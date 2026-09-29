@@ -1,0 +1,4 @@
+{
+  "$comment": "Guard words (SPEC.md R5.2 'with' guard, R6 ' by ' guard). ASCII lowercase.",
+  "words": ["you", "me", "him", "her", "us", "them", "it", "i", "love", "my", "your", "our", "the", "a", "an", "this", "that", "myself", "yourself", "everyone", "everybody", "somebody", "someone", "nobody", "nothing", "all", "night", "side", "day"]
+}

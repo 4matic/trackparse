@@ -1,0 +1,355 @@
+{
+  "$schema": "../../schema/fixture-file.schema.json",
+  "description": "Unknown/unreleased placeholders: ID artists (R7.5), ID titles (R8.6), ID remixers (R5.7) and the resulting flags",
+  "defaults": { "fn": "parse", "options": { "mode": "clean" } },
+  "cases": [
+    {
+      "id": "unknown-id-001",
+      "input": "ID - ID",
+      "match": "exact",
+      "expected": {
+        "input": "ID - ID",
+        "mode": "clean",
+        "position": null,
+        "timestamp": null,
+        "artists": [],
+        "title": "ID",
+        "fullTitle": "ID",
+        "versions": [],
+        "year": null,
+        "flags": { "explicit": false, "clean": false, "unknownArtist": true, "unknownTitle": true },
+        "junk": [],
+        "warnings": []
+      },
+      "rules": ["R7.5", "R8.6"],
+      "tags": ["id", "dnb"]
+    },
+    {
+      "id": "unknown-id-002",
+      "input": "ID - Carbon",
+      "expected": {
+        "artists": [],
+        "title": "Carbon",
+        "flags": { "unknownArtist": true, "unknownTitle": false }
+      },
+      "rules": ["R7.5"],
+      "tags": ["id"]
+    },
+    {
+      "id": "unknown-id-003",
+      "input": "Noisia - ID",
+      "expected": {
+        "artists": ["Noisia"],
+        "title": "ID",
+        "flags": { "unknownArtist": false, "unknownTitle": true }
+      },
+      "rules": ["R8.6"],
+      "tags": ["id"]
+    },
+    {
+      "id": "unknown-id-004",
+      "input": "Noisia - ID (ID Remix)",
+      "match": "exact",
+      "expected": {
+        "input": "Noisia - ID (ID Remix)",
+        "mode": "clean",
+        "position": null,
+        "timestamp": null,
+        "artists": [
+          { "name": "Noisia", "role": "primary", "joiner": null, "source": "artist" }
+        ],
+        "title": "ID",
+        "fullTitle": "ID (ID Remix)",
+        "versions": [
+          {
+            "type": "remix",
+            "raw": "ID Remix",
+            "artists": [],
+            "modifiers": [],
+            "descriptor": null,
+            "year": null,
+            "unknownArtist": true,
+            "delimiter": "("
+          }
+        ],
+        "year": null,
+        "flags": { "explicit": false, "clean": false, "unknownArtist": false, "unknownTitle": true },
+        "junk": [],
+        "warnings": []
+      },
+      "rules": ["R5.7", "R8.6", "R7.5"],
+      "tags": ["id", "remix"],
+      "note": "An unknown remixer sets version.unknownArtist, not flags.unknownArtist."
+    },
+    {
+      "id": "unknown-id-005",
+      "input": "Unknown Artist - Nightcall",
+      "expected": {
+        "artists": [],
+        "title": "Nightcall",
+        "flags": { "unknownArtist": true, "unknownTitle": false }
+      },
+      "rules": ["R7.5"],
+      "tags": ["unknown"]
+    },
+    {
+      "id": "unknown-id-006",
+      "input": "??? - ???",
+      "expected": {
+        "artists": [],
+        "title": "???",
+        "flags": { "unknownArtist": true, "unknownTitle": true }
+      },
+      "rules": ["R7.5", "R8.6"],
+      "tags": ["unknown"]
+    },
+    {
+      "id": "unknown-id-007",
+      "input": "Burial - Untitled",
+      "expected": {
+        "artists": ["Burial"],
+        "title": "Untitled",
+        "flags": { "unknownArtist": false, "unknownTitle": true }
+      },
+      "rules": ["R8.6"],
+      "tags": ["unknown"]
+    },
+    {
+      "id": "unknown-id-008",
+      "input": "Noisia & Phace - IDs",
+      "expected": {
+        "artists": ["Noisia", "Phace"],
+        "title": "IDs",
+        "flags": { "unknownTitle": true }
+      },
+      "rules": ["R8.6"],
+      "tags": ["id"]
+    },
+    {
+      "id": "unknown-id-009",
+      "input": "Noisia - ID?",
+      "expected": {
+        "artists": ["Noisia"],
+        "title": "ID?",
+        "flags": { "unknownTitle": true }
+      },
+      "rules": ["R8.6"],
+      "tags": ["id"]
+    },
+    {
+      "id": "unknown-id-010",
+      "input": "Fred again.. - id",
+      "expected": {
+        "artists": ["Fred again.."],
+        "title": "id",
+        "flags": { "unknownArtist": false, "unknownTitle": false }
+      },
+      "rules": ["R8.6", "R7.4"],
+      "tags": ["id", "case"],
+      "note": "'ID' is caseSensitive: lowercase 'id' is a real title."
+    },
+    {
+      "id": "unknown-id-011",
+      "input": "ID - ID (Noisia Remix)",
+      "expected": {
+        "artists": [],
+        "title": "ID",
+        "fullTitle": "ID (Noisia Remix)",
+        "versions": [{ "type": "remix", "artists": ["Noisia"], "unknownArtist": false }],
+        "flags": { "unknownArtist": true, "unknownTitle": true }
+      },
+      "rules": ["R7.5", "R8.6", "R5.7"],
+      "tags": ["id", "remix"]
+    },
+    {
+      "id": "unknown-id-012",
+      "input": "ID ft. ID - ID",
+      "expected": {
+        "artists": [],
+        "title": "ID",
+        "flags": { "unknownArtist": true, "unknownTitle": true }
+      },
+      "rules": ["R7.2", "R7.5", "R8.6"],
+      "tags": ["id", "feat"]
+    },
+    {
+      "id": "unknown-id-013",
+      "input": "Noisia & ID - ID",
+      "match": "exact",
+      "expected": {
+        "input": "Noisia & ID - ID",
+        "mode": "clean",
+        "position": null,
+        "timestamp": null,
+        "artists": [
+          { "name": "Noisia", "role": "primary", "joiner": null, "source": "artist" }
+        ],
+        "title": "ID",
+        "fullTitle": "ID",
+        "versions": [],
+        "year": null,
+        "flags": { "explicit": false, "clean": false, "unknownArtist": true, "unknownTitle": true },
+        "junk": [],
+        "warnings": []
+      },
+      "rules": ["R7.5", "R8.6"],
+      "tags": ["id"],
+      "note": "A known collaborator plus an unknown one: the ID is dropped, the flag is set."
+    },
+    {
+      "id": "unknown-id-014",
+      "input": "Unknown - Unknown",
+      "expected": {
+        "artists": [],
+        "title": "Unknown",
+        "flags": { "unknownArtist": true, "unknownTitle": true }
+      },
+      "rules": ["R7.5", "R8.6"],
+      "tags": ["unknown"]
+    },
+    {
+      "id": "unknown-id-015",
+      "input": "Unknown Artist - Unknown Title",
+      "expected": {
+        "artists": [],
+        "title": "Unknown Title",
+        "flags": { "unknownArtist": true, "unknownTitle": true }
+      },
+      "rules": ["R7.5", "R8.6"],
+      "tags": ["unknown"]
+    },
+    {
+      "id": "unknown-id-016",
+      "input": "Burial - Untitled (VIP)",
+      "expected": {
+        "artists": ["Burial"],
+        "title": "Untitled",
+        "fullTitle": "Untitled (VIP)",
+        "versions": [{ "type": "vip", "artists": [], "unknownArtist": false }],
+        "flags": { "unknownTitle": true }
+      },
+      "rules": ["R8.6", "R5.7"],
+      "tags": ["unknown", "vip"]
+    },
+    {
+      "id": "unknown-id-017",
+      "input": "Noisia - Tentacles (ID Remix)",
+      "expected": {
+        "artists": ["Noisia"],
+        "title": "Tentacles",
+        "versions": [{ "type": "remix", "raw": "ID Remix", "artists": [], "unknownArtist": true }],
+        "flags": { "unknownArtist": false, "unknownTitle": false }
+      },
+      "rules": ["R5.7"],
+      "tags": ["id", "remix"]
+    },
+    {
+      "id": "unknown-id-018",
+      "input": "Noisia - Tentacles (ID VIP)",
+      "expected": {
+        "artists": ["Noisia"],
+        "title": "Tentacles",
+        "versions": [{ "type": "vip", "raw": "ID VIP", "artists": [], "unknownArtist": true }]
+      },
+      "rules": ["R5.7"],
+      "tags": ["id", "vip"]
+    },
+    {
+      "id": "unknown-id-019",
+      "input": "Noisia - ID Theft",
+      "expected": {
+        "artists": ["Noisia"],
+        "title": "ID Theft",
+        "flags": { "unknownTitle": false }
+      },
+      "rules": ["R8.6"],
+      "tags": ["id"],
+      "note": "Only a title that is entirely an unknown token is flagged."
+    },
+    {
+      "id": "unknown-id-020",
+      "input": "Noisia - Tentacles (feat. ID)",
+      "expected": {
+        "artists": [{ "name": "Noisia", "role": "primary" }],
+        "title": "Tentacles",
+        "flags": { "unknownArtist": true }
+      },
+      "rules": ["R5.2", "R7.5"],
+      "tags": ["id", "feat"],
+      "note": "An unknown featured credit outside versions sets flags.unknownArtist."
+    },
+    {
+      "id": "unknown-id-021",
+      "input": "Noisia - ?",
+      "expected": {
+        "artists": ["Noisia"],
+        "title": "?",
+        "flags": { "unknownTitle": true }
+      },
+      "rules": ["R8.6"],
+      "tags": ["unknown"]
+    },
+    {
+      "id": "unknown-id-022",
+      "input": "ID - ID - ID",
+      "expected": {
+        "artists": [],
+        "title": "ID - ID",
+        "versions": [],
+        "flags": { "unknownArtist": true, "unknownTitle": false }
+      },
+      "rules": ["R6.3", "R8.2", "R8.6"],
+      "tags": ["id"],
+      "note": "Later dashes stay in the title; 'ID - ID' as a whole is not an unknown token."
+    },
+    {
+      "id": "unknown-id-023",
+      "input": "ID - ID (Official Video)",
+      "options": { "mode": "auto" },
+      "expected": {
+        "mode": "youtube",
+        "artists": [],
+        "title": "ID",
+        "junk": [{ "raw": "Official Video", "kind": "video" }],
+        "flags": { "unknownArtist": true, "unknownTitle": true }
+      },
+      "rules": ["R2.1", "R5.1", "R7.5", "R8.6"],
+      "tags": ["id", "junk"]
+    },
+    {
+      "id": "unknown-id-024",
+      "input": "untitled - Burial",
+      "expected": {
+        "artists": [],
+        "title": "Burial",
+        "flags": { "unknownArtist": true, "unknownTitle": false }
+      },
+      "rules": ["R7.5"],
+      "tags": ["unknown", "case"],
+      "note": "'untitled' is a caseInsensitive unknown token, also on the artist side."
+    },
+    {
+      "id": "unknown-id-025",
+      "input": "Noisia - Stigma (feat. ID)",
+      "expected": {
+        "artists": ["Noisia"],
+        "title": "Stigma",
+        "flags": { "unknownArtist": true }
+      },
+      "rules": ["R7.5", "R5.2"],
+      "tags": ["feat"],
+      "note": "An unknown token in a feat credit sets flags.unknownArtist."
+    },
+    {
+      "id": "unknown-id-026",
+      "input": "Noisia - Stigma prod. by ???",
+      "expected": {
+        "artists": ["Noisia"],
+        "title": "Stigma",
+        "flags": { "unknownArtist": true }
+      },
+      "rules": ["R7.5", "R8.3"],
+      "tags": ["producer"]
+    }
+  ]
+}

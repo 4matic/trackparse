@@ -1,0 +1,22 @@
+{
+  "name": "@trackparse/fixture-gen",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Combinatorial fixture generator for the trackparse spec (writes spec/fixtures/generated)",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "gen": "tsx src/cli.ts gen",
+    "check": "tsx src/cli.ts check",
+    "validate": "tsx src/validate.ts",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.3",
+    "ajv": "^8.20.0",
+    "tsx": "^4.23.15",
+    "typescript": "^5.9.3",
+    "vitest": "^5.0.2"
+  }
+}

@@ -1,0 +1,743 @@
+{
+  "$schema": "../../schema/fixture-file.schema.json",
+  "description": "R5.6/R5.7 version groups in brackets: every head, generic-head type rule, modifiers, credits, prefix forms, multi-version, delimiters, and Unknown groups that stay in the title",
+  "defaults": { "fn": "parse", "options": { "mode": "clean" } },
+  "cases": [
+    {
+      "id": "brackets-version-001",
+      "input": "Noisia - Stigma (Mefjus Remix)",
+      "expected": {
+        "artists": ["Noisia"],
+        "title": "Stigma",
+        "fullTitle": "Stigma (Mefjus Remix)",
+        "versions": [{ "type": "remix", "raw": "Mefjus Remix", "artists": [{ "name": "Mefjus", "role": "remixer", "joiner": null, "source": "version" }], "modifiers": [], "delimiter": "(" }]
+      },
+      "rules": ["R5.7", "R8.1"],
+      "tags": ["remix"]
+    },
+    {
+      "id": "brackets-version-002",
+      "input": "Camo - Numbers (Mefjus Rmx)",
+      "expected": { "artists": ["Camo"], "title": "Numbers", "versions": [{ "type": "remix", "raw": "Mefjus Rmx", "artists": ["Mefjus"] }] },
+      "rules": ["R5.7"],
+      "tags": ["remix", "rmx"]
+    },
+    {
+      "id": "brackets-version-003",
+      "input": "Pendulum - Tarantula (Mix)",
+      "expected": { "artists": ["Pendulum"], "title": "Tarantula", "versions": [{ "type": "mix", "raw": "Mix", "artists": [], "modifiers": [] }] },
+      "rules": ["R5.7"],
+      "tags": ["mix"],
+      "note": "Generic 'mix' with empty credit span keeps type mix"
+    },
+    {
+      "id": "brackets-version-004",
+      "input": "Hybrid Minds - Touch (Kanine Bootleg)",
+      "expected": { "artists": ["Hybrid Minds"], "title": "Touch", "versions": [{ "type": "bootleg", "artists": ["Kanine"] }] },
+      "rules": ["R5.7"],
+      "tags": ["bootleg"]
+    },
+    {
+      "id": "brackets-version-005",
+      "input": "Sub Focus - Timewarp (VIP)",
+      "expected": { "artists": ["Sub Focus"], "title": "Timewarp", "fullTitle": "Timewarp (VIP)", "versions": [{ "type": "vip", "raw": "VIP", "artists": [], "modifiers": [] }] },
+      "rules": ["R5.7"],
+      "tags": ["vip"]
+    },
+    {
+      "id": "brackets-version-006",
+      "input": "Rudimental - Feel the Love (Dimension Edit)",
+      "expected": { "artists": ["Rudimental"], "title": "Feel the Love", "versions": [{ "type": "edit", "artists": ["Dimension"], "modifiers": [] }] },
+      "rules": ["R5.7"],
+      "tags": ["edit"],
+      "note": "Generic 'edit' with a non-type-capable credit stays type edit (only 'mix' becomes remix)"
+    },
+    {
+      "id": "brackets-version-007",
+      "input": "Hybrid Minds - Touch (Kanine Re-Edit)",
+      "expected": { "artists": ["Hybrid Minds"], "title": "Touch", "versions": [{ "type": "edit", "raw": "Kanine Re-Edit", "artists": ["Kanine"] }] },
+      "rules": ["R5.7"],
+      "tags": ["edit", "re-edit"]
+    },
+    {
+      "id": "brackets-version-008",
+      "input": "Dimension - Offender (Culture Shock Flip)",
+      "expected": { "artists": ["Dimension"], "title": "Offender", "versions": [{ "type": "flip", "artists": ["Culture Shock"] }] },
+      "rules": ["R5.7"],
+      "tags": ["flip"]
+    },
+    {
+      "id": "brackets-version-009",
+      "input": "DJ Hazard - Mr Happy (Break Refix)",
+      "expected": { "artists": ["DJ Hazard"], "title": "Mr Happy", "versions": [{ "type": "refix", "artists": ["Break"] }] },
+      "rules": ["R5.7"],
+      "tags": ["refix"]
+    },
+    {
+      "id": "brackets-version-010",
+      "input": "Sigma - Nobody to Love (Metrik Rework)",
+      "expected": { "artists": ["Sigma"], "title": "Nobody to Love", "versions": [{ "type": "rework", "artists": ["Metrik"], "modifiers": [] }] },
+      "rules": ["R5.7"],
+      "tags": ["rework"]
+    },
+    {
+      "id": "brackets-version-011",
+      "input": "The Prodigy - Voodoo People (Pendulum Mashup)",
+      "expected": { "artists": ["The Prodigy"], "title": "Voodoo People", "versions": [{ "type": "mashup", "artists": ["Pendulum"] }] },
+      "rules": ["R5.7"],
+      "tags": ["mashup"]
+    },
+    {
+      "id": "brackets-version-012",
+      "input": "Sub Focus - Rock It (DJ Hazard Blend)",
+      "expected": { "artists": ["Sub Focus"], "title": "Rock It", "versions": [{ "type": "blend", "artists": ["DJ Hazard"] }] },
+      "rules": ["R5.7"],
+      "tags": ["blend"]
+    },
+    {
+      "id": "brackets-version-013",
+      "input": "Skream - Midnight Request Line (Dub)",
+      "expected": { "artists": ["Skream"], "title": "Midnight Request Line", "versions": [{ "type": "dub", "raw": "Dub", "artists": [] }] },
+      "rules": ["R5.7"],
+      "tags": ["dub"]
+    },
+    {
+      "id": "brackets-version-014",
+      "input": "Massive Attack - Teardrop (Album Version)",
+      "expected": { "artists": ["Massive Attack"], "title": "Teardrop", "versions": [{ "type": "version", "artists": [], "modifiers": ["album"], "descriptor": null }] },
+      "rules": ["R5.7"],
+      "tags": ["version", "modifiers"],
+      "note": "'album' is a descriptor word (not type-capable): it becomes a modifier and the generic head keeps type version"
+    },
+    {
+      "id": "brackets-version-015",
+      "input": "The Beatles - Help! (Remastered)",
+      "expected": { "artists": ["The Beatles"], "title": "Help!", "versions": [{ "type": "remaster", "raw": "Remastered", "artists": [], "year": null }] },
+      "rules": ["R5.7"],
+      "tags": ["remaster"]
+    },
+    {
+      "id": "brackets-version-016",
+      "input": "Linkin Park - Numb (Piano Cover)",
+      "expected": { "artists": ["Linkin Park"], "title": "Numb", "versions": [{ "type": "cover", "artists": [], "modifiers": ["piano"] }] },
+      "rules": ["R5.7"],
+      "tags": ["cover", "modifiers"]
+    },
+    {
+      "id": "brackets-version-017",
+      "input": "Muse - Exogenesis (Reprise)",
+      "expected": { "artists": ["Muse"], "title": "Exogenesis", "versions": [{ "type": "reprise", "raw": "Reprise", "artists": [] }] },
+      "rules": ["R5.7"],
+      "tags": ["reprise"]
+    },
+    {
+      "id": "brackets-version-018",
+      "input": "deadmau5 - Strobe (Radio Edit)",
+      "expected": { "artists": ["deadmau5"], "title": "Strobe", "fullTitle": "Strobe (Radio Edit)", "versions": [{ "type": "radio", "raw": "Radio Edit", "artists": [], "modifiers": [] }] },
+      "rules": ["R5.7", "R9.4"],
+      "tags": ["radio", "generic-head"]
+    },
+    {
+      "id": "brackets-version-019",
+      "input": "Pendulum - Watercolour (Extended Mix)",
+      "expected": { "artists": ["Pendulum"], "title": "Watercolour", "fullTitle": "Watercolour (Extended Mix)", "versions": [{ "type": "extended", "artists": [], "modifiers": [] }] },
+      "rules": ["R5.7"],
+      "tags": ["extended", "generic-head"]
+    },
+    {
+      "id": "brackets-version-020",
+      "input": "Sub Focus - Timewarp (Original Mix)",
+      "expected": { "artists": ["Sub Focus"], "title": "Timewarp", "versions": [{ "type": "original", "artists": [], "modifiers": [] }] },
+      "rules": ["R5.7"],
+      "tags": ["original", "generic-head"]
+    },
+    {
+      "id": "brackets-version-021",
+      "input": "Netsky - Iron Heart (VIP Mix)",
+      "expected": { "artists": ["Netsky"], "title": "Iron Heart", "versions": [{ "type": "vip", "artists": [], "modifiers": [] }] },
+      "rules": ["R5.7"],
+      "tags": ["vip", "generic-head"]
+    },
+    {
+      "id": "brackets-version-022",
+      "input": "Skream - Midnight Request Line (Dub Mix)",
+      "expected": { "artists": ["Skream"], "title": "Midnight Request Line", "versions": [{ "type": "dub", "artists": [], "modifiers": [] }] },
+      "rules": ["R5.7"],
+      "tags": ["dub", "generic-head"]
+    },
+    {
+      "id": "brackets-version-023",
+      "input": "Armand van Helden - U Don't Know Me (Club Mix)",
+      "expected": { "artists": ["Armand van Helden"], "title": "U Don't Know Me", "versions": [{ "type": "club", "artists": [], "modifiers": [] }] },
+      "rules": ["R5.7"],
+      "tags": ["club", "generic-head"]
+    },
+    {
+      "id": "brackets-version-024",
+      "input": "Wilkinson - Afterglow (Acoustic Version)",
+      "expected": { "artists": ["Wilkinson"], "title": "Afterglow", "versions": [{ "type": "acoustic", "artists": [], "modifiers": [] }] },
+      "rules": ["R5.7"],
+      "tags": ["acoustic", "generic-head"]
+    },
+    {
+      "id": "brackets-version-025",
+      "input": "Wilkinson - Afterglow (Instrumental)",
+      "expected": { "artists": ["Wilkinson"], "title": "Afterglow", "versions": [{ "type": "instrumental", "raw": "Instrumental", "artists": [], "descriptor": null }] },
+      "rules": ["R5.7"],
+      "tags": ["instrumental", "prefix-form"],
+      "note": "'instrumental' is not a head, so this goes through the prefix form"
+    },
+    {
+      "id": "brackets-version-026",
+      "input": "Pendulum - Tarantula (Extended VIP Mix)",
+      "match": "exact",
+      "expected": {
+        "input": "Pendulum - Tarantula (Extended VIP Mix)",
+        "mode": "clean",
+        "position": null,
+        "timestamp": null,
+        "artists": [
+          { "name": "Pendulum", "role": "primary", "joiner": null, "source": "artist" }
+        ],
+        "title": "Tarantula",
+        "fullTitle": "Tarantula (Extended VIP Mix)",
+        "versions": [
+          {
+            "type": "vip",
+            "raw": "Extended VIP Mix",
+            "artists": [],
+            "modifiers": ["extended"],
+            "descriptor": null,
+            "year": null,
+            "unknownArtist": false,
+            "delimiter": "("
+          }
+        ],
+        "year": null,
+        "flags": { "explicit": false, "clean": false, "unknownArtist": false, "unknownTitle": false },
+        "junk": [],
+        "warnings": []
+      },
+      "rules": ["R5.7"],
+      "tags": ["vip", "modifiers", "exact"]
+    },
+    {
+      "id": "brackets-version-027",
+      "input": "Mefjus - Sinkhole (Extended Remix)",
+      "expected": { "artists": ["Mefjus"], "title": "Sinkhole", "versions": [{ "type": "remix", "artists": [], "modifiers": ["extended"] }] },
+      "rules": ["R5.7"],
+      "tags": ["remix", "modifiers"],
+      "note": "'remix' is not generic, so the type-capable word becomes a modifier"
+    },
+    {
+      "id": "brackets-version-028",
+      "input": "Gydra - Away From Me (Levela Mix)",
+      "expected": { "artists": ["Gydra"], "title": "Away From Me", "versions": [{ "type": "remix", "raw": "Levela Mix", "artists": ["Levela"] }], "warnings": [] },
+      "rules": ["R5.7"],
+      "tags": ["remix", "mix-credit"]
+    },
+    {
+      "id": "brackets-version-029",
+      "input": "Phace - Cold Blood (Fonetick Lee & Sonic Art Space Drums Mix)",
+      "expected": {
+        "artists": ["Phace"],
+        "title": "Cold Blood",
+        "versions": [{ "type": "remix", "artists": [{ "name": "Fonetick Lee", "joiner": null }, { "name": "Sonic Art Space Drums", "joiner": "&" }] }],
+        "warnings": ["ambiguousMixCredit"]
+      },
+      "rules": ["R5.7", "R7.3"],
+      "tags": ["remix", "mix-credit", "warning"]
+    },
+    {
+      "id": "brackets-version-030",
+      "input": "Dimension - Offender (Pulsar & North Base Edit)",
+      "expected": {
+        "artists": ["Dimension"],
+        "title": "Offender",
+        "versions": [{
+          "type": "edit",
+          "artists": [
+            { "name": "Pulsar", "role": "remixer", "joiner": null, "source": "version" },
+            { "name": "North Base", "role": "remixer", "joiner": "&", "source": "version" }
+          ]
+        }]
+      },
+      "rules": ["R5.7", "R7.3"],
+      "tags": ["edit", "multi-credit"]
+    },
+    {
+      "id": "brackets-version-031",
+      "input": "Kendrick Lamar - HUMBLE. (Remix by Skrillex)",
+      "expected": {
+        "artists": ["Kendrick Lamar"],
+        "title": "HUMBLE.",
+        "versions": [{ "type": "remix", "raw": "Remix by Skrillex", "artists": [{ "name": "Skrillex", "role": "remixer", "joiner": null, "source": "version" }], "modifiers": [], "descriptor": null }]
+      },
+      "rules": ["R5.7"],
+      "tags": ["remix", "head-by"]
+    },
+    {
+      "id": "brackets-version-032",
+      "input": "Kendrick Lamar - HUMBLE. (Skrillex's Remix)",
+      "expected": { "artists": ["Kendrick Lamar"], "title": "HUMBLE.", "versions": [{ "type": "remix", "artists": ["Skrillex"], "descriptor": null }] },
+      "rules": ["R5.7"],
+      "tags": ["remix", "possessive"]
+    },
+    {
+      "id": "brackets-version-033",
+      "input": "Taylor Swift - Love Story (Taylor’s Version)",
+      "match": "exact",
+      "expected": {
+        "input": "Taylor Swift - Love Story (Taylor’s Version)",
+        "mode": "clean",
+        "position": null,
+        "timestamp": null,
+        "artists": [
+          { "name": "Taylor Swift", "role": "primary", "joiner": null, "source": "artist" }
+        ],
+        "title": "Love Story",
+        "fullTitle": "Love Story (Taylor's Version)",
+        "versions": [
+          {
+            "type": "version",
+            "raw": "Taylor's Version",
+            "artists": [],
+            "modifiers": [],
+            "descriptor": "Taylor's",
+            "year": null,
+            "unknownArtist": false,
+            "delimiter": "("
+          }
+        ],
+        "year": null,
+        "flags": { "explicit": false, "clean": false, "unknownArtist": false, "unknownTitle": false },
+        "junk": [],
+        "warnings": []
+      },
+      "rules": ["R5.7", "R1.4"],
+      "tags": ["version", "possessive", "exact"],
+      "note": "Curly apostrophe normalizes to ASCII; possessive + head 'version' becomes the descriptor, not a credit"
+    },
+    {
+      "id": "brackets-version-034",
+      "input": "Mefjus - Sinkhole (ID Remix)",
+      "expected": {
+        "artists": ["Mefjus"],
+        "title": "Sinkhole",
+        "flags": { "unknownArtist": false },
+        "versions": [{ "type": "remix", "raw": "ID Remix", "artists": [], "unknownArtist": true }]
+      },
+      "rules": ["R5.7", "R7.5"],
+      "tags": ["remix", "unknown"],
+      "note": "Unknown credit inside a version sets version.unknownArtist, not flags.unknownArtist"
+    },
+    {
+      "id": "brackets-version-035",
+      "input": "Sub Focus - Endorphins (Uninvited D'n'B Bootleg)",
+      "match": "exact",
+      "expected": {
+        "input": "Sub Focus - Endorphins (Uninvited D'n'B Bootleg)",
+        "mode": "clean",
+        "position": null,
+        "timestamp": null,
+        "artists": [
+          { "name": "Sub Focus", "role": "primary", "joiner": null, "source": "artist" }
+        ],
+        "title": "Endorphins",
+        "fullTitle": "Endorphins (Uninvited D'n'B Bootleg)",
+        "versions": [
+          {
+            "type": "bootleg",
+            "raw": "Uninvited D'n'B Bootleg",
+            "artists": [
+              { "name": "Uninvited", "role": "remixer", "joiner": null, "source": "version" }
+            ],
+            "modifiers": [],
+            "descriptor": "D'n'B",
+            "year": null,
+            "unknownArtist": false,
+            "delimiter": "("
+          }
+        ],
+        "year": null,
+        "flags": { "explicit": false, "clean": false, "unknownArtist": false, "unknownTitle": false },
+        "junk": [],
+        "warnings": []
+      },
+      "rules": ["R5.7"],
+      "tags": ["bootleg", "descriptor", "genre", "exact"]
+    },
+    {
+      "id": "brackets-version-036",
+      "input": "Queen - Bohemian Rhapsody (2011 Remaster)",
+      "expected": { "artists": ["Queen"], "title": "Bohemian Rhapsody", "year": null, "versions": [{ "type": "remaster", "raw": "2011 Remaster", "artists": [], "year": 2011, "modifiers": [] }] },
+      "rules": ["R5.7"],
+      "tags": ["remaster", "year"]
+    },
+    {
+      "id": "brackets-version-037",
+      "input": "The Beatles - Hey Jude (Remastered 2015)",
+      "expected": { "artists": ["The Beatles"], "title": "Hey Jude", "year": null, "versions": [{ "type": "remaster", "raw": "Remastered 2015", "artists": [], "year": 2015, "descriptor": null }] },
+      "rules": ["R5.7"],
+      "tags": ["remaster", "year", "prefix-form"]
+    },
+    {
+      "id": "brackets-version-038",
+      "input": "Queen - Bohemian Rhapsody (Live at Wembley 1986)",
+      "expected": {
+        "artists": ["Queen"],
+        "title": "Bohemian Rhapsody",
+        "fullTitle": "Bohemian Rhapsody (Live at Wembley 1986)",
+        "year": null,
+        "versions": [{ "type": "live", "raw": "Live at Wembley 1986", "artists": [], "modifiers": [], "descriptor": "at Wembley", "year": 1986 }]
+      },
+      "rules": ["R5.7"],
+      "tags": ["live", "prefix-form", "descriptor"]
+    },
+    {
+      "id": "brackets-version-039",
+      "input": "Kanye West - Stronger (A Cappella)",
+      "expected": { "artists": ["Kanye West"], "title": "Stronger", "versions": [{ "type": "acapella", "raw": "A Cappella" }] },
+      "rules": ["R5.7"],
+      "tags": ["acapella", "prefix-form"]
+    },
+    {
+      "id": "brackets-version-040",
+      "input": "Arctic Monkeys - Do I Wanna Know? (Live Version)",
+      "expected": { "artists": ["Arctic Monkeys"], "title": "Do I Wanna Know?", "versions": [{ "type": "live", "modifiers": [] }] },
+      "rules": ["R5.7"],
+      "tags": ["live", "generic-head"]
+    },
+    {
+      "id": "brackets-version-041",
+      "input": "Imagine Dragons - Bones (Sped Up)",
+      "expected": { "artists": ["Imagine Dragons"], "title": "Bones", "versions": [{ "type": "spedUp", "raw": "Sped Up", "descriptor": null }] },
+      "rules": ["R5.7"],
+      "tags": ["sped-up", "prefix-form"]
+    },
+    {
+      "id": "brackets-version-042",
+      "input": "The Weeknd - Blinding Lights (Slowed + Reverb)",
+      "expected": { "artists": ["The Weeknd"], "title": "Blinding Lights", "junk": [], "versions": [{ "type": "slowed", "raw": "Slowed + Reverb", "descriptor": null }] },
+      "rules": ["R5.7"],
+      "tags": ["slowed", "prefix-form"],
+      "note": "'+' is a junk connector, but no junk phrase is present, so this is not junk"
+    },
+    {
+      "id": "brackets-version-043",
+      "input": "Alan Walker - Faded (Nightcore)",
+      "expected": { "artists": ["Alan Walker"], "title": "Faded", "versions": [{ "type": "nightcore", "raw": "Nightcore" }] },
+      "rules": ["R5.7"],
+      "tags": ["nightcore", "prefix-form"]
+    },
+    {
+      "id": "brackets-version-044",
+      "input": "Tears for Fears - Everybody Wants to Rule the World (Radio Edit / Remastered 2015)",
+      "match": "exact",
+      "expected": {
+        "input": "Tears for Fears - Everybody Wants to Rule the World (Radio Edit / Remastered 2015)",
+        "mode": "clean",
+        "position": null,
+        "timestamp": null,
+        "artists": [
+          { "name": "Tears for Fears", "role": "primary", "joiner": null, "source": "artist" }
+        ],
+        "title": "Everybody Wants to Rule the World",
+        "fullTitle": "Everybody Wants to Rule the World (Radio Edit) (Remastered 2015)",
+        "versions": [
+          {
+            "type": "radio",
+            "raw": "Radio Edit",
+            "artists": [],
+            "modifiers": [],
+            "descriptor": null,
+            "year": null,
+            "unknownArtist": false,
+            "delimiter": "("
+          },
+          {
+            "type": "remaster",
+            "raw": "Remastered 2015",
+            "artists": [],
+            "modifiers": [],
+            "descriptor": null,
+            "year": 2015,
+            "unknownArtist": false,
+            "delimiter": "("
+          }
+        ],
+        "year": null,
+        "flags": { "explicit": false, "clean": false, "unknownArtist": false, "unknownTitle": false },
+        "junk": [],
+        "warnings": []
+      },
+      "rules": ["R5.6", "R5.7", "R9.4"],
+      "tags": ["multi-version", "exact"],
+      "note": "Each part becomes its own version with the group's delimiter; R9.4 renders them as two separate groups"
+    },
+    {
+      "id": "brackets-version-045",
+      "input": "Noisia - Stigma [Mefjus Remix]",
+      "expected": { "artists": ["Noisia"], "title": "Stigma", "fullTitle": "Stigma [Mefjus Remix]", "versions": [{ "type": "remix", "artists": ["Mefjus"], "delimiter": "[" }] },
+      "rules": ["R5.7", "R9.4"],
+      "tags": ["remix", "square"]
+    },
+    {
+      "id": "brackets-version-046",
+      "input": "Noisia - Stigma {Mefjus Remix}",
+      "expected": { "artists": ["Noisia"], "title": "Stigma", "fullTitle": "Stigma {Mefjus Remix}", "versions": [{ "type": "remix", "artists": ["Mefjus"], "delimiter": "{" }] },
+      "rules": ["R5.7", "R9.4"],
+      "tags": ["remix", "curly"]
+    },
+    {
+      "id": "brackets-version-047",
+      "input": "Pendulum - Tarantula (Extended Mix) [2019 Remaster]",
+      "expected": {
+        "artists": ["Pendulum"],
+        "title": "Tarantula",
+        "fullTitle": "Tarantula (Extended Mix) [2019 Remaster]",
+        "year": null,
+        "versions": [
+          { "type": "extended", "raw": "Extended Mix", "year": null, "delimiter": "(" },
+          { "type": "remaster", "raw": "2019 Remaster", "year": 2019, "delimiter": "[" }
+        ]
+      },
+      "rules": ["R5.7", "R9.3", "R9.4"],
+      "tags": ["multiple"]
+    },
+    {
+      "id": "brackets-version-048",
+      "input": "Noisia - Stigma (MEFJUS REMIX)",
+      "expected": { "artists": ["Noisia"], "title": "Stigma", "fullTitle": "Stigma (MEFJUS REMIX)", "versions": [{ "type": "remix", "raw": "MEFJUS REMIX", "artists": ["MEFJUS"] }] },
+      "rules": ["R5.7", "R0.3"],
+      "tags": ["remix", "case"]
+    },
+    {
+      "id": "brackets-version-049",
+      "input": "Noisia - Stigma (remix)",
+      "expected": { "artists": ["Noisia"], "title": "Stigma", "versions": [{ "type": "remix", "raw": "remix", "artists": [] }] },
+      "rules": ["R5.7", "R0.3"],
+      "tags": ["remix", "case"]
+    },
+    {
+      "id": "brackets-version-050",
+      "input": "The Rolling Stones - (I Can't Get No) Satisfaction (Mono Version)",
+      "expected": {
+        "artists": ["The Rolling Stones"],
+        "title": "(I Can't Get No) Satisfaction",
+        "fullTitle": "(I Can't Get No) Satisfaction (Mono Version)",
+        "versions": [{ "type": "version", "raw": "Mono Version", "modifiers": ["mono"] }]
+      },
+      "rules": ["R5.8", "R5.7", "R8.1"],
+      "tags": ["unknown-group", "version"]
+    },
+    {
+      "id": "brackets-version-051",
+      "input": "Rudimental - Waiting All Night (Part 2)",
+      "expected": { "artists": ["Rudimental"], "title": "Waiting All Night (Part 2)", "fullTitle": "Waiting All Night (Part 2)", "versions": [] },
+      "rules": ["R5.8"],
+      "tags": ["unknown-group"]
+    },
+    {
+      "id": "brackets-version-052",
+      "input": "Noisia - Stigma (Rotation Deep UK)",
+      "expected": { "artists": ["Noisia"], "title": "Stigma (Rotation Deep UK)", "versions": [] },
+      "rules": ["R5.8"],
+      "tags": ["unknown-group"]
+    },
+    {
+      "id": "brackets-version-053",
+      "input": "Photek - The Hidden Camera (Moving Shadow 2003)",
+      "expected": { "artists": ["Photek"], "title": "The Hidden Camera (Moving Shadow 2003)", "versions": [], "year": null },
+      "rules": ["R5.8"],
+      "tags": ["unknown-group"],
+      "note": "A year inside a non-version group does not make it a version or set year"
+    },
+    {
+      "id": "brackets-version-054",
+      "input": "Земфира - Искала (Kolya Funk Remix)",
+      "expected": {
+        "artists": ["Земфира"],
+        "title": "Искала",
+        "versions": [{ "type": "remix", "artists": ["Kolya Funk"] }]
+      },
+      "rules": ["R5.7"],
+      "tags": ["remix", "cyrillic"]
+    },
+    {
+      "id": "brackets-version-055",
+      "input": "Звери - Районы-кварталы (Тест Ремикс)",
+      "expected": {
+        "artists": ["Звери"],
+        "title": "Районы-кварталы (Тест Ремикс)",
+        "versions": []
+      },
+      "rules": ["R5.8", "R0.3"],
+      "tags": ["cyrillic", "unknown-group"],
+      "note": "Version vocabulary is ASCII-only in v1; Cyrillic 'Ремикс' is not a head, so the group stays in the title"
+    },
+    {
+      "id": "brackets-version-056",
+      "input": "Netsky - Iron Heart (VIP Remix)",
+      "expected": {
+        "artists": ["Netsky"],
+        "title": "Iron Heart",
+        "versions": [
+          {
+            "type": "remix",
+            "artists": [],
+            "modifiers": ["vip"]
+          }
+        ]
+      },
+      "rules": ["R5.7"],
+      "tags": ["remix", "modifiers"],
+      "note": "'VIP' is a head and type-capable; it does not supply the type, so it counts as a modifier (R5.7)."
+    },
+    {
+      "id": "brackets-version-057",
+      "input": "Pink Floyd - Money (2011 Remastered Version)",
+      "expected": {
+        "artists": ["Pink Floyd"],
+        "title": "Money",
+        "versions": [
+          {
+            "type": "remaster",
+            "year": 2011,
+            "artists": [],
+            "modifiers": []
+          }
+        ]
+      },
+      "rules": ["R5.7"],
+      "tags": ["remaster", "modifiers"],
+      "note": "Generic head 'Version' with a non-generic head ('Remastered') in the run: the nearest non-generic head gives the type (R5.7 type rule 2)."
+    },
+    {
+      "id": "brackets-version-058",
+      "input": "Noisia - Stigma (Club Ver)",
+      "expected": {
+        "artists": ["Noisia"],
+        "title": "Stigma",
+        "versions": [
+          {
+            "type": "club",
+            "raw": "Club Ver",
+            "artists": [],
+            "modifiers": []
+          }
+        ]
+      },
+      "rules": ["R5.7"],
+      "tags": ["generic-head"],
+      "note": "'Ver' is generic because its canonical type is version."
+    },
+    {
+      "id": "brackets-version-059",
+      "input": "Noisia - Stigma (Radio Re-Edit)",
+      "expected": {
+        "artists": ["Noisia"],
+        "title": "Stigma",
+        "versions": [
+          {
+            "type": "radio",
+            "raw": "Radio Re-Edit",
+            "artists": [],
+            "modifiers": []
+          }
+        ]
+      },
+      "rules": ["R5.7"],
+      "tags": ["generic-head"],
+      "note": "'Re-Edit' is generic (canonical edit)."
+    },
+    {
+      "id": "brackets-version-060",
+      "input": "Noisia - Stigma (Dub Remastered Version)",
+      "expected": {
+        "artists": ["Noisia"],
+        "title": "Stigma",
+        "versions": [
+          {
+            "type": "remaster",
+            "raw": "Dub Remastered Version",
+            "artists": [],
+            "modifiers": ["dub"],
+            "year": null
+          }
+        ]
+      },
+      "rules": ["R5.7"],
+      "tags": ["remaster", "modifiers"],
+      "note": "Type rule 2: nearest non-generic head (Remastered). 'Dub' is head + type-capable and did not supply the type, so it is a modifier."
+    },
+    {
+      "id": "brackets-version-061",
+      "input": "Noisia - Stigma (VIP Remix Edit)",
+      "expected": {
+        "artists": ["Noisia"],
+        "title": "Stigma",
+        "versions": [
+          {
+            "type": "remix",
+            "raw": "VIP Remix Edit",
+            "artists": [],
+            "modifiers": ["vip"]
+          }
+        ]
+      },
+      "rules": ["R5.7"],
+      "tags": ["modifiers"],
+      "note": "Generic 'Edit': the nearest non-generic head is 'Remix'; 'VIP' becomes a modifier."
+    },
+    {
+      "id": "brackets-version-062",
+      "input": "Sam Smith - Hello (Adele Cover)",
+      "expected": {
+        "artists": ["Sam Smith"],
+        "title": "Hello",
+        "versions": [
+          {
+            "type": "cover",
+            "raw": "Adele Cover",
+            "artists": [],
+            "descriptor": "Adele"
+          }
+        ]
+      },
+      "rules": ["R5.7"],
+      "tags": ["cover", "descriptor"],
+      "note": "For type cover the credit span is a descriptor, not a remixer."
+    },
+    {
+      "id": "brackets-version-063",
+      "input": "Utada - First Love (Japanese Version)",
+      "expected": {
+        "artists": ["Utada"],
+        "title": "First Love",
+        "versions": [
+          {
+            "type": "version",
+            "raw": "Japanese Version",
+            "artists": [],
+            "descriptor": "Japanese"
+          }
+        ]
+      },
+      "rules": ["R5.7"],
+      "tags": ["version", "descriptor"]
+    },
+    {
+      "id": "brackets-version-064",
+      "input": "Noisia - Stigma (VIP) (Part 2)",
+      "expected": {
+        "artists": ["Noisia"],
+        "title": "Stigma (Part 2)",
+        "fullTitle": "Stigma (Part 2) (VIP)"
+      },
+      "rules": ["R9.4", "R5.8"],
+      "tags": ["fullTitle"],
+      "note": "Intended: versions are appended after the Unknown groups kept in the title."
+    }
+  ]
+}

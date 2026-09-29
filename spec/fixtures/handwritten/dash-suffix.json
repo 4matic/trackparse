@@ -1,0 +1,473 @@
+{
+  "$schema": "../../schema/fixture-file.schema.json",
+  "description": "R6.2 / R8.2 dash-suffix peeling: versions, junk, flags and years after a trailing spaced dash",
+  "defaults": { "fn": "parse", "options": { "mode": "clean" } },
+  "cases": [
+    {
+      "id": "dash-suffix-001",
+      "input": "Hey Jude - Remastered 2015",
+      "match": "exact",
+      "expected": {
+        "input": "Hey Jude - Remastered 2015",
+        "mode": "clean",
+        "position": null,
+        "timestamp": null,
+        "artists": [],
+        "title": "Hey Jude",
+        "fullTitle": "Hey Jude - Remastered 2015",
+        "versions": [
+          {
+            "type": "remaster",
+            "raw": "Remastered 2015",
+            "artists": [],
+            "modifiers": [],
+            "descriptor": null,
+            "year": 2015,
+            "unknownArtist": false,
+            "delimiter": "-"
+          }
+        ],
+        "year": null,
+        "flags": { "explicit": false, "clean": false, "unknownArtist": false, "unknownTitle": false },
+        "junk": [],
+        "warnings": ["noSeparator"]
+      },
+      "rules": ["R6.2", "R5.7", "R6.8", "R9.4"],
+      "tags": ["dash-suffix", "remaster", "exact"],
+      "note": "Peeled by condition (ii) (>= 2 words). Only one segment remains, so R6.8 applies and warns noSeparator. The version's year does not set top-level year."
+    },
+    {
+      "id": "dash-suffix-002",
+      "input": "The Beatles - Hey Jude - Remastered 2015",
+      "match": "exact",
+      "expected": {
+        "input": "The Beatles - Hey Jude - Remastered 2015",
+        "mode": "clean",
+        "position": null,
+        "timestamp": null,
+        "artists": [
+          { "name": "The Beatles", "role": "primary", "joiner": null, "source": "artist" }
+        ],
+        "title": "Hey Jude",
+        "fullTitle": "Hey Jude - Remastered 2015",
+        "versions": [
+          {
+            "type": "remaster",
+            "raw": "Remastered 2015",
+            "artists": [],
+            "modifiers": [],
+            "descriptor": null,
+            "year": 2015,
+            "unknownArtist": false,
+            "delimiter": "-"
+          }
+        ],
+        "year": null,
+        "flags": { "explicit": false, "clean": false, "unknownArtist": false, "unknownTitle": false },
+        "junk": [],
+        "warnings": []
+      },
+      "rules": ["R6.2", "R6.3", "R5.7"],
+      "tags": ["dash-suffix", "remaster", "exact"]
+    },
+    {
+      "id": "dash-suffix-003",
+      "input": "Strobe - Radio Edit",
+      "expected": {
+        "artists": [],
+        "title": "Strobe",
+        "fullTitle": "Strobe - Radio Edit",
+        "versions": [{ "type": "radio", "raw": "Radio Edit", "artists": [], "modifiers": [], "delimiter": "-" }],
+        "warnings": ["noSeparator"]
+      },
+      "rules": ["R6.2", "R5.7", "R6.8"],
+      "tags": ["dash-suffix", "radio"],
+      "note": "Two-word suffix peels even without an artist"
+    },
+    {
+      "id": "dash-suffix-004",
+      "input": "deadmau5 - Strobe - Radio Edit",
+      "expected": {
+        "artists": ["deadmau5"],
+        "title": "Strobe",
+        "fullTitle": "Strobe - Radio Edit",
+        "versions": [{ "type": "radio", "raw": "Radio Edit", "delimiter": "-" }],
+        "warnings": []
+      },
+      "rules": ["R6.2", "R6.3"],
+      "tags": ["dash-suffix", "radio"]
+    },
+    {
+      "id": "dash-suffix-005",
+      "input": "Bastille - Live",
+      "expected": { "artists": ["Bastille"], "title": "Live", "versions": [], "warnings": [] },
+      "rules": ["R6.2", "R6.3", "R8.2"],
+      "tags": ["dash-suffix", "negative"],
+      "note": "One-word suffix with only two segments is not peeled"
+    },
+    {
+      "id": "dash-suffix-006",
+      "input": "Sub Focus - VIP",
+      "expected": { "artists": ["Sub Focus"], "title": "VIP", "versions": [] },
+      "rules": ["R6.2", "R6.3"],
+      "tags": ["dash-suffix", "negative"]
+    },
+    {
+      "id": "dash-suffix-007",
+      "input": "Radio Edit",
+      "expected": { "artists": [], "title": "Radio Edit", "versions": [], "warnings": ["noSeparator"] },
+      "rules": ["R6.2", "R8.2"],
+      "tags": ["dash-suffix", "negative"],
+      "note": "Without any spaced dash there is nothing to peel; unbracketed version words stay in the title"
+    },
+    {
+      "id": "dash-suffix-008",
+      "input": "Pendulum - Watercolour - Extended Mix",
+      "expected": {
+        "artists": ["Pendulum"],
+        "title": "Watercolour",
+        "fullTitle": "Watercolour - Extended Mix",
+        "versions": [{ "type": "extended", "raw": "Extended Mix", "artists": [], "modifiers": [], "delimiter": "-" }]
+      },
+      "rules": ["R6.2", "R5.7"],
+      "tags": ["dash-suffix", "extended"]
+    },
+    {
+      "id": "dash-suffix-009",
+      "input": "Sub Focus - Timewarp - VIP",
+      "expected": {
+        "artists": ["Sub Focus"],
+        "title": "Timewarp",
+        "fullTitle": "Timewarp - VIP",
+        "versions": [{ "type": "vip", "raw": "VIP", "artists": [], "delimiter": "-" }]
+      },
+      "rules": ["R6.2", "R5.7"],
+      "tags": ["dash-suffix", "vip"],
+      "note": "Single word peels via condition (i): two segments remain after peeling"
+    },
+    {
+      "id": "dash-suffix-010",
+      "input": "Noisia - Stigma - Remix",
+      "expected": {
+        "artists": ["Noisia"],
+        "title": "Stigma",
+        "versions": [{ "type": "remix", "raw": "Remix", "artists": [], "delimiter": "-" }]
+      },
+      "rules": ["R6.2", "R5.7"],
+      "tags": ["dash-suffix", "remix"]
+    },
+    {
+      "id": "dash-suffix-011",
+      "input": "Kid Cudi - Pursuit of Happiness - Steve Aoki Remix",
+      "expected": {
+        "artists": ["Kid Cudi"],
+        "title": "Pursuit of Happiness",
+        "fullTitle": "Pursuit of Happiness - Steve Aoki Remix",
+        "versions": [{
+          "type": "remix",
+          "raw": "Steve Aoki Remix",
+          "artists": [{ "name": "Steve Aoki", "role": "remixer", "joiner": null, "source": "version" }],
+          "delimiter": "-"
+        }]
+      },
+      "rules": ["R6.2", "R5.7"],
+      "tags": ["dash-suffix", "remix"]
+    },
+    {
+      "id": "dash-suffix-012",
+      "input": "Noisia - Stigma - Official Video",
+      "expected": {
+        "mode": "clean",
+        "artists": ["Noisia"],
+        "title": "Stigma",
+        "fullTitle": "Stigma",
+        "versions": [],
+        "junk": [{ "raw": "Official Video", "kind": "video" }]
+      },
+      "rules": ["R6.2", "R5.1"],
+      "tags": ["dash-suffix", "junk"],
+      "note": "Junk dash suffixes are peeled in every mode"
+    },
+    {
+      "id": "dash-suffix-013",
+      "input": "Culture Shock - Troglodyte - Official Audio HD",
+      "expected": {
+        "artists": ["Culture Shock"],
+        "title": "Troglodyte",
+        "junk": [{ "raw": "Official Audio HD", "kind": "audio" }]
+      },
+      "rules": ["R6.2", "R5.1"],
+      "tags": ["dash-suffix", "junk"]
+    },
+    {
+      "id": "dash-suffix-014",
+      "input": "Eminem - Lose Yourself - Explicit",
+      "expected": {
+        "artists": ["Eminem"],
+        "title": "Lose Yourself",
+        "fullTitle": "Lose Yourself",
+        "flags": { "explicit": true, "clean": false },
+        "versions": []
+      },
+      "rules": ["R6.2", "R5.4"],
+      "tags": ["dash-suffix", "flag"]
+    },
+    {
+      "id": "dash-suffix-015",
+      "input": "Noisia - Stigma - Clean",
+      "expected": { "artists": ["Noisia"], "title": "Stigma", "flags": { "explicit": false, "clean": true } },
+      "rules": ["R6.2", "R5.4"],
+      "tags": ["dash-suffix", "flag"]
+    },
+    {
+      "id": "dash-suffix-016",
+      "input": "Noisia - Stigma - 2015",
+      "expected": { "artists": ["Noisia"], "title": "Stigma", "fullTitle": "Stigma", "year": 2015, "versions": [] },
+      "rules": ["R6.2", "R5.5"],
+      "tags": ["dash-suffix", "year"]
+    },
+    {
+      "id": "dash-suffix-017",
+      "input": "Stigma - 2015",
+      "expected": { "artists": [], "title": "Stigma", "year": 2015, "warnings": ["noSeparator"] },
+      "rules": ["R6.2", "R5.5", "R6.8"],
+      "tags": ["dash-suffix", "year"],
+      "note": "Single-word year peels via condition (iii) even with only two segments"
+    },
+    {
+      "id": "dash-suffix-018",
+      "input": "Pendulum - Watercolour - Radio Edit - Remastered 2011",
+      "expected": {
+        "artists": ["Pendulum"],
+        "title": "Watercolour",
+        "fullTitle": "Watercolour - Radio Edit - Remastered 2011",
+        "versions": [
+          { "type": "radio", "raw": "Radio Edit", "year": null, "delimiter": "-" },
+          { "type": "remaster", "raw": "Remastered 2011", "year": 2011, "delimiter": "-" }
+        ]
+      },
+      "rules": ["R6.2", "R9.3", "R9.4"],
+      "tags": ["dash-suffix", "multiple"],
+      "note": "Peeled right to left but ordered left to right in the output"
+    },
+    {
+      "id": "dash-suffix-019",
+      "input": "Noisia - Stigma - Extended Mix - 2015",
+      "expected": {
+        "artists": ["Noisia"],
+        "title": "Stigma",
+        "fullTitle": "Stigma - Extended Mix",
+        "year": 2015,
+        "versions": [{ "type": "extended", "raw": "Extended Mix", "year": null, "delimiter": "-" }]
+      },
+      "rules": ["R6.2", "R5.5"],
+      "tags": ["dash-suffix", "multiple", "year"]
+    },
+    {
+      "id": "dash-suffix-020",
+      "input": "Mefjus - Sinkhole - VIP - Official Video",
+      "expected": {
+        "artists": ["Mefjus"],
+        "title": "Sinkhole",
+        "fullTitle": "Sinkhole - VIP",
+        "versions": [{ "type": "vip", "raw": "VIP", "delimiter": "-" }],
+        "junk": [{ "raw": "Official Video", "kind": "video" }]
+      },
+      "rules": ["R6.2"],
+      "tags": ["dash-suffix", "multiple", "junk"]
+    },
+    {
+      "id": "dash-suffix-021",
+      "input": "Noisia - Stigma - Part 2",
+      "expected": { "artists": ["Noisia"], "title": "Stigma - Part 2", "versions": [] },
+      "rules": ["R6.2", "R6.3"],
+      "tags": ["dash-suffix", "negative"]
+    },
+    {
+      "id": "dash-suffix-022",
+      "input": "Noisia - Stigma - 2015 Remaster",
+      "expected": {
+        "artists": ["Noisia"],
+        "title": "Stigma",
+        "year": null,
+        "versions": [{ "type": "remaster", "raw": "2015 Remaster", "year": 2015, "artists": [], "delimiter": "-" }]
+      },
+      "rules": ["R6.2", "R5.7"],
+      "tags": ["dash-suffix", "remaster"]
+    },
+    {
+      "id": "dash-suffix-023",
+      "input": "Pendulum - Hold Your Colour - Live at Brixton 2009",
+      "expected": {
+        "artists": ["Pendulum"],
+        "title": "Hold Your Colour",
+        "versions": [{ "type": "live", "raw": "Live at Brixton 2009", "descriptor": "at Brixton", "year": 2009, "artists": [], "delimiter": "-" }]
+      },
+      "rules": ["R6.2", "R5.7"],
+      "tags": ["dash-suffix", "live"]
+    },
+    {
+      "id": "dash-suffix-024",
+      "input": "Ellie Goulding - Lights - Sped Up",
+      "expected": {
+        "artists": ["Ellie Goulding"],
+        "title": "Lights",
+        "versions": [{ "type": "spedUp", "raw": "Sped Up", "delimiter": "-" }]
+      },
+      "rules": ["R6.2", "R5.7"],
+      "tags": ["dash-suffix", "sped-up"]
+    },
+    {
+      "id": "dash-suffix-025",
+      "input": "Noisia - Stigma - Instrumental",
+      "expected": {
+        "artists": ["Noisia"],
+        "title": "Stigma",
+        "versions": [{ "type": "instrumental", "raw": "Instrumental", "delimiter": "-" }]
+      },
+      "rules": ["R6.2", "R5.7"],
+      "tags": ["dash-suffix", "instrumental"]
+    },
+    {
+      "id": "dash-suffix-026",
+      "input": "Noisia - Stigma - ID Remix",
+      "expected": {
+        "artists": ["Noisia"],
+        "title": "Stigma",
+        "flags": { "unknownArtist": false },
+        "versions": [{ "type": "remix", "raw": "ID Remix", "artists": [], "unknownArtist": true, "delimiter": "-" }]
+      },
+      "rules": ["R6.2", "R5.7", "R7.5"],
+      "tags": ["dash-suffix", "unknown"]
+    },
+    {
+      "id": "dash-suffix-027",
+      "input": "Noisia - Stigma - (Official Video)",
+      "expected": {
+        "artists": ["Noisia"],
+        "title": "Stigma",
+        "fullTitle": "Stigma",
+        "junk": [{ "raw": "Official Video", "kind": "video" }]
+      },
+      "rules": ["R6.2", "R8.1", "R8.5"],
+      "tags": ["dash-suffix", "junk"],
+      "note": "The segment is a placeholder (Unknown) so it is not peeled; the group is removed by R8.1 and the dangling '-' by R8.5"
+    },
+    {
+      "id": "dash-suffix-028",
+      "input": "Noisia - Stigma (Mefjus Remix) - Remastered 2015",
+      "match": "exact",
+      "expected": {
+        "input": "Noisia - Stigma (Mefjus Remix) - Remastered 2015",
+        "mode": "clean",
+        "position": null,
+        "timestamp": null,
+        "artists": [
+          { "name": "Noisia", "role": "primary", "joiner": null, "source": "artist" }
+        ],
+        "title": "Stigma",
+        "fullTitle": "Stigma (Mefjus Remix) - Remastered 2015",
+        "versions": [
+          {
+            "type": "remix",
+            "raw": "Mefjus Remix",
+            "artists": [
+              { "name": "Mefjus", "role": "remixer", "joiner": null, "source": "version" }
+            ],
+            "modifiers": [],
+            "descriptor": null,
+            "year": null,
+            "unknownArtist": false,
+            "delimiter": "("
+          },
+          {
+            "type": "remaster",
+            "raw": "Remastered 2015",
+            "artists": [],
+            "modifiers": [],
+            "descriptor": null,
+            "year": 2015,
+            "unknownArtist": false,
+            "delimiter": "-"
+          }
+        ],
+        "year": null,
+        "flags": { "explicit": false, "clean": false, "unknownArtist": false, "unknownTitle": false },
+        "junk": [],
+        "warnings": []
+      },
+      "rules": ["R6.2", "R8.1", "R9.3", "R9.4"],
+      "tags": ["dash-suffix", "exact", "multiple"],
+      "note": "Bracket version and dash suffix ordered by position in the string"
+    },
+    {
+      "id": "dash-suffix-029",
+      "input": "Би-2 - Полковнику никто не пишет - Live",
+      "expected": {
+        "artists": ["Би-2"],
+        "title": "Полковнику никто не пишет",
+        "versions": [{ "type": "live", "raw": "Live", "descriptor": null, "delimiter": "-" }]
+      },
+      "rules": ["R6.2", "R5.7"],
+      "tags": ["dash-suffix", "live", "cyrillic"]
+    },
+    {
+      "id": "dash-suffix-030",
+      "input": "The Beatles - Hey Jude - REMASTERED 2015",
+      "expected": {
+        "artists": ["The Beatles"],
+        "title": "Hey Jude",
+        "fullTitle": "Hey Jude - REMASTERED 2015",
+        "versions": [{ "type": "remaster", "raw": "REMASTERED 2015", "year": 2015 }]
+      },
+      "rules": ["R6.2", "R0.3"],
+      "tags": ["dash-suffix", "case"]
+    },
+    {
+      "id": "dash-suffix-031",
+      "input": "Andy C b2b Hedex - Live at Printworks",
+      "expected": {
+        "artists": [
+          "Andy C",
+          { "name": "Hedex", "role": "primary", "joiner": "b2b" }
+        ],
+        "title": "Live at Printworks",
+        "versions": []
+      },
+      "rules": ["R6.2", "R5.7"],
+      "tags": ["prefix-form", "not-peeled"],
+      "note": "R6.2 condition (ii) does not apply to prefix-form versions, so the only dash separates artist and title."
+    },
+    {
+      "id": "dash-suffix-032",
+      "input": "Hey Jude - Remastered 2015",
+      "expected": {
+        "artists": [],
+        "title": "Hey Jude",
+        "versions": [
+          { "type": "remaster", "year": 2015 }
+        ],
+        "warnings": ["noSeparator"]
+      },
+      "rules": ["R6.2", "R6.8"],
+      "tags": ["no-artist"],
+      "note": "Intended: a peeled suffix with no artist still warns noSeparator."
+    },
+    {
+      "id": "dash-suffix-033",
+      "input": "Noisia - Stigma - Radio Edit.mp3",
+      "options": { "mode": "filename" },
+      "expected": {
+        "mode": "filename",
+        "artists": ["Noisia"],
+        "title": "Stigma",
+        "versions": [
+          { "type": "radio", "raw": "Radio Edit", "delimiter": "-" }
+        ]
+      },
+      "rules": ["R6.2", "R2.3"],
+      "tags": ["filename"],
+      "note": "R6.2 applies in every mode."
+    }
+  ]
+}

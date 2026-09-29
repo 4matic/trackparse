@@ -1,0 +1,355 @@
+{
+  "$schema": "../../schema/fixture-file.schema.json",
+  "description": "options.knownArtists: names that are never split (R7.3a), block positions (R4.2) and pick the unspaced-dash split (R6.7); paired with the default behaviour without the option",
+  "defaults": { "fn": "parse", "options": { "mode": "clean" } },
+  "cases": [
+    {
+      "id": "known-artists-001",
+      "input": "Chase & Status - Blind Faith",
+      "options": { "knownArtists": ["Chase & Status"] },
+      "match": "exact",
+      "expected": {
+        "input": "Chase & Status - Blind Faith",
+        "mode": "clean",
+        "position": null,
+        "timestamp": null,
+        "artists": [
+          { "name": "Chase & Status", "role": "primary", "joiner": null, "source": "artist" }
+        ],
+        "title": "Blind Faith",
+        "fullTitle": "Blind Faith",
+        "versions": [],
+        "year": null,
+        "flags": { "explicit": false, "clean": false, "unknownArtist": false, "unknownTitle": false },
+        "junk": [],
+        "warnings": []
+      },
+      "rules": ["R7.3a", "R12"],
+      "tags": ["known-artists", "dnb"]
+    },
+    {
+      "id": "known-artists-002",
+      "input": "Chase & Status - Blind Faith",
+      "expected": {
+        "artists": [
+          { "name": "Chase", "joiner": null },
+          { "name": "Status", "joiner": "&" }
+        ],
+        "title": "Blind Faith"
+      },
+      "rules": ["R7.3", "R12"],
+      "tags": ["known-artists", "default", "dnb"],
+      "note": "There is no built-in list: without the option the duo splits."
+    },
+    {
+      "id": "known-artists-003",
+      "input": "Camo & Krooked - Good Times Bad Times",
+      "options": { "knownArtists": ["Camo & Krooked"] },
+      "expected": { "artists": ["Camo & Krooked"], "title": "Good Times Bad Times" },
+      "rules": ["R7.3a"],
+      "tags": ["known-artists", "dnb"]
+    },
+    {
+      "id": "known-artists-004",
+      "input": "Camo & Krooked - Good Times Bad Times",
+      "expected": { "artists": ["Camo", "Krooked"], "title": "Good Times Bad Times" },
+      "rules": ["R7.3"],
+      "tags": ["known-artists", "default", "dnb"]
+    },
+    {
+      "id": "known-artists-005",
+      "input": "Above & Beyond feat. Richard Bedford - Sun & Moon",
+      "options": { "knownArtists": ["Above & Beyond"] },
+      "expected": {
+        "artists": [
+          { "name": "Above & Beyond", "role": "primary", "joiner": null },
+          { "name": "Richard Bedford", "role": "featured", "joiner": "feat." }
+        ],
+        "title": "Sun & Moon"
+      },
+      "rules": ["R7.3a", "R7.2"],
+      "tags": ["known-artists"]
+    },
+    {
+      "id": "known-artists-006",
+      "input": "Above & Beyond feat. Richard Bedford - Sun & Moon",
+      "expected": {
+        "artists": [
+          { "name": "Above", "role": "primary", "joiner": null },
+          { "name": "Beyond", "role": "primary", "joiner": "&" },
+          { "name": "Richard Bedford", "role": "featured", "joiner": "feat." }
+        ],
+        "title": "Sun & Moon"
+      },
+      "rules": ["R7.3", "R7.2"],
+      "tags": ["known-artists", "default"]
+    },
+    {
+      "id": "known-artists-007",
+      "input": "Tyler, The Creator - EARFQUAKE",
+      "options": { "knownArtists": ["Tyler, The Creator"] },
+      "expected": { "artists": [{ "name": "Tyler, The Creator", "joiner": null }], "title": "EARFQUAKE" },
+      "rules": ["R7.3a"],
+      "tags": ["known-artists", "tight"]
+    },
+    {
+      "id": "known-artists-008",
+      "input": "Earth, Wind & Fire feat. The Emotions - Boogie Wonderland",
+      "options": { "knownArtists": ["Earth, Wind & Fire"] },
+      "match": "exact",
+      "expected": {
+        "input": "Earth, Wind & Fire feat. The Emotions - Boogie Wonderland",
+        "mode": "clean",
+        "position": null,
+        "timestamp": null,
+        "artists": [
+          { "name": "Earth, Wind & Fire", "role": "primary", "joiner": null, "source": "artist" },
+          { "name": "The Emotions", "role": "featured", "joiner": "feat.", "source": "artist" }
+        ],
+        "title": "Boogie Wonderland",
+        "fullTitle": "Boogie Wonderland",
+        "versions": [],
+        "year": null,
+        "flags": { "explicit": false, "clean": false, "unknownArtist": false, "unknownTitle": false },
+        "junk": [],
+        "warnings": []
+      },
+      "rules": ["R7.3a", "R7.2"],
+      "tags": ["known-artists"]
+    },
+    {
+      "id": "known-artists-009",
+      "input": "Earth, Wind & Fire - September",
+      "expected": {
+        "artists": [
+          { "name": "Earth", "joiner": null },
+          { "name": "Wind", "joiner": "," },
+          { "name": "Fire", "joiner": "&" }
+        ],
+        "title": "September"
+      },
+      "rules": ["R7.3"],
+      "tags": ["known-artists", "default"]
+    },
+    {
+      "id": "known-artists-010",
+      "input": "Kool & The Gang - Celebration",
+      "options": { "knownArtists": ["Kool & The Gang"] },
+      "expected": { "artists": ["Kool & The Gang"], "title": "Celebration" },
+      "rules": ["R7.3a"],
+      "tags": ["known-artists"]
+    },
+    {
+      "id": "known-artists-011",
+      "input": "Kool & The Gang - Celebration",
+      "expected": { "artists": ["Kool", "The Gang"], "title": "Celebration" },
+      "rules": ["R7.3"],
+      "tags": ["known-artists", "default"],
+      "note": "'the' is not in no-split-before.json on purpose."
+    },
+    {
+      "id": "known-artists-012",
+      "input": "Florence + the Machine - Dog Days Are Over",
+      "options": { "knownArtists": ["Florence + the Machine"] },
+      "expected": { "artists": ["Florence + the Machine"], "title": "Dog Days Are Over" },
+      "rules": ["R7.3a"],
+      "tags": ["known-artists", "plus"]
+    },
+    {
+      "id": "known-artists-013",
+      "input": "Florence + the Machine - Dog Days Are Over",
+      "expected": {
+        "artists": [
+          { "name": "Florence", "joiner": null },
+          { "name": "the Machine", "joiner": "+" }
+        ],
+        "title": "Dog Days Are Over"
+      },
+      "rules": ["R7.3"],
+      "tags": ["known-artists", "default", "plus"]
+    },
+    {
+      "id": "known-artists-014",
+      "input": "CHASE & STATUS - Blind Faith",
+      "options": { "knownArtists": ["chase & status"] },
+      "expected": { "artists": ["CHASE & STATUS"], "title": "Blind Faith" },
+      "rules": ["R7.3a", "R0.4"],
+      "tags": ["known-artists", "case"],
+      "note": "Matching uses dedup keys; the name is kept as written in the input."
+    },
+    {
+      "id": "known-artists-015",
+      "input": "Röyksopp & Robyn - Do It Again",
+      "options": { "knownArtists": ["Royksopp & Robyn"] },
+      "expected": { "artists": ["Röyksopp & Robyn"], "title": "Do It Again" },
+      "rules": ["R7.3a", "R0.4"],
+      "tags": ["known-artists", "diacritics"]
+    },
+    {
+      "id": "known-artists-016",
+      "input": "Rudimental & Chase & Status - Title Track",
+      "options": { "knownArtists": ["Chase & Status"] },
+      "expected": {
+        "artists": [
+          { "name": "Rudimental", "joiner": null },
+          { "name": "Chase & Status", "joiner": "&" }
+        ],
+        "title": "Title Track"
+      },
+      "rules": ["R7.3a", "R7.3"],
+      "tags": ["known-artists"],
+      "note": "Known name matched at a later name start."
+    },
+    {
+      "id": "known-artists-017",
+      "input": "Nero feat. Chase & Status & Plan B - Reflections",
+      "options": { "knownArtists": ["Chase & Status"] },
+      "expected": {
+        "artists": [
+          { "name": "Nero", "role": "primary", "joiner": null },
+          { "name": "Chase & Status", "role": "featured", "joiner": "feat." },
+          { "name": "Plan B", "role": "featured", "joiner": "&" }
+        ],
+        "title": "Reflections"
+      },
+      "rules": ["R7.3a", "R7.2"],
+      "tags": ["known-artists", "feat"],
+      "note": "Constructed credit. Known names apply inside featured lists."
+    },
+    {
+      "id": "known-artists-018",
+      "input": "Nero feat. Chase & Status & Plan B - Reflections",
+      "expected": {
+        "artists": [
+          { "name": "Nero", "role": "primary", "joiner": null },
+          { "name": "Chase", "role": "featured", "joiner": "feat." },
+          { "name": "Status", "role": "featured", "joiner": "&" },
+          { "name": "Plan B", "role": "featured", "joiner": "&" }
+        ],
+        "title": "Reflections"
+      },
+      "rules": ["R7.3", "R7.2"],
+      "tags": ["known-artists", "feat", "default"]
+    },
+    {
+      "id": "known-artists-019",
+      "input": "Pendulum - Watercolour (Camo & Krooked Remix)",
+      "options": { "knownArtists": ["Camo & Krooked"] },
+      "expected": {
+        "artists": ["Pendulum"],
+        "title": "Watercolour",
+        "fullTitle": "Watercolour (Camo & Krooked Remix)",
+        "versions": [
+          {
+            "type": "remix",
+            "raw": "Camo & Krooked Remix",
+            "artists": [{ "name": "Camo & Krooked", "role": "remixer", "joiner": null, "source": "version" }],
+            "delimiter": "("
+          }
+        ]
+      },
+      "rules": ["R7.3a", "R5.7"],
+      "tags": ["known-artists", "remix", "dnb"]
+    },
+    {
+      "id": "known-artists-020",
+      "input": "Pendulum - Watercolour (Camo & Krooked Remix)",
+      "expected": {
+        "artists": ["Pendulum"],
+        "title": "Watercolour",
+        "versions": [
+          {
+            "type": "remix",
+            "artists": [
+              { "name": "Camo", "role": "remixer", "joiner": null },
+              { "name": "Krooked", "role": "remixer", "joiner": "&" }
+            ]
+          }
+        ]
+      },
+      "rules": ["R7.3", "R5.7"],
+      "tags": ["known-artists", "remix", "default", "dnb"]
+    },
+    {
+      "id": "known-artists-021",
+      "input": "2 Unlimited - No Limit",
+      "options": { "knownArtists": ["2 Unlimited"] },
+      "expected": { "position": null, "artists": ["2 Unlimited"], "title": "No Limit" },
+      "rules": ["R4.2", "R7.3a"],
+      "tags": ["known-artists", "digits"]
+    },
+    {
+      "id": "known-artists-022",
+      "input": "2 Unlimited - No Limit",
+      "expected": { "position": null, "artists": ["2 Unlimited"], "title": "No Limit" },
+      "rules": ["R4.2", "R4.3"],
+      "tags": ["known-artists", "digits", "default"],
+      "note": "R4.2(d): the option is irrelevant here, leading digits are never stripped in clean mode."
+    },
+    {
+      "id": "known-artists-023",
+      "input": "3 Doors Down-Kryptonite.mp3",
+      "options": { "mode": "auto", "knownArtists": ["3 Doors Down"] },
+      "expected": {
+        "mode": "filename",
+        "position": null,
+        "artists": ["3 Doors Down"],
+        "title": "Kryptonite",
+        "warnings": ["unspacedDashSplit"]
+      },
+      "rules": ["R4.2", "R6.7", "R7.3a"],
+      "tags": ["known-artists", "filename", "digits"],
+      "note": "The known name at the start blocks R4.2(e) and selects the unspaced-dash candidate."
+    },
+    {
+      "id": "known-artists-024",
+      "input": "3 Doors Down-Kryptonite.mp3",
+      "options": { "mode": "auto" },
+      "expected": {
+        "mode": "filename",
+        "position": { "raw": "3", "number": 3 },
+        "artists": ["Doors Down"],
+        "title": "Kryptonite",
+        "warnings": ["unspacedDashSplit"]
+      },
+      "rules": ["R4.2", "R6.7"],
+      "tags": ["known-artists", "filename", "digits", "default"],
+      "note": "Without the option R4.2(e) takes '3' as a position (no spaced dash remains)."
+    },
+    {
+      "id": "known-artists-025",
+      "input": "Jay-Z-Run-This-Town",
+      "options": { "mode": "youtube", "knownArtists": ["Jay-Z"] },
+      "expected": { "artists": ["Jay-Z"], "title": "Run-This-Town", "warnings": ["unspacedDashSplit"] },
+      "rules": ["R6.7", "R7.3a"],
+      "tags": ["known-artists", "unspaced-dash"]
+    },
+    {
+      "id": "known-artists-026",
+      "input": "Jay-Z-Run-This-Town",
+      "options": { "mode": "youtube" },
+      "expected": { "artists": ["Jay-Z-Run-This"], "title": "Town", "warnings": ["unspacedDashSplit"] },
+      "rules": ["R6.7"],
+      "tags": ["known-artists", "unspaced-dash", "default"],
+      "note": "Without the option the last unspaced-dash candidate wins."
+    },
+    {
+      "id": "known-artists-027",
+      "input": "3 Doors Down-Kryptonite.mp3",
+      "options": {
+        "mode": "filename",
+        "knownArtists": ["3 Doors Down"]
+      },
+      "expected": {
+        "mode": "filename",
+        "position": null,
+        "artists": ["3 Doors Down"],
+        "title": "Kryptonite",
+        "warnings": ["unspacedDashSplit"]
+      },
+      "rules": ["R4.2", "R6.7", "R7.3"],
+      "tags": ["numeric", "unspaced"],
+      "note": "A knownArtists match may be followed by '-': it blocks the position and picks the R6.7 dash."
+    }
+  ]
+}

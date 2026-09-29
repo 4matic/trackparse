@@ -1,0 +1,73 @@
+{
+  "name": "trackparse",
+  "version": "0.1.0",
+  "description": "Spec-driven parser for music track strings: artists, feat credits, remixes/versions, junk and more from single track strings (store titles, YouTube titles, filenames).",
+  "license": "MIT",
+  "author": "Maksim Maksimov",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/4matic/trackparse.git",
+    "directory": "js"
+  },
+  "homepage": "https://github.com/4matic/trackparse#readme",
+  "bugs": "https://github.com/4matic/trackparse/issues",
+  "keywords": [
+    "music",
+    "parser",
+    "track",
+    "artist",
+    "feat",
+    "remix",
+    "metadata",
+    "tracklist",
+    "youtube",
+    "scrobbling"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "engines": {
+    "node": ">=18"
+  },
+  "files": [
+    "dist"
+  ],
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    },
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "gen:data": "tsx scripts/gen-data.ts",
+    "gen:data:check": "tsx scripts/gen-data.ts --check",
+    "build": "tsup",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check .",
+    "conformance": "tsx scripts/conformance.ts",
+    "check:package": "publint && attw --pack .",
+    "compat": "node scripts/compat.mjs"
+  },
+  "devDependencies": {
+    "@arethetypeswrong/cli": "^0.18.5",
+    "@biomejs/biome": "^2.5.14",
+    "@types/node": "^26.6.3",
+    "ajv": "^8.20.0",
+    "fast-check": "^4.10.2",
+    "publint": "^0.3.24",
+    "tsup": "^8.5.1",
+    "tsx": "^4.23.15",
+    "typescript": "^5.9.3",
+    "vitest": "^5.0.2"
+  }
+}

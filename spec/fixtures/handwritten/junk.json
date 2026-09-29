@@ -1,0 +1,444 @@
+{
+  "$schema": "../../schema/fixture-file.schema.json",
+  "description": "R5.1 junk groups (every kind, multi-phrase, labels, genres), junk ordering, R8.4 trailing unbracketed junk (youtube only) and R2.1 auto-mode resolution",
+  "defaults": { "fn": "parse", "options": { "mode": "clean" } },
+  "cases": [
+    {
+      "id": "junk-001",
+      "input": "Noisia - Stigma (Official Video)",
+      "expected": { "artists": ["Noisia"], "title": "Stigma", "fullTitle": "Stigma", "junk": [{ "raw": "Official Video", "kind": "video" }] },
+      "rules": ["R5.1", "R8.1"],
+      "tags": ["video"]
+    },
+    {
+      "id": "junk-002",
+      "input": "Rick Astley - Never Gonna Give You Up (Official Music Video)",
+      "expected": { "artists": ["Rick Astley"], "title": "Never Gonna Give You Up", "junk": [{ "raw": "Official Music Video", "kind": "video" }] },
+      "rules": ["R5.1"],
+      "tags": ["video", "longest-first"]
+    },
+    {
+      "id": "junk-003",
+      "input": "Sub Focus - Timewarp (Official Visualiser)",
+      "expected": { "artists": ["Sub Focus"], "title": "Timewarp", "junk": [{ "raw": "Official Visualiser", "kind": "video" }] },
+      "rules": ["R5.1"],
+      "tags": ["video"]
+    },
+    {
+      "id": "junk-004",
+      "input": "IU - Blueming [MV]",
+      "expected": { "artists": ["IU"], "title": "Blueming", "junk": [{ "raw": "MV", "kind": "video" }] },
+      "rules": ["R5.1"],
+      "tags": ["video"]
+    },
+    {
+      "id": "junk-005",
+      "input": "Culture Shock - Troglodyte (Official Audio)",
+      "expected": { "artists": ["Culture Shock"], "title": "Troglodyte", "junk": [{ "raw": "Official Audio", "kind": "audio" }] },
+      "rules": ["R5.1"],
+      "tags": ["audio"]
+    },
+    {
+      "id": "junk-006",
+      "input": "Culture Shock - Troglodyte (Audio)",
+      "expected": { "artists": ["Culture Shock"], "title": "Troglodyte", "junk": [{ "raw": "Audio", "kind": "audio" }] },
+      "rules": ["R5.1"],
+      "tags": ["audio"]
+    },
+    {
+      "id": "junk-007",
+      "input": "Linkin Park - Numb (Lyrics)",
+      "expected": { "artists": ["Linkin Park"], "title": "Numb", "junk": [{ "raw": "Lyrics", "kind": "lyrics" }] },
+      "rules": ["R5.1"],
+      "tags": ["lyrics"]
+    },
+    {
+      "id": "junk-008",
+      "input": "Linkin Park - Numb [Official Lyric Video]",
+      "expected": { "artists": ["Linkin Park"], "title": "Numb", "junk": [{ "raw": "Official Lyric Video", "kind": "lyrics" }] },
+      "rules": ["R5.1"],
+      "tags": ["lyrics", "longest-first"],
+      "note": "'official lyric video' (lyrics) wins over 'official' (other) by longest match"
+    },
+    {
+      "id": "junk-009",
+      "input": "Rosalía - Malamente (Letra)",
+      "expected": { "artists": ["Rosalía"], "title": "Malamente", "junk": [{ "raw": "Letra", "kind": "lyrics" }] },
+      "rules": ["R5.1"],
+      "tags": ["lyrics"]
+    },
+    {
+      "id": "junk-010",
+      "input": "Pendulum - Witchcraft [HD] [1080p]",
+      "expected": {
+        "artists": ["Pendulum"],
+        "title": "Witchcraft",
+        "junk": [{ "raw": "HD", "kind": "quality" }, { "raw": "1080p", "kind": "quality" }]
+      },
+      "rules": ["R5.1"],
+      "tags": ["quality"]
+    },
+    {
+      "id": "junk-011",
+      "input": "Noisia - Stigma [Free Download]",
+      "expected": { "artists": ["Noisia"], "title": "Stigma", "junk": [{ "raw": "Free Download", "kind": "promo" }] },
+      "rules": ["R5.1"],
+      "tags": ["promo"]
+    },
+    {
+      "id": "junk-012",
+      "input": "Mefjus - Sinkhole (Out Now)",
+      "expected": { "artists": ["Mefjus"], "title": "Sinkhole", "junk": [{ "raw": "Out Now", "kind": "promo" }] },
+      "rules": ["R5.1"],
+      "tags": ["promo"]
+    },
+    {
+      "id": "junk-013",
+      "input": "Phace - Cold Blood [Premiere]",
+      "expected": { "artists": ["Phace"], "title": "Cold Blood", "junk": [{ "raw": "Premiere", "kind": "promo" }] },
+      "rules": ["R5.1"],
+      "tags": ["promo"]
+    },
+    {
+      "id": "junk-014",
+      "input": "Elektronomia - Sky High [NCS Release]",
+      "options": { "mode": "auto" },
+      "expected": { "mode": "youtube", "artists": ["Elektronomia"], "title": "Sky High", "junk": [{ "raw": "NCS Release", "kind": "label" }] },
+      "rules": ["R5.1", "R2.1"],
+      "tags": ["label", "auto"],
+      "note": "Label junk (unlike genre) triggers youtube in auto mode"
+    },
+    {
+      "id": "junk-015",
+      "input": "Pegboard Nerds - Hero [Monstercat Release]",
+      "expected": { "artists": ["Pegboard Nerds"], "title": "Hero", "junk": [{ "raw": "Monstercat Release", "kind": "label" }] },
+      "rules": ["R5.1"],
+      "tags": ["label"]
+    },
+    {
+      "id": "junk-016",
+      "input": "London Elektricity - Just One Second (Hospital Records)",
+      "expected": { "artists": ["London Elektricity"], "title": "Just One Second", "junk": [{ "raw": "Hospital Records", "kind": "label" }] },
+      "rules": ["R5.1"],
+      "tags": ["label", "label-suffix"]
+    },
+    {
+      "id": "junk-017",
+      "input": "Alix Perez - Forsaken [Shogun Audio Recordings]",
+      "expected": { "artists": ["Alix Perez"], "title": "Forsaken", "junk": [{ "raw": "Shogun Audio Recordings", "kind": "label" }] },
+      "rules": ["R5.1"],
+      "tags": ["label", "label-suffix"]
+    },
+    {
+      "id": "junk-018",
+      "input": "Noisia - Stigma (Records)",
+      "expected": { "artists": ["Noisia"], "title": "Stigma (Records)", "junk": [] },
+      "rules": ["R5.1", "R5.8"],
+      "tags": ["label-suffix", "negative"],
+      "note": "Label suffix rule needs >= 2 words"
+    },
+    {
+      "id": "junk-019",
+      "input": "Noisia - Stigma [Drum & Bass]",
+      "options": { "mode": "auto" },
+      "match": "exact",
+      "expected": {
+        "input": "Noisia - Stigma [Drum & Bass]",
+        "mode": "clean",
+        "position": null,
+        "timestamp": null,
+        "artists": [
+          { "name": "Noisia", "role": "primary", "joiner": null, "source": "artist" }
+        ],
+        "title": "Stigma",
+        "fullTitle": "Stigma",
+        "versions": [],
+        "year": null,
+        "flags": { "explicit": false, "clean": false, "unknownArtist": false, "unknownTitle": false },
+        "junk": [{ "raw": "Drum & Bass", "kind": "genre" }],
+        "warnings": []
+      },
+      "rules": ["R5.1", "R2.1"],
+      "tags": ["genre", "auto", "exact"],
+      "note": "Genre-only junk is removed but does not switch auto mode to youtube"
+    },
+    {
+      "id": "junk-020",
+      "input": "[DnB] Noisia - Stigma",
+      "expected": { "artists": ["Noisia"], "title": "Stigma", "junk": [{ "raw": "DnB", "kind": "genre" }] },
+      "rules": ["R5.1", "R7.1"],
+      "tags": ["genre", "artist-side"]
+    },
+    {
+      "id": "junk-021",
+      "input": "Noisia - Stigma [Drum & Bass | Neurofunk]",
+      "expected": { "artists": ["Noisia"], "title": "Stigma", "junk": [{ "raw": "Drum & Bass | Neurofunk", "kind": "genre" }] },
+      "rules": ["R5.1"],
+      "tags": ["genre", "connector"]
+    },
+    {
+      "id": "junk-022",
+      "input": "Noisia - Stigma (Official)",
+      "expected": { "artists": ["Noisia"], "title": "Stigma", "junk": [{ "raw": "Official", "kind": "other" }] },
+      "rules": ["R5.1"],
+      "tags": ["other"]
+    },
+    {
+      "id": "junk-023",
+      "input": "Noisia - Stigma [Official Video HD]",
+      "expected": { "artists": ["Noisia"], "title": "Stigma", "junk": [{ "raw": "Official Video HD", "kind": "video" }] },
+      "rules": ["R5.1"],
+      "tags": ["video", "multi-phrase"],
+      "note": "One junk entry per group; kind of the first phrase"
+    },
+    {
+      "id": "junk-024",
+      "input": "Noisia - Stigma (HD - Official Video)",
+      "expected": { "artists": ["Noisia"], "title": "Stigma", "junk": [{ "raw": "HD - Official Video", "kind": "quality" }] },
+      "rules": ["R5.1"],
+      "tags": ["quality", "multi-phrase", "connector"]
+    },
+    {
+      "id": "junk-025",
+      "input": "Noisia - Stigma (Official Video / Lyrics)",
+      "expected": { "artists": ["Noisia"], "title": "Stigma", "junk": [{ "raw": "Official Video / Lyrics", "kind": "video" }] },
+      "rules": ["R5.1"],
+      "tags": ["video", "multi-phrase", "connector"]
+    },
+    {
+      "id": "junk-026",
+      "input": "Noisia - Stigma (Official Music Video) [4K]",
+      "options": { "mode": "auto" },
+      "match": "exact",
+      "expected": {
+        "input": "Noisia - Stigma (Official Music Video) [4K]",
+        "mode": "youtube",
+        "position": null,
+        "timestamp": null,
+        "artists": [
+          { "name": "Noisia", "role": "primary", "joiner": null, "source": "artist" }
+        ],
+        "title": "Stigma",
+        "fullTitle": "Stigma",
+        "versions": [],
+        "year": null,
+        "flags": { "explicit": false, "clean": false, "unknownArtist": false, "unknownTitle": false },
+        "junk": [
+          { "raw": "Official Music Video", "kind": "video" },
+          { "raw": "4K", "kind": "quality" }
+        ],
+        "warnings": []
+      },
+      "rules": ["R5.1", "R2.1", "R8.1"],
+      "tags": ["video", "quality", "auto", "exact"]
+    },
+    {
+      "id": "junk-027",
+      "input": "Noisia - Stigma [HD] (Official Video)",
+      "expected": {
+        "artists": ["Noisia"],
+        "title": "Stigma",
+        "junk": [{ "raw": "HD", "kind": "quality" }, { "raw": "Official Video", "kind": "video" }]
+      },
+      "rules": ["R5.1"],
+      "tags": ["order"]
+    },
+    {
+      "id": "junk-028",
+      "input": "[Monstercat Release] Pegboard Nerds - Hero (Official Video)",
+      "options": { "mode": "auto" },
+      "match": "exact",
+      "expected": {
+        "input": "[Monstercat Release] Pegboard Nerds - Hero (Official Video)",
+        "mode": "youtube",
+        "position": null,
+        "timestamp": null,
+        "artists": [
+          { "name": "Pegboard Nerds", "role": "primary", "joiner": null, "source": "artist" }
+        ],
+        "title": "Hero",
+        "fullTitle": "Hero",
+        "versions": [],
+        "year": null,
+        "flags": { "explicit": false, "clean": false, "unknownArtist": false, "unknownTitle": false },
+        "junk": [
+          { "raw": "Monstercat Release", "kind": "label" },
+          { "raw": "Official Video", "kind": "video" }
+        ],
+        "warnings": []
+      },
+      "rules": ["R5.1", "R7.1", "R8.1", "R2.1"],
+      "tags": ["order", "artist-side", "exact"],
+      "note": "Junk is ordered by appearance in the input across artist and title sides"
+    },
+    {
+      "id": "junk-029",
+      "input": "Noisia - Stigma (Mefjus Remix) [Official Video]",
+      "expected": {
+        "artists": ["Noisia"],
+        "title": "Stigma",
+        "fullTitle": "Stigma (Mefjus Remix)",
+        "versions": [{ "type": "remix", "artists": ["Mefjus"] }],
+        "junk": [{ "raw": "Official Video", "kind": "video" }]
+      },
+      "rules": ["R5.1", "R5.7", "R9.4"],
+      "tags": ["video", "remix"]
+    },
+    {
+      "id": "junk-030",
+      "input": "The Buggles - Video Killed the Radio Star",
+      "options": { "mode": "youtube" },
+      "expected": { "artists": ["The Buggles"], "title": "Video Killed the Radio Star", "junk": [] },
+      "rules": ["R8.4"],
+      "tags": ["negative", "trailing"],
+      "note": "Junk words inside a title are not junk; only an exact trailing phrase is removed"
+    },
+    {
+      "id": "junk-031",
+      "input": "The Buggles - Video Killed the Radio Star",
+      "options": { "mode": "auto" },
+      "expected": { "mode": "clean", "artists": ["The Buggles"], "title": "Video Killed the Radio Star", "junk": [] },
+      "rules": ["R2.1"],
+      "tags": ["negative", "auto"]
+    },
+    {
+      "id": "junk-032",
+      "input": "Noisia - Stigma Official Video",
+      "expected": { "mode": "clean", "artists": ["Noisia"], "title": "Stigma Official Video", "junk": [] },
+      "rules": ["R8.4"],
+      "tags": ["trailing", "clean"],
+      "note": "Trailing unbracketed junk is only removed in youtube mode"
+    },
+    {
+      "id": "junk-033",
+      "input": "Noisia - Stigma Official Video",
+      "options": { "mode": "youtube" },
+      "expected": { "mode": "youtube", "artists": ["Noisia"], "title": "Stigma", "junk": [{ "raw": "Official Video", "kind": "video" }] },
+      "rules": ["R8.4"],
+      "tags": ["trailing", "youtube", "longest-first"],
+      "note": "Longest phrase first: one 'Official Video' entry, not 'Video' then 'Official'"
+    },
+    {
+      "id": "junk-034",
+      "input": "Noisia - Stigma Official Audio",
+      "options": { "mode": "auto" },
+      "expected": { "mode": "youtube", "artists": ["Noisia"], "title": "Stigma", "junk": [{ "raw": "Official Audio", "kind": "audio" }] },
+      "rules": ["R2.1", "R8.4"],
+      "tags": ["trailing", "auto"]
+    },
+    {
+      "id": "junk-035",
+      "input": "Noisia - Stigma HD",
+      "options": { "mode": "youtube" },
+      "expected": { "artists": ["Noisia"], "title": "Stigma", "junk": [{ "raw": "HD", "kind": "quality" }] },
+      "rules": ["R8.4"],
+      "tags": ["trailing", "youtube"]
+    },
+    {
+      "id": "junk-036",
+      "input": "Noisia - Stigma Drum & Bass",
+      "options": { "mode": "youtube" },
+      "expected": { "artists": ["Noisia"], "title": "Stigma Drum & Bass", "junk": [] },
+      "rules": ["R8.4"],
+      "tags": ["trailing", "genre", "negative"],
+      "note": "R8.4 uses junk phrases only, not genres"
+    },
+    {
+      "id": "junk-037",
+      "input": "Noisia - Stigma (Official Video 2015)",
+      "expected": {
+        "artists": ["Noisia"],
+        "title": "Stigma",
+        "junk": [
+          { "raw": "Official Video 2015", "kind": "video" }
+        ],
+        "year": null
+      },
+      "rules": ["R5.1"],
+      "tags": ["year"],
+      "note": "Year words may sit inside a junk group when at least one junk phrase is present (R5.1). The year stays in the junk raw and does not set `year`."
+    },
+    {
+      "id": "junk-038",
+      "input": "Noisia - Stigma (Video Edit)",
+      "expected": {
+        "artists": ["Noisia"],
+        "title": "Stigma",
+        "junk": [],
+        "versions": [
+          {
+            "type": "edit",
+            "raw": "Video Edit",
+            "artists": [],
+            "descriptor": "Video"
+          }
+        ]
+      },
+      "rules": ["R5.1", "R5.7"],
+      "tags": ["negative", "edit"],
+      "note": "Not whole-junk, so it is a version; a credit span made entirely of junk phrases goes to descriptor (R5.7)."
+    },
+    {
+      "id": "junk-039",
+      "input": "Кино - Кукушка (Официальный клип)",
+      "expected": {
+        "artists": ["Кино"],
+        "title": "Кукушка (Официальный клип)",
+        "junk": []
+      },
+      "rules": ["R5.1", "R5.8"],
+      "tags": ["cyrillic", "negative"],
+      "note": "Junk vocabulary is English/ASCII in v1; unrecognised groups stay in the title"
+    },
+    {
+      "id": "junk-040",
+      "input": "Кино - Группа крови (Official Audio)",
+      "options": { "mode": "auto" },
+      "expected": {
+        "mode": "youtube",
+        "artists": ["Кино"],
+        "title": "Группа крови",
+        "junk": [{ "raw": "Official Audio", "kind": "audio" }]
+      },
+      "rules": ["R5.1", "R2.1"],
+      "tags": ["cyrillic", "auto"]
+    },
+    {
+      "id": "junk-041",
+      "input": "Noisia - Stigma (OFFICIAL VIDEO)",
+      "expected": { "artists": ["Noisia"], "title": "Stigma", "junk": [{ "raw": "OFFICIAL VIDEO", "kind": "video" }] },
+      "rules": ["R5.1", "R0.3"],
+      "tags": ["video", "case"]
+    },
+    {
+      "id": "junk-042",
+      "input": "Noisia - Stigma [Official Music Video 2019]",
+      "expected": {
+        "artists": ["Noisia"],
+        "title": "Stigma",
+        "year": null,
+        "junk": [
+          { "raw": "Official Music Video 2019", "kind": "video" }
+        ]
+      },
+      "rules": ["R5.1"],
+      "tags": ["year"]
+    },
+    {
+      "id": "junk-043",
+      "input": "Noisia - Stigma [Official Video] - HD",
+      "options": { "mode": "youtube" },
+      "expected": {
+        "artists": ["Noisia"],
+        "title": "Stigma",
+        "junk": [
+          { "raw": "Official Video", "kind": "video" },
+          { "raw": "HD", "kind": "quality" }
+        ]
+      },
+      "rules": ["R9.7", "R6.2", "R8.1"],
+      "tags": ["order"],
+      "note": "Junk is in text order, although the dash suffix is removed before the bracket group."
+    }
+  ]
+}

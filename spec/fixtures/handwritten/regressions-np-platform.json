@@ -1,0 +1,2746 @@
+{
+  "$schema": "../../schema/fixture-file.schema.json",
+  "description": "Regressions from np-platform packages/core: parse-artist-string (artist/title parsing) and releases/filename-parser, plus its known bugs fixed by the spec.",
+  "defaults": {
+    "fn": "parse",
+    "options": {
+      "mode": "clean"
+    }
+  },
+  "cases": [
+    {
+      "id": "regressions-np-platform-001",
+      "fn": "parseArtists",
+      "input": "Noisia",
+      "expected": [
+        {
+          "name": "Noisia",
+          "role": "primary",
+          "joiner": null,
+          "source": "artist"
+        }
+      ],
+      "match": "exact",
+      "rules": [
+        "R10"
+      ],
+      "source": "np-platform: __tests__/parse-artist-string.test.ts"
+    },
+    {
+      "id": "regressions-np-platform-002",
+      "fn": "parseArtists",
+      "input": "  Noisia  ",
+      "expected": [
+        "Noisia"
+      ],
+      "rules": [
+        "R10",
+        "R1.6"
+      ],
+      "source": "np-platform: __tests__/parse-artist-string.test.ts"
+    },
+    {
+      "id": "regressions-np-platform-003",
+      "fn": "parseArtists",
+      "input": "",
+      "expected": [],
+      "rules": [
+        "R10"
+      ],
+      "source": "np-platform: __tests__/parse-artist-string.test.ts"
+    },
+    {
+      "id": "regressions-np-platform-004",
+      "fn": "parseArtists",
+      "input": "   ",
+      "expected": [],
+      "rules": [
+        "R10",
+        "R1.6"
+      ],
+      "source": "np-platform: __tests__/parse-artist-string.test.ts"
+    },
+    {
+      "id": "regressions-np-platform-005",
+      "fn": "parseArtists",
+      "input": "Noisia feat. Foreign Beggars",
+      "expected": [
+        {
+          "name": "Noisia",
+          "role": "primary",
+          "joiner": null,
+          "source": "artist"
+        },
+        {
+          "name": "Foreign Beggars",
+          "role": "featured",
+          "joiner": "feat.",
+          "source": "artist"
+        }
+      ],
+      "rules": [
+        "R10",
+        "R7.2"
+      ],
+      "source": "np-platform: __tests__/parse-artist-string.test.ts"
+    },
+    {
+      "id": "regressions-np-platform-006",
+      "fn": "parseArtists",
+      "input": "Noisia feat Foreign Beggars",
+      "expected": [
+        {
+          "name": "Noisia",
+          "role": "primary",
+          "joiner": null,
+          "source": "artist"
+        },
+        {
+          "name": "Foreign Beggars",
+          "role": "featured",
+          "joiner": "feat",
+          "source": "artist"
+        }
+      ],
+      "rules": [
+        "R10",
+        "R7.2"
+      ],
+      "source": "np-platform: __tests__/parse-artist-string.test.ts"
+    },
+    {
+      "id": "regressions-np-platform-007",
+      "fn": "parseArtists",
+      "input": "Noisia featuring Foreign Beggars",
+      "expected": [
+        {
+          "name": "Noisia",
+          "role": "primary",
+          "joiner": null,
+          "source": "artist"
+        },
+        {
+          "name": "Foreign Beggars",
+          "role": "featured",
+          "joiner": "featuring",
+          "source": "artist"
+        }
+      ],
+      "rules": [
+        "R10",
+        "R7.2"
+      ],
+      "source": "np-platform: __tests__/parse-artist-string.test.ts"
+    },
+    {
+      "id": "regressions-np-platform-008",
+      "fn": "parseArtists",
+      "input": "Noisia ft. Foreign Beggars",
+      "expected": [
+        {
+          "name": "Noisia",
+          "role": "primary",
+          "joiner": null,
+          "source": "artist"
+        },
+        {
+          "name": "Foreign Beggars",
+          "role": "featured",
+          "joiner": "ft.",
+          "source": "artist"
+        }
+      ],
+      "rules": [
+        "R10",
+        "R7.2"
+      ],
+      "source": "np-platform: __tests__/parse-artist-string.test.ts"
+    },
+    {
+      "id": "regressions-np-platform-009",
+      "fn": "parseArtists",
+      "input": "Noisia ft Foreign Beggars",
+      "expected": [
+        {
+          "name": "Noisia",
+          "role": "primary",
+          "joiner": null,
+          "source": "artist"
+        },
+        {
+          "name": "Foreign Beggars",
+          "role": "featured",
+          "joiner": "ft",
+          "source": "artist"
+        }
+      ],
+      "rules": [
+        "R10",
+        "R7.2"
+      ],
+      "source": "np-platform: __tests__/parse-artist-string.test.ts"
+    },
+    {
+      "id": "regressions-np-platform-010",
+      "fn": "parseArtists",
+      "input": "Noisia FEAT. Foreign Beggars",
+      "expected": [
+        {
+          "name": "Noisia",
+          "role": "primary",
+          "joiner": null,
+          "source": "artist"
+        },
+        {
+          "name": "Foreign Beggars",
+          "role": "featured",
+          "joiner": "FEAT.",
+          "source": "artist"
+        }
+      ],
+      "rules": [
+        "R10",
+        "R7.2",
+        "R0.3"
+      ],
+      "source": "np-platform: __tests__/parse-artist-string.test.ts",
+      "note": "Marker compared case-insensitively, joiner keeps the original case."
+    },
+    {
+      "id": "regressions-np-platform-011",
+      "fn": "parseArtists",
+      "input": "Noisia & The Upbeats",
+      "expected": [
+        {
+          "name": "Noisia",
+          "role": "primary",
+          "joiner": null,
+          "source": "artist"
+        },
+        {
+          "name": "The Upbeats",
+          "role": "primary",
+          "joiner": "&",
+          "source": "artist"
+        }
+      ],
+      "rules": [
+        "R10",
+        "R7.3"
+      ],
+      "source": "np-platform: __tests__/parse-artist-string.test.ts",
+      "note": "Old role 'collaborator' does not exist: '&'/'x'/','/'with' names are primary; the joiner records how they were joined. Must split: 'the' is deliberately not in no-split-before.json."
+    },
+    {
+      "id": "regressions-np-platform-012",
+      "fn": "parseArtists",
+      "input": "Noisia x Phace",
+      "expected": [
+        {
+          "name": "Noisia",
+          "role": "primary",
+          "joiner": null,
+          "source": "artist"
+        },
+        {
+          "name": "Phace",
+          "role": "primary",
+          "joiner": "x",
+          "source": "artist"
+        }
+      ],
+      "rules": [
+        "R10",
+        "R7.3"
+      ],
+      "source": "np-platform: __tests__/parse-artist-string.test.ts",
+      "note": "Old role 'collaborator' does not exist: '&'/'x'/','/'with' names are primary; the joiner records how they were joined."
+    },
+    {
+      "id": "regressions-np-platform-013",
+      "fn": "parseArtists",
+      "input": "Noisia and The Upbeats",
+      "expected": [
+        {
+          "name": "Noisia and The Upbeats",
+          "role": "primary",
+          "joiner": null,
+          "source": "artist"
+        }
+      ],
+      "rules": [
+        "R10",
+        "R7.3"
+      ],
+      "source": "np-platform: __tests__/parse-artist-string.test.ts",
+      "note": "Old parser split at 'and'. Spec splitAnd 'auto' only splits 'and' after a comma split in the same list, so this stays one name."
+    },
+    {
+      "id": "regressions-np-platform-014",
+      "fn": "parseArtists",
+      "input": "Noisia and The Upbeats",
+      "options": {
+        "splitAnd": "always"
+      },
+      "expected": [
+        {
+          "name": "Noisia",
+          "role": "primary",
+          "joiner": null,
+          "source": "artist"
+        },
+        {
+          "name": "The Upbeats",
+          "role": "primary",
+          "joiner": "and",
+          "source": "artist"
+        }
+      ],
+      "rules": [
+        "R10",
+        "R7.3",
+        "R12"
+      ],
+      "source": "np-platform: __tests__/parse-artist-string.test.ts",
+      "note": "Same input with splitAnd 'always'."
+    },
+    {
+      "id": "regressions-np-platform-015",
+      "fn": "parseArtists",
+      "input": "Noisia with The Upbeats",
+      "expected": [
+        {
+          "name": "Noisia",
+          "role": "primary",
+          "joiner": null,
+          "source": "artist"
+        },
+        {
+          "name": "The Upbeats",
+          "role": "primary",
+          "joiner": "with",
+          "source": "artist"
+        }
+      ],
+      "rules": [
+        "R10",
+        "R7.3"
+      ],
+      "source": "np-platform: __tests__/parse-artist-string.test.ts",
+      "note": "Old role 'collaborator' does not exist: '&'/'x'/','/'with' names are primary; the joiner records how they were joined. 'with' splits in the main list of an artist side."
+    },
+    {
+      "id": "regressions-np-platform-016",
+      "fn": "parseArtists",
+      "input": "Noisia & The Upbeats & Phace",
+      "expected": [
+        {
+          "name": "Noisia",
+          "role": "primary",
+          "joiner": null,
+          "source": "artist"
+        },
+        {
+          "name": "The Upbeats",
+          "role": "primary",
+          "joiner": "&",
+          "source": "artist"
+        },
+        {
+          "name": "Phace",
+          "role": "primary",
+          "joiner": "&",
+          "source": "artist"
+        }
+      ],
+      "rules": [
+        "R10",
+        "R7.3"
+      ],
+      "source": "np-platform: __tests__/parse-artist-string.test.ts"
+    },
+    {
+      "id": "regressions-np-platform-017",
+      "fn": "parseArtists",
+      "input": "Noisia, The Upbeats, Phace",
+      "expected": [
+        {
+          "name": "Noisia",
+          "role": "primary",
+          "joiner": null,
+          "source": "artist"
+        },
+        {
+          "name": "The Upbeats",
+          "role": "primary",
+          "joiner": ",",
+          "source": "artist"
+        },
+        {
+          "name": "Phace",
+          "role": "primary",
+          "joiner": ",",
+          "source": "artist"
+        }
+      ],
+      "rules": [
+        "R10",
+        "R7.3"
+      ],
+      "source": "np-platform: __tests__/parse-artist-string.test.ts"
+    },
+    {
+      "id": "regressions-np-platform-018",
+      "fn": "parseArtists",
+      "input": "Noisia vs Mefjus",
+      "expected": [
+        {
+          "name": "Noisia",
+          "role": "primary",
+          "joiner": null,
+          "source": "artist"
+        },
+        {
+          "name": "Mefjus",
+          "role": "primary",
+          "joiner": "vs",
+          "source": "artist"
+        }
+      ],
+      "rules": [
+        "R10",
+        "R7.3"
+      ],
+      "source": "np-platform: __tests__/parse-artist-string.test.ts",
+      "note": "Old role 'versus' does not exist: vs-joined names are primary with joiner recorded."
+    },
+    {
+      "id": "regressions-np-platform-019",
+      "fn": "parseArtists",
+      "input": "Noisia vs. Mefjus",
+      "expected": [
+        {
+          "name": "Noisia",
+          "role": "primary",
+          "joiner": null,
+          "source": "artist"
+        },
+        {
+          "name": "Mefjus",
+          "role": "primary",
+          "joiner": "vs.",
+          "source": "artist"
+        }
+      ],
+      "rules": [
+        "R10",
+        "R7.3",
+        "R0.3"
+      ],
+      "source": "np-platform: __tests__/parse-artist-string.test.ts",
+      "note": "Old role 'versus' does not exist: vs-joined names are primary with joiner recorded."
+    },
+    {
+      "id": "regressions-np-platform-020",
+      "fn": "parseArtists",
+      "input": "Noisia versus Mefjus",
+      "expected": [
+        {
+          "name": "Noisia",
+          "role": "primary",
+          "joiner": null,
+          "source": "artist"
+        },
+        {
+          "name": "Mefjus",
+          "role": "primary",
+          "joiner": "versus",
+          "source": "artist"
+        }
+      ],
+      "rules": [
+        "R10",
+        "R7.3"
+      ],
+      "source": "np-platform: __tests__/parse-artist-string.test.ts",
+      "note": "Old role 'versus' does not exist: vs-joined names are primary with joiner recorded."
+    },
+    {
+      "id": "regressions-np-platform-021",
+      "fn": "parseArtists",
+      "input": "Noisia feat. Foreign Beggars & Virus Syndicate",
+      "expected": [
+        {
+          "name": "Noisia",
+          "role": "primary",
+          "joiner": null,
+          "source": "artist"
+        },
+        {
+          "name": "Foreign Beggars",
+          "role": "featured",
+          "joiner": "feat.",
+          "source": "artist"
+        },
+        {
+          "name": "Virus Syndicate",
+          "role": "featured",
+          "joiner": "&",
+          "source": "artist"
+        }
+      ],
+      "rules": [
+        "R10",
+        "R7.2",
+        "R7.3"
+      ],
+      "source": "np-platform: __tests__/parse-artist-string.test.ts"
+    },
+    {
+      "id": "regressions-np-platform-022",
+      "fn": "parseArtists",
+      "input": "Noisia & The Upbeats feat. Foreign Beggars",
+      "expected": [
+        {
+          "name": "Noisia",
+          "role": "primary",
+          "joiner": null,
+          "source": "artist"
+        },
+        {
+          "name": "The Upbeats",
+          "role": "primary",
+          "joiner": "&",
+          "source": "artist"
+        },
+        {
+          "name": "Foreign Beggars",
+          "role": "featured",
+          "joiner": "feat.",
+          "source": "artist"
+        }
+      ],
+      "rules": [
+        "R10",
+        "R7.2",
+        "R7.3"
+      ],
+      "source": "np-platform: __tests__/parse-artist-string.test.ts",
+      "note": "Old role 'collaborator' does not exist: '&'/'x'/','/'with' names are primary; the joiner records how they were joined."
+    },
+    {
+      "id": "regressions-np-platform-023",
+      "input": "Track Name",
+      "expected": {
+        "artists": [],
+        "title": "Track Name",
+        "versions": [],
+        "warnings": [
+          "noSeparator"
+        ]
+      },
+      "rules": [
+        "R6.8"
+      ],
+      "source": "np-platform: __tests__/parse-artist-string.test.ts"
+    },
+    {
+      "id": "regressions-np-platform-024",
+      "input": "",
+      "expected": {
+        "input": "",
+        "mode": "clean",
+        "position": null,
+        "timestamp": null,
+        "artists": [],
+        "title": "",
+        "fullTitle": "",
+        "versions": [],
+        "year": null,
+        "flags": {
+          "explicit": false,
+          "clean": false,
+          "unknownArtist": false,
+          "unknownTitle": false
+        },
+        "junk": [],
+        "warnings": []
+      },
+      "match": "exact",
+      "rules": [
+        "R9.5"
+      ],
+      "source": "np-platform: __tests__/parse-artist-string.test.ts",
+      "note": "Empty input: everything empty, no warnings."
+    },
+    {
+      "id": "regressions-np-platform-025",
+      "input": "Track Name (feat. MC Vocalist)",
+      "expected": {
+        "artists": [
+          {
+            "name": "MC Vocalist",
+            "role": "featured",
+            "joiner": "feat.",
+            "source": "title"
+          }
+        ],
+        "title": "Track Name",
+        "versions": []
+      },
+      "rules": [
+        "R5.2",
+        "R8.1"
+      ],
+      "source": "np-platform: __tests__/parse-artist-string.test.ts"
+    },
+    {
+      "id": "regressions-np-platform-026",
+      "input": "Track Name (ft. MC Vocalist)",
+      "expected": {
+        "artists": [
+          {
+            "name": "MC Vocalist",
+            "role": "featured",
+            "joiner": "ft.",
+            "source": "title"
+          }
+        ],
+        "title": "Track Name"
+      },
+      "rules": [
+        "R5.2"
+      ],
+      "source": "np-platform: __tests__/parse-artist-string.test.ts"
+    },
+    {
+      "id": "regressions-np-platform-027",
+      "input": "Track Name (featuring MC Vocalist)",
+      "expected": {
+        "artists": [
+          {
+            "name": "MC Vocalist",
+            "role": "featured",
+            "joiner": "featuring",
+            "source": "title"
+          }
+        ],
+        "title": "Track Name"
+      },
+      "rules": [
+        "R5.2"
+      ],
+      "source": "np-platform: __tests__/parse-artist-string.test.ts"
+    },
+    {
+      "id": "regressions-np-platform-028",
+      "input": "Track Name (feat. MC Vocalist & DJ Producer)",
+      "expected": {
+        "artists": [
+          {
+            "name": "MC Vocalist",
+            "role": "featured",
+            "joiner": "feat.",
+            "source": "title"
+          },
+          {
+            "name": "DJ Producer",
+            "role": "featured",
+            "joiner": "&",
+            "source": "title"
+          }
+        ],
+        "title": "Track Name"
+      },
+      "rules": [
+        "R5.2",
+        "R7.3"
+      ],
+      "source": "np-platform: __tests__/parse-artist-string.test.ts"
+    },
+    {
+      "id": "regressions-np-platform-029",
+      "input": "Track Name [feat. MC Vocalist]",
+      "expected": {
+        "artists": [
+          {
+            "name": "MC Vocalist",
+            "role": "featured",
+            "joiner": "feat.",
+            "source": "title"
+          }
+        ],
+        "title": "Track Name"
+      },
+      "rules": [
+        "R5.2",
+        "R3.1"
+      ],
+      "source": "np-platform: __tests__/parse-artist-string.test.ts"
+    },
+    {
+      "id": "regressions-np-platform-030",
+      "input": "Track Name feat. MC Vocalist",
+      "expected": {
+        "artists": [
+          {
+            "name": "MC Vocalist",
+            "role": "featured",
+            "joiner": "feat.",
+            "source": "title"
+          }
+        ],
+        "title": "Track Name"
+      },
+      "rules": [
+        "R8.3",
+        "R6.8"
+      ],
+      "source": "np-platform: __tests__/parse-artist-string.test.ts"
+    },
+    {
+      "id": "regressions-np-platform-031",
+      "input": "Track Name ft. MC Vocalist",
+      "expected": {
+        "artists": [
+          {
+            "name": "MC Vocalist",
+            "role": "featured",
+            "joiner": "ft.",
+            "source": "title"
+          }
+        ],
+        "title": "Track Name"
+      },
+      "rules": [
+        "R8.3"
+      ],
+      "source": "np-platform: __tests__/parse-artist-string.test.ts"
+    },
+    {
+      "id": "regressions-np-platform-032",
+      "input": "Track Name (Noisia Remix)",
+      "expected": {
+        "artists": [],
+        "title": "Track Name",
+        "versions": [
+          {
+            "type": "remix",
+            "raw": "Noisia Remix",
+            "artists": [
+              {
+                "name": "Noisia",
+                "role": "remixer",
+                "joiner": null,
+                "source": "version"
+              }
+            ],
+            "delimiter": "("
+          }
+        ]
+      },
+      "rules": [
+        "R5.7",
+        "R8.1"
+      ],
+      "source": "np-platform: __tests__/parse-artist-string.test.ts",
+      "note": "Old parser returned the remixer in artists; the spec keeps it in versions[].artists (artists stays empty)."
+    },
+    {
+      "id": "regressions-np-platform-033",
+      "input": "Track Name (Noisia RMX)",
+      "expected": {
+        "artists": [],
+        "title": "Track Name",
+        "versions": [
+          {
+            "type": "remix",
+            "raw": "Noisia RMX",
+            "artists": [
+              {
+                "name": "Noisia",
+                "role": "remixer",
+                "joiner": null,
+                "source": "version"
+              }
+            ],
+            "delimiter": "("
+          }
+        ]
+      },
+      "rules": [
+        "R5.7",
+        "R8.1"
+      ],
+      "source": "np-platform: __tests__/parse-artist-string.test.ts",
+      "note": "Old parser returned the remixer in artists; the spec keeps it in versions[].artists (artists stays empty)."
+    },
+    {
+      "id": "regressions-np-platform-034",
+      "input": "Track Name (Noisia & Phace Remix)",
+      "expected": {
+        "artists": [],
+        "title": "Track Name",
+        "versions": [
+          {
+            "type": "remix",
+            "raw": "Noisia & Phace Remix",
+            "artists": [
+              {
+                "name": "Noisia",
+                "role": "remixer",
+                "joiner": null,
+                "source": "version"
+              },
+              {
+                "name": "Phace",
+                "role": "remixer",
+                "joiner": "&",
+                "source": "version"
+              }
+            ],
+            "delimiter": "("
+          }
+        ]
+      },
+      "rules": [
+        "R5.7",
+        "R8.1"
+      ],
+      "source": "np-platform: __tests__/parse-artist-string.test.ts",
+      "note": "Old parser returned the remixer in artists; the spec keeps it in versions[].artists (artists stays empty)."
+    },
+    {
+      "id": "regressions-np-platform-035",
+      "input": "Track Name [Noisia Remix]",
+      "expected": {
+        "artists": [],
+        "title": "Track Name",
+        "versions": [
+          {
+            "type": "remix",
+            "raw": "Noisia Remix",
+            "artists": [
+              {
+                "name": "Noisia",
+                "role": "remixer",
+                "joiner": null,
+                "source": "version"
+              }
+            ],
+            "delimiter": "["
+          }
+        ]
+      },
+      "rules": [
+        "R5.7",
+        "R8.1"
+      ],
+      "source": "np-platform: __tests__/parse-artist-string.test.ts",
+      "note": "Old parser returned the remixer in artists; the spec keeps it in versions[].artists (artists stays empty)."
+    },
+    {
+      "id": "regressions-np-platform-036",
+      "input": "Track Name (Noisia Bootleg)",
+      "expected": {
+        "artists": [],
+        "title": "Track Name",
+        "versions": [
+          {
+            "type": "bootleg",
+            "raw": "Noisia Bootleg",
+            "artists": [
+              {
+                "name": "Noisia",
+                "role": "remixer",
+                "joiner": null,
+                "source": "version"
+              }
+            ],
+            "delimiter": "("
+          }
+        ]
+      },
+      "rules": [
+        "R5.7",
+        "R8.1"
+      ],
+      "source": "np-platform: __tests__/parse-artist-string.test.ts",
+      "note": "Old parser returned the remixer in artists; the spec keeps it in versions[].artists (artists stays empty)."
+    },
+    {
+      "id": "regressions-np-platform-037",
+      "input": "Track Name [Noisia Bootleg]",
+      "expected": {
+        "artists": [],
+        "title": "Track Name",
+        "versions": [
+          {
+            "type": "bootleg",
+            "raw": "Noisia Bootleg",
+            "artists": [
+              {
+                "name": "Noisia",
+                "role": "remixer",
+                "joiner": null,
+                "source": "version"
+              }
+            ],
+            "delimiter": "["
+          }
+        ]
+      },
+      "rules": [
+        "R5.7",
+        "R8.1"
+      ],
+      "source": "np-platform: __tests__/parse-artist-string.test.ts",
+      "note": "Old parser returned the remixer in artists; the spec keeps it in versions[].artists (artists stays empty)."
+    },
+    {
+      "id": "regressions-np-platform-038",
+      "input": "Track Name (Noisia & Phace Bootleg)",
+      "expected": {
+        "artists": [],
+        "title": "Track Name",
+        "versions": [
+          {
+            "type": "bootleg",
+            "raw": "Noisia & Phace Bootleg",
+            "artists": [
+              {
+                "name": "Noisia",
+                "role": "remixer",
+                "joiner": null,
+                "source": "version"
+              },
+              {
+                "name": "Phace",
+                "role": "remixer",
+                "joiner": "&",
+                "source": "version"
+              }
+            ],
+            "delimiter": "("
+          }
+        ]
+      },
+      "rules": [
+        "R5.7",
+        "R8.1"
+      ],
+      "source": "np-platform: __tests__/parse-artist-string.test.ts",
+      "note": "Old parser returned the remixer in artists; the spec keeps it in versions[].artists (artists stays empty)."
+    },
+    {
+      "id": "regressions-np-platform-039",
+      "input": "Track Name (DJ Fresh Mashup)",
+      "expected": {
+        "artists": [],
+        "title": "Track Name",
+        "versions": [
+          {
+            "type": "mashup",
+            "raw": "DJ Fresh Mashup",
+            "artists": [
+              {
+                "name": "DJ Fresh",
+                "role": "remixer",
+                "joiner": null,
+                "source": "version"
+              }
+            ],
+            "delimiter": "("
+          }
+        ]
+      },
+      "rules": [
+        "R5.7",
+        "R8.1"
+      ],
+      "source": "np-platform: __tests__/parse-artist-string.test.ts",
+      "note": "Old parser returned the remixer in artists; the spec keeps it in versions[].artists (artists stays empty)."
+    },
+    {
+      "id": "regressions-np-platform-040",
+      "input": "Track Name [DJ Fresh Mashup]",
+      "expected": {
+        "artists": [],
+        "title": "Track Name",
+        "versions": [
+          {
+            "type": "mashup",
+            "raw": "DJ Fresh Mashup",
+            "artists": [
+              {
+                "name": "DJ Fresh",
+                "role": "remixer",
+                "joiner": null,
+                "source": "version"
+              }
+            ],
+            "delimiter": "["
+          }
+        ]
+      },
+      "rules": [
+        "R5.7",
+        "R8.1"
+      ],
+      "source": "np-platform: __tests__/parse-artist-string.test.ts",
+      "note": "Old parser returned the remixer in artists; the spec keeps it in versions[].artists (artists stays empty)."
+    },
+    {
+      "id": "regressions-np-platform-041",
+      "input": "Track Name (Noisia Blend)",
+      "expected": {
+        "artists": [],
+        "title": "Track Name",
+        "versions": [
+          {
+            "type": "blend",
+            "raw": "Noisia Blend",
+            "artists": [
+              {
+                "name": "Noisia",
+                "role": "remixer",
+                "joiner": null,
+                "source": "version"
+              }
+            ],
+            "delimiter": "("
+          }
+        ]
+      },
+      "rules": [
+        "R5.7",
+        "R8.1"
+      ],
+      "source": "np-platform: __tests__/parse-artist-string.test.ts",
+      "note": "Old parser returned the remixer in artists; the spec keeps it in versions[].artists (artists stays empty)."
+    },
+    {
+      "id": "regressions-np-platform-042",
+      "input": "Track Name [Noisia Blend]",
+      "expected": {
+        "artists": [],
+        "title": "Track Name",
+        "versions": [
+          {
+            "type": "blend",
+            "raw": "Noisia Blend",
+            "artists": [
+              {
+                "name": "Noisia",
+                "role": "remixer",
+                "joiner": null,
+                "source": "version"
+              }
+            ],
+            "delimiter": "["
+          }
+        ]
+      },
+      "rules": [
+        "R5.7",
+        "R8.1"
+      ],
+      "source": "np-platform: __tests__/parse-artist-string.test.ts",
+      "note": "Old parser returned the remixer in artists; the spec keeps it in versions[].artists (artists stays empty)."
+    },
+    {
+      "id": "regressions-np-platform-043",
+      "input": "Track Name (Noisia VIP)",
+      "expected": {
+        "artists": [],
+        "title": "Track Name",
+        "versions": [
+          {
+            "type": "vip",
+            "raw": "Noisia VIP",
+            "artists": [
+              {
+                "name": "Noisia",
+                "role": "remixer",
+                "joiner": null,
+                "source": "version"
+              }
+            ],
+            "delimiter": "("
+          }
+        ]
+      },
+      "rules": [
+        "R5.7",
+        "R8.1"
+      ],
+      "source": "np-platform: __tests__/parse-artist-string.test.ts",
+      "note": "Old parser returned the remixer in artists; the spec keeps it in versions[].artists (artists stays empty)."
+    },
+    {
+      "id": "regressions-np-platform-044",
+      "input": "Track Name (Noisia Edit)",
+      "expected": {
+        "artists": [],
+        "title": "Track Name",
+        "versions": [
+          {
+            "type": "edit",
+            "raw": "Noisia Edit",
+            "artists": [
+              {
+                "name": "Noisia",
+                "role": "remixer",
+                "joiner": null,
+                "source": "version"
+              }
+            ],
+            "delimiter": "("
+          }
+        ]
+      },
+      "rules": [
+        "R5.7",
+        "R8.1"
+      ],
+      "source": "np-platform: __tests__/parse-artist-string.test.ts",
+      "note": "Old parser returned the remixer in artists; the spec keeps it in versions[].artists (artists stays empty)."
+    },
+    {
+      "id": "regressions-np-platform-045",
+      "input": "Track Name (Noisia Flip)",
+      "expected": {
+        "artists": [],
+        "title": "Track Name",
+        "versions": [
+          {
+            "type": "flip",
+            "raw": "Noisia Flip",
+            "artists": [
+              {
+                "name": "Noisia",
+                "role": "remixer",
+                "joiner": null,
+                "source": "version"
+              }
+            ],
+            "delimiter": "("
+          }
+        ]
+      },
+      "rules": [
+        "R5.7",
+        "R8.1"
+      ],
+      "source": "np-platform: __tests__/parse-artist-string.test.ts",
+      "note": "Old parser returned the remixer in artists; the spec keeps it in versions[].artists (artists stays empty)."
+    },
+    {
+      "id": "regressions-np-platform-046",
+      "input": "Track Name (Noisia Refix)",
+      "expected": {
+        "artists": [],
+        "title": "Track Name",
+        "versions": [
+          {
+            "type": "refix",
+            "raw": "Noisia Refix",
+            "artists": [
+              {
+                "name": "Noisia",
+                "role": "remixer",
+                "joiner": null,
+                "source": "version"
+              }
+            ],
+            "delimiter": "("
+          }
+        ]
+      },
+      "rules": [
+        "R5.7",
+        "R8.1"
+      ],
+      "source": "np-platform: __tests__/parse-artist-string.test.ts",
+      "note": "Old parser returned the remixer in artists; the spec keeps it in versions[].artists (artists stays empty)."
+    },
+    {
+      "id": "regressions-np-platform-047",
+      "input": "Track Name (Noisia REMIX)",
+      "expected": {
+        "artists": [],
+        "title": "Track Name",
+        "versions": [
+          {
+            "type": "remix",
+            "raw": "Noisia REMIX",
+            "artists": [
+              {
+                "name": "Noisia",
+                "role": "remixer",
+                "joiner": null,
+                "source": "version"
+              }
+            ],
+            "delimiter": "("
+          }
+        ]
+      },
+      "rules": [
+        "R5.7",
+        "R8.1"
+      ],
+      "source": "np-platform: __tests__/parse-artist-string.test.ts",
+      "note": "Old parser returned the remixer in artists; the spec keeps it in versions[].artists (artists stays empty)."
+    },
+    {
+      "id": "regressions-np-platform-048",
+      "input": "Track Name (FEAT. MC Vocalist)",
+      "expected": {
+        "artists": [
+          {
+            "name": "MC Vocalist",
+            "role": "featured",
+            "joiner": "FEAT.",
+            "source": "title"
+          }
+        ],
+        "title": "Track Name"
+      },
+      "rules": [
+        "R5.2",
+        "R0.3"
+      ],
+      "source": "np-platform: __tests__/parse-artist-string.test.ts"
+    },
+    {
+      "id": "regressions-np-platform-049",
+      "input": "Track Name (radio edit)",
+      "expected": {
+        "artists": [],
+        "title": "Track Name",
+        "fullTitle": "Track Name (radio edit)",
+        "versions": [
+          {
+            "type": "radio",
+            "raw": "radio edit",
+            "artists": [],
+            "modifiers": []
+          }
+        ]
+      },
+      "rules": [
+        "R5.7"
+      ],
+      "source": "np-platform: __tests__/parse-artist-string.test.ts",
+      "note": "Old parser left version descriptors in cleanTitle; the spec extracts them as a version with no remixer."
+    },
+    {
+      "id": "regressions-np-platform-050",
+      "input": "Track Name (extended edit)",
+      "expected": {
+        "artists": [],
+        "title": "Track Name",
+        "versions": [
+          {
+            "type": "extended",
+            "artists": [],
+            "modifiers": []
+          }
+        ]
+      },
+      "rules": [
+        "R5.7"
+      ],
+      "source": "np-platform: __tests__/parse-artist-string.test.ts",
+      "note": "Old parser left version descriptors in cleanTitle; the spec extracts them as a version with no remixer."
+    },
+    {
+      "id": "regressions-np-platform-051",
+      "input": "Track Name (club edit)",
+      "expected": {
+        "artists": [],
+        "title": "Track Name",
+        "versions": [
+          {
+            "type": "club",
+            "artists": [],
+            "modifiers": []
+          }
+        ]
+      },
+      "rules": [
+        "R5.7"
+      ],
+      "source": "np-platform: __tests__/parse-artist-string.test.ts",
+      "note": "Old parser left version descriptors in cleanTitle; the spec extracts them as a version with no remixer."
+    },
+    {
+      "id": "regressions-np-platform-052",
+      "input": "Track Name (original mix)",
+      "expected": {
+        "artists": [],
+        "title": "Track Name",
+        "versions": [
+          {
+            "type": "original",
+            "artists": []
+          }
+        ]
+      },
+      "rules": [
+        "R5.7"
+      ],
+      "source": "np-platform: __tests__/parse-artist-string.test.ts",
+      "note": "Old parser left version descriptors in cleanTitle; the spec extracts them as a version with no remixer."
+    },
+    {
+      "id": "regressions-np-platform-053",
+      "input": "Track Name (instrumental remix)",
+      "expected": {
+        "artists": [],
+        "title": "Track Name",
+        "versions": [
+          {
+            "type": "remix",
+            "artists": [],
+            "modifiers": [
+              "instrumental"
+            ]
+          }
+        ]
+      },
+      "rules": [
+        "R5.7"
+      ],
+      "source": "np-platform: __tests__/parse-artist-string.test.ts",
+      "note": "Old parser left version descriptors in cleanTitle; the spec extracts them as a version with no remixer. Head 'remix' is not generic, so the type stays remix and 'instrumental' becomes a modifier."
+    },
+    {
+      "id": "regressions-np-platform-054",
+      "input": "Noisia - Track Name",
+      "expected": {
+        "artists": [
+          {
+            "name": "Noisia",
+            "role": "primary",
+            "joiner": null,
+            "source": "artist"
+          }
+        ],
+        "title": "Track Name"
+      },
+      "rules": [
+        "R6.3"
+      ],
+      "source": "np-platform: __tests__/parse-artist-string.test.ts"
+    },
+    {
+      "id": "regressions-np-platform-055",
+      "input": "Noisia - Track Name (feat. MC Vocalist)",
+      "expected": {
+        "artists": [
+          {
+            "name": "Noisia",
+            "role": "primary",
+            "joiner": null,
+            "source": "artist"
+          },
+          {
+            "name": "MC Vocalist",
+            "role": "featured",
+            "joiner": "feat.",
+            "source": "title"
+          }
+        ],
+        "title": "Track Name"
+      },
+      "rules": [
+        "R9.1",
+        "R8.1"
+      ],
+      "source": "np-platform: __tests__/parse-artist-string.test.ts"
+    },
+    {
+      "id": "regressions-np-platform-056",
+      "input": "Noisia feat. MC Vocalist - Track Name (feat. MC Vocalist)",
+      "expected": {
+        "artists": [
+          {
+            "name": "Noisia",
+            "role": "primary",
+            "joiner": null,
+            "source": "artist"
+          },
+          {
+            "name": "MC Vocalist",
+            "role": "featured",
+            "joiner": "feat.",
+            "source": "artist"
+          }
+        ],
+        "title": "Track Name"
+      },
+      "rules": [
+        "R9.2"
+      ],
+      "source": "np-platform: __tests__/parse-artist-string.test.ts",
+      "note": "Title-side duplicate removed; the artist-side entry (source artist) is kept."
+    },
+    {
+      "id": "regressions-np-platform-057",
+      "input": "Noisia feat. mc vocalist - Track Name (feat. MC VOCALIST)",
+      "expected": {
+        "artists": [
+          {
+            "name": "Noisia",
+            "role": "primary",
+            "joiner": null,
+            "source": "artist"
+          },
+          {
+            "name": "mc vocalist",
+            "role": "featured",
+            "joiner": "feat.",
+            "source": "artist"
+          }
+        ],
+        "title": "Track Name"
+      },
+      "rules": [
+        "R9.2",
+        "R0.4"
+      ],
+      "source": "np-platform: __tests__/parse-artist-string.test.ts",
+      "note": "Case-insensitive dedup keeps the first casing."
+    },
+    {
+      "id": "regressions-np-platform-058",
+      "input": "Noisia & The Upbeats - Track Name (feat. Foreign Beggars) (Phace Remix)",
+      "expected": {
+        "input": "Noisia & The Upbeats - Track Name (feat. Foreign Beggars) (Phace Remix)",
+        "mode": "clean",
+        "position": null,
+        "timestamp": null,
+        "artists": [
+          {
+            "name": "Noisia",
+            "role": "primary",
+            "joiner": null,
+            "source": "artist"
+          },
+          {
+            "name": "The Upbeats",
+            "role": "primary",
+            "joiner": "&",
+            "source": "artist"
+          },
+          {
+            "name": "Foreign Beggars",
+            "role": "featured",
+            "joiner": "feat.",
+            "source": "title"
+          }
+        ],
+        "title": "Track Name",
+        "fullTitle": "Track Name (Phace Remix)",
+        "versions": [
+          {
+            "type": "remix",
+            "raw": "Phace Remix",
+            "artists": [
+              {
+                "name": "Phace",
+                "role": "remixer",
+                "joiner": null,
+                "source": "version"
+              }
+            ],
+            "modifiers": [],
+            "descriptor": null,
+            "year": null,
+            "unknownArtist": false,
+            "delimiter": "("
+          }
+        ],
+        "year": null,
+        "flags": {
+          "explicit": false,
+          "clean": false,
+          "unknownArtist": false,
+          "unknownTitle": false
+        },
+        "junk": [],
+        "warnings": []
+      },
+      "match": "exact",
+      "rules": [
+        "R8.1",
+        "R9.1",
+        "R9.4",
+        "R5.2",
+        "R5.7"
+      ],
+      "source": "np-platform: __tests__/parse-artist-string.test.ts",
+      "note": "Known bug: the old implementation only caught the first bracket pattern. Both the feat group and the remix group are extracted."
+    },
+    {
+      "id": "regressions-np-platform-059",
+      "input": "Track Name (feat. MC)",
+      "expected": {
+        "artists": [
+          {
+            "name": "MC",
+            "role": "featured",
+            "joiner": "feat.",
+            "source": "title"
+          }
+        ],
+        "title": "Track Name"
+      },
+      "rules": [
+        "R5.2"
+      ],
+      "source": "np-platform: __tests__/parse-artist-string.test.ts",
+      "note": "Empty artist field + title with feat."
+    },
+    {
+      "id": "regressions-np-platform-060",
+      "input": "Noisia - Into The Sun",
+      "expected": {
+        "artists": [
+          {
+            "name": "Noisia",
+            "role": "primary",
+            "joiner": null,
+            "source": "artist"
+          }
+        ],
+        "title": "Into The Sun"
+      },
+      "rules": [
+        "R6.3"
+      ],
+      "source": "np-platform: __tests__/parse-artist-string.test.ts"
+    },
+    {
+      "id": "regressions-np-platform-061",
+      "input": "cvpellv x gleb_kkkk - Track Name",
+      "expected": {
+        "artists": [
+          {
+            "name": "cvpellv",
+            "role": "primary",
+            "joiner": null,
+            "source": "artist"
+          },
+          {
+            "name": "gleb_kkkk",
+            "role": "primary",
+            "joiner": "x",
+            "source": "artist"
+          }
+        ],
+        "title": "Track Name"
+      },
+      "rules": [
+        "R7.3",
+        "R2.3"
+      ],
+      "source": "np-platform: __tests__/parse-artist-string.test.ts",
+      "note": "Old role 'collaborator' does not exist: '&'/'x'/','/'with' names are primary; the joiner records how they were joined. Underscores are only rewritten in filename mode."
+    },
+    {
+      "id": "regressions-np-platform-062",
+      "input": "cvpellv x gleb_kkkk ft. sofi - Бабочкой",
+      "expected": {
+        "artists": [
+          {
+            "name": "cvpellv",
+            "role": "primary",
+            "joiner": null,
+            "source": "artist"
+          },
+          {
+            "name": "gleb_kkkk",
+            "role": "primary",
+            "joiner": "x",
+            "source": "artist"
+          },
+          {
+            "name": "sofi",
+            "role": "featured",
+            "joiner": "ft.",
+            "source": "artist"
+          }
+        ],
+        "title": "Бабочкой"
+      },
+      "rules": [
+        "R7.2",
+        "R7.3"
+      ],
+      "source": "np-platform: __tests__/parse-artist-string.test.ts",
+      "note": "Old role 'collaborator' does not exist: '&'/'x'/','/'with' names are primary; the joiner records how they were joined."
+    },
+    {
+      "id": "regressions-np-platform-063",
+      "input": "cvpellv x gleb_kkkk ft. sofi - Бабочкой (radio edit)",
+      "expected": {
+        "artists": [
+          "cvpellv",
+          "gleb_kkkk",
+          "sofi"
+        ],
+        "title": "Бабочкой",
+        "fullTitle": "Бабочкой (radio edit)",
+        "versions": [
+          {
+            "type": "radio",
+            "artists": []
+          }
+        ]
+      },
+      "rules": [
+        "R5.7",
+        "R9.4"
+      ],
+      "source": "np-platform: __tests__/parse-artist-string.test.ts",
+      "note": "Old cleanTitle kept '(radio edit)'; the spec extracts it (fullTitle still has it)."
+    },
+    {
+      "id": "regressions-np-platform-064",
+      "input": "Original Artist - Track Name (Noisia Remix)",
+      "expected": {
+        "artists": [
+          {
+            "name": "Original Artist",
+            "role": "primary",
+            "joiner": null,
+            "source": "artist"
+          }
+        ],
+        "title": "Track Name",
+        "versions": [
+          {
+            "type": "remix",
+            "artists": [
+              "Noisia"
+            ]
+          }
+        ]
+      },
+      "rules": [
+        "R5.7"
+      ],
+      "source": "np-platform: __tests__/parse-artist-string.test.ts",
+      "note": "Old parser returned the remixer in artists; the spec keeps it in versions[].artists (artists stays empty)."
+    },
+    {
+      "id": "regressions-np-platform-065",
+      "input": "Noisia & The Upbeats & Phace - Track Name",
+      "expected": {
+        "artists": [
+          "Noisia",
+          "The Upbeats",
+          "Phace"
+        ],
+        "title": "Track Name"
+      },
+      "rules": [
+        "R7.3"
+      ],
+      "source": "np-platform: __tests__/parse-artist-string.test.ts"
+    },
+    {
+      "id": "regressions-np-platform-066",
+      "input": "Noisia feat. MC - Track Name (feat. MC)",
+      "expected": {
+        "artists": [
+          {
+            "name": "Noisia",
+            "role": "primary",
+            "joiner": null,
+            "source": "artist"
+          },
+          {
+            "name": "MC",
+            "role": "featured",
+            "joiner": "feat.",
+            "source": "artist"
+          }
+        ],
+        "title": "Track Name"
+      },
+      "rules": [
+        "R9.2"
+      ],
+      "source": "np-platform: __tests__/parse-artist-string.test.ts"
+    },
+    {
+      "id": "regressions-np-platform-067",
+      "input": "Track-Name",
+      "expected": {
+        "artists": [],
+        "title": "Track-Name",
+        "warnings": [
+          "noSeparator"
+        ]
+      },
+      "rules": [
+        "R6.7",
+        "R6.8"
+      ],
+      "source": "np-platform: __tests__/parse-artist-string.test.ts",
+      "note": "clean mode: unspaced dash never splits."
+    },
+    {
+      "id": "regressions-np-platform-068",
+      "input": "Artist Name - Track - Subtitle",
+      "expected": {
+        "artists": [
+          "Artist Name"
+        ],
+        "title": "Track - Subtitle",
+        "versions": []
+      },
+      "rules": [
+        "R6.2",
+        "R6.3",
+        "R8.2"
+      ],
+      "source": "np-platform: __tests__/parse-artist-string.test.ts",
+      "note": "Later dashes stay in the title; 'Subtitle' is not peelable."
+    },
+    {
+      "id": "regressions-np-platform-069",
+      "input": "Артист - Название Трека",
+      "expected": {
+        "artists": [
+          "Артист"
+        ],
+        "title": "Название Трека"
+      },
+      "rules": [
+        "R6.3"
+      ],
+      "source": "np-platform: __tests__/parse-artist-string.test.ts"
+    },
+    {
+      "id": "regressions-np-platform-070",
+      "fn": "parseArtists",
+      "input": "Artist1 x Artist2 x Artist3",
+      "expected": [
+        "Artist1",
+        "Artist2",
+        "Artist3"
+      ],
+      "rules": [
+        "R10",
+        "R7.3"
+      ],
+      "source": "np-platform: __tests__/parse-artist-string.test.ts"
+    },
+    {
+      "id": "regressions-np-platform-071",
+      "fn": "parseArtists",
+      "input": "Artist1 x Artist2 & Artist3",
+      "expected": [
+        {
+          "name": "Artist1",
+          "role": "primary",
+          "joiner": null,
+          "source": "artist"
+        },
+        {
+          "name": "Artist2",
+          "role": "primary",
+          "joiner": "x",
+          "source": "artist"
+        },
+        {
+          "name": "Artist3",
+          "role": "primary",
+          "joiner": "&",
+          "source": "artist"
+        }
+      ],
+      "rules": [
+        "R10",
+        "R7.3"
+      ],
+      "source": "np-platform: __tests__/parse-artist-string.test.ts"
+    },
+    {
+      "id": "regressions-np-platform-072",
+      "fn": "parseArtists",
+      "input": "Artist1 x Artist2 feat. Artist3",
+      "expected": [
+        {
+          "name": "Artist1",
+          "role": "primary",
+          "joiner": null,
+          "source": "artist"
+        },
+        {
+          "name": "Artist2",
+          "role": "primary",
+          "joiner": "x",
+          "source": "artist"
+        },
+        {
+          "name": "Artist3",
+          "role": "featured",
+          "joiner": "feat.",
+          "source": "artist"
+        }
+      ],
+      "rules": [
+        "R10",
+        "R7.2"
+      ],
+      "source": "np-platform: __tests__/parse-artist-string.test.ts",
+      "note": "Old role 'collaborator' does not exist: '&'/'x'/','/'with' names are primary; the joiner records how they were joined."
+    },
+    {
+      "id": "regressions-np-platform-073",
+      "fn": "format",
+      "input": "Noisia feat. Foreign Beggars - Track Name",
+      "expected": "Noisia feat. Foreign Beggars - Track Name",
+      "rules": [
+        "R11.1",
+        "R11.2",
+        "R11.4"
+      ],
+      "source": "np-platform: __tests__/parse-artist-string.test.ts"
+    },
+    {
+      "id": "regressions-np-platform-074",
+      "fn": "format",
+      "input": "Noisia & The Upbeats & Phace - Track Name",
+      "expected": "Noisia & The Upbeats & Phace - Track Name",
+      "rules": [
+        "R11.1"
+      ],
+      "source": "np-platform: __tests__/parse-artist-string.test.ts"
+    },
+    {
+      "id": "regressions-np-platform-075",
+      "fn": "format",
+      "input": "Noisia, The Upbeats, Phace - Track Name",
+      "expected": "Noisia, The Upbeats, Phace - Track Name",
+      "rules": [
+        "R11.1"
+      ],
+      "source": "np-platform: __tests__/parse-artist-string.test.ts"
+    },
+    {
+      "id": "regressions-np-platform-076",
+      "fn": "format",
+      "input": "Noisia vs Mefjus - Track Name",
+      "formatOptions": {
+        "joiners": "canonical"
+      },
+      "expected": "Noisia vs. Mefjus - Track Name",
+      "rules": [
+        "R11.5"
+      ],
+      "source": "np-platform: __tests__/parse-artist-string.test.ts",
+      "note": "Old formatter always wrote 'vs'; canonical joiners write 'vs.'."
+    },
+    {
+      "id": "regressions-np-platform-077",
+      "fn": "format",
+      "input": "Noisia & The Upbeats feat. Foreign Beggars - Track Name",
+      "expected": "Noisia & The Upbeats feat. Foreign Beggars - Track Name",
+      "rules": [
+        "R11.1",
+        "R11.2"
+      ],
+      "source": "np-platform: __tests__/parse-artist-string.test.ts"
+    },
+    {
+      "id": "regressions-np-platform-078",
+      "fn": "format",
+      "input": "Noisia - Track Name (feat. MC Vocalist)",
+      "formatOptions": {
+        "feat": "artist"
+      },
+      "expected": "Noisia feat. MC Vocalist - Track Name",
+      "rules": [
+        "R11.2"
+      ],
+      "source": "np-platform: __tests__/parse-artist-string.test.ts",
+      "note": "feat 'artist' moves title-side featured credits into the artist string."
+    },
+    {
+      "id": "regressions-np-platform-079",
+      "fn": "parseArtists",
+      "input": "Noisia feat. Foreign Beggars vs Phace",
+      "expected": [
+        {
+          "name": "Noisia",
+          "role": "primary",
+          "joiner": null,
+          "source": "artist"
+        },
+        {
+          "name": "Foreign Beggars",
+          "role": "featured",
+          "joiner": "feat.",
+          "source": "artist"
+        },
+        {
+          "name": "Phace",
+          "role": "featured",
+          "joiner": "vs",
+          "source": "artist"
+        }
+      ],
+      "rules": [
+        "R10",
+        "R7.2"
+      ],
+      "source": "np-platform: artists/parse-artist-string.ts",
+      "note": "Known bug 'A feat. B vs C': the leftmost feat marker wins, so B and C are both featured (vs is a joiner inside the featured list)."
+    },
+    {
+      "id": "regressions-np-platform-080",
+      "fn": "parseArtists",
+      "input": "Noisia vs Phace feat. Foreign Beggars",
+      "expected": [
+        {
+          "name": "Noisia",
+          "role": "primary",
+          "joiner": null,
+          "source": "artist"
+        },
+        {
+          "name": "Phace",
+          "role": "primary",
+          "joiner": "vs",
+          "source": "artist"
+        },
+        {
+          "name": "Foreign Beggars",
+          "role": "featured",
+          "joiner": "feat.",
+          "source": "artist"
+        }
+      ],
+      "rules": [
+        "R10",
+        "R7.2",
+        "R7.3"
+      ],
+      "source": "np-platform: artists/parse-artist-string.ts",
+      "note": "Known bug 'A vs B feat. C'."
+    },
+    {
+      "id": "regressions-np-platform-081",
+      "input": "Track Name (feat. MC Vocalist) (Noisia Remix)",
+      "expected": {
+        "artists": [
+          {
+            "name": "MC Vocalist",
+            "role": "featured",
+            "joiner": "feat.",
+            "source": "title"
+          }
+        ],
+        "title": "Track Name",
+        "fullTitle": "Track Name (Noisia Remix)",
+        "versions": [
+          {
+            "type": "remix",
+            "artists": [
+              "Noisia"
+            ]
+          }
+        ]
+      },
+      "rules": [
+        "R8.1",
+        "R5.2",
+        "R5.7"
+      ],
+      "source": "np-platform: artists/parse-artist-string.ts",
+      "note": "Known bug: old TITLE patterns were anchored at the end and caught only one group."
+    },
+    {
+      "id": "regressions-np-platform-082",
+      "input": "Track Name (Noisia Remix) (Radio Edit)",
+      "expected": {
+        "artists": [],
+        "title": "Track Name",
+        "fullTitle": "Track Name (Noisia Remix) (Radio Edit)",
+        "versions": [
+          {
+            "type": "remix",
+            "artists": [
+              "Noisia"
+            ]
+          },
+          {
+            "type": "radio",
+            "artists": []
+          }
+        ]
+      },
+      "rules": [
+        "R8.1",
+        "R9.3",
+        "R9.4"
+      ],
+      "source": "np-platform: artists/parse-artist-string.ts",
+      "note": "Known bug: two version groups, both extracted in order."
+    },
+    {
+      "id": "regressions-np-platform-083",
+      "input": "Track Name (Smoke Edit)",
+      "expected": {
+        "artists": [],
+        "title": "Track Name",
+        "versions": [
+          {
+            "type": "edit",
+            "artists": [
+              {
+                "name": "Smoke",
+                "role": "remixer",
+                "joiner": null,
+                "source": "version"
+              }
+            ]
+          }
+        ]
+      },
+      "rules": [
+        "R5.7"
+      ],
+      "source": "np-platform: artists/parse-artist-string.ts",
+      "note": "Known bug: the old descriptor filter matched words like 'Smoke'; here Smoke is the editor."
+    },
+    {
+      "id": "regressions-np-platform-084",
+      "input": "Track Name (Extended Club Edit)",
+      "expected": {
+        "input": "Track Name (Extended Club Edit)",
+        "mode": "clean",
+        "position": null,
+        "timestamp": null,
+        "artists": [],
+        "title": "Track Name",
+        "fullTitle": "Track Name (Extended Club Edit)",
+        "versions": [
+          {
+            "type": "club",
+            "raw": "Extended Club Edit",
+            "artists": [],
+            "modifiers": [
+              "extended"
+            ],
+            "descriptor": null,
+            "year": null,
+            "unknownArtist": false,
+            "delimiter": "("
+          }
+        ],
+        "year": null,
+        "flags": {
+          "explicit": false,
+          "clean": false,
+          "unknownArtist": false,
+          "unknownTitle": false
+        },
+        "junk": [],
+        "warnings": [
+          "noSeparator"
+        ]
+      },
+      "match": "exact",
+      "rules": [
+        "R5.7",
+        "R6.8"
+      ],
+      "source": "np-platform: artists/parse-artist-string.ts",
+      "note": "Known bug. R5.7 head scan: generic head 'Edit', word directly left is 'Club' (type-capable) -> type club; 'Extended' is a leftover modifier."
+    },
+    {
+      "id": "regressions-np-platform-085",
+      "input": "Noisia & The Upbeats - Track Name",
+      "expected": {
+        "artists": [
+          {
+            "name": "Noisia",
+            "role": "primary",
+            "joiner": null,
+            "source": "artist"
+          },
+          {
+            "name": "The Upbeats",
+            "role": "primary",
+            "joiner": "&",
+            "source": "artist"
+          }
+        ],
+        "title": "Track Name"
+      },
+      "rules": [
+        "R7.3"
+      ],
+      "source": "np-platform: artists/parse-artist-string.ts",
+      "note": "Must split: 'The' does not block '&'."
+    },
+    {
+      "id": "regressions-np-platform-086",
+      "fn": "parseArtists",
+      "input": "Artist1 feat. Artist2 & Artist3",
+      "expected": [
+        {
+          "name": "Artist1",
+          "role": "primary",
+          "joiner": null,
+          "source": "artist"
+        },
+        {
+          "name": "Artist2",
+          "role": "featured",
+          "joiner": "feat.",
+          "source": "artist"
+        },
+        {
+          "name": "Artist3",
+          "role": "featured",
+          "joiner": "&",
+          "source": "artist"
+        }
+      ],
+      "rules": [
+        "R10",
+        "R7.2"
+      ],
+      "source": "np-platform: artists/parse-artist-string.ts",
+      "note": "Old doc comment gave [primary, featured, collaborator]; every name right of the marker is featured."
+    },
+    {
+      "id": "regressions-np-platform-087",
+      "input": "01 - Track Name.mp3",
+      "options": {
+        "mode": "filename"
+      },
+      "expected": {
+        "mode": "filename",
+        "position": {
+          "raw": "01",
+          "number": 1
+        },
+        "artists": [],
+        "title": "Track Name"
+      },
+      "rules": [
+        "R2.3",
+        "R4.2"
+      ],
+      "source": "np-platform: __tests__/releases/filename-parser.test.ts"
+    },
+    {
+      "id": "regressions-np-platform-088",
+      "input": "02 - Another Track.mp3",
+      "options": {
+        "mode": "filename"
+      },
+      "expected": {
+        "position": {
+          "raw": "02",
+          "number": 2
+        },
+        "artists": [],
+        "title": "Another Track"
+      },
+      "rules": [
+        "R2.3",
+        "R4.2"
+      ],
+      "source": "np-platform: __tests__/releases/filename-parser.test.ts"
+    },
+    {
+      "id": "regressions-np-platform-089",
+      "input": "10 - Double Digit.wav",
+      "options": { "mode": "filename" },
+      "expected": {
+        "position": { "raw": "10", "number": 10 },
+        "artists": [],
+        "title": "Double Digit"
+      },
+      "rules": ["R4.2", "R2.3"],
+      "source": "np-platform: __tests__/releases/filename-parser.test.ts",
+      "note": "Filename mode: 'N - ' is always a position (R4.2c)."
+    },
+    {
+      "id": "regressions-np-platform-090",
+      "input": "001 - Triple Digit Track.flac",
+      "options": {
+        "mode": "filename"
+      },
+      "expected": {
+        "position": {
+          "raw": "001",
+          "number": 1
+        },
+        "title": "Triple Digit Track"
+      },
+      "rules": [
+        "R4.2"
+      ],
+      "source": "np-platform: __tests__/releases/filename-parser.test.ts"
+    },
+    {
+      "id": "regressions-np-platform-091",
+      "input": "01-Track.mp3",
+      "options": {
+        "mode": "filename"
+      },
+      "expected": {
+        "position": {
+          "raw": "01",
+          "number": 1
+        },
+        "artists": [],
+        "title": "Track"
+      },
+      "rules": [
+        "R4.2",
+        "R2.3"
+      ],
+      "source": "np-platform: __tests__/releases/filename-parser.test.ts",
+      "note": "R4.2(e): digits + '-' + non-space."
+    },
+    {
+      "id": "regressions-np-platform-092",
+      "input": "03-Another-Track.mp3",
+      "options": {
+        "mode": "filename"
+      },
+      "expected": {
+        "position": {
+          "raw": "03",
+          "number": 3
+        },
+        "artists": [
+          "Another"
+        ],
+        "title": "Track",
+        "warnings": [
+          "unspacedDashSplit"
+        ]
+      },
+      "rules": [
+        "R4.2",
+        "R6.7"
+      ],
+      "source": "np-platform: __tests__/releases/filename-parser.test.ts",
+      "note": "Old parser gave title 'Another Track'. Under the spec the remaining unspaced dash is an R6.7 artist/title split in filename mode."
+    },
+    {
+      "id": "regressions-np-platform-093",
+      "input": "01_track_name.mp3",
+      "options": {
+        "mode": "filename"
+      },
+      "expected": {
+        "input": "01_track_name.mp3",
+        "mode": "filename",
+        "position": {
+          "raw": "01",
+          "number": 1
+        },
+        "timestamp": null,
+        "artists": [],
+        "title": "track name",
+        "fullTitle": "track name",
+        "versions": [],
+        "year": null,
+        "flags": {
+          "explicit": false,
+          "clean": false,
+          "unknownArtist": false,
+          "unknownTitle": false
+        },
+        "junk": [],
+        "warnings": [
+          "noSeparator"
+        ]
+      },
+      "match": "exact",
+      "rules": [
+        "R2.3",
+        "R4.2",
+        "R6.8"
+      ],
+      "source": "np-platform: __tests__/releases/filename-parser.test.ts",
+      "note": "Our parser does not title-case (old filename-parser cleanTitle did)."
+    },
+    {
+      "id": "regressions-np-platform-094",
+      "input": "02_another_track.mp3",
+      "options": {
+        "mode": "filename"
+      },
+      "expected": {
+        "position": {
+          "raw": "02",
+          "number": 2
+        },
+        "title": "another track"
+      },
+      "rules": [
+        "R2.3",
+        "R4.2"
+      ],
+      "source": "np-platform: __tests__/releases/filename-parser.test.ts",
+      "note": "Our parser does not title-case (old filename-parser cleanTitle did)."
+    },
+    {
+      "id": "regressions-np-platform-095",
+      "input": "05_MY_SONG.mp3",
+      "options": {
+        "mode": "filename"
+      },
+      "expected": {
+        "position": {
+          "raw": "05",
+          "number": 5
+        },
+        "title": "MY SONG"
+      },
+      "rules": [
+        "R2.3",
+        "R4.2"
+      ],
+      "source": "np-platform: __tests__/releases/filename-parser.test.ts",
+      "note": "Our parser does not title-case (old filename-parser cleanTitle did)."
+    },
+    {
+      "id": "regressions-np-platform-096",
+      "input": "01 Track.mp3",
+      "options": {
+        "mode": "filename"
+      },
+      "expected": {
+        "position": {
+          "raw": "01",
+          "number": 1
+        },
+        "title": "Track"
+      },
+      "rules": [
+        "R4.2"
+      ],
+      "source": "np-platform: __tests__/releases/filename-parser.test.ts"
+    },
+    {
+      "id": "regressions-np-platform-097",
+      "input": "03 My Song.mp3",
+      "options": {
+        "mode": "filename"
+      },
+      "expected": {
+        "position": {
+          "raw": "03",
+          "number": 3
+        },
+        "title": "My Song"
+      },
+      "rules": [
+        "R4.2"
+      ],
+      "source": "np-platform: __tests__/releases/filename-parser.test.ts"
+    },
+    {
+      "id": "regressions-np-platform-098",
+      "input": "My Song.mp3",
+      "options": {
+        "mode": "filename"
+      },
+      "expected": {
+        "position": null,
+        "artists": [],
+        "title": "My Song",
+        "warnings": [
+          "noSeparator"
+        ]
+      },
+      "rules": [
+        "R2.3",
+        "R6.8"
+      ],
+      "source": "np-platform: __tests__/releases/filename-parser.test.ts"
+    },
+    {
+      "id": "regressions-np-platform-099",
+      "input": "Artist - Title.mp3",
+      "options": {
+        "mode": "filename"
+      },
+      "expected": {
+        "position": null,
+        "artists": [
+          "Artist"
+        ],
+        "title": "Title"
+      },
+      "rules": [
+        "R2.3",
+        "R6.3"
+      ],
+      "source": "np-platform: __tests__/releases/filename-parser.test.ts",
+      "note": "Old filename-parser left 'Artist - Title' as the title; the spec splits artist/title."
+    },
+    {
+      "id": "regressions-np-platform-100",
+      "input": "track.mp3",
+      "options": {
+        "mode": "filename"
+      },
+      "expected": {
+        "position": null,
+        "title": "track"
+      },
+      "rules": [
+        "R2.3"
+      ],
+      "source": "np-platform: __tests__/releases/filename-parser.test.ts",
+      "note": "Our parser does not title-case (old filename-parser cleanTitle did)."
+    },
+    {
+      "id": "regressions-np-platform-101",
+      "input": "01.mp3",
+      "options": {
+        "mode": "filename"
+      },
+      "expected": {
+        "position": null,
+        "artists": [],
+        "title": "01"
+      },
+      "rules": [
+        "R2.3",
+        "R4.2"
+      ],
+      "source": "np-platform: __tests__/releases/filename-parser.test.ts",
+      "note": "Old parser returned position 1 and title '01'. After stripping '.mp3' the string is just '01'; R4.2 needs a following '.', ')' or space and a non-empty remainder, so no position."
+    },
+    {
+      "id": "regressions-np-platform-102",
+      "input": "01 - .mp3",
+      "options": { "mode": "filename" },
+      "expected": {
+        "position": { "raw": "01", "number": 1 },
+        "artists": [],
+        "title": ""
+      },
+      "rules": ["R2.3", "R4.2", "R8.5"],
+      "source": "np-platform: __tests__/releases/filename-parser.test.ts",
+      "note": "R2.3 trims after removing the extension ('01 -'); '01 ' is a zero-padded position (R4.2b)."
+    },
+    {
+      "id": "regressions-np-platform-103",
+      "input": "01 - Track - Remix.mp3",
+      "options": {
+        "mode": "filename"
+      },
+      "expected": {
+        "position": {
+          "raw": "01",
+          "number": 1
+        },
+        "artists": [
+          "Track"
+        ],
+        "title": "Remix",
+        "versions": []
+      },
+      "rules": [
+        "R4.2",
+        "R6.2",
+        "R6.3"
+      ],
+      "source": "np-platform: __tests__/releases/filename-parser.test.ts",
+      "note": "Old parser gave title 'Track - Remix'. After the position, 'Track - Remix' has a spaced dash; the one-word suffix 'Remix' is not peelable with only 2 segments (like 'Band - Live'), so it is an artist/title split."
+    },
+    {
+      "id": "regressions-np-platform-104",
+      "input": "  01 - Track  .mp3",
+      "options": {
+        "mode": "filename"
+      },
+      "expected": {
+        "position": {
+          "raw": "01",
+          "number": 1
+        },
+        "title": "Track"
+      },
+      "rules": [
+        "R1.6",
+        "R2.3",
+        "R4.2",
+        "R8.5"
+      ],
+      "source": "np-platform: __tests__/releases/filename-parser.test.ts"
+    },
+    {
+      "id": "regressions-np-platform-105",
+      "input": "01 - Track.wav",
+      "options": {
+        "mode": "filename"
+      },
+      "expected": {
+        "position": {
+          "raw": "01",
+          "number": 1
+        },
+        "title": "Track"
+      },
+      "rules": [
+        "R2.3",
+        "R4.2"
+      ],
+      "source": "np-platform: __tests__/releases/filename-parser.test.ts"
+    },
+    {
+      "id": "regressions-np-platform-106",
+      "input": "01 - Track.aac",
+      "options": {
+        "mode": "filename"
+      },
+      "expected": {
+        "position": {
+          "raw": "01",
+          "number": 1
+        },
+        "title": "Track"
+      },
+      "rules": [
+        "R2.3",
+        "R4.2"
+      ],
+      "source": "np-platform: __tests__/releases/filename-parser.test.ts"
+    },
+    {
+      "id": "regressions-np-platform-107",
+      "input": "01 - Track.m4a",
+      "options": {
+        "mode": "filename"
+      },
+      "expected": {
+        "position": {
+          "raw": "01",
+          "number": 1
+        },
+        "title": "Track"
+      },
+      "rules": [
+        "R2.3",
+        "R4.2"
+      ],
+      "source": "np-platform: __tests__/releases/filename-parser.test.ts"
+    },
+    {
+      "id": "regressions-np-platform-108",
+      "input": "01 - Track.ogg",
+      "options": {
+        "mode": "filename"
+      },
+      "expected": {
+        "position": {
+          "raw": "01",
+          "number": 1
+        },
+        "title": "Track"
+      },
+      "rules": [
+        "R2.3",
+        "R4.2"
+      ],
+      "source": "np-platform: __tests__/releases/filename-parser.test.ts"
+    },
+    {
+      "id": "regressions-np-platform-109",
+      "input": "01 - Track",
+      "options": {
+        "mode": "filename"
+      },
+      "expected": {
+        "position": {
+          "raw": "01",
+          "number": 1
+        },
+        "title": "Track"
+      },
+      "rules": [
+        "R4.2"
+      ],
+      "source": "np-platform: __tests__/releases/filename-parser.test.ts",
+      "note": "No extension."
+    },
+    {
+      "id": "regressions-np-platform-110",
+      "input": "123 - Track.mp3",
+      "options": { "mode": "filename" },
+      "expected": {
+        "position": { "raw": "123", "number": 123 },
+        "artists": [],
+        "title": "Track"
+      },
+      "rules": ["R4.2"],
+      "source": "np-platform: __tests__/releases/filename-parser.test.ts",
+      "note": "Filename mode: 'N - ' is always a position (R4.2c)."
+    },
+    {
+      "id": "regressions-np-platform-111",
+      "input": "1000 - Track.mp3",
+      "options": {
+        "mode": "filename"
+      },
+      "expected": {
+        "position": null,
+        "artists": [
+          "1000"
+        ],
+        "title": "Track"
+      },
+      "rules": [
+        "R4.2",
+        "R6.3"
+      ],
+      "source": "np-platform: __tests__/releases/filename-parser.test.ts",
+      "note": "Old parser took 1000 as a position; R4.2 never treats 4+ digits as a position, so '1000' is the artist."
+    },
+    {
+      "id": "regressions-np-platform-112",
+      "input": "00 - Intro.mp3",
+      "options": {
+        "mode": "filename"
+      },
+      "expected": {
+        "position": {
+          "raw": "00",
+          "number": 0
+        },
+        "title": "Intro"
+      },
+      "rules": [
+        "R4.2"
+      ],
+      "source": "np-platform: __tests__/releases/filename-parser.test.ts"
+    },
+    {
+      "id": "regressions-np-platform-113",
+      "input": "01 - Café Dreams.mp3",
+      "options": {
+        "mode": "filename"
+      },
+      "expected": {
+        "position": {
+          "raw": "01",
+          "number": 1
+        },
+        "title": "Café Dreams"
+      },
+      "rules": [
+        "R1.1",
+        "R4.2"
+      ],
+      "source": "np-platform: __tests__/releases/filename-parser.test.ts"
+    },
+    {
+      "id": "regressions-np-platform-114",
+      "input": "01 - Fire Track 🔥.mp3",
+      "options": {
+        "mode": "filename"
+      },
+      "expected": {
+        "position": {
+          "raw": "01",
+          "number": 1
+        },
+        "title": "Fire Track 🔥"
+      },
+      "rules": [
+        "R4.2",
+        "R0.5"
+      ],
+      "source": "np-platform: __tests__/releases/filename-parser.test.ts"
+    },
+    {
+      "id": "regressions-np-platform-115",
+      "input": "01 - <script>alert(1)</script>.mp3",
+      "options": {
+        "mode": "filename"
+      },
+      "expected": {
+        "position": {
+          "raw": "01",
+          "number": 1
+        },
+        "artists": [],
+        "title": "<script>alert(1)</script>",
+        "versions": [],
+        "year": null
+      },
+      "rules": [
+        "R4.2",
+        "R5.8"
+      ],
+      "source": "np-platform: __tests__/releases/filename-parser.test.ts",
+      "note": "'(1)' is an Unknown group and stays verbatim."
+    },
+    {
+      "id": "regressions-np-platform-116",
+      "input": "my__track___name.mp3",
+      "options": {
+        "mode": "filename"
+      },
+      "expected": {
+        "title": "my track name"
+      },
+      "rules": [
+        "R2.3",
+        "R8.5"
+      ],
+      "source": "np-platform: __tests__/releases/filename-parser.test.ts",
+      "note": "cleanTitle test: underscores become spaces and whitespace is collapsed. Our parser does not title-case (old filename-parser cleanTitle did)."
+    },
+    {
+      "id": "regressions-np-platform-117",
+      "input": "track ft artist.mp3",
+      "options": { "mode": "filename" },
+      "expected": {
+        "artists": [],
+        "title": "track ft artist"
+      },
+      "rules": ["R8.3"],
+      "source": "np-platform: __tests__/releases/filename-parser.test.ts",
+      "note": "cleanTitle test input. Undotted 'ft' on the title side is text (R8.3), so nothing is extracted."
+    },
+    {
+      "id": "regressions-np-platform-118",
+      "input": "battle vs rival.mp3",
+      "options": {
+        "mode": "filename"
+      },
+      "expected": {
+        "artists": [],
+        "title": "battle vs rival"
+      },
+      "rules": [
+        "R6.8",
+        "R8.3"
+      ],
+      "source": "np-platform: __tests__/releases/filename-parser.test.ts",
+      "note": "Joiners are never split on the title side."
+    }
+  ]
+}

@@ -1,0 +1,1790 @@
+{
+  "$schema": "../../schema/fixture-file.schema.json",
+  "description": "Regressions from the old neuropunk web parser (helpers/track.tsx, track.test.ts, tracklist-segments.ts) and the Tracklist.cy.tsx corpus.",
+  "defaults": {
+    "fn": "parse",
+    "options": {
+      "mode": "clean"
+    }
+  },
+  "cases": [
+    {
+      "id": "regressions-neuropunk-web-001",
+      "fn": "parseArtists",
+      "input": "Gydra",
+      "expected": [
+        "Gydra"
+      ],
+      "rules": [
+        "R10"
+      ],
+      "source": "neuropunk-web: helpers/track.test.ts"
+    },
+    {
+      "id": "regressions-neuropunk-web-002",
+      "fn": "parseArtists",
+      "input": "Gydra & Dextems",
+      "expected": [
+        {
+          "name": "Gydra",
+          "role": "primary",
+          "joiner": null,
+          "source": "artist"
+        },
+        {
+          "name": "Dextems",
+          "role": "primary",
+          "joiner": "&",
+          "source": "artist"
+        }
+      ],
+      "rules": [
+        "R10",
+        "R7.3"
+      ],
+      "source": "neuropunk-web: helpers/track.test.ts"
+    },
+    {
+      "id": "regressions-neuropunk-web-003",
+      "fn": "parseArtists",
+      "input": "9THWAVE ft. Blinded Theory & Irontype",
+      "expected": [
+        {
+          "name": "9THWAVE",
+          "role": "primary",
+          "joiner": null,
+          "source": "artist"
+        },
+        {
+          "name": "Blinded Theory",
+          "role": "featured",
+          "joiner": "ft.",
+          "source": "artist"
+        },
+        {
+          "name": "Irontype",
+          "role": "featured",
+          "joiner": "&",
+          "source": "artist"
+        }
+      ],
+      "rules": [
+        "R10",
+        "R7.2",
+        "R7.3"
+      ],
+      "source": "neuropunk-web: helpers/track.test.ts",
+      "note": "Old parser treated unbracketed ft./feat. as a plain delimiter (all names equal); the spec gives role featured (R7.2)."
+    },
+    {
+      "id": "regressions-neuropunk-web-004",
+      "fn": "parseArtists",
+      "input": "007, Immerr (feat. Vecster & Ксю)",
+      "expected": [
+        {
+          "name": "007",
+          "role": "primary",
+          "joiner": null,
+          "source": "artist"
+        },
+        {
+          "name": "Immerr",
+          "role": "primary",
+          "joiner": ",",
+          "source": "artist"
+        },
+        {
+          "name": "Vecster",
+          "role": "featured",
+          "joiner": "feat.",
+          "source": "artist"
+        },
+        {
+          "name": "Ксю",
+          "role": "featured",
+          "joiner": "&",
+          "source": "artist"
+        }
+      ],
+      "rules": [
+        "R10",
+        "R7.1",
+        "R5.2",
+        "R7.3"
+      ],
+      "source": "neuropunk-web: helpers/track.test.ts",
+      "note": "Old parser flattened roles; the spec marks the bracketed feat. credits featured and appends them after the text credits (R7.1). '007' is kept: parseArtists never strips positions."
+    },
+    {
+      "id": "regressions-neuropunk-web-005",
+      "fn": "parseArtists",
+      "input": "Teddy Killerz x Ravager",
+      "expected": [
+        {
+          "name": "Teddy Killerz",
+          "role": "primary",
+          "joiner": null,
+          "source": "artist"
+        },
+        {
+          "name": "Ravager",
+          "role": "primary",
+          "joiner": "x",
+          "source": "artist"
+        }
+      ],
+      "rules": [
+        "R10",
+        "R7.3"
+      ],
+      "source": "neuropunk-web: helpers/track.test.ts"
+    },
+    {
+      "id": "regressions-neuropunk-web-006",
+      "fn": "parseArtists",
+      "input": "Agnostetics, Bes, Hightech",
+      "expected": [
+        {
+          "name": "Agnostetics",
+          "role": "primary",
+          "joiner": null,
+          "source": "artist"
+        },
+        {
+          "name": "Bes",
+          "role": "primary",
+          "joiner": ",",
+          "source": "artist"
+        },
+        {
+          "name": "Hightech",
+          "role": "primary",
+          "joiner": ",",
+          "source": "artist"
+        }
+      ],
+      "rules": [
+        "R10",
+        "R7.3"
+      ],
+      "source": "neuropunk-web: helpers/track.test.ts"
+    },
+    {
+      "id": "regressions-neuropunk-web-007",
+      "fn": "parseArtists",
+      "input": "Artist (2023)",
+      "expected": [
+        "Artist"
+      ],
+      "rules": [
+        "R10",
+        "R7.1",
+        "R5.5"
+      ],
+      "source": "neuropunk-web: helpers/track.test.ts",
+      "note": "Year group is removed from the artist side (it sets year in parse())."
+    },
+    {
+      "id": "regressions-neuropunk-web-008",
+      "fn": "parseArtists",
+      "input": "GYDRA & Gydra",
+      "expected": [
+        {
+          "name": "GYDRA",
+          "role": "primary",
+          "joiner": null,
+          "source": "artist"
+        }
+      ],
+      "rules": [
+        "R10",
+        "R9.2",
+        "R0.4"
+      ],
+      "source": "neuropunk-web: helpers/track.test.ts",
+      "note": "Dedup keeps the first casing."
+    },
+    {
+      "id": "regressions-neuropunk-web-009",
+      "fn": "parseArtists",
+      "input": "",
+      "expected": [],
+      "rules": [
+        "R10",
+        "R9.5"
+      ],
+      "source": "neuropunk-web: helpers/track.test.ts"
+    },
+    {
+      "id": "regressions-neuropunk-web-010",
+      "fn": "parseArtists",
+      "input": "   ",
+      "expected": [],
+      "rules": [
+        "R10",
+        "R1.6"
+      ],
+      "source": "neuropunk-web: helpers/track.test.ts"
+    },
+    {
+      "id": "regressions-neuropunk-web-011",
+      "fn": "parseArtists",
+      "input": "01. Gydra & Dextems",
+      "expected": [
+        "01. Gydra",
+        "Dextems"
+      ],
+      "rules": [
+        "R10",
+        "R4.3"
+      ],
+      "source": "neuropunk-web: helpers/track.test.ts",
+      "note": "Old splitArtists stripped a leading track number. parseArtists applies no R4 (position detection belongs to parse), so '01. Gydra' is kept verbatim."
+    },
+    {
+      "id": "regressions-neuropunk-web-012",
+      "fn": "parseArtists",
+      "input": "Gydra & 2023",
+      "expected": [
+        "Gydra"
+      ],
+      "rules": [
+        "R10",
+        "R7.5"
+      ],
+      "source": "neuropunk-web: helpers/track.tsx",
+      "note": "Old parser skipped 4-digit years (createArtistLink/dedupeEntries); spec R7.5 drops a year-only name when other names exist."
+    },
+    {
+      "id": "regressions-neuropunk-web-013",
+      "fn": "parseArtists",
+      "input": "2023",
+      "expected": [
+        "2023"
+      ],
+      "rules": [
+        "R10",
+        "R7.5"
+      ],
+      "source": "neuropunk-web: helpers/track.tsx",
+      "note": "Year-only name is kept when it is the only name in the list (old parser dropped it)."
+    },
+    {
+      "id": "regressions-neuropunk-web-014",
+      "fn": "parseArtists",
+      "input": "Mefjus / Kasra",
+      "expected": [
+        {
+          "name": "Mefjus",
+          "role": "primary",
+          "joiner": null,
+          "source": "artist"
+        },
+        {
+          "name": "Kasra",
+          "role": "primary",
+          "joiner": "/",
+          "source": "artist"
+        }
+      ],
+      "rules": [
+        "R10",
+        "R7.3"
+      ],
+      "source": "neuropunk-web: helpers/track.tsx",
+      "note": "' / ' was an old ARTIST_DELIMITER; spaced '/' is a spec joiner."
+    },
+    {
+      "id": "regressions-neuropunk-web-015",
+      "fn": "parseArtists",
+      "input": "Gydra\\Dextems",
+      "expected": [
+        "Gydra\\Dextems"
+      ],
+      "rules": [
+        "R10",
+        "R7.3"
+      ],
+      "source": "neuropunk-web: helpers/track.tsx",
+      "note": "Old parser split on a bare backslash; the spec has no backslash joiner, so the name stays whole."
+    },
+    {
+      "id": "regressions-neuropunk-web-016",
+      "fn": "parseArtists",
+      "input": "Mage & Subminderz & Malstrom",
+      "expected": [
+        {
+          "name": "Mage",
+          "role": "primary",
+          "joiner": null,
+          "source": "artist"
+        },
+        {
+          "name": "Subminderz",
+          "role": "primary",
+          "joiner": "&",
+          "source": "artist"
+        },
+        {
+          "name": "Malstrom",
+          "role": "primary",
+          "joiner": "&",
+          "source": "artist"
+        }
+      ],
+      "rules": [
+        "R10",
+        "R7.3"
+      ],
+      "source": "neuropunk-web: components/release/Tracklist.cy.tsx",
+      "note": "Corpus line used as a pure artist string."
+    },
+    {
+      "id": "regressions-neuropunk-web-017",
+      "fn": "parseArtists",
+      "input": "Bes",
+      "expected": [
+        "Bes"
+      ],
+      "rules": [
+        "R10"
+      ],
+      "source": "neuropunk-web: helpers/track.test.ts",
+      "note": "collectTrackArtists('Bes') with no title."
+    },
+    {
+      "id": "regressions-neuropunk-web-018",
+      "input": "Bruises (Magnetude Remix)",
+      "expected": {
+        "artists": [],
+        "title": "Bruises",
+        "versions": [
+          {
+            "type": "remix",
+            "artists": [
+              "Magnetude"
+            ]
+          }
+        ],
+        "warnings": [
+          "noSeparator"
+        ]
+      },
+      "rules": [
+        "R6.8",
+        "R8.1",
+        "R5.7"
+      ],
+      "source": "neuropunk-web: helpers/track.test.ts",
+      "note": "Old collectTrackArtists put remixers in the artist list; the spec keeps them in versions[].artists (R9.2)."
+    },
+    {
+      "id": "regressions-neuropunk-web-019",
+      "input": "Track (feat. Da Kooka)",
+      "expected": {
+        "artists": [
+          {
+            "name": "Da Kooka",
+            "role": "featured",
+            "joiner": "feat.",
+            "source": "title"
+          }
+        ],
+        "title": "Track",
+        "versions": []
+      },
+      "rules": [
+        "R6.8",
+        "R8.1",
+        "R5.2"
+      ],
+      "source": "neuropunk-web: helpers/track.test.ts"
+    },
+    {
+      "id": "regressions-neuropunk-web-020",
+      "input": "Dark Message",
+      "expected": {
+        "artists": [],
+        "title": "Dark Message",
+        "versions": [],
+        "warnings": [
+          "noSeparator"
+        ]
+      },
+      "rules": [
+        "R6.8"
+      ],
+      "source": "neuropunk-web: helpers/track.test.ts"
+    },
+    {
+      "id": "regressions-neuropunk-web-021",
+      "input": "Dawn-1, Flexibility",
+      "expected": {
+        "artists": [],
+        "title": "Dawn-1, Flexibility",
+        "warnings": [
+          "noSeparator"
+        ]
+      },
+      "rules": [
+        "R6.7",
+        "R6.8"
+      ],
+      "source": "neuropunk-web: helpers/track.test.ts",
+      "note": "clean mode: unspaced dashes never split and a title is never split at commas."
+    },
+    {
+      "id": "regressions-neuropunk-web-022",
+      "input": "Busted (VIP)",
+      "expected": {
+        "artists": [],
+        "title": "Busted",
+        "versions": [
+          {
+            "type": "vip",
+            "artists": []
+          }
+        ]
+      },
+      "rules": [
+        "R5.7",
+        "R8.1"
+      ],
+      "source": "neuropunk-web: helpers/track.test.ts",
+      "note": "Keyword-only version group: no remixer."
+    },
+    {
+      "id": "regressions-neuropunk-web-023",
+      "input": "Fox Stevenson - Bruises (Magnetude Remix)",
+      "expected": {
+        "input": "Fox Stevenson - Bruises (Magnetude Remix)",
+        "mode": "clean",
+        "position": null,
+        "timestamp": null,
+        "artists": [
+          {
+            "name": "Fox Stevenson",
+            "role": "primary",
+            "joiner": null,
+            "source": "artist"
+          }
+        ],
+        "title": "Bruises",
+        "fullTitle": "Bruises (Magnetude Remix)",
+        "versions": [
+          {
+            "type": "remix",
+            "raw": "Magnetude Remix",
+            "artists": [
+              {
+                "name": "Magnetude",
+                "role": "remixer",
+                "joiner": null,
+                "source": "version"
+              }
+            ],
+            "modifiers": [],
+            "descriptor": null,
+            "year": null,
+            "unknownArtist": false,
+            "delimiter": "("
+          }
+        ],
+        "year": null,
+        "flags": {
+          "explicit": false,
+          "clean": false,
+          "unknownArtist": false,
+          "unknownTitle": false
+        },
+        "junk": [],
+        "warnings": []
+      },
+      "match": "exact",
+      "rules": [
+        "R6.3",
+        "R5.7",
+        "R8.1",
+        "R9.4"
+      ],
+      "source": "neuropunk-web: helpers/track.test.ts",
+      "note": "Old collectTrackArtists put remixers in the artist list; the spec keeps them in versions[].artists (R9.2)."
+    },
+    {
+      "id": "regressions-neuropunk-web-024",
+      "input": "IMMERR & Vecster - Dark Message",
+      "expected": {
+        "artists": [
+          {
+            "name": "IMMERR",
+            "role": "primary",
+            "joiner": null,
+            "source": "artist"
+          },
+          {
+            "name": "Vecster",
+            "role": "primary",
+            "joiner": "&",
+            "source": "artist"
+          }
+        ],
+        "title": "Dark Message"
+      },
+      "rules": [
+        "R6.3",
+        "R7.3"
+      ],
+      "source": "neuropunk-web: helpers/track.test.ts"
+    },
+    {
+      "id": "regressions-neuropunk-web-025",
+      "input": "Gydra - Neft (Gydra VIP)",
+      "expected": {
+        "artists": [
+          {
+            "name": "Gydra",
+            "role": "primary",
+            "joiner": null,
+            "source": "artist"
+          }
+        ],
+        "title": "Neft",
+        "versions": [
+          {
+            "type": "vip",
+            "artists": [
+              {
+                "name": "Gydra",
+                "role": "remixer",
+                "joiner": null,
+                "source": "version"
+              }
+            ]
+          }
+        ]
+      },
+      "rules": [
+        "R5.7",
+        "R9.2"
+      ],
+      "source": "neuropunk-web: helpers/track.test.ts",
+      "note": "Old parser deduped the self-remixer away; the spec never removes remixers because they also appear as primary (R9.2)."
+    },
+    {
+      "id": "regressions-neuropunk-web-026",
+      "input": "Konflikt - Messiah (Skrimor Bootleg)",
+      "expected": {
+        "artists": [
+          "Konflikt"
+        ],
+        "title": "Messiah",
+        "versions": [
+          {
+            "type": "bootleg",
+            "raw": "Skrimor Bootleg",
+            "artists": [
+              "Skrimor"
+            ]
+          }
+        ]
+      },
+      "rules": [
+        "R5.7"
+      ],
+      "source": "neuropunk-web: helpers/track.test.ts",
+      "note": "Old 'keyword' Bootleg becomes the version type."
+    },
+    {
+      "id": "regressions-neuropunk-web-027",
+      "input": "Gydra - Track (feat. Da Kooka)",
+      "expected": {
+        "artists": [
+          {
+            "name": "Gydra",
+            "role": "primary",
+            "joiner": null,
+            "source": "artist"
+          },
+          {
+            "name": "Da Kooka",
+            "role": "featured",
+            "joiner": "feat.",
+            "source": "title"
+          }
+        ],
+        "title": "Track"
+      },
+      "rules": [
+        "R8.1",
+        "R5.2",
+        "R9.1"
+      ],
+      "source": "neuropunk-web: helpers/track.test.ts"
+    },
+    {
+      "id": "regressions-neuropunk-web-028",
+      "input": "0:00 Fox Stevenson - Bruises (Magnetude Remix)",
+      "expected": {
+        "timestamp": {
+          "raw": "0:00",
+          "seconds": 0
+        },
+        "position": null,
+        "artists": [
+          "Fox Stevenson"
+        ],
+        "title": "Bruises",
+        "versions": [
+          {
+            "type": "remix",
+            "artists": [
+              "Magnetude"
+            ]
+          }
+        ]
+      },
+      "rules": [
+        "R4.1",
+        "R6.3",
+        "R5.7"
+      ],
+      "source": "neuropunk-web: helpers/tracklist-segments.test.ts"
+    },
+    {
+      "id": "regressions-neuropunk-web-029",
+      "input": "2:35 Disphonia - All Ears (Skrimor Remix)",
+      "expected": {
+        "timestamp": {
+          "raw": "2:35",
+          "seconds": 155
+        },
+        "artists": [
+          "Disphonia"
+        ],
+        "title": "All Ears",
+        "versions": [
+          {
+            "type": "remix",
+            "artists": [
+              "Skrimor"
+            ]
+          }
+        ]
+      },
+      "rules": [
+        "R4.1",
+        "R5.7"
+      ],
+      "source": "neuropunk-web: helpers/tracklist-segments.test.ts"
+    },
+    {
+      "id": "regressions-neuropunk-web-030",
+      "input": "3:40 IMMERR & Vecster - Dark Message",
+      "expected": {
+        "input": "3:40 IMMERR & Vecster - Dark Message",
+        "mode": "clean",
+        "position": null,
+        "timestamp": {
+          "raw": "3:40",
+          "seconds": 220
+        },
+        "artists": [
+          {
+            "name": "IMMERR",
+            "role": "primary",
+            "joiner": null,
+            "source": "artist"
+          },
+          {
+            "name": "Vecster",
+            "role": "primary",
+            "joiner": "&",
+            "source": "artist"
+          }
+        ],
+        "title": "Dark Message",
+        "fullTitle": "Dark Message",
+        "versions": [],
+        "year": null,
+        "flags": {
+          "explicit": false,
+          "clean": false,
+          "unknownArtist": false,
+          "unknownTitle": false
+        },
+        "junk": [],
+        "warnings": []
+      },
+      "match": "exact",
+      "rules": [
+        "R4.1",
+        "R6.3",
+        "R7.3"
+      ],
+      "source": "neuropunk-web: helpers/tracklist-segments.test.ts"
+    },
+    {
+      "id": "regressions-neuropunk-web-031",
+      "input": "1:23:45 01. Noisia - Stigma",
+      "expected": {
+        "timestamp": {
+          "raw": "1:23:45",
+          "seconds": 5025
+        },
+        "position": {
+          "raw": "01",
+          "number": 1
+        },
+        "artists": [
+          "Noisia"
+        ],
+        "title": "Stigma"
+      },
+      "rules": [
+        "R4.1",
+        "R4.2"
+      ],
+      "source": "neuropunk-web: helpers/tracklist-segments.ts",
+      "note": "TRACKLIST_LINE_RE shape 'H:MM:SS NN. Artist - Title': timestamp first, then position."
+    },
+    {
+      "id": "regressions-neuropunk-web-032",
+      "input": "Place 2b – Iron Man",
+      "expected": {
+        "position": null,
+        "artists": [
+          "Place 2b"
+        ],
+        "title": "Iron Man"
+      },
+      "rules": [
+        "R1.5",
+        "R6.3",
+        "R4.2"
+      ],
+      "source": "neuropunk-web: components/release/Tracklist.cy.tsx",
+      "note": "En dash normalized to '-'; trailing '2b' is part of the name."
+    },
+    {
+      "id": "regressions-neuropunk-web-033",
+      "input": "Ant+Shift ft. PLEXXAGLASS - Source Code (Cvpellv & Gydra remix)",
+      "expected": {
+        "artists": [
+          {
+            "name": "Ant+Shift",
+            "role": "primary",
+            "joiner": null,
+            "source": "artist"
+          },
+          {
+            "name": "PLEXXAGLASS",
+            "role": "featured",
+            "joiner": "ft.",
+            "source": "artist"
+          }
+        ],
+        "title": "Source Code",
+        "versions": [
+          {
+            "type": "remix",
+            "artists": [
+              {
+                "name": "Cvpellv",
+                "role": "remixer",
+                "joiner": null,
+                "source": "version"
+              },
+              {
+                "name": "Gydra",
+                "role": "remixer",
+                "joiner": "&",
+                "source": "version"
+              }
+            ]
+          }
+        ]
+      },
+      "rules": [
+        "R7.2",
+        "R7.3",
+        "R5.7"
+      ],
+      "source": "neuropunk-web: components/release/Tracklist.cy.tsx",
+      "note": "Old parser treated unbracketed ft./feat. as a plain delimiter (all names equal); the spec gives role featured (R7.2). Unspaced '+' never splits."
+    },
+    {
+      "id": "regressions-neuropunk-web-034",
+      "input": "Beterror & Alt.Face - Nonsense (Warm Roller Remix)",
+      "expected": {
+        "artists": [
+          "Beterror",
+          "Alt.Face"
+        ],
+        "title": "Nonsense",
+        "versions": [
+          {
+            "type": "remix",
+            "artists": [
+              "Warm Roller"
+            ]
+          }
+        ]
+      },
+      "rules": [
+        "R7.3",
+        "R7.4",
+        "R5.7"
+      ],
+      "source": "neuropunk-web: components/release/Tracklist.cy.tsx"
+    },
+    {
+      "id": "regressions-neuropunk-web-035",
+      "input": "Miyagi & Andy Panda ft. TumaniYO - Brooklyn (Teddy Killerz bootleg)",
+      "expected": {
+        "artists": [
+          {
+            "name": "Miyagi",
+            "role": "primary",
+            "joiner": null,
+            "source": "artist"
+          },
+          {
+            "name": "Andy Panda",
+            "role": "primary",
+            "joiner": "&",
+            "source": "artist"
+          },
+          {
+            "name": "TumaniYO",
+            "role": "featured",
+            "joiner": "ft.",
+            "source": "artist"
+          }
+        ],
+        "title": "Brooklyn",
+        "versions": [
+          {
+            "type": "bootleg",
+            "artists": [
+              "Teddy Killerz"
+            ]
+          }
+        ]
+      },
+      "rules": [
+        "R7.2",
+        "R7.3",
+        "R5.7"
+      ],
+      "source": "neuropunk-web: components/release/Tracklist.cy.tsx",
+      "note": "Old parser treated unbracketed ft./feat. as a plain delimiter (all names equal); the spec gives role featured (R7.2)."
+    },
+    {
+      "id": "regressions-neuropunk-web-036",
+      "input": "Катя Чехова - Я Робот (Chaser remix)",
+      "expected": {
+        "artists": [
+          "Катя Чехова"
+        ],
+        "title": "Я Робот",
+        "versions": [
+          {
+            "type": "remix",
+            "artists": [
+              "Chaser"
+            ]
+          }
+        ]
+      },
+      "rules": [
+        "R6.3",
+        "R5.7"
+      ],
+      "source": "neuropunk-web: components/release/Tracklist.cy.tsx"
+    },
+    {
+      "id": "regressions-neuropunk-web-037",
+      "input": "А'Студио - Джулия (KASHIN VIP)",
+      "expected": {
+        "artists": [
+          "А'Студио"
+        ],
+        "title": "Джулия",
+        "versions": [
+          {
+            "type": "vip",
+            "artists": [
+              "KASHIN"
+            ]
+          }
+        ]
+      },
+      "rules": [
+        "R7.4",
+        "R5.7"
+      ],
+      "source": "neuropunk-web: components/release/Tracklist.cy.tsx",
+      "note": "An interior apostrophe is not a wrapping quote."
+    },
+    {
+      "id": "regressions-neuropunk-web-038",
+      "input": "Teddy Killerz & Gydra - Miles High (Levela rmx)",
+      "expected": {
+        "artists": [
+          "Teddy Killerz",
+          "Gydra"
+        ],
+        "title": "Miles High",
+        "versions": [
+          {
+            "type": "remix",
+            "raw": "Levela rmx",
+            "artists": [
+              "Levela"
+            ]
+          }
+        ]
+      },
+      "rules": [
+        "R5.7"
+      ],
+      "source": "neuropunk-web: components/release/Tracklist.cy.tsx",
+      "note": "'rmx' head maps to type remix."
+    },
+    {
+      "id": "regressions-neuropunk-web-039",
+      "input": "Decades feat. Mansa - Gin & Tonic",
+      "expected": {
+        "artists": [
+          {
+            "name": "Decades",
+            "role": "primary",
+            "joiner": null,
+            "source": "artist"
+          },
+          {
+            "name": "Mansa",
+            "role": "featured",
+            "joiner": "feat.",
+            "source": "artist"
+          }
+        ],
+        "title": "Gin & Tonic"
+      },
+      "rules": [
+        "R7.2",
+        "R8.3"
+      ],
+      "source": "neuropunk-web: components/release/Tracklist.cy.tsx",
+      "note": "Old parser treated unbracketed ft./feat. as a plain delimiter (all names equal); the spec gives role featured (R7.2). '&' in the title never splits."
+    },
+    {
+      "id": "regressions-neuropunk-web-040",
+      "input": "CrucifyMe x Optifiber - Sweet Dispersion",
+      "expected": {
+        "artists": [
+          {
+            "name": "CrucifyMe",
+            "role": "primary",
+            "joiner": null,
+            "source": "artist"
+          },
+          {
+            "name": "Optifiber",
+            "role": "primary",
+            "joiner": "x",
+            "source": "artist"
+          }
+        ],
+        "title": "Sweet Dispersion"
+      },
+      "rules": [
+        "R7.3"
+      ],
+      "source": "neuropunk-web: components/release/Tracklist.cy.tsx"
+    },
+    {
+      "id": "regressions-neuropunk-web-041",
+      "input": "Beterror, Alt.Face - Nonsense (Warm Roller Remix) (Sinuous)",
+      "expected": {
+        "artists": [
+          {
+            "name": "Beterror",
+            "role": "primary",
+            "joiner": null,
+            "source": "artist"
+          },
+          {
+            "name": "Alt.Face",
+            "role": "primary",
+            "joiner": ",",
+            "source": "artist"
+          }
+        ],
+        "title": "Nonsense (Sinuous)",
+        "fullTitle": "Nonsense (Sinuous) (Warm Roller Remix)",
+        "versions": [
+          {
+            "type": "remix",
+            "artists": [
+              "Warm Roller"
+            ]
+          }
+        ]
+      },
+      "rules": [
+        "R5.8",
+        "R8.1",
+        "R9.4"
+      ],
+      "source": "neuropunk-web: components/release/Tracklist.cy.tsx",
+      "note": "Unknown '(Sinuous)' stays in the title; fullTitle appends versions after the title, so the version moves after it."
+    },
+    {
+      "id": "regressions-neuropunk-web-042",
+      "input": "Outro (feat. Mewone!)",
+      "expected": {
+        "artists": [
+          {
+            "name": "Mewone!",
+            "role": "featured",
+            "joiner": "feat.",
+            "source": "title"
+          }
+        ],
+        "title": "Outro",
+        "warnings": [
+          "noSeparator"
+        ]
+      },
+      "rules": [
+        "R6.8",
+        "R5.2",
+        "R7.4"
+      ],
+      "source": "neuropunk-web: components/release/Tracklist.cy.tsx",
+      "note": "Trailing '!' is part of the name."
+    },
+    {
+      "id": "regressions-neuropunk-web-043",
+      "input": "Engage Interview @ Тула",
+      "expected": {
+        "artists": [],
+        "title": "Engage Interview @ Тула",
+        "versions": [],
+        "warnings": [
+          "noSeparator"
+        ]
+      },
+      "rules": [
+        "R6.8"
+      ],
+      "source": "neuropunk-web: components/release/Tracklist.cy.tsx"
+    },
+    {
+      "id": "regressions-neuropunk-web-044",
+      "input": "Mage & Subminderz & Malstrom",
+      "expected": {
+        "artists": [],
+        "title": "Mage & Subminderz & Malstrom",
+        "warnings": [
+          "noSeparator"
+        ]
+      },
+      "rules": [
+        "R6.8"
+      ],
+      "source": "neuropunk-web: components/release/Tracklist.cy.tsx",
+      "note": "parse() without a separator puts everything in the title; see the parseArtists case for the artist reading."
+    },
+    {
+      "id": "regressions-neuropunk-web-045",
+      "input": "Grum - Never Have To Be Alone (Pulsar & North Base edit)",
+      "expected": {
+        "artists": [
+          "Grum"
+        ],
+        "title": "Never Have To Be Alone",
+        "versions": [
+          {
+            "type": "edit",
+            "artists": [
+              {
+                "name": "Pulsar",
+                "role": "remixer",
+                "joiner": null,
+                "source": "version"
+              },
+              {
+                "name": "North Base",
+                "role": "remixer",
+                "joiner": "&",
+                "source": "version"
+              }
+            ]
+          }
+        ]
+      },
+      "rules": [
+        "R5.7",
+        "R7.3"
+      ],
+      "source": "neuropunk-web: components/release/Tracklist.cy.tsx"
+    },
+    {
+      "id": "regressions-neuropunk-web-046",
+      "input": "Caim - Hold My Breathe (Krot remix)",
+      "expected": {
+        "artists": [
+          "Caim"
+        ],
+        "title": "Hold My Breathe",
+        "versions": [
+          {
+            "type": "remix",
+            "artists": [
+              "Krot"
+            ]
+          }
+        ]
+      },
+      "rules": [
+        "R5.7"
+      ],
+      "source": "neuropunk-web: components/release/Tracklist.cy.tsx"
+    },
+    {
+      "id": "regressions-neuropunk-web-047",
+      "input": "Sequential - Terminal Velocity (ft. MC Kerizma)",
+      "expected": {
+        "artists": [
+          {
+            "name": "Sequential",
+            "role": "primary",
+            "joiner": null,
+            "source": "artist"
+          },
+          {
+            "name": "MC Kerizma",
+            "role": "featured",
+            "joiner": "ft.",
+            "source": "title"
+          }
+        ],
+        "title": "Terminal Velocity"
+      },
+      "rules": [
+        "R5.2",
+        "R8.1"
+      ],
+      "source": "neuropunk-web: components/release/Tracklist.cy.tsx"
+    },
+    {
+      "id": "regressions-neuropunk-web-048",
+      "input": "J. Cole - Wet Dreamz (Cnof Bootleg)",
+      "expected": {
+        "artists": [
+          "J. Cole"
+        ],
+        "title": "Wet Dreamz",
+        "versions": [
+          {
+            "type": "bootleg",
+            "artists": [
+              "Cnof"
+            ]
+          }
+        ]
+      },
+      "rules": [
+        "R7.4",
+        "R5.7"
+      ],
+      "source": "neuropunk-web: components/release/Tracklist.cy.tsx"
+    },
+    {
+      "id": "regressions-neuropunk-web-049",
+      "input": "Direct feat. Matt Van - I Don't Mind (Uninvited D'n'B Bootleg)",
+      "expected": {
+        "input": "Direct feat. Matt Van - I Don't Mind (Uninvited D'n'B Bootleg)",
+        "mode": "clean",
+        "position": null,
+        "timestamp": null,
+        "artists": [
+          {
+            "name": "Direct",
+            "role": "primary",
+            "joiner": null,
+            "source": "artist"
+          },
+          {
+            "name": "Matt Van",
+            "role": "featured",
+            "joiner": "feat.",
+            "source": "artist"
+          }
+        ],
+        "title": "I Don't Mind",
+        "fullTitle": "I Don't Mind (Uninvited D'n'B Bootleg)",
+        "versions": [
+          {
+            "type": "bootleg",
+            "raw": "Uninvited D'n'B Bootleg",
+            "artists": [
+              {
+                "name": "Uninvited",
+                "role": "remixer",
+                "joiner": null,
+                "source": "version"
+              }
+            ],
+            "modifiers": [],
+            "descriptor": "D'n'B",
+            "year": null,
+            "unknownArtist": false,
+            "delimiter": "("
+          }
+        ],
+        "year": null,
+        "flags": {
+          "explicit": false,
+          "clean": false,
+          "unknownArtist": false,
+          "unknownTitle": false
+        },
+        "junk": [],
+        "warnings": []
+      },
+      "match": "exact",
+      "rules": [
+        "R7.2",
+        "R5.7"
+      ],
+      "source": "neuropunk-web: components/release/Tracklist.cy.tsx",
+      "note": "Old parser treated unbracketed ft./feat. as a plain delimiter (all names equal); the spec gives role featured (R7.2). Genre word in the modifier run becomes the descriptor."
+    },
+    {
+      "id": "regressions-neuropunk-web-050",
+      "input": "Receptor - Pan Terra (ft. Vitos MC, Johny J.P.R.)",
+      "expected": {
+        "artists": [
+          {
+            "name": "Receptor",
+            "role": "primary",
+            "joiner": null,
+            "source": "artist"
+          },
+          {
+            "name": "Vitos MC",
+            "role": "featured",
+            "joiner": "ft.",
+            "source": "title"
+          },
+          {
+            "name": "Johny J.P.R.",
+            "role": "featured",
+            "joiner": ",",
+            "source": "title"
+          }
+        ],
+        "title": "Pan Terra"
+      },
+      "rules": [
+        "R5.2",
+        "R7.3",
+        "R7.4"
+      ],
+      "source": "neuropunk-web: components/release/Tracklist.cy.tsx",
+      "note": "Interior/trailing dots of 'J.P.R.' are kept."
+    },
+    {
+      "id": "regressions-neuropunk-web-051",
+      "input": "Shiny Radio - Love & Unity (ft. La Kos) (Nuvertal Remix)",
+      "expected": {
+        "artists": [
+          {
+            "name": "Shiny Radio",
+            "role": "primary",
+            "joiner": null,
+            "source": "artist"
+          },
+          {
+            "name": "La Kos",
+            "role": "featured",
+            "joiner": "ft.",
+            "source": "title"
+          }
+        ],
+        "title": "Love & Unity",
+        "fullTitle": "Love & Unity (Nuvertal Remix)",
+        "versions": [
+          {
+            "type": "remix",
+            "artists": [
+              "Nuvertal"
+            ]
+          }
+        ]
+      },
+      "rules": [
+        "R8.1",
+        "R5.2",
+        "R5.7",
+        "R9.4"
+      ],
+      "source": "neuropunk-web: components/release/Tracklist.cy.tsx"
+    },
+    {
+      "id": "regressions-neuropunk-web-052",
+      "input": "Koto - Any Last Words (Fonetick Lee & Sonic Art Space Drums Mix) (Rotation Deep UK)",
+      "expected": {
+        "input": "Koto - Any Last Words (Fonetick Lee & Sonic Art Space Drums Mix) (Rotation Deep UK)",
+        "mode": "clean",
+        "position": null,
+        "timestamp": null,
+        "artists": [
+          {
+            "name": "Koto",
+            "role": "primary",
+            "joiner": null,
+            "source": "artist"
+          }
+        ],
+        "title": "Any Last Words (Rotation Deep UK)",
+        "fullTitle": "Any Last Words (Rotation Deep UK) (Fonetick Lee & Sonic Art Space Drums Mix)",
+        "versions": [
+          {
+            "type": "remix",
+            "raw": "Fonetick Lee & Sonic Art Space Drums Mix",
+            "artists": [
+              {
+                "name": "Fonetick Lee",
+                "role": "remixer",
+                "joiner": null,
+                "source": "version"
+              },
+              {
+                "name": "Sonic Art Space Drums",
+                "role": "remixer",
+                "joiner": "&",
+                "source": "version"
+              }
+            ],
+            "modifiers": [],
+            "descriptor": null,
+            "year": null,
+            "unknownArtist": false,
+            "delimiter": "("
+          }
+        ],
+        "year": null,
+        "flags": {
+          "explicit": false,
+          "clean": false,
+          "unknownArtist": false,
+          "unknownTitle": false
+        },
+        "junk": [],
+        "warnings": [
+          "ambiguousMixCredit"
+        ]
+      },
+      "match": "exact",
+      "rules": [
+        "R5.7",
+        "R5.8",
+        "R9.4"
+      ],
+      "source": "neuropunk-web: components/release/Tracklist.cy.tsx",
+      "note": "Generic 'Mix' with a credit becomes remix; last credit has >= 3 words -> ambiguousMixCredit. '(Rotation Deep UK)' is Unknown and stays in the title (old parser treated it as artists)."
+    },
+    {
+      "id": "regressions-neuropunk-web-053",
+      "input": "Nuvertal - Things We Shared (ft. Maureen)",
+      "expected": {
+        "artists": [
+          {
+            "name": "Nuvertal",
+            "role": "primary",
+            "joiner": null,
+            "source": "artist"
+          },
+          {
+            "name": "Maureen",
+            "role": "featured",
+            "joiner": "ft.",
+            "source": "title"
+          }
+        ],
+        "title": "Things We Shared"
+      },
+      "rules": [
+        "R5.2",
+        "R8.1"
+      ],
+      "source": "neuropunk-web: components/release/Tracklist.cy.tsx"
+    },
+    {
+      "id": "regressions-neuropunk-web-054",
+      "input": "Paperclip + Flexo + Selector - Kinesis To Death",
+      "expected": {
+        "artists": [
+          {
+            "name": "Paperclip",
+            "role": "primary",
+            "joiner": null,
+            "source": "artist"
+          },
+          {
+            "name": "Flexo",
+            "role": "primary",
+            "joiner": "+",
+            "source": "artist"
+          },
+          {
+            "name": "Selector",
+            "role": "primary",
+            "joiner": "+",
+            "source": "artist"
+          }
+        ],
+        "title": "Kinesis To Death"
+      },
+      "rules": [
+        "R7.3"
+      ],
+      "source": "neuropunk-web: components/release/Tracklist.cy.tsx"
+    },
+    {
+      "id": "regressions-neuropunk-web-055",
+      "input": "Receptor & Kubrak - 24 Kornerz (ft. mc BQ)",
+      "expected": {
+        "position": null,
+        "artists": [
+          {
+            "name": "Receptor",
+            "role": "primary",
+            "joiner": null,
+            "source": "artist"
+          },
+          {
+            "name": "Kubrak",
+            "role": "primary",
+            "joiner": "&",
+            "source": "artist"
+          },
+          {
+            "name": "mc BQ",
+            "role": "featured",
+            "joiner": "ft.",
+            "source": "title"
+          }
+        ],
+        "title": "24 Kornerz"
+      },
+      "rules": [
+        "R4.2",
+        "R5.2"
+      ],
+      "source": "neuropunk-web: components/release/Tracklist.cy.tsx",
+      "note": "Digits at the start of the title side are never a position."
+    },
+    {
+      "id": "regressions-neuropunk-web-056",
+      "input": "Implex + Enei - Monkey Business (VIP)",
+      "expected": {
+        "artists": [
+          "Implex",
+          "Enei"
+        ],
+        "title": "Monkey Business",
+        "versions": [
+          {
+            "type": "vip",
+            "artists": []
+          }
+        ]
+      },
+      "rules": [
+        "R7.3",
+        "R5.7"
+      ],
+      "source": "neuropunk-web: components/release/Tracklist.cy.tsx"
+    },
+    {
+      "id": "regressions-neuropunk-web-057",
+      "input": "Gydra (feat. Da Kooka) - Away Form Me",
+      "expected": {
+        "input": "Gydra (feat. Da Kooka) - Away Form Me",
+        "mode": "clean",
+        "position": null,
+        "timestamp": null,
+        "artists": [
+          {
+            "name": "Gydra",
+            "role": "primary",
+            "joiner": null,
+            "source": "artist"
+          },
+          {
+            "name": "Da Kooka",
+            "role": "featured",
+            "joiner": "feat.",
+            "source": "artist"
+          }
+        ],
+        "title": "Away Form Me",
+        "fullTitle": "Away Form Me",
+        "versions": [],
+        "year": null,
+        "flags": {
+          "explicit": false,
+          "clean": false,
+          "unknownArtist": false,
+          "unknownTitle": false
+        },
+        "junk": [],
+        "warnings": []
+      },
+      "match": "exact",
+      "rules": [
+        "R7.1",
+        "R5.2",
+        "R3.4"
+      ],
+      "source": "neuropunk-web: components/release/Tracklist.cy.tsx",
+      "note": "Bracketed feat. on the artist side: source artist."
+    },
+    {
+      "id": "regressions-neuropunk-web-058",
+      "input": "Technical Itch & Mc Jakes - The Risin (Subwave rmx) (Moving Shadow 2003)",
+      "expected": {
+        "artists": [
+          "Technical Itch",
+          "Mc Jakes"
+        ],
+        "title": "The Risin (Moving Shadow 2003)",
+        "year": null,
+        "versions": [
+          {
+            "type": "remix",
+            "artists": [
+              "Subwave"
+            ]
+          }
+        ]
+      },
+      "rules": [
+        "R5.8",
+        "R5.5",
+        "R5.7"
+      ],
+      "source": "neuropunk-web: components/release/Tracklist.cy.tsx",
+      "note": "'(Moving Shadow 2003)' is not a label/year group: Unknown, stays in the title."
+    },
+    {
+      "id": "regressions-neuropunk-web-059",
+      "input": "Noisia - Hand Gestures (Sunchase & Nickbee rmx)",
+      "expected": {
+        "artists": [
+          "Noisia"
+        ],
+        "title": "Hand Gestures",
+        "versions": [
+          {
+            "type": "remix",
+            "artists": [
+              "Sunchase",
+              "Nickbee"
+            ]
+          }
+        ]
+      },
+      "rules": [
+        "R5.7",
+        "R7.3"
+      ],
+      "source": "neuropunk-web: components/release/Tracklist.cy.tsx"
+    },
+    {
+      "id": "regressions-neuropunk-web-060",
+      "input": "Place 2b & Paimon & Malk - Pulsar (Nickbee Remix)",
+      "expected": {
+        "artists": [
+          "Place 2b",
+          "Paimon",
+          "Malk"
+        ],
+        "title": "Pulsar",
+        "versions": [
+          {
+            "type": "remix",
+            "artists": [
+              "Nickbee"
+            ]
+          }
+        ]
+      },
+      "rules": [
+        "R7.3",
+        "R5.7"
+      ],
+      "source": "neuropunk-web: components/release/Tracklist.cy.tsx"
+    },
+    {
+      "id": "regressions-neuropunk-web-061",
+      "input": "Teddy Killerz - Higher Ground (ft. Pat Fulgoni)",
+      "expected": {
+        "artists": [
+          {
+            "name": "Teddy Killerz",
+            "role": "primary",
+            "joiner": null,
+            "source": "artist"
+          },
+          {
+            "name": "Pat Fulgoni",
+            "role": "featured",
+            "joiner": "ft.",
+            "source": "title"
+          }
+        ],
+        "title": "Higher Ground"
+      },
+      "rules": [
+        "R5.2"
+      ],
+      "source": "neuropunk-web: components/release/Tracklist.cy.tsx"
+    },
+    {
+      "id": "regressions-neuropunk-web-062",
+      "input": "oneBYone - Give Me Your Chance (ft. Alaine)",
+      "expected": {
+        "artists": [
+          {
+            "name": "oneBYone",
+            "role": "primary",
+            "joiner": null,
+            "source": "artist"
+          },
+          {
+            "name": "Alaine",
+            "role": "featured",
+            "joiner": "ft.",
+            "source": "title"
+          }
+        ],
+        "title": "Give Me Your Chance"
+      },
+      "rules": [
+        "R6.6",
+        "R5.2"
+      ],
+      "source": "neuropunk-web: components/release/Tracklist.cy.tsx",
+      "note": "'BY' inside a word never splits."
+    },
+    {
+      "id": "regressions-neuropunk-web-063",
+      "input": "Sunchase - As We Look (Teddy Killerz & Malk rmx)",
+      "expected": {
+        "artists": [
+          "Sunchase"
+        ],
+        "title": "As We Look",
+        "versions": [
+          {
+            "type": "remix",
+            "artists": [
+              "Teddy Killerz",
+              "Malk"
+            ]
+          }
+        ]
+      },
+      "rules": [
+        "R5.7",
+        "R7.3"
+      ],
+      "source": "neuropunk-web: components/release/Tracklist.cy.tsx"
+    },
+    {
+      "id": "regressions-neuropunk-web-064",
+      "input": "The Brig, Rob Gasser, Ashley Apollodor - Take Me A Fall (Mewone! remix)",
+      "expected": {
+        "artists": [
+          {
+            "name": "The Brig",
+            "role": "primary",
+            "joiner": null,
+            "source": "artist"
+          },
+          {
+            "name": "Rob Gasser",
+            "role": "primary",
+            "joiner": ",",
+            "source": "artist"
+          },
+          {
+            "name": "Ashley Apollodor",
+            "role": "primary",
+            "joiner": ",",
+            "source": "artist"
+          }
+        ],
+        "title": "Take Me A Fall",
+        "versions": [
+          {
+            "type": "remix",
+            "artists": [
+              "Mewone!"
+            ]
+          }
+        ]
+      },
+      "rules": [
+        "R7.3",
+        "R5.7"
+      ],
+      "source": "neuropunk-web: components/release/Tracklist.cy.tsx"
+    },
+    {
+      "id": "regressions-neuropunk-web-065",
+      "input": "Nuvertal - Things (Original Mix)",
+      "expected": {
+        "artists": [
+          "Nuvertal"
+        ],
+        "title": "Things",
+        "versions": [
+          {
+            "type": "original",
+            "artists": [],
+            "modifiers": []
+          }
+        ]
+      },
+      "rules": [
+        "R5.7"
+      ],
+      "source": "neuropunk-web: helpers/track.tsx",
+      "note": "'original' was an old TITLE_KEYWORD; generic 'Mix' after a type-capable modifier takes the modifier's type."
+    },
+    {
+      "id": "regressions-neuropunk-web-066",
+      "input": "2 Unlimited - No Limit",
+      "expected": {
+        "position": null,
+        "artists": [
+          "2 Unlimited"
+        ],
+        "title": "No Limit"
+      },
+      "rules": [
+        "R4.2",
+        "R4.3"
+      ],
+      "source": "neuropunk-web: helpers/track.tsx",
+      "note": "Old getArtistString stripped /^[0-9]+\\.?\\s+/ and broke names like '2 Unlimited'; R4.2(d) never takes it as a position."
+    }
+  ]
+}

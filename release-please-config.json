@@ -1,0 +1,42 @@
+{
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
+  "include-component-in-tag": true,
+  "tag-separator": "-",
+  "bump-minor-pre-major": true,
+  "bump-patch-for-minor-pre-major": false,
+  "pull-request-header": ":robot: Merging this PR tags the release, publishes a GitHub Release with these notes and publishes to npm.",
+  "changelog-sections": [
+    { "type": "feat", "section": "Features" },
+    { "type": "fix", "section": "Bug Fixes" },
+    { "type": "perf", "section": "Performance" },
+    { "type": "revert", "section": "Reverts" },
+    { "type": "docs", "section": "Documentation" },
+    { "type": "refactor", "section": "Refactoring", "hidden": true },
+    { "type": "test", "section": "Tests", "hidden": true },
+    { "type": "build", "section": "Build", "hidden": true },
+    { "type": "ci", "section": "CI", "hidden": true },
+    { "type": "chore", "section": "Miscellaneous", "hidden": true }
+  ],
+  "packages": {
+    "js": {
+      "release-type": "node",
+      "component": "js",
+      "package-name": "trackparse",
+      "changelog-path": "CHANGELOG.md",
+      "extra-files": [{ "type": "generic", "path": "src/data.generated.ts" }]
+    },
+    "spec": {
+      "release-type": "simple",
+      "component": "spec",
+      "version-file": "VERSION",
+      "changelog-path": "CHANGELOG.md"
+    }
+  },
+  "plugins": [
+    {
+      "type": "linked-versions",
+      "groupName": "trackparse",
+      "components": ["js", "spec"]
+    }
+  ]
+}

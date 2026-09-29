@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/4matic/trackparse/spec/schema/options.schema.json",
+  "title": "Options",
+  "$defs": {
+    "parseOptions": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "mode": { "enum": ["auto", "clean", "youtube", "filename"], "default": "auto" },
+        "uploader": { "type": "string", "description": "youtube mode: channel name used as artist when no separator is found." },
+        "knownArtists": { "type": "array", "items": { "type": "string" }, "description": "Names that must never be split (e.g. 'Chase & Status')." },
+        "splitAnd": { "enum": ["auto", "always", "never"], "default": "auto" },
+        "keywords": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Extensions to the built-in vocabulary (additive only in v1).",
+          "properties": {
+            "versionHeads": { "type": "object", "additionalProperties": { "type": "string" } },
+            "descriptors": { "type": "array", "items": { "type": "string" } },
+            "genres": { "type": "array", "items": { "type": "string" } },
+            "junk": { "type": "object", "additionalProperties": { "enum": ["video", "audio", "lyrics", "quality", "promo", "platform", "label", "genre", "other"] } },
+            "featMarkers": { "type": "array", "items": { "type": "string" } }
+          }
+        }
+      }
+    },
+    "formatOptions": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "feat": { "enum": ["source", "artist", "title", "omit"], "default": "source" },
+        "featMarker": { "type": "string" },
+        "joiners": { "enum": ["original", "canonical"], "default": "original" },
+        "versions": { "enum": ["all", "none"], "default": "all" },
+        "producers": { "type": "boolean", "default": true },
+        "position": { "type": "boolean", "default": false }
+      }
+    }
+  }
+}

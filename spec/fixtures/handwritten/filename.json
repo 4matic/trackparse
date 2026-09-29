@@ -1,0 +1,357 @@
+{
+  "$schema": "../../schema/fixture-file.schema.json",
+  "description": "filename mode: extension stripping and auto-detection (R2.1, R2.3), underscores, filename-only positions (R4.2e)",
+  "defaults": { "fn": "parse", "options": { "mode": "auto" } },
+  "cases": [
+    {
+      "id": "filename-001",
+      "input": "01 - Noisia - Tentacles.mp3",
+      "match": "exact",
+      "expected": {
+        "input": "01 - Noisia - Tentacles.mp3",
+        "mode": "filename",
+        "position": { "raw": "01", "number": 1 },
+        "timestamp": null,
+        "artists": [
+          { "name": "Noisia", "role": "primary", "joiner": null, "source": "artist" }
+        ],
+        "title": "Tentacles",
+        "fullTitle": "Tentacles",
+        "versions": [],
+        "year": null,
+        "flags": { "explicit": false, "clean": false, "unknownArtist": false, "unknownTitle": false },
+        "junk": [],
+        "warnings": []
+      },
+      "rules": ["R2.1", "R2.3", "R4.2"],
+      "tags": ["extension", "position"]
+    },
+    {
+      "id": "filename-002",
+      "input": "01-track.mp3",
+      "expected": {
+        "mode": "filename",
+        "position": { "raw": "01", "number": 1 },
+        "artists": [],
+        "title": "track",
+        "warnings": ["noSeparator"]
+      },
+      "rules": ["R4.2", "R2.3"],
+      "tags": ["position"],
+      "note": "R4.2(e): digits + '-' + non-space."
+    },
+    {
+      "id": "filename-003",
+      "input": "01_track_name.mp3",
+      "match": "exact",
+      "expected": {
+        "input": "01_track_name.mp3",
+        "mode": "filename",
+        "position": { "raw": "01", "number": 1 },
+        "timestamp": null,
+        "artists": [],
+        "title": "track name",
+        "fullTitle": "track name",
+        "versions": [],
+        "year": null,
+        "flags": { "explicit": false, "clean": false, "unknownArtist": false, "unknownTitle": false },
+        "junk": [],
+        "warnings": ["noSeparator"]
+      },
+      "rules": ["R2.3", "R4.2"],
+      "tags": ["underscore", "position"],
+      "note": "No space and contains '_' -> underscores become spaces, then '01 ' is a zero-padded position."
+    },
+    {
+      "id": "filename-004",
+      "input": "3 My Song.flac",
+      "expected": {
+        "mode": "filename",
+        "position": { "raw": "3", "number": 3 },
+        "artists": [],
+        "title": "My Song"
+      },
+      "rules": ["R4.2"],
+      "tags": ["position"],
+      "note": "R4.2(e): unpadded number + space is a position in filename mode when no spaced dash remains."
+    },
+    {
+      "id": "filename-005",
+      "input": "2 Unlimited - No Limit.wav",
+      "expected": {
+        "mode": "filename",
+        "position": null,
+        "artists": ["2 Unlimited"],
+        "title": "No Limit"
+      },
+      "rules": ["R4.2", "R4.3"],
+      "tags": ["position", "digits"],
+      "note": "R4.2(e): remainder contains a spaced dash -> not a position."
+    },
+    {
+      "id": "filename-006",
+      "input": "Noisia - Tentacles (Remix).FLAC",
+      "expected": {
+        "mode": "filename",
+        "artists": ["Noisia"],
+        "title": "Tentacles",
+        "fullTitle": "Tentacles (Remix)",
+        "versions": [{ "type": "remix", "raw": "Remix", "artists": [], "delimiter": "(" }]
+      },
+      "rules": ["R2.1", "R2.3", "R5.7"],
+      "tags": ["extension", "case"],
+      "note": "Extension matched case-insensitively."
+    },
+    {
+      "id": "filename-007",
+      "input": "Noisia - Tentacles.txt",
+      "expected": { "mode": "clean", "artists": ["Noisia"], "title": "Tentacles.txt" },
+      "rules": ["R2.1"],
+      "tags": ["extension"],
+      "note": "'.txt' is not an audio/video extension: no filename mode, nothing stripped."
+    },
+    {
+      "id": "filename-008",
+      "input": "Noisia - Tentacles.txt",
+      "options": { "mode": "filename" },
+      "expected": { "mode": "filename", "artists": ["Noisia"], "title": "Tentacles.txt" },
+      "rules": ["R2.3"],
+      "tags": ["extension"],
+      "note": "Explicit filename mode still only strips known extensions."
+    },
+    {
+      "id": "filename-009",
+      "input": "Noisia - Tentacles.mp3",
+      "expected": { "mode": "filename", "position": null, "artists": ["Noisia"], "title": "Tentacles" },
+      "rules": ["R2.1", "R2.3"],
+      "tags": ["extension", "auto"]
+    },
+    {
+      "id": "filename-010",
+      "input": "Noisia_-_Tentacles.mp3",
+      "expected": { "mode": "filename", "artists": ["Noisia"], "title": "Tentacles", "warnings": [] },
+      "rules": ["R2.3", "R6.3"],
+      "tags": ["underscore"]
+    },
+    {
+      "id": "filename-011",
+      "input": "Noisia - Tentacles_VIP.mp3",
+      "expected": { "mode": "filename", "artists": ["Noisia"], "title": "Tentacles_VIP", "versions": [] },
+      "rules": ["R2.3"],
+      "tags": ["underscore"],
+      "note": "The string contains spaces, so '_' is kept."
+    },
+    {
+      "id": "filename-012",
+      "input": "03. Noisia - Tentacles.flac",
+      "expected": {
+        "mode": "filename",
+        "position": { "raw": "03", "number": 3 },
+        "artists": ["Noisia"],
+        "title": "Tentacles"
+      },
+      "rules": ["R4.2"],
+      "tags": ["position"]
+    },
+    {
+      "id": "filename-013",
+      "input": "03_noisia-tentacles.mp3",
+      "expected": {
+        "mode": "filename",
+        "position": { "raw": "03", "number": 3 },
+        "artists": ["noisia"],
+        "title": "tentacles",
+        "warnings": ["unspacedDashSplit"]
+      },
+      "rules": ["R2.3", "R4.2", "R6.7"],
+      "tags": ["underscore", "unspaced-dash"]
+    },
+    {
+      "id": "filename-014",
+      "input": "311 - Amber.mp3",
+      "expected": {
+        "mode": "filename",
+        "position": { "raw": "311", "number": 311 },
+        "artists": [],
+        "title": "Amber"
+      },
+      "rules": ["R4.2"],
+      "tags": ["position", "digits"],
+      "note": "Filename mode: 'N - ' is always a position (R4.2c), so the band 311 becomes position 311 here. Use knownArtists to keep it."
+    },
+    {
+      "id": "filename-015",
+      "input": "Noisia - Tentacles (Official Video).webm",
+      "expected": {
+        "mode": "filename",
+        "artists": ["Noisia"],
+        "title": "Tentacles",
+        "junk": [{ "raw": "Official Video", "kind": "video" }]
+      },
+      "rules": ["R2.1", "R8.1"],
+      "tags": ["extension", "junk"],
+      "note": "filename detection is checked before youtube; junk groups are still extracted."
+    },
+    {
+      "id": "filename-016",
+      "input": "10 Noisia - Tentacles.m4a",
+      "expected": {
+        "mode": "filename",
+        "position": null,
+        "artists": ["10 Noisia"],
+        "title": "Tentacles"
+      },
+      "rules": ["R4.2"],
+      "tags": ["position", "digits"],
+      "note": "Filename mode: 'N word' is a position only if the remainder has no spaced dash (R4.2e)."
+    },
+    {
+      "id": "filename-017",
+      "input": "01 - Noisia - Tentacles",
+      "options": { "mode": "filename" },
+      "expected": {
+        "mode": "filename",
+        "position": { "raw": "01", "number": 1 },
+        "artists": ["Noisia"],
+        "title": "Tentacles"
+      },
+      "rules": ["R2.3", "R4.2"],
+      "tags": ["position"],
+      "note": "Explicit filename mode without an extension."
+    },
+    {
+      "id": "filename-018",
+      "input": "01.Noisia - Tentacles.mp3",
+      "expected": {
+        "position": { "raw": "01", "number": 1 },
+        "artists": ["Noisia"],
+        "title": "Tentacles"
+      },
+      "rules": ["R4.2"],
+      "tags": ["position"],
+      "note": "R4.2(e): '01.' directly followed by a non-space."
+    },
+    {
+      "id": "filename-019",
+      "input": "Mr. Oizo - Flat Beat.mp3",
+      "expected": { "mode": "filename", "artists": ["Mr. Oizo"], "title": "Flat Beat" },
+      "rules": ["R2.3", "R7.4"],
+      "tags": ["extension", "dots"],
+      "note": "Only the final '.<ext>' is stripped."
+    },
+    {
+      "id": "filename-020",
+      "input": "Tentacles.opus",
+      "expected": { "mode": "filename", "artists": [], "title": "Tentacles", "warnings": ["noSeparator"] },
+      "rules": ["R2.3", "R6.8"],
+      "tags": ["extension"]
+    },
+    {
+      "id": "filename-021",
+      "input": "01 - Tentacles.mp3",
+      "expected": {
+        "position": { "raw": "01", "number": 1 },
+        "artists": [],
+        "title": "Tentacles",
+        "warnings": ["noSeparator"]
+      },
+      "rules": ["R4.2"],
+      "tags": ["position"],
+      "note": "Zero-padded number: the following '- ' is consumed with the position."
+    },
+    {
+      "id": "filename-022",
+      "input": "01_-_Noisia_-_Tentacles.mp3",
+      "expected": {
+        "position": { "raw": "01", "number": 1 },
+        "artists": ["Noisia"],
+        "title": "Tentacles"
+      },
+      "rules": ["R2.3", "R4.2"],
+      "tags": ["underscore", "position"]
+    },
+    {
+      "id": "filename-023",
+      "input": "Noisia - Tentacles.mp3.txt",
+      "expected": { "mode": "clean", "artists": ["Noisia"], "title": "Tentacles.mp3.txt" },
+      "rules": ["R2.1"],
+      "tags": ["extension"],
+      "note": "Only the final extension counts."
+    },
+    {
+      "id": "filename-024",
+      "input": "Blink-182-All The Small Things.mp3",
+      "expected": {
+        "mode": "filename",
+        "artists": ["Blink-182"],
+        "title": "All The Small Things",
+        "warnings": ["unspacedDashSplit"]
+      },
+      "rules": ["R6.7"],
+      "tags": ["unspaced-dash", "digits"],
+      "note": "'-182' is rejected as a candidate (right neighbour is not a letter)."
+    },
+    {
+      "id": "filename-025",
+      "input": "Noisia - Tentacles.MP3",
+      "options": { "mode": "clean" },
+      "expected": { "mode": "clean", "artists": ["Noisia"], "title": "Tentacles.MP3" },
+      "rules": ["R2.1", "R2.3"],
+      "tags": ["extension"],
+      "note": "Extensions are only stripped in filename mode."
+    },
+    {
+      "id": "filename-026",
+      "input": "Noisia - Stigma.MP3",
+      "expected": {
+        "mode": "filename",
+        "artists": ["Noisia"],
+        "title": "Stigma"
+      },
+      "rules": ["R2.1", "R2.3"],
+      "tags": ["extension", "case"],
+      "note": "Extension matching is ASCII case-insensitive."
+    },
+    {
+      "id": "filename-027",
+      "input": "Noisia - Stigma .flac",
+      "expected": {
+        "mode": "filename",
+        "artists": ["Noisia"],
+        "title": "Stigma"
+      },
+      "rules": ["R2.3"],
+      "tags": ["extension", "trim"],
+      "note": "R2.3 trims after stripping the extension."
+    },
+    {
+      "id": "filename-028",
+      "input": "7 - Seven Nation Army.mp3",
+      "expected": {
+        "mode": "filename",
+        "position": { "raw": "7", "number": 7 },
+        "artists": [],
+        "title": "Seven Nation Army"
+      },
+      "rules": ["R4.2"],
+      "tags": ["position"],
+      "note": "Filename mode: 'N - ' is always a position (R4.2c)."
+    },
+    {
+      "id": "filename-029",
+      "input": "311 - Amber.mp3",
+      "options": {
+        "knownArtists": ["311"]
+      },
+      "expected": {
+        "mode": "filename",
+        "position": null,
+        "artists": ["311"],
+        "title": "Amber"
+      },
+      "rules": ["R4.2", "R7.3"],
+      "tags": ["position", "known-artists"],
+      "note": "A knownArtists match at the start blocks every R4.2 form."
+    }
+  ]
+}

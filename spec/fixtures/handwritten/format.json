@@ -1,0 +1,315 @@
+{
+  "$schema": "../../schema/fixture-file.schema.json",
+  "description": "format(parse(input)) with formatOptions (R11): defaults, feat placement, featMarker, canonical joiners, versions, producers, position",
+  "defaults": { "fn": "format", "options": { "mode": "clean" } },
+  "cases": [
+    {
+      "id": "format-001",
+      "input": "Noisia - Tentacles",
+      "expected": "Noisia - Tentacles",
+      "rules": ["R11.4"],
+      "tags": ["defaults", "round-trip"]
+    },
+    {
+      "id": "format-002",
+      "input": "Sub Focus ft. Alice Gold & Kele - Out the Blue (Wilkinson Remix)",
+      "expected": "Sub Focus ft. Alice Gold & Kele - Out the Blue (Wilkinson Remix)",
+      "rules": ["R11.1", "R11.2", "R11.3"],
+      "tags": ["defaults", "round-trip", "feat"]
+    },
+    {
+      "id": "format-003",
+      "input": "Noisia & The Upbeats vs Phace, Mefjus - Dead Limit",
+      "expected": "Noisia & The Upbeats vs Phace, Mefjus - Dead Limit",
+      "rules": ["R11.1"],
+      "tags": ["defaults", "round-trip", "joiner"],
+      "note": "Constructed credits. ',' renders as ', ' (no space before)."
+    },
+    {
+      "id": "format-004",
+      "input": "Sub Focus - Out the Blue ft. Alice Gold",
+      "expected": "Sub Focus - Out the Blue (ft. Alice Gold)",
+      "rules": ["R11.2"],
+      "tags": ["feat", "source"],
+      "note": "feat 'source': title-sourced featured credits go into a title group."
+    },
+    {
+      "id": "format-005",
+      "input": "Sub Focus - Out the Blue ft. Alice Gold",
+      "formatOptions": { "feat": "artist" },
+      "expected": "Sub Focus ft. Alice Gold - Out the Blue",
+      "rules": ["R11.2"],
+      "tags": ["feat"]
+    },
+    {
+      "id": "format-006",
+      "input": "Sub Focus ft. Alice Gold - Out the Blue",
+      "formatOptions": { "feat": "title" },
+      "expected": "Sub Focus - Out the Blue (ft. Alice Gold)",
+      "rules": ["R11.2"],
+      "tags": ["feat"]
+    },
+    {
+      "id": "format-007",
+      "input": "Sub Focus ft. Alice Gold - Out the Blue",
+      "formatOptions": { "feat": "omit" },
+      "expected": "Sub Focus - Out the Blue",
+      "rules": ["R11.2"],
+      "tags": ["feat"]
+    },
+    {
+      "id": "format-008",
+      "input": "Sub Focus ft. Alice Gold & Kele - Out the Blue",
+      "formatOptions": { "featMarker": "feat." },
+      "expected": "Sub Focus feat. Alice Gold & Kele - Out the Blue",
+      "rules": ["R11.2"],
+      "tags": ["feat", "featMarker"],
+      "note": "Only the first featured joiner is overridden."
+    },
+    {
+      "id": "format-009",
+      "input": "Sub Focus ft. Alice Gold - Out the Blue",
+      "formatOptions": { "feat": "title", "featMarker": "with" },
+      "expected": "Sub Focus - Out the Blue (with Alice Gold)",
+      "rules": ["R11.2"],
+      "tags": ["feat", "featMarker"]
+    },
+    {
+      "id": "format-010",
+      "input": "Wilkinson - Afterglow feat. Becky Hill & Tom Cane (Sub Focus Remix)",
+      "expected": "Wilkinson - Afterglow (feat. Becky Hill & Tom Cane) (Sub Focus Remix)",
+      "rules": ["R11.2", "R11.3"],
+      "tags": ["feat", "order"],
+      "note": "Title, then the title-featured group, then versions."
+    },
+    {
+      "id": "format-011",
+      "input": "Sub Focus ft. Kele - Turn Back Time feat. Alice Gold",
+      "expected": "Sub Focus ft. Kele - Turn Back Time (feat. Alice Gold)",
+      "rules": ["R11.2"],
+      "tags": ["feat", "source"]
+    },
+    {
+      "id": "format-012",
+      "input": "Armin van Buuren vs Vini Vici - Great Spirit",
+      "formatOptions": { "joiners": "canonical" },
+      "expected": "Armin van Buuren vs. Vini Vici - Great Spirit",
+      "rules": ["R11.5"],
+      "tags": ["canonical", "vs"]
+    },
+    {
+      "id": "format-013",
+      "input": "Armin van Buuren VS. Vini Vici - Great Spirit",
+      "expected": "Armin van Buuren VS. Vini Vici - Great Spirit",
+      "rules": ["R11.1"],
+      "tags": ["original", "vs"],
+      "note": "Default joiners 'original' keep the raw text and case."
+    },
+    {
+      "id": "format-014",
+      "input": "Dimitri Vegas & Like Mike versus Diplo - Hey Baby",
+      "formatOptions": { "joiners": "canonical" },
+      "expected": "Dimitri Vegas & Like Mike vs. Diplo - Hey Baby",
+      "rules": ["R11.5"],
+      "tags": ["canonical", "vs"]
+    },
+    {
+      "id": "format-015",
+      "input": "Dimension; Culture Shock - Desire",
+      "formatOptions": { "joiners": "canonical" },
+      "expected": "Dimension, Culture Shock - Desire",
+      "rules": ["R11.5", "R11.1"],
+      "tags": ["canonical", "tight"]
+    },
+    {
+      "id": "format-016",
+      "input": "Dimension; Culture Shock - Desire",
+      "expected": "Dimension; Culture Shock - Desire",
+      "rules": ["R11.1"],
+      "tags": ["original", "tight"],
+      "note": "Original joiners: a tight joiner renders as the raw character + a space (R11.1)."
+    },
+    {
+      "id": "format-017",
+      "input": "Wilkinson, Sub Focus and Dimension - Illuminate",
+      "formatOptions": { "joiners": "canonical" },
+      "expected": "Wilkinson, Sub Focus & Dimension - Illuminate",
+      "rules": ["R11.5"],
+      "tags": ["canonical", "and"]
+    },
+    {
+      "id": "format-018",
+      "input": "Wilkinson, Sub Focus and Dimension - Illuminate",
+      "expected": "Wilkinson, Sub Focus and Dimension - Illuminate",
+      "rules": ["R11.1", "R11.6"],
+      "tags": ["original", "and", "round-trip"]
+    },
+    {
+      "id": "format-019",
+      "input": "Sub Focus ft. Alice Gold - Out the Blue",
+      "formatOptions": { "joiners": "canonical" },
+      "expected": "Sub Focus feat. Alice Gold - Out the Blue",
+      "rules": ["R11.5"],
+      "tags": ["canonical", "feat"],
+      "note": "Feat markers become featCanonical."
+    },
+    {
+      "id": "format-020",
+      "input": "Armin van Buuren presents Rising Star - Safe Inside You",
+      "formatOptions": { "joiners": "canonical" },
+      "expected": "Armin van Buuren pres. Rising Star - Safe Inside You",
+      "rules": ["R11.5"],
+      "tags": ["canonical", "presents"]
+    },
+    {
+      "id": "format-021",
+      "input": "Dimension × Culture Shock - Rezonate",
+      "formatOptions": { "joiners": "canonical" },
+      "expected": "Dimension x Culture Shock - Rezonate",
+      "rules": ["R11.5"],
+      "tags": ["canonical", "x"]
+    },
+    {
+      "id": "format-022",
+      "input": "Sigala with Ella Eyre - Came Here for Love",
+      "formatOptions": { "joiners": "canonical" },
+      "expected": "Sigala with Ella Eyre - Came Here for Love",
+      "rules": ["R11.5"],
+      "tags": ["canonical", "with"]
+    },
+    {
+      "id": "format-023",
+      "input": "Noisia - Tentacles (Phace Remix)",
+      "formatOptions": { "versions": "none" },
+      "expected": "Noisia - Tentacles",
+      "rules": ["R11.3"],
+      "tags": ["versions"]
+    },
+    {
+      "id": "format-024",
+      "input": "deadmau5 - Strobe - Radio Edit",
+      "expected": "deadmau5 - Strobe - Radio Edit",
+      "rules": ["R11.3", "R9.4"],
+      "tags": ["versions", "delimiter", "round-trip"]
+    },
+    {
+      "id": "format-025",
+      "input": "deadmau5 - Strobe - Radio Edit",
+      "formatOptions": { "versions": "none" },
+      "expected": "deadmau5 - Strobe",
+      "rules": ["R11.3"],
+      "tags": ["versions", "delimiter"]
+    },
+    {
+      "id": "format-026",
+      "input": "Noisia - Tentacles [Phace Remix] {VIP}",
+      "expected": "Noisia - Tentacles [Phace Remix] {VIP}",
+      "rules": ["R11.3", "R9.4"],
+      "tags": ["versions", "delimiter", "round-trip"],
+      "note": "Constructed. Each version keeps its own delimiter."
+    },
+    {
+      "id": "format-027",
+      "input": "Future - Mask Off (prod. Metro Boomin)",
+      "expected": "Future - Mask Off (prod. Metro Boomin)",
+      "rules": ["R11.3"],
+      "tags": ["producers", "round-trip"]
+    },
+    {
+      "id": "format-028",
+      "input": "Future - Mask Off (prod. Metro Boomin)",
+      "formatOptions": { "producers": false },
+      "expected": "Future - Mask Off",
+      "rules": ["R11.3"],
+      "tags": ["producers"]
+    },
+    {
+      "id": "format-029",
+      "input": "Future - Mask Off [Prod. by Metro Boomin] (Remix)",
+      "expected": "Future - Mask Off (Remix) (Prod. by Metro Boomin)",
+      "rules": ["R11.3"],
+      "tags": ["producers", "order"],
+      "note": "Producers always render last, in parentheses, with the marker as written."
+    },
+    {
+      "id": "format-030",
+      "input": "01. Noisia - Tentacles",
+      "formatOptions": { "position": true },
+      "expected": "01. Noisia - Tentacles",
+      "rules": ["R11.4"],
+      "tags": ["position"]
+    },
+    {
+      "id": "format-031",
+      "input": "01. Noisia - Tentacles",
+      "expected": "Noisia - Tentacles",
+      "rules": ["R11.4"],
+      "tags": ["position", "defaults"]
+    },
+    {
+      "id": "format-032",
+      "input": "1) Intro",
+      "formatOptions": { "position": true },
+      "expected": "1. Intro",
+      "rules": ["R11.4", "R4.2"],
+      "tags": ["position"]
+    },
+    {
+      "id": "format-033",
+      "input": "Noisia - Tentacles",
+      "formatOptions": { "position": true },
+      "expected": "Noisia - Tentacles",
+      "rules": ["R11.4"],
+      "tags": ["position"],
+      "note": "No position parsed -> no prefix."
+    },
+    {
+      "id": "format-034",
+      "input": "Noisia - Tentacles (Official Video) (2010) (Explicit)",
+      "expected": "Noisia - Tentacles",
+      "rules": ["R11.3", "R9.4"],
+      "tags": ["junk", "year", "flags"],
+      "note": "Junk, year and flags are not rendered."
+    },
+    {
+      "id": "format-035",
+      "input": "Hey Jude - Remastered 2015",
+      "expected": "Hey Jude - Remastered 2015",
+      "rules": ["R11.4", "R6.2"],
+      "tags": ["no-artist", "delimiter"],
+      "note": "No artist credits -> only the title part."
+    },
+    {
+      "id": "format-036",
+      "input": "ID - ID",
+      "expected": "ID",
+      "rules": ["R11.4"],
+      "tags": ["no-artist", "id"]
+    },
+    {
+      "id": "format-037",
+      "input": "Dimension; Culture Shock - Desire",
+      "formatOptions": { "joiners": "canonical" },
+      "expected": "Dimension, Culture Shock - Desire",
+      "rules": ["R11.5", "R11.1"],
+      "tags": ["canonical", "tight"]
+    },
+    {
+      "id": "format-038",
+      "input": "Noisia, Phace; Mefjus - Stigma",
+      "expected": "Noisia, Phace; Mefjus - Stigma",
+      "rules": ["R11.1"],
+      "tags": ["original", "tight"],
+      "note": "Tight joiners render as the raw character + a space."
+    },
+    {
+      "id": "format-039",
+      "input": "Noisia - Stigma (with Phace)",
+      "formatOptions": { "joiners": "canonical" },
+      "expected": "Noisia - Stigma (feat. Phace)",
+      "rules": ["R11.5"],
+      "tags": ["canonical", "with"],
+      "note": "'with' becomes feat. only as the marker starting a featured list."
+    }
+  ]
+}

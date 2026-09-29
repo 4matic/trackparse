@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/4matic/trackparse/spec/schema/fixture-file.schema.json",
+  "title": "Fixture file",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["description", "cases"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "description": { "type": "string" },
+    "defaults": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "fn": { "$ref": "#/$defs/fn" },
+        "options": { "type": "object" },
+        "formatOptions": { "type": "object" }
+      }
+    },
+    "cases": { "type": "array", "items": { "$ref": "#/$defs/case" } }
+  },
+  "$defs": {
+    "fn": { "enum": ["parse", "parseArtists", "format", "normalize"] },
+    "case": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "input"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9:._-]*$" },
+        "fn": { "$ref": "#/$defs/fn" },
+        "input": { "type": "string" },
+        "options": { "type": "object" },
+        "formatOptions": { "type": "object" },
+        "expected": { "description": "Partial expectation (see spec/fixtures/README.md). For fn=parse an object; parseArtists an array; format/normalize a string." },
+        "expectedAny": { "type": "array", "minItems": 2, "description": "status=ambiguous: case passes if any entry matches." },
+        "match": { "enum": ["partial", "exact"], "default": "partial" },
+        "status": { "enum": ["pass", "xfail", "ambiguous"], "default": "pass" },
+        "rules": { "type": "array", "items": { "type": "string", "pattern": "^R[0-9]+(\\.[0-9]+[a-z]?)*$" } },
+        "tags": { "type": "array", "items": { "type": "string" } },
+        "source": { "type": "string" },
+        "note": { "type": "string" }
+      },
+      "allOf": [
+        { "if": { "properties": { "status": { "const": "ambiguous" } }, "required": ["status"] }, "then": { "required": ["expectedAny"] }, "else": { "required": ["expected"] } }
+      ]
+    }
+  }
+}

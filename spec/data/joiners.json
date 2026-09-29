@@ -1,0 +1,24 @@
+{
+  "$comment": "Artist joiners (SPEC.md R7.3). 'spaced' joiners need whitespace (or string edge) on both sides and match case-insensitively as whole words. 'tight' joiners may have optional whitespace around them. 'canonical' is used by format({ joiners: 'canonical' }).",
+  "spaced": [
+    { "raw": "&", "canonical": "&" },
+    { "raw": "and", "canonical": "&", "kind": "and" },
+    { "raw": "x", "canonical": "x", "caseSensitive": true },
+    { "raw": "×", "canonical": "x" },
+    { "raw": "vs.", "canonical": "vs." },
+    { "raw": "vs", "canonical": "vs." },
+    { "raw": "versus", "canonical": "vs." },
+    { "raw": "/", "canonical": "/" },
+    { "raw": "+", "canonical": "+" },
+    { "raw": "with", "canonical": "with" },
+    { "raw": "meets", "canonical": "meets" },
+    { "raw": "pres.", "canonical": "pres." },
+    { "raw": "presents", "canonical": "pres." },
+    { "raw": "b2b", "canonical": "b2b" }
+  ],
+  "tight": [
+    { "raw": ",", "canonical": "," },
+    { "raw": ";", "canonical": "," }
+  ],
+  "featCanonical": "feat."
+}
