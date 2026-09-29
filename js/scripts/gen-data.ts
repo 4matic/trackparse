@@ -39,7 +39,7 @@ function render(): string {
     "// GENERATED from spec/data — do not edit. Run `pnpm gen:data` to regenerate.",
     "/* eslint-disable */",
     "",
-    `export const SPEC_VERSION = ${JSON.stringify(version)};`,
+    `export const SPEC_VERSION = ${JSON.stringify(version)}; // x-release-please-version`,
     "",
   ];
   for (const file of files) {

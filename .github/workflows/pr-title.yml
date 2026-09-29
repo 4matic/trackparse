@@ -1,0 +1,42 @@
+name: pr-title
+
+# PRs are squash-merged, so the PR title becomes the commit that release-please reads.
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+
+permissions:
+  pull-requests: read
+
+jobs:
+  conventional-title:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: amannn/action-semantic-pull-request@v5
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          types: |
+            feat
+            fix
+            perf
+            revert
+            docs
+            refactor
+            test
+            build
+            ci
+            chore
+          scopes: |
+            js
+            spec
+            generator
+            fixtures
+            python
+            rust
+            ci
+            deps
+            release
+            main
+          requireScope: false

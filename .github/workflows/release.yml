@@ -1,0 +1,123 @@
+name: release
+
+# release-please keeps a "chore: release" PR up to date from conventional commits on main.
+# Merging that PR tags js-vX.Y.Z / spec-vX.Y.Z, creates the GitHub Releases, and publishes to npm.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    outputs:
+      js_release_created: ${{ steps.release.outputs['js--release_created'] }}
+      js_tag_name: ${{ steps.release.outputs['js--tag_name'] }}
+      js_version: ${{ steps.release.outputs['js--version'] }}
+    steps:
+      - uses: googleapis/release-please-action@v4
+        id: release
+        with:
+          # A PAT or GitHub App token lets CI run on the release PR; GITHUB_TOKEN-created PRs don't trigger workflows.
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN || github.token }}
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+
+  publish-npm:
+    needs: release-please
+    if: needs.release-please.outputs.js_release_created == 'true'
+    runs-on: ubuntu-latest
+    environment:
+      name: npm
+      url: https://www.npmjs.com/package/trackparse/v/${{ needs.release-please.outputs.js_version }}
+    permissions:
+      contents: write # upload the tarball to the GitHub Release
+      id-token: write # npm trusted publishing (OIDC) + provenance
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.release-please.outputs.js_tag_name }}
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          registry-url: https://registry.npmjs.org
+      # Trusted publishing needs npm >= 11.5.1.
+      - run: npm install -g npm@latest
+      - run: pnpm install --frozen-lockfile
+
+      - name: Verify versions are in sync
+        env:
+          TAG_VERSION: ${{ needs.release-please.outputs.js_version }}
+        run: |
+          js_version=$(node -p "require('./js/package.json').version")
+          spec_version=$(cat spec/VERSION)
+          tag_version="$TAG_VERSION"
+          echo "js=$js_version spec=$spec_version tag=$tag_version"
+          test "$js_version" = "$tag_version"
+          test "$spec_version" = "$tag_version"
+          pnpm --filter trackparse gen:data:check
+
+      - name: Test and build
+        run: |
+          pnpm --filter trackparse lint
+          pnpm --filter trackparse typecheck
+          pnpm --filter trackparse test
+          pnpm --filter trackparse build
+
+      - name: Package checks
+        working-directory: js
+        run: |
+          pnpm exec publint
+          pnpm exec attw --pack . --profile node16
+          npm pack
+          ls -l trackparse-*.tgz
+
+      - name: Publish to npm
+        working-directory: js
+        env:
+          # Only needed until trusted publishing is configured on npmjs.com (first release).
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          # Provenance requires a public repository.
+          PROVENANCE: ${{ github.event.repository.private == false && '--provenance' || '' }}
+        run: npm publish trackparse-*.tgz --access public $PROVENANCE
+
+      - name: Attach tarball and install notes to the GitHub Release
+        working-directory: js
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.release-please.outputs.js_tag_name }}
+          VERSION: ${{ needs.release-please.outputs.js_version }}
+        run: |
+          gh release upload "$TAG" trackparse-*.tgz --clobber
+          highlights="../.github/release-notes/${VERSION}.md"
+          : > notes.md
+          if [ -f "$highlights" ]; then
+            cat "$highlights" >> notes.md
+            printf '\n## Changelog\n\n' >> notes.md
+          fi
+          gh release view "$TAG" --json body --jq .body >> notes.md
+          cat >> notes.md <<EOF
+
+          ---
+
+          ### Install
+
+          \`\`\`sh
+          npm install trackparse@${VERSION}
+          \`\`\`
+
+          npm: https://www.npmjs.com/package/trackparse/v/${VERSION} · implements spec ${VERSION} ([SPEC.md](https://github.com/${GITHUB_REPOSITORY}/blob/${TAG}/spec/SPEC.md))
+          EOF
+          gh release edit "$TAG" --notes-file notes.md

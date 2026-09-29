@@ -6,6 +6,7 @@ on:
   pull_request:
     paths:
       - "spec/**"
+      - "js/package.json"
       - "js/scripts/gen-data.ts"
       - "js/src/data.generated.ts"
       - "pnpm-lock.yaml"
@@ -32,3 +33,9 @@ jobs:
         run: pnpm --filter @trackparse/fixture-gen test
       - name: Port data codegen is up to date
         run: pnpm --filter trackparse gen:data:check
+      - name: js and spec versions are linked
+        run: |
+          js_version=$(node -p "require('./js/package.json').version")
+          spec_version=$(cat spec/VERSION)
+          echo "js=$js_version spec=$spec_version"
+          test "$js_version" = "$spec_version"

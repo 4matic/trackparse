@@ -82,5 +82,6 @@ the rest.
 
 ## Changing expectations
 
-Any change to an existing `expected` value is a behaviour change. Bump the spec minor version
-(0.x) and add a line to `CHANGELOG.md`.
+Any change to an existing `expected` value is a behaviour change. Commit it as a `feat` (conventional
+commits); release-please then bumps the spec minor version (0.x) and writes the changelog. See
+[AGENTS.md](../../AGENTS.md#versioning-and-release).
