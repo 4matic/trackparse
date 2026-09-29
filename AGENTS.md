@@ -197,7 +197,7 @@ Releases are automated with [release-please](https://github.com/googleapis/relea
    bumps `js/package.json`, `spec/VERSION`, `SPEC_VERSION` in `js/src/data.generated.ts`, and
    writes `js/CHANGELOG.md` / `spec/CHANGELOG.md`.
 3. **Merging the release PR** creates tags `js-vX.Y.Z` and `spec-vX.Y.Z`, GitHub Releases with the
-   changelog as notes, then publishes `trackparse` to npm (with provenance once the repo is public),
+   changelog as notes, then publishes `trackparse` to npm via trusted publishing (OIDC, no stored token) with provenance,
    attaches the tarball and appends install instructions to the release. For a bigger release, add
    `.github/release-notes/X.Y.Z.md` beforehand: it is prepended to the notes.
 

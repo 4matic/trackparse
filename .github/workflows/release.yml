@@ -52,7 +52,6 @@ jobs:
         with:
           node-version: 22
           cache: pnpm
-          registry-url: https://registry.npmjs.org
       # Trusted publishing needs npm >= 11.5.1.
       - run: npm install -g npm@latest
       - run: pnpm install --frozen-lockfile
@@ -84,14 +83,11 @@ jobs:
           npm pack
           ls -l trackparse-*.tgz
 
+      # Trusted publishing (OIDC): npmjs.com trusts 4matic/trackparse, release.yml, environment "npm".
+      # No token is stored anywhere; npm also generates provenance automatically.
       - name: Publish to npm
         working-directory: js
-        env:
-          # Only needed until trusted publishing is configured on npmjs.com (first release).
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-          # Provenance requires a public repository.
-          PROVENANCE: ${{ github.event.repository.private == false && '--provenance' || '' }}
-        run: npm publish trackparse-*.tgz --access public $PROVENANCE
+        run: npm publish trackparse-*.tgz --access public --provenance
 
       - name: Attach tarball and install notes to the GitHub Release
         working-directory: js
