@@ -120,4 +120,5 @@ jobs:
 
           npm: https://www.npmjs.com/package/trackparse/v/${VERSION} · implements spec ${VERSION} ([SPEC.md](https://github.com/${GITHUB_REPOSITORY}/blob/${TAG}/spec/SPEC.md))
           EOF
-          gh release edit "$TAG" --notes-file notes.md
+          # js and spec release together; the npm package is the one to show as "Latest".
+          gh release edit "$TAG" --notes-file notes.md --latest
