@@ -55,7 +55,8 @@
     "typecheck": "tsc --noEmit",
     "lint": "biome check .",
     "conformance": "tsx scripts/conformance.ts",
-    "check:package": "publint && attw --pack ."
+    "check:package": "publint && attw --pack .",
+    "compat": "node scripts/compat.mjs"
   },
   "devDependencies": {
     "@arethetypeswrong/cli": "^0.18.5",

@@ -18,7 +18,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node: [20, 22, 24]
+        # pnpm 11 and vitest need Node >= 22; older runtimes are covered by the compat job.
+        node: [22, 24]
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -36,3 +37,27 @@ jobs:
         run: |
           pnpm exec publint
           pnpm exec attw --pack . --profile node16
+
+  # The package supports Node >= 18 (engines). Build with the toolchain on Node 22, then run every
+  # fixture against the built ESM and CJS entries on the older runtime with plain Node.
+  compat:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: [18, 20]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter trackparse build
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+      - name: Fixtures against dist on Node ${{ matrix.node }}
+        working-directory: js
+        run: node scripts/compat.mjs

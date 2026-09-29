@@ -42,7 +42,7 @@ js/                       npm package `trackparse`, reference implementation
   test/skip.json          port-specific known failures (only ever shrinks)
 python/                   planned PyPI port (README stub only)
 rust/                     planned crates.io port (README stub only)
-.github/workflows/        js.yml (lint, typecheck, test, build, package checks on Node 20/22/24),
+.github/workflows/        js.yml (full suite on Node 22/24; compat: fixtures vs built dist on Node 18/20),
                           spec.yml (fixture validation, generated/codegen drift, generator tests,
                           js/spec version link), release.yml (release-please + npm publish),
                           pr-title.yml (conventional PR titles)
@@ -117,6 +117,7 @@ Run from the repo root (pnpm workspace; Node ≥ 20 for development).
 | `pnpm build` | Build the npm package (`js/dist`) |
 | `pnpm lint` | Biome lint + format check |
 | `pnpm conformance` | JS pass rate per fixture file and per rule ID |
+| `pnpm --filter trackparse compat` | After `build`: every fixture against `dist/` (ESM + CJS) with plain Node; runs on Node 18+ |
 | `pnpm gen:data` | Regenerate `js/src/data.generated.ts` from `spec/data` + `spec/VERSION` |
 | `pnpm gen:fixtures` | Regenerate `spec/fixtures/generated/*.json` |
 | `pnpm gen:check` | Fail if generated fixtures or JS codegen are stale |
