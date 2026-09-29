@@ -1,0 +1,316 @@
+{
+  "$schema": "../../schema/fixture-file.schema.json",
+  "description": "Non-Latin scripts and Unicode edge cases: Cyrillic, diacritics, CJK, Greek, RTL, emoji, NFD input, Unicode-aware dedup keys",
+  "defaults": { "fn": "parse", "options": { "mode": "clean" } },
+  "cases": [
+    {
+      "id": "unicode-001",
+      "input": "Кино - Группа крови",
+      "match": "exact",
+      "expected": {
+        "input": "Кино - Группа крови",
+        "mode": "clean",
+        "position": null,
+        "timestamp": null,
+        "artists": [
+          { "name": "Кино", "role": "primary", "joiner": null, "source": "artist" }
+        ],
+        "title": "Группа крови",
+        "fullTitle": "Группа крови",
+        "versions": [],
+        "year": null,
+        "flags": { "explicit": false, "clean": false, "unknownArtist": false, "unknownTitle": false },
+        "junk": [],
+        "warnings": []
+      },
+      "rules": ["R6.3"],
+      "tags": ["cyrillic"]
+    },
+    {
+      "id": "unicode-002",
+      "input": "Катя Чехова - Я Робот (Chaser remix)",
+      "match": "exact",
+      "expected": {
+        "input": "Катя Чехова - Я Робот (Chaser remix)",
+        "mode": "clean",
+        "position": null,
+        "timestamp": null,
+        "artists": [
+          { "name": "Катя Чехова", "role": "primary", "joiner": null, "source": "artist" }
+        ],
+        "title": "Я Робот",
+        "fullTitle": "Я Робот (Chaser remix)",
+        "versions": [
+          {
+            "type": "remix",
+            "raw": "Chaser remix",
+            "artists": [{ "name": "Chaser", "role": "remixer", "joiner": null, "source": "version" }],
+            "modifiers": [],
+            "descriptor": null,
+            "year": null,
+            "unknownArtist": false,
+            "delimiter": "("
+          }
+        ],
+        "year": null,
+        "flags": { "explicit": false, "clean": false, "unknownArtist": false, "unknownTitle": false },
+        "junk": [],
+        "warnings": []
+      },
+      "rules": ["R5.7", "R9.4"],
+      "tags": ["cyrillic", "remix"],
+      "note": "Lowercase 'remix' head; raw keeps the case as written."
+    },
+    {
+      "id": "unicode-003",
+      "input": "А'Студио - Джулия (KASHIN VIP)",
+      "expected": {
+        "artists": ["А'Студио"],
+        "title": "Джулия",
+        "fullTitle": "Джулия (KASHIN VIP)",
+        "versions": [{ "type": "vip", "raw": "KASHIN VIP", "artists": ["KASHIN"], "delimiter": "(" }]
+      },
+      "rules": ["R5.7", "R7.4"],
+      "tags": ["cyrillic", "vip"],
+      "note": "The apostrophe inside the name is not a wrapping quote."
+    },
+    {
+      "id": "unicode-004",
+      "input": "Кино - Кукушка (Ремикс)",
+      "expected": { "artists": ["Кино"], "title": "Кукушка (Ремикс)", "versions": [] },
+      "rules": ["R5.8"],
+      "tags": ["cyrillic", "limitation"],
+      "note": "Vocabulary is ASCII only: Cyrillic 'Ремикс' is not a version head, the group stays verbatim."
+    },
+    {
+      "id": "unicode-005",
+      "input": "Кино - Звезда по имени Солнце (1989)",
+      "expected": { "artists": ["Кино"], "title": "Звезда по имени Солнце", "fullTitle": "Звезда по имени Солнце", "year": 1989 },
+      "rules": ["R5.5", "R8.1"],
+      "tags": ["cyrillic", "year"]
+    },
+    {
+      "id": "unicode-006",
+      "input": "Баста & Гуф - Заколоченное",
+      "expected": {
+        "artists": [
+          { "name": "Баста", "joiner": null },
+          { "name": "Гуф", "joiner": "&" }
+        ],
+        "title": "Заколоченное"
+      },
+      "rules": ["R7.3"],
+      "tags": ["cyrillic", "joiner"]
+    },
+    {
+      "id": "unicode-007",
+      "input": "ГИДРА & Гидра - Волк",
+      "expected": { "artists": [{ "name": "ГИДРА", "role": "primary", "joiner": null }], "title": "Волк" },
+      "rules": ["R9.2", "R0.4"],
+      "tags": ["cyrillic", "dedup"],
+      "note": "Dedup key uses full Unicode lowercase, not ASCII-only."
+    },
+    {
+      "id": "unicode-008",
+      "input": "Ёлка & Елка - Прованс",
+      "expected": { "artists": ["Ёлка"], "title": "Прованс" },
+      "rules": ["R9.2", "R0.4"],
+      "tags": ["cyrillic", "dedup"],
+      "note": "Ё decomposes to Е + U+0308, which the dedup key removes: the two spellings collide."
+    },
+    {
+      "id": "unicode-009",
+      "input": "Sigur Rós - Hoppípolla",
+      "expected": { "artists": ["Sigur Rós"], "title": "Hoppípolla" },
+      "rules": ["R1.1"],
+      "tags": ["diacritics"]
+    },
+    {
+      "id": "unicode-010",
+      "input": "Beyoncé feat. Jay-Z - Crazy in Love",
+      "expected": {
+        "artists": [
+          { "name": "Beyoncé", "role": "primary", "joiner": null },
+          { "name": "Jay-Z", "role": "featured", "joiner": "feat." }
+        ],
+        "title": "Crazy in Love"
+      },
+      "rules": ["R7.2"],
+      "tags": ["diacritics", "feat"]
+    },
+    {
+      "id": "unicode-011",
+      "input": "Major Lazer & DJ Snake feat. MØ - Lean On",
+      "expected": {
+        "artists": [
+          { "name": "Major Lazer", "role": "primary" },
+          { "name": "DJ Snake", "role": "primary" },
+          { "name": "MØ", "role": "featured", "joiner": "feat." }
+        ],
+        "title": "Lean On"
+      },
+      "rules": ["R7.2", "R7.3"],
+      "tags": ["diacritics", "feat"]
+    },
+    {
+      "id": "unicode-012",
+      "input": "Røyksopp - Eple",
+      "expected": { "artists": ["Røyksopp"], "title": "Eple" },
+      "rules": ["R6.3"],
+      "tags": ["diacritics"]
+    },
+    {
+      "id": "unicode-013",
+      "input": "Beyoncé - Halo",
+      "expected": { "input": "Beyoncé - Halo", "artists": ["Beyoncé"], "title": "Halo" },
+      "rules": ["R1.1"],
+      "tags": ["nfd", "normalization"],
+      "note": "NFD input: output names are NFC; input is kept untouched."
+    },
+    {
+      "id": "unicode-014",
+      "input": "Мумий Тролль - Владивосток 2000",
+      "expected": {
+        "artists": ["Мумий Тролль"],
+        "title": "Владивосток 2000",
+        "year": null
+      },
+      "rules": ["R1.1", "R5.5"],
+      "tags": ["nfd", "cyrillic"],
+      "note": "Decomposed 'и + U+0306' composes to 'й'. An unbracketed trailing number is not a year."
+    },
+    {
+      "id": "unicode-015",
+      "input": "Sigur Rós - Svefn-g-englar",
+      "expected": { "artists": ["Sigur Rós"], "title": "Svefn-g-englar" },
+      "rules": ["R1.1"],
+      "tags": ["nfd"]
+    },
+    {
+      "id": "unicode-016",
+      "input": "宇多田ヒカル - First Love",
+      "expected": { "artists": ["宇多田ヒカル"], "title": "First Love" },
+      "rules": ["R6.3"],
+      "tags": ["cjk"]
+    },
+    {
+      "id": "unicode-017",
+      "input": "宇多田ヒカル「First Love」",
+      "options": { "mode": "youtube" },
+      "expected": { "artists": ["宇多田ヒカル"], "title": "First Love", "warnings": ["quotedTitleSplit"] },
+      "rules": ["R1.4", "R6.5"],
+      "tags": ["cjk", "quoted"],
+      "note": "Corner brackets map to '\"' and become a quoted-title split in youtube mode."
+    },
+    {
+      "id": "unicode-018",
+      "input": "방탄소년단 - 봄날",
+      "expected": { "artists": ["방탄소년단"], "title": "봄날" },
+      "rules": ["R6.3"],
+      "tags": ["cjk", "korean"]
+    },
+    {
+      "id": "unicode-019",
+      "input": "BTS （방탄소년단） - Spring Day",
+      "expected": { "artists": ["BTS (방탄소년단)"], "title": "Spring Day" },
+      "rules": ["R1.3", "R7.1", "R5.8"],
+      "tags": ["cjk", "korean", "brackets"],
+      "note": "Fullwidth parentheses normalize to ASCII; an Unknown group on the artist side stays in the name."
+    },
+    {
+      "id": "unicode-020",
+      "input": "ONE OK ROCK - The Beginning（Official Music Video）",
+      "expected": {
+        "artists": ["ONE OK ROCK"],
+        "title": "The Beginning",
+        "junk": [{ "raw": "Official Music Video", "kind": "video" }]
+      },
+      "rules": ["R1.3", "R5.1", "R8.1"],
+      "tags": ["cjk", "junk"]
+    },
+    {
+      "id": "unicode-021",
+      "input": "Μίκης Θεοδωράκης - Ζορμπάς",
+      "expected": { "artists": ["Μίκης Θεοδωράκης"], "title": "Ζορμπάς" },
+      "rules": ["R6.3"],
+      "tags": ["greek"]
+    },
+    {
+      "id": "unicode-022",
+      "input": "İbrahim Tatlıses & Ibrahim Tatlıses - Mavi Mavi",
+      "expected": { "artists": ["İbrahim Tatlıses"], "title": "Mavi Mavi" },
+      "rules": ["R9.2", "R0.4"],
+      "tags": ["turkish", "dedup"],
+      "note": "Unicode lowercase of 'İ' is 'i' + U+0307; the combining dot is removed, so both keys are 'ibrahim tatlıses'."
+    },
+    {
+      "id": "unicode-023",
+      "input": "عمرو دياب - تملي معاك",
+      "expected": { "artists": ["عمرو دياب"], "title": "تملي معاك" },
+      "rules": ["R6.3"],
+      "tags": ["rtl", "arabic"]
+    },
+    {
+      "id": "unicode-024",
+      "input": "עומר אדם - תל אביב",
+      "expected": { "artists": ["עומר אדם"], "title": "תל אביב" },
+      "rules": ["R6.3"],
+      "tags": ["rtl", "hebrew"]
+    },
+    {
+      "id": "unicode-025",
+      "input": "٠١. عمرو دياب - تملي معاك",
+      "expected": { "position": null, "artists": ["٠١. عمرو دياب"], "title": "تملي معاك" },
+      "rules": ["R0.6", "R4.2"],
+      "tags": ["rtl", "digits"],
+      "note": "Digits are ASCII 0-9 only: Arabic-Indic digits are never a position."
+    },
+    {
+      "id": "unicode-026",
+      "input": "Noisia - Tentacles 🐙",
+      "expected": { "artists": ["Noisia"], "title": "Tentacles 🐙" },
+      "rules": ["R8.5"],
+      "tags": ["emoji"]
+    },
+    {
+      "id": "unicode-027",
+      "input": "Noisia - Family 👨‍👩‍👧",
+      "expected": {
+        "artists": ["Noisia"],
+        "title": "Family 👨‍👩‍👧"
+      },
+      "rules": ["R1.2"],
+      "tags": ["emoji", "zwj"],
+      "note": "U+200D is kept by R1.2, so ZWJ emoji sequences survive."
+    },
+    {
+      "id": "unicode-028",
+      "input": "周杰倫 Jay Chou - 告白氣球",
+      "expected": { "artists": ["周杰倫 Jay Chou"], "title": "告白氣球" },
+      "rules": ["R6.3"],
+      "tags": ["cjk"]
+    },
+    {
+      "id": "unicode-029",
+      "input": "Googoosh - Man o To (می‌خوام)",
+      "expected": {
+        "artists": ["Googoosh"],
+        "title": "Man o To (می‌خوام)"
+      },
+      "rules": ["R1.2"],
+      "tags": ["zwnj", "persian"],
+      "note": "U+200C (ZWNJ) is part of Persian spelling and is kept (R1.2)."
+    },
+    {
+      "id": "unicode-030",
+      "input": "Noisia - Stigma 🏳️‍🌈",
+      "expected": {
+        "artists": ["Noisia"],
+        "title": "Stigma 🏳️‍🌈"
+      },
+      "rules": ["R1.2"],
+      "tags": ["emoji", "zwj"],
+      "note": "ZWJ emoji sequence survives normalization (R1.2)."
+    }
+  ]
+}

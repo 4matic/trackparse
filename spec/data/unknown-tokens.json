@@ -1,0 +1,5 @@
+{
+  "$comment": "Placeholder names for unreleased/unknown tracks (SPEC.md R7.5, R8.6). caseSensitive entries match exactly; caseInsensitive entries match after ASCII-lowercasing.",
+  "caseSensitive": ["ID", "IDs", "ID?"],
+  "caseInsensitive": ["unknown", "unknown artist", "unknown title", "untitled", "?", "??", "???"]
+}

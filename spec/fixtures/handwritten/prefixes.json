@@ -1,0 +1,317 @@
+{
+  "$schema": "../../schema/fixture-file.schema.json",
+  "description": "R4 prefixes: leading cue timestamps and track positions, and digit-leading artist names that must not be mistaken for positions",
+  "defaults": { "fn": "parse", "options": { "mode": "clean" } },
+  "cases": [
+    {
+      "id": "prefixes-001",
+      "input": "0:00 Aphex Twin - Xtal",
+      "expected": { "timestamp": { "raw": "0:00", "seconds": 0 }, "position": null, "artists": ["Aphex Twin"], "title": "Xtal" },
+      "rules": ["R4.1"],
+      "tags": ["timestamp"]
+    },
+    {
+      "id": "prefixes-002",
+      "input": "12:34 Noisia - Stigma",
+      "expected": { "timestamp": { "raw": "12:34", "seconds": 754 }, "artists": ["Noisia"], "title": "Stigma" },
+      "rules": ["R4.1"],
+      "tags": ["timestamp"]
+    },
+    {
+      "id": "prefixes-003",
+      "input": "1:02:03 Noisia - Stigma",
+      "expected": { "timestamp": { "raw": "1:02:03", "seconds": 3723 }, "artists": ["Noisia"], "title": "Stigma" },
+      "rules": ["R4.1"],
+      "tags": ["timestamp"]
+    },
+    {
+      "id": "prefixes-004",
+      "input": "01:02:03 Noisia - Stigma",
+      "expected": { "timestamp": { "raw": "01:02:03", "seconds": 3723 }, "artists": ["Noisia"], "title": "Stigma" },
+      "rules": ["R4.1"],
+      "tags": ["timestamp"]
+    },
+    {
+      "id": "prefixes-005",
+      "input": "[12:34] Noisia - Stigma",
+      "expected": { "timestamp": { "raw": "12:34", "seconds": 754 }, "artists": ["Noisia"], "title": "Stigma" },
+      "rules": ["R4.1"],
+      "tags": ["timestamp", "brackets"],
+      "note": "raw is the time without brackets"
+    },
+    {
+      "id": "prefixes-006",
+      "input": "(1:02:03) Noisia - Stigma",
+      "expected": { "timestamp": { "raw": "1:02:03", "seconds": 3723 }, "artists": ["Noisia"], "title": "Stigma" },
+      "rules": ["R4.1"],
+      "tags": ["timestamp", "brackets"]
+    },
+    {
+      "id": "prefixes-007",
+      "input": "12:34 - Noisia - Stigma",
+      "expected": { "timestamp": { "raw": "12:34", "seconds": 754 }, "artists": ["Noisia"], "title": "Stigma", "warnings": [] },
+      "rules": ["R4.1", "R6.3"],
+      "tags": ["timestamp"],
+      "note": "The spaced dash after the timestamp is consumed, so it is not the artist/title separator"
+    },
+    {
+      "id": "prefixes-008",
+      "input": "12:75 Noisia - Stigma",
+      "expected": { "timestamp": null, "position": null, "artists": ["12:75 Noisia"], "title": "Stigma" },
+      "rules": ["R4.1", "R4.2", "R4.3"],
+      "tags": ["timestamp", "negative"],
+      "note": "SS must be 00-59: not a timestamp, and '12' followed by ':' is no position form, so the text stays in the artist"
+    },
+    {
+      "id": "prefixes-009",
+      "input": "The Cure - 10:15 Saturday Night",
+      "expected": { "timestamp": null, "artists": ["The Cure"], "title": "10:15 Saturday Night" },
+      "rules": ["R4.1"],
+      "tags": ["timestamp", "negative"],
+      "note": "Timestamps are only recognised at the very start"
+    },
+    {
+      "id": "prefixes-010",
+      "input": "01. Aphex Twin - Xtal",
+      "expected": { "position": { "raw": "01", "number": 1 }, "artists": ["Aphex Twin"], "title": "Xtal" },
+      "rules": ["R4.2"],
+      "tags": ["position"]
+    },
+    {
+      "id": "prefixes-011",
+      "input": "1) Intro",
+      "match": "exact",
+      "expected": {
+        "input": "1) Intro",
+        "mode": "clean",
+        "position": { "raw": "1", "number": 1 },
+        "timestamp": null,
+        "artists": [],
+        "title": "Intro",
+        "fullTitle": "Intro",
+        "versions": [],
+        "year": null,
+        "flags": { "explicit": false, "clean": false, "unknownArtist": false, "unknownTitle": false },
+        "junk": [],
+        "warnings": ["noSeparator"]
+      },
+      "rules": ["R4.2", "R6.8"],
+      "tags": ["position", "exact"],
+      "note": "Form (a) with ')'; the stray ')' is consumed by the position, not treated as a closer"
+    },
+    {
+      "id": "prefixes-012",
+      "input": "01 Aphex Twin - Xtal",
+      "expected": { "position": { "raw": "01", "number": 1 }, "artists": ["Aphex Twin"], "title": "Xtal" },
+      "rules": ["R4.2"],
+      "tags": ["position", "zero-padded"]
+    },
+    {
+      "id": "prefixes-013",
+      "input": "001 Aphex Twin - Xtal",
+      "expected": { "position": { "raw": "001", "number": 1 }, "artists": ["Aphex Twin"], "title": "Xtal" },
+      "rules": ["R4.2"],
+      "tags": ["position", "zero-padded"]
+    },
+    {
+      "id": "prefixes-014",
+      "input": "01 - Aphex Twin - Xtal",
+      "expected": { "position": { "raw": "01", "number": 1 }, "artists": ["Aphex Twin"], "title": "Xtal" },
+      "rules": ["R4.2"],
+      "tags": ["position", "zero-padded"],
+      "note": "Form (b); the following '- ' is stripped with the position"
+    },
+    {
+      "id": "prefixes-015",
+      "input": "3 - Aphex Twin - Xtal",
+      "expected": { "position": { "raw": "3", "number": 3 }, "artists": ["Aphex Twin"], "title": "Xtal" },
+      "rules": ["R4.2"],
+      "tags": ["position"],
+      "note": "Form (c): remainder still contains a spaced dash"
+    },
+    {
+      "id": "prefixes-016",
+      "input": "311 - Amber",
+      "match": "exact",
+      "expected": {
+        "input": "311 - Amber",
+        "mode": "clean",
+        "position": null,
+        "timestamp": null,
+        "artists": [
+          { "name": "311", "role": "primary", "joiner": null, "source": "artist" }
+        ],
+        "title": "Amber",
+        "fullTitle": "Amber",
+        "versions": [],
+        "year": null,
+        "flags": { "explicit": false, "clean": false, "unknownArtist": false, "unknownTitle": false },
+        "junk": [],
+        "warnings": []
+      },
+      "rules": ["R4.2", "R4.3", "R6.3"],
+      "tags": ["position", "negative", "exact", "digit-artist"],
+      "note": "Form (c) fails: the remainder 'Amber' has no spaced dash, so 311 is the artist"
+    },
+    {
+      "id": "prefixes-017",
+      "input": "3 - 311 - Amber",
+      "expected": { "position": { "raw": "3", "number": 3 }, "artists": ["311"], "title": "Amber" },
+      "rules": ["R4.2"],
+      "tags": ["position", "digit-artist"]
+    },
+    {
+      "id": "prefixes-018",
+      "input": "2 Unlimited - No Limit",
+      "expected": { "position": null, "artists": ["2 Unlimited"], "title": "No Limit" },
+      "rules": ["R4.2", "R4.3"],
+      "tags": ["position", "negative", "digit-artist"],
+      "note": "Form (d): non-padded number + word is never a position in clean mode"
+    },
+    {
+      "id": "prefixes-019",
+      "input": "808 State - Pacific State",
+      "expected": { "position": null, "artists": ["808 State"], "title": "Pacific State" },
+      "rules": ["R4.2", "R4.3"],
+      "tags": ["position", "negative", "digit-artist"]
+    },
+    {
+      "id": "prefixes-020",
+      "input": "50 Cent - In Da Club",
+      "expected": { "position": null, "artists": ["50 Cent"], "title": "In Da Club" },
+      "rules": ["R4.2", "R4.3"],
+      "tags": ["position", "negative", "digit-artist"]
+    },
+    {
+      "id": "prefixes-021",
+      "input": "21 Savage - a lot",
+      "options": { "mode": "youtube" },
+      "expected": { "mode": "youtube", "position": null, "artists": ["21 Savage"], "title": "a lot" },
+      "rules": ["R4.2"],
+      "tags": ["position", "negative", "digit-artist", "youtube"],
+      "note": "Form (d) is also never a position in youtube mode"
+    },
+    {
+      "id": "prefixes-022",
+      "input": "3 Doors Down - Kryptonite",
+      "expected": { "position": null, "artists": ["3 Doors Down"], "title": "Kryptonite" },
+      "rules": ["R4.2"],
+      "tags": ["position", "negative", "digit-artist"]
+    },
+    {
+      "id": "prefixes-023",
+      "input": "1975 - Chocolate",
+      "expected": { "position": null, "year": null, "artists": ["1975"], "title": "Chocolate" },
+      "rules": ["R4.2", "R7.5"],
+      "tags": ["position", "negative", "digit-artist", "year"],
+      "note": "4+ digits are never a position; a year-only name is kept when it is the only name in the list"
+    },
+    {
+      "id": "prefixes-024",
+      "input": "1000 Clowns - (Not the) Greatest Rapper",
+      "expected": { "position": null, "artists": ["1000 Clowns"], "title": "(Not the) Greatest Rapper" },
+      "rules": ["R4.2", "R5.8"],
+      "tags": ["position", "negative", "digit-artist"]
+    },
+    {
+      "id": "prefixes-025",
+      "input": "01. 2 Unlimited - No Limit",
+      "expected": { "position": { "raw": "01", "number": 1 }, "artists": ["2 Unlimited"], "title": "No Limit" },
+      "rules": ["R4.2", "R4.3"],
+      "tags": ["position", "digit-artist"],
+      "note": "At most one position is stripped"
+    },
+    {
+      "id": "prefixes-026",
+      "input": "0:00 01. Aphex Twin - Xtal",
+      "match": "exact",
+      "expected": {
+        "input": "0:00 01. Aphex Twin - Xtal",
+        "mode": "clean",
+        "position": { "raw": "01", "number": 1 },
+        "timestamp": { "raw": "0:00", "seconds": 0 },
+        "artists": [
+          { "name": "Aphex Twin", "role": "primary", "joiner": null, "source": "artist" }
+        ],
+        "title": "Xtal",
+        "fullTitle": "Xtal",
+        "versions": [],
+        "year": null,
+        "flags": { "explicit": false, "clean": false, "unknownArtist": false, "unknownTitle": false },
+        "junk": [],
+        "warnings": []
+      },
+      "rules": ["R4.1", "R4.2"],
+      "tags": ["timestamp", "position", "exact"]
+    },
+    {
+      "id": "prefixes-027",
+      "input": "[03:15] 02. Noisia - Stigma",
+      "expected": {
+        "timestamp": { "raw": "03:15", "seconds": 195 },
+        "position": { "raw": "02", "number": 2 },
+        "artists": ["Noisia"],
+        "title": "Stigma"
+      },
+      "rules": ["R4.1", "R4.2"],
+      "tags": ["timestamp", "position"]
+    },
+    {
+      "id": "prefixes-028",
+      "input": "12. Noisia - Stigma",
+      "expected": { "position": { "raw": "12", "number": 12 }, "artists": ["Noisia"], "title": "Stigma" },
+      "rules": ["R4.2"],
+      "tags": ["position"]
+    },
+    {
+      "id": "prefixes-029",
+      "input": "01 Intro",
+      "expected": { "position": { "raw": "01", "number": 1 }, "artists": [], "title": "Intro", "warnings": ["noSeparator"] },
+      "rules": ["R4.2", "R6.8"],
+      "tags": ["position", "zero-padded"]
+    },
+    {
+      "id": "prefixes-030",
+      "input": "99 Luftballons",
+      "expected": { "position": null, "artists": [], "title": "99 Luftballons", "warnings": ["noSeparator"] },
+      "rules": ["R4.2", "R4.3", "R6.8"],
+      "tags": ["position", "negative"]
+    },
+    {
+      "id": "prefixes-031",
+      "input": "01.",
+      "expected": { "position": null, "artists": [], "title": "01.", "warnings": ["noSeparator"] },
+      "rules": ["R4.2"],
+      "tags": ["position", "negative"],
+      "note": "The remainder after a position must be non-empty"
+    },
+    {
+      "id": "prefixes-032",
+      "input": "01. Кино - Группа крови",
+      "expected": { "position": { "raw": "01", "number": 1 }, "artists": ["Кино"], "title": "Группа крови" },
+      "rules": ["R4.2"],
+      "tags": ["position", "cyrillic"]
+    },
+    {
+      "id": "prefixes-033",
+      "input": "10) Noisia - Stigma",
+      "expected": { "position": { "raw": "10", "number": 10 }, "artists": ["Noisia"], "title": "Stigma" },
+      "rules": ["R4.2"],
+      "tags": ["position"]
+    },
+    {
+      "id": "prefixes-034",
+      "input": "01 A - T.mp3",
+      "options": { "mode": "filename" },
+      "expected": {
+        "mode": "filename",
+        "position": { "raw": "01", "number": 1 },
+        "artists": ["A"],
+        "title": "T"
+      },
+      "rules": ["R4.2"],
+      "tags": ["position", "filename"],
+      "note": "Zero-padded + space is a position in every mode (R4.2b), checked before (e)."
+    }
+  ]
+}

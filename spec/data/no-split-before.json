@@ -1,0 +1,4 @@
+{
+  "$comment": "Do not split at '&', 'and' or '+' when the next word (ASCII lowercase, trailing punctuation stripped) is one of these (SPEC.md R7.3). 'the' is deliberately absent: 'Noisia & The Upbeats' must split. Use the knownArtists option for 'Kool & The Gang'.",
+  "words": ["sons", "daughters", "friends", "co", "co.", "company", "his", "her", "their", "orchestra"]
+}

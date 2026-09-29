@@ -1,0 +1,6 @@
+{
+  "seed": 20260929,
+  "exhaustiveLimit": 3000,
+  "pairwiseCandidates": 12,
+  "kitchenSinkSample": 200
+}

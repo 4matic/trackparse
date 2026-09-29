@@ -1,0 +1,359 @@
+{
+  "$schema": "../../schema/fixture-file.schema.json",
+  "description": "R5.2 featuring groups in brackets on both sides: markers, bracket-only 'with'/'w/', stopword guard, joiners inside the list, ordering and dedup",
+  "defaults": { "fn": "parse", "options": { "mode": "clean" } },
+  "cases": [
+    {
+      "id": "brackets-feat-001",
+      "input": "Pendulum - Tarantula (feat. Fresh, $pyda & Tenor Fly)",
+      "expected": {
+        "artists": [
+          { "name": "Pendulum", "role": "primary", "joiner": null, "source": "artist" },
+          { "name": "Fresh", "role": "featured", "joiner": "feat.", "source": "title" },
+          { "name": "$pyda", "role": "featured", "joiner": ",", "source": "title" },
+          { "name": "Tenor Fly", "role": "featured", "joiner": "&", "source": "title" }
+        ],
+        "title": "Tarantula",
+        "fullTitle": "Tarantula"
+      },
+      "rules": ["R5.2", "R7.3", "R8.1", "R9.1"],
+      "tags": ["feat", "joiners"]
+    },
+    {
+      "id": "brackets-feat-002",
+      "input": "Sub Focus - Out the Blue (ft Alice Gold)",
+      "expected": {
+        "artists": ["Sub Focus", { "name": "Alice Gold", "role": "featured", "joiner": "ft", "source": "title" }],
+        "title": "Out the Blue"
+      },
+      "rules": ["R5.2"],
+      "tags": ["feat", "ft"]
+    },
+    {
+      "id": "brackets-feat-003",
+      "input": "DJ Fresh - Gold Dust (featuring Ms Dynamite & Sian Evans)",
+      "expected": {
+        "artists": [
+          "DJ Fresh",
+          { "name": "Ms Dynamite", "role": "featured", "joiner": "featuring" },
+          { "name": "Sian Evans", "role": "featured", "joiner": "&" }
+        ],
+        "title": "Gold Dust"
+      },
+      "rules": ["R5.2", "R7.3"],
+      "tags": ["feat", "featuring"]
+    },
+    {
+      "id": "brackets-feat-004",
+      "input": "Wilkinson - Afterglow [feat. Becky Hill]",
+      "expected": {
+        "artists": ["Wilkinson", { "name": "Becky Hill", "role": "featured", "joiner": "feat.", "source": "title" }],
+        "title": "Afterglow",
+        "fullTitle": "Afterglow"
+      },
+      "rules": ["R5.2"],
+      "tags": ["feat", "square"]
+    },
+    {
+      "id": "brackets-feat-005",
+      "input": "Ed Sheeran - I Don't Care (with Justin Bieber)",
+      "expected": {
+        "artists": ["Ed Sheeran", { "name": "Justin Bieber", "role": "featured", "joiner": "with", "source": "title" }],
+        "title": "I Don't Care"
+      },
+      "rules": ["R5.2"],
+      "tags": ["feat", "with", "bracket-only"]
+    },
+    {
+      "id": "brackets-feat-006",
+      "input": "Skrillex - Rumble (w/ Fred again.. & Flowdan)",
+      "expected": {
+        "artists": [
+          "Skrillex",
+          { "name": "Fred again..", "role": "featured", "joiner": "w/" },
+          { "name": "Flowdan", "role": "featured", "joiner": "&" }
+        ],
+        "title": "Rumble"
+      },
+      "rules": ["R5.2", "R7.3", "R7.4"],
+      "tags": ["feat", "w/", "bracket-only"],
+      "note": "Trailing dots in a name are kept (R7.4 strips only , and ;)"
+    },
+    {
+      "id": "brackets-feat-007",
+      "input": "Dimension - Desire (With You)",
+      "match": "exact",
+      "expected": {
+        "input": "Dimension - Desire (With You)",
+        "mode": "clean",
+        "position": null,
+        "timestamp": null,
+        "artists": [
+          { "name": "Dimension", "role": "primary", "joiner": null, "source": "artist" }
+        ],
+        "title": "Desire (With You)",
+        "fullTitle": "Desire (With You)",
+        "versions": [],
+        "year": null,
+        "flags": { "explicit": false, "clean": false, "unknownArtist": false, "unknownTitle": false },
+        "junk": [],
+        "warnings": []
+      },
+      "rules": ["R5.2", "R5.8"],
+      "tags": ["with", "stopword", "exact"],
+      "note": "'you' is a stopword, so the group is Unknown and stays in the title"
+    },
+    {
+      "id": "brackets-feat-008",
+      "input": "Wilkinson - Too Close (With Love)",
+      "expected": { "artists": ["Wilkinson"], "title": "Too Close (With Love)" },
+      "rules": ["R5.2", "R5.8"],
+      "tags": ["with", "stopword"]
+    },
+    {
+      "id": "brackets-feat-009",
+      "input": "Sub Focus - Stay (w/ Me)",
+      "expected": { "artists": ["Sub Focus"], "title": "Stay (w/ Me)" },
+      "rules": ["R5.2", "R5.8"],
+      "tags": ["w/", "stopword"]
+    },
+    {
+      "id": "brackets-feat-010",
+      "input": "Gydra (feat. Da Kooka) - Away From Me",
+      "match": "exact",
+      "expected": {
+        "input": "Gydra (feat. Da Kooka) - Away From Me",
+        "mode": "clean",
+        "position": null,
+        "timestamp": null,
+        "artists": [
+          { "name": "Gydra", "role": "primary", "joiner": null, "source": "artist" },
+          { "name": "Da Kooka", "role": "featured", "joiner": "feat.", "source": "artist" }
+        ],
+        "title": "Away From Me",
+        "fullTitle": "Away From Me",
+        "versions": [],
+        "year": null,
+        "flags": { "explicit": false, "clean": false, "unknownArtist": false, "unknownTitle": false },
+        "junk": [],
+        "warnings": []
+      },
+      "rules": ["R5.2", "R7.1"],
+      "tags": ["feat", "artist-side", "exact"]
+    },
+    {
+      "id": "brackets-feat-011",
+      "input": "Gydra (feat. Da Kooka) - Away From Me (feat. MC Mota)",
+      "expected": {
+        "artists": [
+          { "name": "Gydra", "role": "primary", "source": "artist" },
+          { "name": "Da Kooka", "role": "featured", "source": "artist" },
+          { "name": "MC Mota", "role": "featured", "joiner": "feat.", "source": "title" }
+        ],
+        "title": "Away From Me"
+      },
+      "rules": ["R7.1", "R8.1", "R9.1"],
+      "tags": ["feat", "artist-side", "order"]
+    },
+    {
+      "id": "brackets-feat-012",
+      "input": "Avicii - Wake Me Up (feat. Mumford & Sons)",
+      "expected": {
+        "artists": ["Avicii", { "name": "Mumford & Sons", "role": "featured", "joiner": "feat." }],
+        "title": "Wake Me Up"
+      },
+      "rules": ["R5.2", "R7.3"],
+      "tags": ["feat", "no-split-before"]
+    },
+    {
+      "id": "brackets-feat-013",
+      "input": "Chip - Hello Friend (feat. Skepta x JME)",
+      "expected": {
+        "artists": [
+          "Chip",
+          { "name": "Skepta", "role": "featured", "joiner": "feat." },
+          { "name": "JME", "role": "featured", "joiner": "x" }
+        ],
+        "title": "Hello Friend"
+      },
+      "rules": ["R5.2", "R7.3"],
+      "tags": ["feat", "joiner-x"]
+    },
+    {
+      "id": "brackets-feat-014",
+      "input": "Noisia - Machine Gun (feat. Foreign Beggars, Posij and Mefjus)",
+      "expected": {
+        "artists": [
+          "Noisia",
+          { "name": "Foreign Beggars", "role": "featured", "joiner": "feat." },
+          { "name": "Posij", "role": "featured", "joiner": "," },
+          { "name": "Mefjus", "role": "featured", "joiner": "and" }
+        ],
+        "title": "Machine Gun"
+      },
+      "rules": ["R5.2", "R7.3"],
+      "tags": ["feat", "split-and"],
+      "note": "splitAnd auto: 'and' splits because the list already split at ','"
+    },
+    {
+      "id": "brackets-feat-015",
+      "input": "Paul Simon - Graceland (feat. Simon and Garfunkel)",
+      "expected": {
+        "artists": ["Paul Simon", { "name": "Simon and Garfunkel", "role": "featured", "joiner": "feat." }],
+        "title": "Graceland"
+      },
+      "rules": ["R5.2", "R7.3"],
+      "tags": ["feat", "split-and"],
+      "note": "splitAnd auto with no preceding ',' keeps 'and' inside the name"
+    },
+    {
+      "id": "brackets-feat-016",
+      "input": "Rudimental - Lay It All on Me (feat. Ed Sheeran with Stormzy)",
+      "expected": {
+        "artists": ["Rudimental", { "name": "Ed Sheeran with Stormzy", "role": "featured", "joiner": "feat." }],
+        "title": "Lay It All on Me"
+      },
+      "rules": ["R7.3"],
+      "tags": ["feat", "with"],
+      "note": "'with' only splits in the artist-side main list, never inside groups"
+    },
+    {
+      "id": "brackets-feat-017",
+      "input": "Wilkinson - Afterglow (feat. Becky Hill) (Sigma Remix)",
+      "match": "exact",
+      "expected": {
+        "input": "Wilkinson - Afterglow (feat. Becky Hill) (Sigma Remix)",
+        "mode": "clean",
+        "position": null,
+        "timestamp": null,
+        "artists": [
+          { "name": "Wilkinson", "role": "primary", "joiner": null, "source": "artist" },
+          { "name": "Becky Hill", "role": "featured", "joiner": "feat.", "source": "title" }
+        ],
+        "title": "Afterglow",
+        "fullTitle": "Afterglow (Sigma Remix)",
+        "versions": [
+          {
+            "type": "remix",
+            "raw": "Sigma Remix",
+            "artists": [
+              { "name": "Sigma", "role": "remixer", "joiner": null, "source": "version" }
+            ],
+            "modifiers": [],
+            "descriptor": null,
+            "year": null,
+            "unknownArtist": false,
+            "delimiter": "("
+          }
+        ],
+        "year": null,
+        "flags": { "explicit": false, "clean": false, "unknownArtist": false, "unknownTitle": false },
+        "junk": [],
+        "warnings": []
+      },
+      "rules": ["R5.2", "R5.7", "R9.4"],
+      "tags": ["feat", "remix", "exact"],
+      "note": "fullTitle re-attaches versions only, never feat groups"
+    },
+    {
+      "id": "brackets-feat-018",
+      "input": "Noisia - Stigma (FEAT. Mefjus)",
+      "expected": {
+        "artists": ["Noisia", { "name": "Mefjus", "role": "featured", "joiner": "FEAT." }],
+        "title": "Stigma"
+      },
+      "rules": ["R5.2", "R0.3"],
+      "tags": ["feat", "case"],
+      "note": "Joiner keeps the marker as written"
+    },
+    {
+      "id": "brackets-feat-019",
+      "input": "Noisia - Stigma (Feat: Mefjus)",
+      "expected": {
+        "artists": ["Noisia", { "name": "Mefjus", "role": "featured", "joiner": "Feat:" }],
+        "title": "Stigma"
+      },
+      "rules": ["R5.2", "R0.3"],
+      "tags": ["feat"]
+    },
+    {
+      "id": "brackets-feat-020",
+      "input": "Noisia - Stigma (feat.)",
+      "expected": { "artists": ["Noisia"], "title": "Stigma (feat.)" },
+      "rules": ["R5.2", "R5.8"],
+      "tags": ["feat", "negative"],
+      "note": "A marker with nothing after it is not a feat group"
+    },
+    {
+      "id": "brackets-feat-021",
+      "input": "Noisia ft. Mefjus - Stigma (feat. Mefjus)",
+      "expected": {
+        "artists": [
+          { "name": "Noisia", "role": "primary", "source": "artist" },
+          { "name": "Mefjus", "role": "featured", "joiner": "ft.", "source": "artist" }
+        ],
+        "title": "Stigma"
+      },
+      "rules": ["R9.2", "R7.2"],
+      "tags": ["feat", "dedup"]
+    },
+    {
+      "id": "brackets-feat-022",
+      "input": "Noisia - Stigma (feat. Noisia)",
+      "expected": {
+        "artists": [{ "name": "Noisia", "role": "primary", "joiner": null, "source": "artist" }],
+        "title": "Stigma"
+      },
+      "rules": ["R9.2"],
+      "tags": ["feat", "dedup"],
+      "note": "A later featured duplicate of a primary is removed"
+    },
+    {
+      "id": "brackets-feat-023",
+      "input": "Баста - Сансара (feat. Диана Арбенина)",
+      "expected": {
+        "artists": ["Баста", { "name": "Диана Арбенина", "role": "featured", "joiner": "feat." }],
+        "title": "Сансара"
+      },
+      "rules": ["R5.2"],
+      "tags": ["feat", "cyrillic"]
+    },
+    {
+      "id": "brackets-feat-024",
+      "input": "Noisia - Stigma (Ftampa Remix)",
+      "expected": {
+        "artists": [{ "name": "Noisia", "role": "primary" }],
+        "title": "Stigma",
+        "versions": [{ "type": "remix", "artists": ["Ftampa"] }]
+      },
+      "rules": ["R5.2", "R5.7"],
+      "tags": ["feat", "negative"],
+      "note": "'Ftampa' is not the marker 'ft'"
+    },
+    {
+      "id": "brackets-feat-025",
+      "input": "Silk City - Electricity [with Dua Lipa] (Official Video)",
+      "options": { "mode": "auto" },
+      "expected": {
+        "mode": "youtube",
+        "artists": ["Silk City", { "name": "Dua Lipa", "role": "featured", "joiner": "with", "source": "title" }],
+        "title": "Electricity",
+        "junk": [{ "raw": "Official Video", "kind": "video" }]
+      },
+      "rules": ["R5.2", "R2.1"],
+      "tags": ["feat", "with", "junk"]
+    },
+    {
+      "id": "brackets-feat-026",
+      "input": "Sub Focus - Solar System (ft. Kele) [Culture Shock Remix]",
+      "expected": {
+        "artists": ["Sub Focus", { "name": "Kele", "role": "featured", "joiner": "ft." }],
+        "title": "Solar System",
+        "fullTitle": "Solar System [Culture Shock Remix]",
+        "versions": [{ "type": "remix", "artists": ["Culture Shock"], "delimiter": "[" }]
+      },
+      "rules": ["R5.2", "R5.7"],
+      "tags": ["feat", "remix"]
+    }
+  ]
+}

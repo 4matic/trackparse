@@ -1,0 +1,365 @@
+{
+  "$schema": "../../schema/fixture-file.schema.json",
+  "description": "R5.4 explicit/clean flag groups and R5.5 bare year groups on both sides, including non-flags, out-of-range years and version years",
+  "defaults": { "fn": "parse", "options": { "mode": "clean" } },
+  "cases": [
+    {
+      "id": "flags-year-001",
+      "input": "Eminem - Lose Yourself [Explicit]",
+      "match": "exact",
+      "expected": {
+        "input": "Eminem - Lose Yourself [Explicit]",
+        "mode": "clean",
+        "position": null,
+        "timestamp": null,
+        "artists": [
+          { "name": "Eminem", "role": "primary", "joiner": null, "source": "artist" }
+        ],
+        "title": "Lose Yourself",
+        "fullTitle": "Lose Yourself",
+        "versions": [],
+        "year": null,
+        "flags": { "explicit": true, "clean": false, "unknownArtist": false, "unknownTitle": false },
+        "junk": [],
+        "warnings": []
+      },
+      "rules": ["R5.4", "R8.1"],
+      "tags": ["explicit", "exact"]
+    },
+    {
+      "id": "flags-year-002",
+      "input": "Eminem - Lose Yourself (Explicit Version)",
+      "expected": { "artists": ["Eminem"], "title": "Lose Yourself", "versions": [], "flags": { "explicit": true, "clean": false } },
+      "rules": ["R5.4"],
+      "tags": ["explicit"],
+      "note": "Flag is checked before Versions, so 'Explicit Version' is not a version"
+    },
+    {
+      "id": "flags-year-003",
+      "input": "Lil Jon - Get Low (Dirty)",
+      "expected": { "artists": ["Lil Jon"], "title": "Get Low", "flags": { "explicit": true, "clean": false } },
+      "rules": ["R5.4"],
+      "tags": ["explicit", "dirty"]
+    },
+    {
+      "id": "flags-year-004",
+      "input": "Lil Jon - Get Low (Dirty Version)",
+      "expected": { "artists": ["Lil Jon"], "title": "Get Low", "versions": [], "flags": { "explicit": true } },
+      "rules": ["R5.4"],
+      "tags": ["explicit", "dirty"]
+    },
+    {
+      "id": "flags-year-005",
+      "input": "Lil Jon - Get Low (Clean)",
+      "expected": { "artists": ["Lil Jon"], "title": "Get Low", "flags": { "explicit": false, "clean": true } },
+      "rules": ["R5.4"],
+      "tags": ["clean"]
+    },
+    {
+      "id": "flags-year-006",
+      "input": "Cardi B - Bodak Yellow (Clean Version)",
+      "expected": { "artists": ["Cardi B"], "title": "Bodak Yellow", "versions": [], "flags": { "explicit": false, "clean": true } },
+      "rules": ["R5.4"],
+      "tags": ["clean"]
+    },
+    {
+      "id": "flags-year-007",
+      "input": "Cardi B - Bodak Yellow [Radio Clean]",
+      "expected": { "artists": ["Cardi B"], "title": "Bodak Yellow", "versions": [], "flags": { "clean": true } },
+      "rules": ["R5.4"],
+      "tags": ["clean"]
+    },
+    {
+      "id": "flags-year-008",
+      "input": "Eminem - Stan (EXPLICIT)",
+      "expected": { "artists": ["Eminem"], "title": "Stan", "flags": { "explicit": true } },
+      "rules": ["R5.4", "R0.3"],
+      "tags": ["explicit", "case"]
+    },
+    {
+      "id": "flags-year-009",
+      "input": "Eminem - Lose Yourself (E)",
+      "expected": { "artists": ["Eminem"], "title": "Lose Yourself (E)", "flags": { "explicit": false, "clean": false } },
+      "rules": ["R5.4", "R5.8"],
+      "tags": ["explicit", "negative"],
+      "note": "A lone E is not a flag"
+    },
+    {
+      "id": "flags-year-010",
+      "input": "Eminem - Lose Yourself [E]",
+      "expected": { "artists": ["Eminem"], "title": "Lose Yourself [E]", "flags": { "explicit": false } },
+      "rules": ["R5.4", "R5.8"],
+      "tags": ["explicit", "negative"]
+    },
+    {
+      "id": "flags-year-011",
+      "input": "Cardi B - Bodak Yellow (Clean Edit)",
+      "expected": {
+        "artists": ["Cardi B"],
+        "title": "Bodak Yellow",
+        "flags": { "explicit": false, "clean": false },
+        "versions": [{ "type": "edit", "raw": "Clean Edit", "artists": [], "modifiers": ["clean"] }]
+      },
+      "rules": ["R5.4", "R5.7"],
+      "tags": ["clean", "negative", "edit"],
+      "note": "'clean edit' is not in the flag list; 'clean' is a descriptor word so this is an edit with modifier clean"
+    },
+    {
+      "id": "flags-year-012",
+      "input": "Eminem (Explicit) - Stan",
+      "expected": {
+        "artists": ["Eminem"],
+        "title": "Stan",
+        "flags": { "explicit": true }
+      },
+      "rules": ["R7.1"],
+      "tags": ["explicit", "artist-side"],
+      "note": "Artist-side Flag groups are extracted: the flag is set and the group leaves the name (R7.1)."
+    },
+    {
+      "id": "flags-year-013",
+      "input": "Adele - Hello (2015)",
+      "expected": { "artists": ["Adele"], "title": "Hello", "fullTitle": "Hello", "year": 2015, "versions": [] },
+      "rules": ["R5.5", "R8.1"],
+      "tags": ["year"]
+    },
+    {
+      "id": "flags-year-014",
+      "input": "Prince - 1999 [1982]",
+      "expected": { "artists": ["Prince"], "title": "1999", "year": 1982 },
+      "rules": ["R5.5"],
+      "tags": ["year", "square"],
+      "note": "An unbracketed year-looking title is kept; only the bracketed year is extracted"
+    },
+    {
+      "id": "flags-year-015",
+      "input": "Skrillex (2023) - Rumble",
+      "match": "exact",
+      "expected": {
+        "input": "Skrillex (2023) - Rumble",
+        "mode": "clean",
+        "position": null,
+        "timestamp": null,
+        "artists": [
+          { "name": "Skrillex", "role": "primary", "joiner": null, "source": "artist" }
+        ],
+        "title": "Rumble",
+        "fullTitle": "Rumble",
+        "versions": [],
+        "year": 2023,
+        "flags": { "explicit": false, "clean": false, "unknownArtist": false, "unknownTitle": false },
+        "junk": [],
+        "warnings": []
+      },
+      "rules": ["R5.5", "R7.1"],
+      "tags": ["year", "artist-side", "exact"]
+    },
+    {
+      "id": "flags-year-016",
+      "input": "Moby - Porcelain (1999) (2015)",
+      "expected": { "artists": ["Moby"], "title": "Porcelain", "year": 1999 },
+      "rules": ["R5.5"],
+      "tags": ["year"],
+      "note": "The first year wins; the second group is still removed"
+    },
+    {
+      "id": "flags-year-017",
+      "input": "Moby (1999) - Porcelain (2015)",
+      "expected": { "artists": ["Moby"], "title": "Porcelain", "year": 1999 },
+      "rules": ["R5.5", "R7.1"],
+      "tags": ["year", "artist-side"]
+    },
+    {
+      "id": "flags-year-018",
+      "input": "Queen - Bohemian Rhapsody (2011 Remaster)",
+      "match": "exact",
+      "expected": {
+        "input": "Queen - Bohemian Rhapsody (2011 Remaster)",
+        "mode": "clean",
+        "position": null,
+        "timestamp": null,
+        "artists": [
+          { "name": "Queen", "role": "primary", "joiner": null, "source": "artist" }
+        ],
+        "title": "Bohemian Rhapsody",
+        "fullTitle": "Bohemian Rhapsody (2011 Remaster)",
+        "versions": [
+          {
+            "type": "remaster",
+            "raw": "2011 Remaster",
+            "artists": [],
+            "modifiers": [],
+            "descriptor": null,
+            "year": 2011,
+            "unknownArtist": false,
+            "delimiter": "("
+          }
+        ],
+        "year": null,
+        "flags": { "explicit": false, "clean": false, "unknownArtist": false, "unknownTitle": false },
+        "junk": [],
+        "warnings": []
+      },
+      "rules": ["R5.7", "R5.5"],
+      "tags": ["year", "remaster", "exact"],
+      "note": "A year inside a version stays on the version; top-level year is null"
+    },
+    {
+      "id": "flags-year-019",
+      "input": "The Beatles - Help! (Remastered 2015) (1965)",
+      "expected": {
+        "artists": ["The Beatles"],
+        "title": "Help!",
+        "fullTitle": "Help! (Remastered 2015)",
+        "year": 1965,
+        "versions": [{ "type": "remaster", "year": 2015 }]
+      },
+      "rules": ["R5.5", "R5.7"],
+      "tags": ["year", "remaster"]
+    },
+    {
+      "id": "flags-year-020",
+      "input": "Queen - We Will Rock You (Live 1986)",
+      "expected": {
+        "artists": ["Queen"],
+        "title": "We Will Rock You",
+        "year": null,
+        "versions": [{ "type": "live", "raw": "Live 1986", "year": 1986, "descriptor": null }]
+      },
+      "rules": ["R5.7"],
+      "tags": ["year", "live"]
+    },
+    {
+      "id": "flags-year-021",
+      "input": "Noisia - Stigma (1899)",
+      "expected": { "artists": ["Noisia"], "title": "Stigma (1899)", "year": null },
+      "rules": ["R5.5", "R5.8"],
+      "tags": ["year", "negative", "range"]
+    },
+    {
+      "id": "flags-year-022",
+      "input": "Noisia - Stigma (2100)",
+      "expected": { "artists": ["Noisia"], "title": "Stigma (2100)", "year": null },
+      "rules": ["R5.5", "R5.8"],
+      "tags": ["year", "negative", "range"]
+    },
+    {
+      "id": "flags-year-023",
+      "input": "Noisia - Stigma (1900)",
+      "expected": { "artists": ["Noisia"], "title": "Stigma", "year": 1900 },
+      "rules": ["R5.5"],
+      "tags": ["year", "range"]
+    },
+    {
+      "id": "flags-year-024",
+      "input": "Noisia - Stigma (2099)",
+      "expected": { "artists": ["Noisia"], "title": "Stigma", "year": 2099 },
+      "rules": ["R5.5"],
+      "tags": ["year", "range"]
+    },
+    {
+      "id": "flags-year-025",
+      "input": "Noisia - Stigma (2015-2016)",
+      "expected": { "artists": ["Noisia"], "title": "Stigma (2015-2016)", "year": null },
+      "rules": ["R5.5", "R5.8"],
+      "tags": ["year", "negative"]
+    },
+    {
+      "id": "flags-year-026",
+      "input": "Kendrick Lamar - DNA. (2017) [Explicit]",
+      "expected": { "artists": ["Kendrick Lamar"], "title": "DNA.", "fullTitle": "DNA.", "year": 2017, "flags": { "explicit": true, "clean": false } },
+      "rules": ["R5.4", "R5.5"],
+      "tags": ["year", "explicit"]
+    },
+    {
+      "id": "flags-year-027",
+      "input": "Кино - Звезда по имени Солнце (1989)",
+      "expected": { "artists": ["Кино"], "title": "Звезда по имени Солнце", "year": 1989 },
+      "rules": ["R5.5"],
+      "tags": ["year", "cyrillic"]
+    },
+    {
+      "id": "flags-year-028",
+      "input": "Кино - Звезда по имени Солнце - 1989",
+      "expected": { "artists": ["Кино"], "title": "Звезда по имени Солнце", "year": 1989, "versions": [] },
+      "rules": ["R5.5", "R6.2"],
+      "tags": ["year", "dash-suffix", "cyrillic"]
+    },
+    {
+      "id": "flags-year-029",
+      "input": "Daft Punk - One More Time (2001 Mix)",
+      "expected": {
+        "artists": ["Daft Punk"],
+        "title": "One More Time",
+        "year": null,
+        "versions": [{ "type": "mix", "raw": "2001 Mix", "artists": [], "year": 2001 }]
+      },
+      "rules": ["R5.7"],
+      "tags": ["year", "mix"],
+      "note": "The year is in the modifier run, so the credit span is empty and generic 'mix' stays type mix"
+    },
+    {
+      "id": "flags-year-030",
+      "input": "Eminem - Lose Yourself (Explicit) (Official Video)",
+      "options": { "mode": "auto" },
+      "expected": {
+        "mode": "youtube",
+        "artists": ["Eminem"],
+        "title": "Lose Yourself",
+        "flags": { "explicit": true },
+        "junk": [{ "raw": "Official Video", "kind": "video" }]
+      },
+      "rules": ["R5.4", "R5.1", "R2.1"],
+      "tags": ["explicit", "junk"]
+    },
+    {
+      "id": "flags-year-031",
+      "input": "Moby - Porcelain (1999) - 2015",
+      "expected": {
+        "artists": ["Moby"],
+        "title": "Porcelain",
+        "year": 1999
+      },
+      "rules": ["R5.5", "R6.2", "R8.1", "R9.6"],
+      "tags": ["year", "dash-suffix"],
+      "note": "The track year is the first year in text order (R9.6), not in processing order."
+    },
+    {
+      "id": "flags-year-032",
+      "input": "Eminem [Clean] - Stan",
+      "expected": {
+        "artists": ["Eminem"],
+        "title": "Stan",
+        "flags": { "clean": true, "explicit": false }
+      },
+      "rules": ["R7.1", "R5.4"],
+      "tags": ["clean", "artist-side"]
+    },
+    {
+      "id": "flags-year-033",
+      "input": "Noisia, 2015 - Stigma",
+      "expected": {
+        "artists": [
+          { "name": "Noisia", "joiner": null }
+        ],
+        "title": "Stigma",
+        "year": 2015
+      },
+      "rules": ["R7.5", "R9.6"],
+      "tags": ["year", "artist-side"],
+      "note": "A dropped year-only name sets the track year."
+    },
+    {
+      "id": "flags-year-034",
+      "input": "Noisia - Stigma [2016] - 1999",
+      "expected": {
+        "artists": ["Noisia"],
+        "title": "Stigma",
+        "year": 2016
+      },
+      "rules": ["R9.6", "R6.2", "R8.1"],
+      "tags": ["year", "order"],
+      "note": "First year in text order wins."
+    }
+  ]
+}

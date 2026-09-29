@@ -1,0 +1,4 @@
+{
+  "$comment": "Audio/video file extensions stripped in filename mode and used by mode auto-detection (SPEC.md R2). ASCII lowercase, without the dot.",
+  "extensions": ["mp3", "flac", "wav", "m4a", "ogg", "opus", "aac", "aiff", "aif", "wma", "alac", "mp4", "webm", "mkv"]
+}

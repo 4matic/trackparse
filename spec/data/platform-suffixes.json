@@ -1,0 +1,4 @@
+{
+  "$comment": "Trailing platform noise removed in every mode before separator detection (SPEC.md R2.2). Matched case-insensitively at the very end of the normalized string, longest first.",
+  "suffixes": [" - YouTube Music", " - YouTube", " | Free Listening on SoundCloud", " - SoundCloud", " | SoundCloud", " - Topic", " | Bandcamp", " - Bandcamp"]
+}

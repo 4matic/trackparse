@@ -1,0 +1,710 @@
+{
+  "$schema": "../../schema/fixture-file.schema.json",
+  "description": "Featured/producer credits on the title side: unbracketed markers (R8.3), feat groups (R5.2, R8.1), ordering (R9.1) and dedup (R9.2)",
+  "defaults": {
+    "fn": "parse",
+    "options": {
+      "mode": "clean"
+    }
+  },
+  "cases": [
+    {
+      "id": "title-feat-001",
+      "input": "Sub Focus - Out the Blue ft. Alice Gold",
+      "expected": {
+        "artists": [
+          {
+            "name": "Sub Focus",
+            "role": "primary",
+            "joiner": null,
+            "source": "artist"
+          },
+          {
+            "name": "Alice Gold",
+            "role": "featured",
+            "joiner": "ft.",
+            "source": "title"
+          }
+        ],
+        "title": "Out the Blue"
+      },
+      "rules": [
+        "R8.3"
+      ],
+      "tags": [
+        "feat"
+      ]
+    },
+    {
+      "id": "title-feat-002",
+      "input": "Wilkinson - Afterglow feat. Becky Hill & Tom Cane (Sub Focus Remix)",
+      "match": "exact",
+      "expected": {
+        "input": "Wilkinson - Afterglow feat. Becky Hill & Tom Cane (Sub Focus Remix)",
+        "mode": "clean",
+        "position": null,
+        "timestamp": null,
+        "artists": [
+          {
+            "name": "Wilkinson",
+            "role": "primary",
+            "joiner": null,
+            "source": "artist"
+          },
+          {
+            "name": "Becky Hill",
+            "role": "featured",
+            "joiner": "feat.",
+            "source": "title"
+          },
+          {
+            "name": "Tom Cane",
+            "role": "featured",
+            "joiner": "&",
+            "source": "title"
+          }
+        ],
+        "title": "Afterglow",
+        "fullTitle": "Afterglow (Sub Focus Remix)",
+        "versions": [
+          {
+            "type": "remix",
+            "raw": "Sub Focus Remix",
+            "artists": [
+              {
+                "name": "Sub Focus",
+                "role": "remixer",
+                "joiner": null,
+                "source": "version"
+              }
+            ],
+            "modifiers": [],
+            "descriptor": null,
+            "year": null,
+            "unknownArtist": false,
+            "delimiter": "("
+          }
+        ],
+        "year": null,
+        "flags": {
+          "explicit": false,
+          "clean": false,
+          "unknownArtist": false,
+          "unknownTitle": false
+        },
+        "junk": [],
+        "warnings": []
+      },
+      "rules": [
+        "R8.3",
+        "R7.3",
+        "R5.7",
+        "R9.4"
+      ],
+      "tags": [
+        "feat",
+        "remix",
+        "dnb"
+      ],
+      "note": "The unbracketed featured list runs up to the next placeholder. Remixer Sub Focus is not in artists."
+    },
+    {
+      "id": "title-feat-003",
+      "input": "Calvin Harris - This Is What You Came For featuring Rihanna",
+      "expected": {
+        "artists": [
+          {
+            "name": "Calvin Harris",
+            "role": "primary"
+          },
+          {
+            "name": "Rihanna",
+            "role": "featured",
+            "joiner": "featuring",
+            "source": "title"
+          }
+        ],
+        "title": "This Is What You Came For"
+      },
+      "rules": [
+        "R8.3"
+      ],
+      "tags": [
+        "feat"
+      ]
+    },
+    {
+      "id": "title-feat-004",
+      "input": "Sam Smith - Stay with Me",
+      "expected": {
+        "artists": [
+          "Sam Smith"
+        ],
+        "title": "Stay with Me"
+      },
+      "rules": [
+        "R8.3"
+      ],
+      "tags": [
+        "feat",
+        "with"
+      ],
+      "note": "'with' is bracketOnly: never a title marker when unbracketed."
+    },
+    {
+      "id": "title-feat-005",
+      "input": "Marshmello - Here With Me (with CHVRCHES)",
+      "expected": {
+        "artists": [
+          {
+            "name": "Marshmello",
+            "role": "primary"
+          },
+          {
+            "name": "CHVRCHES",
+            "role": "featured",
+            "joiner": "with",
+            "source": "title"
+          }
+        ],
+        "title": "Here With Me"
+      },
+      "rules": [
+        "R5.2",
+        "R8.1"
+      ],
+      "tags": [
+        "feat",
+        "with"
+      ]
+    },
+    {
+      "id": "title-feat-006",
+      "input": "Sub Focus - Falling (With You)",
+      "expected": {
+        "artists": [
+          "Sub Focus"
+        ],
+        "title": "Falling (With You)"
+      },
+      "rules": [
+        "R5.2",
+        "R5.8"
+      ],
+      "tags": [
+        "feat",
+        "with",
+        "stopword"
+      ],
+      "note": "'with' followed by a stopword: the group is Unknown and stays verbatim."
+    },
+    {
+      "id": "title-feat-007",
+      "input": "Noisia ft. Foreign Beggars - Shellshock (feat. Foreign Beggars)",
+      "expected": {
+        "artists": [
+          {
+            "name": "Noisia",
+            "role": "primary",
+            "joiner": null,
+            "source": "artist"
+          },
+          {
+            "name": "Foreign Beggars",
+            "role": "featured",
+            "joiner": "ft.",
+            "source": "artist"
+          }
+        ],
+        "title": "Shellshock"
+      },
+      "rules": [
+        "R9.2",
+        "R7.2",
+        "R5.2"
+      ],
+      "tags": [
+        "feat",
+        "dedup",
+        "dnb"
+      ],
+      "note": "Feat on both sides: the first (artist-side) occurrence is kept."
+    },
+    {
+      "id": "title-feat-008",
+      "input": "Sub Focus ft. Kele - Turn Back Time feat. Alice Gold",
+      "expected": {
+        "artists": [
+          {
+            "name": "Sub Focus",
+            "role": "primary",
+            "joiner": null,
+            "source": "artist"
+          },
+          {
+            "name": "Kele",
+            "role": "featured",
+            "joiner": "ft.",
+            "source": "artist"
+          },
+          {
+            "name": "Alice Gold",
+            "role": "featured",
+            "joiner": "feat.",
+            "source": "title"
+          }
+        ],
+        "title": "Turn Back Time"
+      },
+      "rules": [
+        "R9.1",
+        "R7.2",
+        "R8.3"
+      ],
+      "tags": [
+        "feat",
+        "order"
+      ],
+      "note": "Constructed credits. Artist-side credits come before title-side ones."
+    },
+    {
+      "id": "title-feat-009",
+      "input": "Future - Mask Off ft. Kendrick Lamar (prod. Metro Boomin)",
+      "match": "exact",
+      "expected": {
+        "input": "Future - Mask Off ft. Kendrick Lamar (prod. Metro Boomin)",
+        "mode": "clean",
+        "position": null,
+        "timestamp": null,
+        "artists": [
+          {
+            "name": "Future",
+            "role": "primary",
+            "joiner": null,
+            "source": "artist"
+          },
+          {
+            "name": "Kendrick Lamar",
+            "role": "featured",
+            "joiner": "ft.",
+            "source": "title"
+          },
+          {
+            "name": "Metro Boomin",
+            "role": "producer",
+            "joiner": "prod.",
+            "source": "title"
+          }
+        ],
+        "title": "Mask Off",
+        "fullTitle": "Mask Off",
+        "versions": [],
+        "year": null,
+        "flags": {
+          "explicit": false,
+          "clean": false,
+          "unknownArtist": false,
+          "unknownTitle": false
+        },
+        "junk": [],
+        "warnings": []
+      },
+      "rules": [
+        "R9.1",
+        "R8.3",
+        "R5.3",
+        "R8.1"
+      ],
+      "tags": [
+        "feat",
+        "producer",
+        "order"
+      ],
+      "note": "Title-side credits ordered by position: unbracketed ft. list, then the producer group."
+    },
+    {
+      "id": "title-feat-010",
+      "input": "Sub Focus - Out the Blue (feat. Sub Focus & Alice Gold)",
+      "expected": {
+        "artists": [
+          { "name": "Sub Focus", "role": "primary", "joiner": null, "source": "artist" },
+          { "name": "Alice Gold", "role": "featured", "joiner": "feat.", "source": "title" }
+        ],
+        "title": "Out the Blue"
+      },
+      "rules": ["R9.2", "R5.2", "R7.6"],
+      "tags": ["feat", "dedup"],
+      "note": "Constructed. The removed duplicate was the first featured name; the next featured name inherits the marker (R7.6)."
+    },
+    {
+      "id": "title-feat-011",
+      "input": "Metro Boomin - Superhero (prod. Future) (feat. Future)",
+      "expected": {
+        "artists": [
+          { "name": "Metro Boomin", "role": "primary", "joiner": null, "source": "artist" },
+          { "name": "Future", "role": "producer", "joiner": "prod.", "source": "title" },
+          { "name": "Future", "role": "featured", "joiner": "feat.", "source": "title" }
+        ],
+        "title": "Superhero"
+      },
+      "rules": ["R9.2", "R5.3", "R5.2"],
+      "tags": ["feat", "producer", "dedup"],
+      "note": "Constructed. Producer and featured are separate classes (R9.2): Future is kept in both roles, in text order."
+    },
+    {
+      "id": "title-feat-012",
+      "input": "Sub Focus - Out the Blue Ft. Alice Gold",
+      "expected": {
+        "artists": [
+          "Sub Focus",
+          {
+            "name": "Alice Gold",
+            "role": "featured",
+            "joiner": "Ft.",
+            "source": "title"
+          }
+        ],
+        "title": "Out the Blue"
+      },
+      "rules": [
+        "R8.3",
+        "R0.3"
+      ],
+      "tags": [
+        "feat",
+        "case"
+      ]
+    },
+    {
+      "id": "title-feat-013",
+      "input": "Crystal Castles - Not in Love ft Robert Smith",
+      "expected": {
+        "artists": ["Crystal Castles"],
+        "title": "Not in Love ft Robert Smith"
+      },
+      "rules": ["R8.3"],
+      "tags": ["feat"],
+      "note": "Undotted 'ft' is not a title-side marker (R8.3); only feat., ft. and featuring are."
+    },
+    {
+      "id": "title-feat-014",
+      "input": "Noisia - Shellshock feat: Foreign Beggars",
+      "expected": {
+        "artists": ["Noisia"],
+        "title": "Shellshock feat: Foreign Beggars"
+      },
+      "rules": ["R8.3", "R0.3"],
+      "tags": ["feat"],
+      "note": "'feat:' is not a title-side marker (R8.3); only feat., ft. and featuring are."
+    },
+    {
+      "id": "title-feat-015",
+      "input": "Wilkinson - Take You Higher [feat. Karen Harding]",
+      "expected": {
+        "artists": [
+          "Wilkinson",
+          {
+            "name": "Karen Harding",
+            "role": "featured",
+            "joiner": "feat.",
+            "source": "title"
+          }
+        ],
+        "title": "Take You Higher",
+        "fullTitle": "Take You Higher"
+      },
+      "rules": [
+        "R5.2",
+        "R8.1"
+      ],
+      "tags": [
+        "feat",
+        "brackets"
+      ]
+    },
+    {
+      "id": "title-feat-016",
+      "input": "Culture Shock - Bunker (VIP) ft. Rider Shafique",
+      "expected": {
+        "artists": [
+          "Culture Shock",
+          {
+            "name": "Rider Shafique",
+            "role": "featured",
+            "joiner": "ft.",
+            "source": "title"
+          }
+        ],
+        "title": "Bunker",
+        "fullTitle": "Bunker (VIP)",
+        "versions": [
+          {
+            "type": "vip",
+            "artists": [],
+            "delimiter": "("
+          }
+        ]
+      },
+      "rules": [
+        "R8.3",
+        "R5.7"
+      ],
+      "tags": [
+        "feat",
+        "vip",
+        "dnb"
+      ],
+      "note": "Constructed title. Feat after a version group."
+    },
+    {
+      "id": "title-feat-017",
+      "input": "Sub Focus - Out the Blue ft. Alice Gold - Radio Edit",
+      "expected": {
+        "artists": [
+          "Sub Focus",
+          {
+            "name": "Alice Gold",
+            "role": "featured",
+            "joiner": "ft.",
+            "source": "title"
+          }
+        ],
+        "title": "Out the Blue",
+        "fullTitle": "Out the Blue - Radio Edit",
+        "versions": [
+          {
+            "type": "radio",
+            "raw": "Radio Edit",
+            "delimiter": "-"
+          }
+        ]
+      },
+      "rules": [
+        "R6.2",
+        "R8.3"
+      ],
+      "tags": [
+        "feat",
+        "dash-suffix"
+      ]
+    },
+    {
+      "id": "title-feat-018",
+      "input": "Culture Shock - Troglodyte (feat. Mefjus x Kanine)",
+      "expected": {
+        "artists": [
+          "Culture Shock",
+          {
+            "name": "Mefjus",
+            "role": "featured",
+            "joiner": "feat.",
+            "source": "title"
+          },
+          {
+            "name": "Kanine",
+            "role": "featured",
+            "joiner": "x",
+            "source": "title"
+          }
+        ],
+        "title": "Troglodyte"
+      },
+      "rules": [
+        "R5.2",
+        "R7.3"
+      ],
+      "tags": [
+        "feat",
+        "joiner"
+      ],
+      "note": "Constructed credits."
+    },
+    {
+      "id": "title-feat-019",
+      "input": "Shy FX - Raver (ft. Stamina MC with Kojo)",
+      "expected": {
+        "artists": [
+          "Shy FX",
+          {
+            "name": "Stamina MC with Kojo",
+            "role": "featured",
+            "joiner": "ft.",
+            "source": "title"
+          }
+        ],
+        "title": "Raver"
+      },
+      "rules": [
+        "R7.3",
+        "R5.2"
+      ],
+      "tags": [
+        "feat",
+        "with"
+      ],
+      "note": "Constructed. 'with' never splits inside groups."
+    },
+    {
+      "id": "title-feat-020",
+      "input": "Skrillex - Kill Everybody ft.Nobody",
+      "expected": {
+        "artists": [
+          "Skrillex"
+        ],
+        "title": "Kill Everybody ft.Nobody"
+      },
+      "rules": [
+        "R8.3"
+      ],
+      "tags": [
+        "feat",
+        "trap"
+      ],
+      "note": "Constructed. The marker must be a whole word with spaces around; 'ft.Nobody' is not."
+    },
+    {
+      "id": "title-feat-021",
+      "input": "Daft Punk - Feat of Clay",
+      "expected": {
+        "artists": [
+          "Daft Punk"
+        ],
+        "title": "Feat of Clay"
+      },
+      "rules": [
+        "R8.3"
+      ],
+      "tags": [
+        "feat",
+        "trap"
+      ],
+      "note": "Constructed. A marker at the very start of the title has no space on its left, so it does not match."
+    },
+    {
+      "id": "title-feat-022",
+      "input": "Rhapsody - A Feat of Strength",
+      "expected": {
+        "artists": ["Rhapsody"],
+        "title": "A Feat of Strength"
+      },
+      "rules": ["R8.3"],
+      "tags": ["feat", "trap"],
+      "note": "Constructed. Undotted 'Feat' mid-title is an ordinary word (R8.3)."
+    },
+    {
+      "id": "title-feat-023",
+      "input": "Kanye West - Mercy (feat. Big Sean, Pusha T & 2 Chainz)",
+      "expected": {
+        "artists": [
+          "Kanye West",
+          {
+            "name": "Big Sean",
+            "role": "featured",
+            "joiner": "feat.",
+            "source": "title"
+          },
+          {
+            "name": "Pusha T",
+            "role": "featured",
+            "joiner": ",",
+            "source": "title"
+          },
+          {
+            "name": "2 Chainz",
+            "role": "featured",
+            "joiner": "&",
+            "source": "title"
+          }
+        ],
+        "title": "Mercy"
+      },
+      "rules": [
+        "R5.2",
+        "R7.3",
+        "R4.3"
+      ],
+      "tags": [
+        "feat",
+        "digits"
+      ]
+    },
+    {
+      "id": "title-feat-024",
+      "input": "Chase & Status - Count On Me (feat. Moko)",
+      "options": {
+        "knownArtists": [
+          "Chase & Status"
+        ]
+      },
+      "expected": {
+        "artists": [
+          {
+            "name": "Chase & Status",
+            "role": "primary",
+            "source": "artist"
+          },
+          {
+            "name": "Moko",
+            "role": "featured",
+            "joiner": "feat.",
+            "source": "title"
+          }
+        ],
+        "title": "Count On Me"
+      },
+      "rules": [
+        "R5.2",
+        "R7.3a"
+      ],
+      "tags": [
+        "feat",
+        "known-artists",
+        "dnb"
+      ]
+    },
+    {
+      "id": "title-feat-025",
+      "input": "Noisia - Stigma (feat. ID & Alice Gold)",
+      "expected": {
+        "artists": [
+          "Noisia",
+          { "name": "Alice Gold", "role": "featured", "joiner": "feat.", "source": "title" }
+        ],
+        "title": "Stigma",
+        "flags": { "unknownArtist": true }
+      },
+      "rules": ["R7.5", "R7.6", "R5.2"],
+      "tags": ["id", "joiner"],
+      "note": "The first featured name was an unknown token: the next one inherits the marker."
+    },
+    {
+      "id": "title-feat-026",
+      "input": "Noisia - Stigma Ft. Mefjus",
+      "expected": {
+        "artists": [
+          "Noisia",
+          { "name": "Mefjus", "role": "featured", "joiner": "Ft.", "source": "title" }
+        ],
+        "title": "Stigma"
+      },
+      "rules": ["R8.3", "R0.3"],
+      "tags": ["feat"],
+      "note": "Dotted markers count on the title side regardless of case."
+    },
+    {
+      "id": "title-feat-027",
+      "input": "Noisia - Stigma featuring Mefjus produced by Phace",
+      "expected": {
+        "artists": [
+          "Noisia",
+          { "name": "Mefjus", "role": "featured", "joiner": "featuring", "source": "title" },
+          { "name": "Phace", "role": "producer", "joiner": "produced by", "source": "title" }
+        ],
+        "title": "Stigma"
+      },
+      "rules": ["R8.3"],
+      "tags": ["feat", "producer"],
+      "note": "A title-side feat list ends at a producer marker."
+    }
+  ]
+}

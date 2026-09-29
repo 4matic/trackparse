@@ -1,0 +1,487 @@
+{
+  "$schema": "../../schema/fixture-file.schema.json",
+  "description": "youtube mode: pipes (R2.4), platform suffixes (R2.2), quoted titles (R6.5), ' by ' (R6.6), uploader fallback (R6.8), trailing junk (R8.4), auto-detection (R2.1)",
+  "defaults": { "fn": "parse", "options": { "mode": "auto" } },
+  "cases": [
+    {
+      "id": "youtube-001",
+      "input": "Noisia - Tentacles | Official Video",
+      "match": "exact",
+      "expected": {
+        "input": "Noisia - Tentacles | Official Video",
+        "mode": "youtube",
+        "position": null,
+        "timestamp": null,
+        "artists": [
+          { "name": "Noisia", "role": "primary", "joiner": null, "source": "artist" }
+        ],
+        "title": "Tentacles",
+        "fullTitle": "Tentacles",
+        "versions": [],
+        "year": null,
+        "flags": { "explicit": false, "clean": false, "unknownArtist": false, "unknownTitle": false },
+        "junk": [{ "raw": "Official Video", "kind": "video" }],
+        "warnings": []
+      },
+      "rules": ["R2.1", "R2.4"],
+      "tags": ["pipe", "junk"],
+      "note": "A top-level ' | ' resolves auto to youtube; the all-junk segment is dropped."
+    },
+    {
+      "id": "youtube-002",
+      "input": "Noisia | Tentacles",
+      "match": "exact",
+      "expected": {
+        "input": "Noisia | Tentacles",
+        "mode": "youtube",
+        "position": null,
+        "timestamp": null,
+        "artists": [
+          { "name": "Noisia", "role": "primary", "joiner": null, "source": "artist" }
+        ],
+        "title": "Tentacles",
+        "fullTitle": "Tentacles",
+        "versions": [],
+        "year": null,
+        "flags": { "explicit": false, "clean": false, "unknownArtist": false, "unknownTitle": false },
+        "junk": [],
+        "warnings": ["ambiguousSeparator"]
+      },
+      "rules": ["R2.4"],
+      "tags": ["pipe"]
+    },
+    {
+      "id": "youtube-003",
+      "input": "Noisia | Tentacles | Official Video",
+      "expected": {
+        "artists": ["Noisia"],
+        "title": "Tentacles",
+        "junk": [{ "raw": "Official Video", "kind": "video" }],
+        "warnings": ["ambiguousSeparator"]
+      },
+      "rules": ["R2.4"],
+      "tags": ["pipe", "junk"],
+      "note": "Exactly 2 segments remain after junk removal -> artist | title."
+    },
+    {
+      "id": "youtube-004",
+      "input": "Noisia - Tentacles | Official Audio | Vision Recordings Channel",
+      "expected": {
+        "mode": "youtube",
+        "artists": ["Noisia"],
+        "title": "Tentacles",
+        "junk": [
+          { "raw": "Official Audio", "kind": "audio" },
+          { "raw": "Vision Recordings Channel", "kind": "other" }
+        ]
+      },
+      "rules": ["R2.4"],
+      "tags": ["pipe", "junk"],
+      "note": "The first segment with a spaced dash is kept; other non-junk segments become junk 'other'."
+    },
+    {
+      "id": "youtube-005",
+      "input": "Noisia - Tentacles || HD",
+      "expected": {
+        "artists": ["Noisia"],
+        "title": "Tentacles",
+        "junk": [{ "raw": "HD", "kind": "quality" }]
+      },
+      "rules": ["R2.4"],
+      "tags": ["pipe", "junk"]
+    },
+    {
+      "id": "youtube-006",
+      "input": "Noisia | Tentacles | Vision Recordings Channel",
+      "expected": {
+        "mode": "youtube",
+        "artists": [],
+        "title": "Noisia",
+        "junk": [
+          { "raw": "Tentacles", "kind": "other" },
+          { "raw": "Vision Recordings Channel", "kind": "other" }
+        ],
+        "warnings": ["noSeparator"]
+      },
+      "rules": ["R2.4", "R6.8"],
+      "tags": ["pipe", "spec-issue"],
+      "note": "R2.4.4: three non-junk segments without a dash -> keep the first. Spec-literal; see report."
+    },
+    {
+      "id": "youtube-007",
+      "input": "Taylor Swift \"Shake It Off\"",
+      "options": { "mode": "youtube" },
+      "match": "exact",
+      "expected": {
+        "input": "Taylor Swift \"Shake It Off\"",
+        "mode": "youtube",
+        "position": null,
+        "timestamp": null,
+        "artists": [
+          { "name": "Taylor Swift", "role": "primary", "joiner": null, "source": "artist" }
+        ],
+        "title": "Shake It Off",
+        "fullTitle": "Shake It Off",
+        "versions": [],
+        "year": null,
+        "flags": { "explicit": false, "clean": false, "unknownArtist": false, "unknownTitle": false },
+        "junk": [],
+        "warnings": ["quotedTitleSplit"]
+      },
+      "rules": ["R6.5"],
+      "tags": ["quoted"]
+    },
+    {
+      "id": "youtube-008",
+      "input": "Taylor Swift \"Shake It Off\"",
+      "expected": {
+        "mode": "clean",
+        "artists": [],
+        "title": "Taylor Swift \"Shake It Off\"",
+        "warnings": ["noSeparator"]
+      },
+      "rules": ["R2.1", "R6.5", "R6.8"],
+      "tags": ["quoted", "auto"],
+      "note": "Nothing youtube-ish in the string: auto resolves to clean, where quoted titles are not a separator."
+    },
+    {
+      "id": "youtube-009",
+      "input": "Taylor Swift: \"Shake It Off\" (Official Video)",
+      "expected": {
+        "mode": "youtube",
+        "artists": ["Taylor Swift"],
+        "title": "Shake It Off",
+        "junk": [{ "raw": "Official Video", "kind": "video" }],
+        "warnings": ["quotedTitleSplit"]
+      },
+      "rules": ["R2.1", "R6.5"],
+      "tags": ["quoted", "junk"],
+      "note": "Trailing ':' trimmed from the artist side; text after the closing quote joins the title side."
+    },
+    {
+      "id": "youtube-010",
+      "input": "Noisia - \"Tentacles\"",
+      "options": { "mode": "youtube" },
+      "expected": { "artists": ["Noisia"], "title": "Tentacles", "warnings": [] },
+      "rules": ["R6.3", "R8.5"],
+      "tags": ["quoted"],
+      "note": "A spaced dash wins over R6.5; wrapping quotes stripped by R8.5 without a warning."
+    },
+    {
+      "id": "youtube-011",
+      "input": "Tentacles by Noisia",
+      "options": { "mode": "youtube" },
+      "expected": { "artists": ["Noisia"], "title": "Tentacles", "warnings": ["bySplit"] },
+      "rules": ["R6.6"],
+      "tags": ["by"]
+    },
+    {
+      "id": "youtube-012",
+      "input": "Stand by Me",
+      "options": { "mode": "youtube" },
+      "expected": { "artists": [], "title": "Stand by Me", "warnings": ["noSeparator"] },
+      "rules": ["R6.6", "R6.8"],
+      "tags": ["by", "stopword"],
+      "note": "Right side is a single stopword: no split."
+    },
+    {
+      "id": "youtube-013",
+      "input": "Stand by Me by Ben E. King",
+      "options": { "mode": "youtube" },
+      "expected": { "artists": ["Ben E. King"], "title": "Stand by Me", "warnings": ["bySplit"] },
+      "rules": ["R6.6"],
+      "tags": ["by"],
+      "note": "The last ' by ' is used."
+    },
+    {
+      "id": "youtube-014",
+      "input": "Tentacles by Noisia (Official Video)",
+      "expected": {
+        "mode": "youtube",
+        "artists": ["Noisia"],
+        "title": "Tentacles",
+        "junk": [{ "raw": "Official Video", "kind": "video" }],
+        "warnings": ["bySplit"]
+      },
+      "rules": ["R6.6", "R7.1"],
+      "tags": ["by", "junk"],
+      "note": "The junk group ends up on the artist side and is extracted there (R7.1)."
+    },
+    {
+      "id": "youtube-015",
+      "input": "Stand by Me (Official Audio)",
+      "expected": {
+        "mode": "youtube",
+        "artists": [],
+        "title": "Stand by Me",
+        "junk": [
+          { "raw": "Official Audio", "kind": "audio" }
+        ],
+        "warnings": ["noSeparator"]
+      },
+      "rules": ["R6.6"],
+      "tags": ["by", "stopword"],
+      "note": "Placeholders are ignored in the R6.6 stopword test, so 'Me (Official Audio)' is a single stopword: no split."
+    },
+    {
+      "id": "youtube-016",
+      "input": "Noisia - Tentacles - YouTube",
+      "expected": {
+        "mode": "youtube",
+        "artists": ["Noisia"],
+        "title": "Tentacles",
+        "junk": [{ "raw": "YouTube", "kind": "platform" }]
+      },
+      "rules": ["R2.1", "R2.2"],
+      "tags": ["platform"]
+    },
+    {
+      "id": "youtube-017",
+      "input": "Noisia - Tentacles - YouTube Music",
+      "expected": {
+        "mode": "youtube",
+        "artists": ["Noisia"],
+        "title": "Tentacles",
+        "junk": [{ "raw": "YouTube Music", "kind": "platform" }]
+      },
+      "rules": ["R2.2"],
+      "tags": ["platform"],
+      "note": "Longest suffix first."
+    },
+    {
+      "id": "youtube-018",
+      "input": "Noisia - Tentacles - Topic",
+      "expected": {
+        "mode": "youtube",
+        "artists": ["Noisia"],
+        "title": "Tentacles",
+        "junk": [{ "raw": "Topic", "kind": "platform" }]
+      },
+      "rules": ["R2.2"],
+      "tags": ["platform"]
+    },
+    {
+      "id": "youtube-019",
+      "input": "Noisia - Tentacles | Free Listening on SoundCloud",
+      "expected": {
+        "mode": "youtube",
+        "artists": ["Noisia"],
+        "title": "Tentacles",
+        "junk": [{ "raw": "Free Listening on SoundCloud", "kind": "platform" }]
+      },
+      "rules": ["R2.2"],
+      "tags": ["platform"]
+    },
+    {
+      "id": "youtube-020",
+      "input": "Numb (Official Video)",
+      "options": { "uploader": "Linkin Park" },
+      "expected": {
+        "mode": "youtube",
+        "artists": [{ "name": "Linkin Park", "role": "primary" }],
+        "title": "Numb",
+        "junk": [{ "raw": "Official Video", "kind": "video" }]
+      },
+      "rules": ["R6.8", "R2.1"],
+      "tags": ["uploader"]
+    },
+    {
+      "id": "youtube-021",
+      "input": "Numb (Official Video)",
+      "options": { "uploader": "LinkinParkVEVO" },
+      "expected": { "artists": ["LinkinPark"], "title": "Numb" },
+      "rules": ["R6.8"],
+      "tags": ["uploader", "vevo"],
+      "note": "Only the trailing 'VEVO' is removed; camel-case is not re-spaced."
+    },
+    {
+      "id": "youtube-022",
+      "input": "Numb (Official Video)",
+      "options": { "uploader": "Linkin Park - Topic" },
+      "expected": { "artists": ["Linkin Park"], "title": "Numb" },
+      "rules": ["R6.8"],
+      "tags": ["uploader", "topic"]
+    },
+    {
+      "id": "youtube-023",
+      "input": "Numb (Official Video)",
+      "options": { "uploader": "Linkin Park VEVO" },
+      "expected": { "artists": ["Linkin Park"], "title": "Numb" },
+      "rules": ["R6.8"],
+      "tags": ["uploader", "vevo"]
+    },
+    {
+      "id": "youtube-024",
+      "input": "Linkin Park - Numb (Official Video)",
+      "options": { "uploader": "Warner Records Vault" },
+      "expected": { "artists": ["Linkin Park"], "title": "Numb" },
+      "rules": ["R6.8", "R6.3"],
+      "tags": ["uploader"],
+      "note": "The uploader is only a fallback when no separator is found."
+    },
+    {
+      "id": "youtube-025",
+      "input": "Numb",
+      "options": { "mode": "clean", "uploader": "Linkin Park" },
+      "expected": { "mode": "clean", "artists": [], "title": "Numb", "warnings": ["noSeparator"] },
+      "rules": ["R6.8"],
+      "tags": ["uploader"],
+      "note": "The uploader fallback applies in youtube mode only."
+    },
+    {
+      "id": "youtube-026",
+      "input": "Noisia - Tentacles Official Video",
+      "expected": {
+        "mode": "youtube",
+        "artists": ["Noisia"],
+        "title": "Tentacles",
+        "junk": [{ "raw": "Official Video", "kind": "video" }]
+      },
+      "rules": ["R2.1", "R8.4"],
+      "tags": ["trailing-junk"],
+      "note": "An unbracketed trailing junk phrase both resolves auto to youtube and is removed (longest phrase)."
+    },
+    {
+      "id": "youtube-027",
+      "input": "Noisia - Tentacles Official Video HD",
+      "expected": {
+        "artists": ["Noisia"],
+        "title": "Tentacles",
+        "junk": [
+          { "raw": "Official Video", "kind": "video" },
+          { "raw": "HD", "kind": "quality" }
+        ]
+      },
+      "rules": ["R8.4"],
+      "tags": ["trailing-junk"],
+      "note": "Repeated removal; junk listed in order of appearance in the input."
+    },
+    {
+      "id": "youtube-028",
+      "input": "Noisia - Tentacles Lyrics",
+      "expected": {
+        "mode": "youtube",
+        "artists": ["Noisia"],
+        "title": "Tentacles",
+        "junk": [{ "raw": "Lyrics", "kind": "lyrics" }]
+      },
+      "rules": ["R2.1", "R8.4"],
+      "tags": ["trailing-junk"]
+    },
+    {
+      "id": "youtube-029",
+      "input": "[MV] BLACKPINK - 'How You Like That'",
+      "expected": {
+        "mode": "youtube",
+        "artists": ["BLACKPINK"],
+        "title": "How You Like That",
+        "junk": [{ "raw": "MV", "kind": "video" }]
+      },
+      "rules": ["R2.1", "R7.1", "R8.5"],
+      "tags": ["kpop", "junk"],
+      "note": "The [MV] group sits on the artist side and is extracted there; wrapping single quotes stripped from the title."
+    },
+    {
+      "id": "youtube-030",
+      "input": "[MV] IU(아이유) _ Blueming(블루밍)",
+      "expected": {
+        "mode": "youtube",
+        "artists": [],
+        "title": "IU(아이유) _ Blueming(블루밍)",
+        "junk": [{ "raw": "MV", "kind": "video" }],
+        "warnings": ["noSeparator"]
+      },
+      "rules": ["R6.8", "R5.8"],
+      "tags": ["kpop", "limitation"],
+      "note": "The ' _ ' separator used by some K-pop channels is not a separator in v1; documents current behaviour."
+    },
+    {
+      "id": "youtube-031",
+      "input": "Stigma Official Video",
+      "options": { "mode": "youtube" },
+      "expected": {
+        "artists": [],
+        "title": "Stigma",
+        "junk": [
+          { "raw": "Official Video", "kind": "video" }
+        ]
+      },
+      "rules": ["R8.4"],
+      "tags": ["trailing-junk"],
+      "note": "The longest junk phrase that is a suffix wins (Official Video, not Video)."
+    },
+    {
+      "id": "youtube-032",
+      "input": "Official Video",
+      "options": { "mode": "youtube" },
+      "expected": {
+        "artists": [],
+        "title": "Official Video",
+        "junk": []
+      },
+      "rules": ["R8.4"],
+      "tags": ["trailing-junk"],
+      "note": "R8.4 never empties the title."
+    },
+    {
+      "id": "youtube-033",
+      "input": "Numb",
+      "options": { "mode": "youtube", "uploader": "Linkin Park" },
+      "expected": {
+        "artists": ["Linkin Park"],
+        "title": "Numb",
+        "warnings": []
+      },
+      "rules": ["R6.8"],
+      "tags": ["uploader"],
+      "note": "The uploader fallback does not warn noSeparator."
+    },
+    {
+      "id": "youtube-034",
+      "input": "Stand by You (Lyric Video)",
+      "expected": {
+        "mode": "youtube",
+        "artists": [],
+        "title": "Stand by You",
+        "junk": [
+          { "raw": "Lyric Video", "kind": "lyrics" }
+        ],
+        "warnings": ["noSeparator"]
+      },
+      "rules": ["R6.6"],
+      "tags": ["by", "stopword"],
+      "note": "Placeholders are ignored in the stopword test."
+    },
+    {
+      "id": "youtube-035",
+      "input": "Noisia - Stigma | Official Video - HD",
+      "expected": {
+        "mode": "youtube",
+        "artists": ["Noisia"],
+        "title": "Stigma",
+        "junk": [
+          { "raw": "Official Video - HD", "kind": "other" }
+        ]
+      },
+      "rules": ["R2.4"],
+      "tags": ["pipe"],
+      "note": "A pipe segment with a spaced dash is never junk in step 1; it is pushed as 'other' in step 2."
+    },
+    {
+      "id": "youtube-036",
+      "input": "HD | 4K",
+      "options": { "mode": "youtube" },
+      "expected": {
+        "artists": [],
+        "title": "",
+        "junk": [
+          { "raw": "HD", "kind": "quality" },
+          { "raw": "4K", "kind": "quality" }
+        ]
+      },
+      "rules": ["R2.4"],
+      "tags": ["pipe"],
+      "note": "Every segment is junk: the working string is empty."
+    }
+  ]
+}

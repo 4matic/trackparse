@@ -1,0 +1,9 @@
+{
+  "$comment": "Words allowed in the modifier run to the left of a version head (SPEC.md R5.7). typeCapableModifiers from version-keywords.json and genres.json entries are also allowed. ASCII lowercase.",
+  "descriptors": [
+    "radio", "extended", "club", "original", "instrumental", "dub", "vip", "acoustic", "live", "demo",
+    "vocal", "clean", "dirty", "explicit", "short", "long", "full", "album", "single", "alternate", "alt",
+    "alternative", "main", "special", "bonus", "deluxe", "mono", "stereo", "new", "official", "orchestral",
+    "piano", "unplugged", "12\"", "7\"", "12''", "7''", "12 inch", "7 inch", "re", "final", "second", "2nd", "3rd"
+  ]
+}

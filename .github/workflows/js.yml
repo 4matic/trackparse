@@ -1,0 +1,38 @@
+name: js
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    paths:
+      - "js/**"
+      - "spec/**"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "package.json"
+      - ".github/workflows/js.yml"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: [20, 22, 24]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter trackparse lint
+      - run: pnpm --filter trackparse typecheck
+      - run: pnpm --filter trackparse test
+      - run: pnpm --filter trackparse build
+      - name: Package checks
+        working-directory: js
+        run: |
+          pnpm exec publint
+          pnpm exec attw --pack . --profile node16

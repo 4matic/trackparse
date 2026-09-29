@@ -1,0 +1,11 @@
+{
+  "$comment": "Genre words/phrases. A bracket group made only of these is junk of kind 'genre'; inside a version group they become the descriptor. ASCII lowercase, matched as token sequences, longest first.",
+  "genres": [
+    "d'n'b", "dnb", "d&b", "d & b", "drum & bass", "drum&bass", "drum and bass", "drum n bass", "drum 'n' bass", "drum'n'bass",
+    "neurofunk", "neuro", "liquid", "liquid funk", "jump up", "jump-up", "jungle", "halftime", "dancefloor",
+    "dubstep", "riddim", "brostep", "trap", "future bass", "house", "deep house", "tech house", "progressive house",
+    "electro house", "techno", "trance", "psytrance", "psy", "hardstyle", "hardcore", "breaks", "breakbeat",
+    "garage", "uk garage", "ukg", "2step", "2-step", "grime", "bass", "bass house", "edm", "electronic", "idm",
+    "synthwave", "phonk", "hip hop", "hip-hop", "rap", "pop", "rock", "metal", "ambient", "chillout", "lofi", "lo-fi"
+  ]
+}

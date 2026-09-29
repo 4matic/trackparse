@@ -1,0 +1,616 @@
+{
+  "$schema": "../../schema/fixture-file.schema.json",
+  "description": "Artist-side credit splitting: joiners, guards, splitAnd, leftmost feat, name cleanup, symbol names, dedup (R7.2, R7.3, R7.4, R9.2)",
+  "defaults": { "fn": "parse", "options": { "mode": "clean" } },
+  "cases": [
+    {
+      "id": "artists-split-001",
+      "input": "Noisia & The Upbeats - Dead Limit",
+      "match": "exact",
+      "expected": {
+        "input": "Noisia & The Upbeats - Dead Limit",
+        "mode": "clean",
+        "position": null,
+        "timestamp": null,
+        "artists": [
+          { "name": "Noisia", "role": "primary", "joiner": null, "source": "artist" },
+          { "name": "The Upbeats", "role": "primary", "joiner": "&", "source": "artist" }
+        ],
+        "title": "Dead Limit",
+        "fullTitle": "Dead Limit",
+        "versions": [],
+        "year": null,
+        "flags": { "explicit": false, "clean": false, "unknownArtist": false, "unknownTitle": false },
+        "junk": [],
+        "warnings": []
+      },
+      "rules": ["R7.3", "R6.3"],
+      "tags": ["joiner", "dnb"],
+      "note": "'the' is deliberately not in no-split-before.json, so '& The Upbeats' splits."
+    },
+    {
+      "id": "artists-split-002",
+      "input": "Sub Focus, Wilkinson - Illuminate",
+      "expected": {
+        "artists": [
+          { "name": "Sub Focus", "role": "primary", "joiner": null },
+          { "name": "Wilkinson", "role": "primary", "joiner": "," }
+        ],
+        "title": "Illuminate"
+      },
+      "rules": ["R7.3"],
+      "tags": ["joiner", "tight"]
+    },
+    {
+      "id": "artists-split-003",
+      "input": "Dimension; Culture Shock - Desire",
+      "expected": {
+        "artists": [
+          { "name": "Dimension", "joiner": null },
+          { "name": "Culture Shock", "joiner": ";" }
+        ],
+        "title": "Desire"
+      },
+      "rules": ["R7.3"],
+      "tags": ["joiner", "tight"]
+    },
+    {
+      "id": "artists-split-004",
+      "input": "Wilkinson x Sub Focus - Take It Up",
+      "expected": {
+        "artists": [
+          { "name": "Wilkinson", "role": "primary", "joiner": null },
+          { "name": "Sub Focus", "role": "primary", "joiner": "x" }
+        ],
+        "title": "Take It Up"
+      },
+      "rules": ["R7.3"],
+      "tags": ["joiner", "x"]
+    },
+    {
+      "id": "artists-split-005",
+      "input": "Dimension × Culture Shock - Rezonate",
+      "expected": {
+        "artists": [
+          { "name": "Dimension", "joiner": null },
+          { "name": "Culture Shock", "joiner": "×" }
+        ],
+        "title": "Rezonate"
+      },
+      "rules": ["R7.3", "R1.7"],
+      "tags": ["joiner"]
+    },
+    {
+      "id": "artists-split-006",
+      "input": "Armin van Buuren vs Vini Vici - Great Spirit",
+      "expected": {
+        "artists": [
+          { "name": "Armin van Buuren", "role": "primary", "joiner": null },
+          { "name": "Vini Vici", "role": "primary", "joiner": "vs" }
+        ],
+        "title": "Great Spirit"
+      },
+      "rules": ["R7.3"],
+      "tags": ["joiner", "vs"],
+      "note": "vs does not create a role; it is only the joiner."
+    },
+    {
+      "id": "artists-split-007",
+      "input": "Armin van Buuren VS. Vini Vici - Great Spirit",
+      "expected": {
+        "artists": [
+          { "name": "Armin van Buuren", "joiner": null },
+          { "name": "Vini Vici", "joiner": "VS." }
+        ],
+        "title": "Great Spirit"
+      },
+      "rules": ["R7.3", "R0.3"],
+      "tags": ["joiner", "vs", "case"],
+      "note": "Joiner recorded as written, case kept."
+    },
+    {
+      "id": "artists-split-008",
+      "input": "Dimitri Vegas & Like Mike versus Diplo - Hey Baby",
+      "expected": {
+        "artists": [
+          { "name": "Dimitri Vegas", "joiner": null },
+          { "name": "Like Mike", "joiner": "&" },
+          { "name": "Diplo", "joiner": "versus" }
+        ],
+        "title": "Hey Baby"
+      },
+      "rules": ["R7.3"],
+      "tags": ["joiner", "vs"]
+    },
+    {
+      "id": "artists-split-009",
+      "input": "Calibre / DRS - Mr Majestic",
+      "expected": {
+        "artists": [
+          { "name": "Calibre", "joiner": null },
+          { "name": "DRS", "joiner": "/" }
+        ],
+        "title": "Mr Majestic"
+      },
+      "rules": ["R7.3"],
+      "tags": ["joiner", "slash"]
+    },
+    {
+      "id": "artists-split-010",
+      "input": "Rudimental + Ed Sheeran - Bloodstream",
+      "expected": {
+        "artists": [
+          { "name": "Rudimental", "joiner": null },
+          { "name": "Ed Sheeran", "joiner": "+" }
+        ],
+        "title": "Bloodstream"
+      },
+      "rules": ["R7.3"],
+      "tags": ["joiner", "plus"]
+    },
+    {
+      "id": "artists-split-011",
+      "input": "Sigala with Ella Eyre - Came Here for Love",
+      "expected": {
+        "artists": [
+          { "name": "Sigala", "role": "primary", "joiner": null, "source": "artist" },
+          { "name": "Ella Eyre", "role": "primary", "joiner": "with", "source": "artist" }
+        ],
+        "title": "Came Here for Love"
+      },
+      "rules": ["R7.3", "R7.2"],
+      "tags": ["joiner", "with"],
+      "note": "Unbracketed 'with' is a bracketOnly feat marker, so on the artist side it is a plain joiner of the main list (primary role)."
+    },
+    {
+      "id": "artists-split-012",
+      "input": "Dillinja meets Lemon D - Big Bad Bass",
+      "expected": {
+        "artists": [
+          { "name": "Dillinja", "joiner": null },
+          { "name": "Lemon D", "joiner": "meets" }
+        ],
+        "title": "Big Bad Bass"
+      },
+      "rules": ["R7.3"],
+      "tags": ["joiner"]
+    },
+    {
+      "id": "artists-split-013",
+      "input": "Armin van Buuren pres. Gaia - Tuvan",
+      "expected": {
+        "artists": [
+          { "name": "Armin van Buuren", "role": "primary", "joiner": null },
+          { "name": "Gaia", "role": "primary", "joiner": "pres." }
+        ],
+        "title": "Tuvan"
+      },
+      "rules": ["R7.3", "R0.3"],
+      "tags": ["joiner", "presents"]
+    },
+    {
+      "id": "artists-split-014",
+      "input": "Armin van Buuren presents Rising Star - Safe Inside You",
+      "expected": {
+        "artists": [
+          { "name": "Armin van Buuren", "joiner": null },
+          { "name": "Rising Star", "joiner": "presents" }
+        ],
+        "title": "Safe Inside You"
+      },
+      "rules": ["R7.3"],
+      "tags": ["joiner", "presents"]
+    },
+    {
+      "id": "artists-split-015",
+      "input": "Andy C b2b Hedex - Heartbeat Loud",
+      "expected": {
+        "artists": [
+          { "name": "Andy C", "joiner": null },
+          { "name": "Hedex", "joiner": "b2b" }
+        ],
+        "title": "Heartbeat Loud"
+      },
+      "rules": ["R7.3"],
+      "tags": ["joiner", "dnb"]
+    },
+    {
+      "id": "artists-split-016",
+      "input": "Wilkinson, Sub Focus and Dimension - Illuminate",
+      "match": "exact",
+      "expected": {
+        "input": "Wilkinson, Sub Focus and Dimension - Illuminate",
+        "mode": "clean",
+        "position": null,
+        "timestamp": null,
+        "artists": [
+          { "name": "Wilkinson", "role": "primary", "joiner": null, "source": "artist" },
+          { "name": "Sub Focus", "role": "primary", "joiner": ",", "source": "artist" },
+          { "name": "Dimension", "role": "primary", "joiner": "and", "source": "artist" }
+        ],
+        "title": "Illuminate",
+        "fullTitle": "Illuminate",
+        "versions": [],
+        "year": null,
+        "flags": { "explicit": false, "clean": false, "unknownArtist": false, "unknownTitle": false },
+        "junk": [],
+        "warnings": []
+      },
+      "rules": ["R7.3"],
+      "tags": ["joiner", "and", "splitAnd"],
+      "note": "splitAnd auto: 'and' splits because the list already split at ',' before it."
+    },
+    {
+      "id": "artists-split-017",
+      "input": "Simon and Garfunkel - The Boxer",
+      "expected": { "artists": ["Simon and Garfunkel"], "title": "The Boxer" },
+      "rules": ["R7.3"],
+      "tags": ["and", "splitAnd"],
+      "note": "splitAnd auto: no ',' before 'and' -> no split."
+    },
+    {
+      "id": "artists-split-018",
+      "input": "Above and Beyond - Sun & Moon",
+      "expected": { "artists": ["Above and Beyond"], "title": "Sun & Moon" },
+      "rules": ["R7.3"],
+      "tags": ["and", "splitAnd"],
+      "note": "Title side is never split at joiners."
+    },
+    {
+      "id": "artists-split-019",
+      "input": "Simon and Garfunkel - The Boxer",
+      "options": { "splitAnd": "always" },
+      "expected": {
+        "artists": [
+          { "name": "Simon", "joiner": null },
+          { "name": "Garfunkel", "joiner": "and" }
+        ],
+        "title": "The Boxer"
+      },
+      "rules": ["R7.3", "R12"],
+      "tags": ["and", "splitAnd"]
+    },
+    {
+      "id": "artists-split-020",
+      "input": "Wilkinson, Sub Focus and Dimension - Illuminate",
+      "options": { "splitAnd": "never" },
+      "expected": {
+        "artists": [
+          { "name": "Wilkinson", "joiner": null },
+          { "name": "Sub Focus and Dimension", "joiner": "," }
+        ],
+        "title": "Illuminate"
+      },
+      "rules": ["R7.3", "R12"],
+      "tags": ["and", "splitAnd"]
+    },
+    {
+      "id": "artists-split-021",
+      "input": "Mumford and Sons - Little Lion Man",
+      "options": { "splitAnd": "always" },
+      "expected": { "artists": ["Mumford and Sons"], "title": "Little Lion Man" },
+      "rules": ["R7.3"],
+      "tags": ["and", "guard", "no-split-before"],
+      "note": "no-split-before guard wins even with splitAnd always."
+    },
+    {
+      "id": "artists-split-022",
+      "input": "Mumford & Sons - The Cave",
+      "expected": { "artists": ["Mumford & Sons"], "title": "The Cave" },
+      "rules": ["R7.3"],
+      "tags": ["guard", "no-split-before"]
+    },
+    {
+      "id": "artists-split-023",
+      "input": "AC/DC - Thunderstruck",
+      "expected": { "artists": ["AC/DC"], "title": "Thunderstruck" },
+      "rules": ["R7.3"],
+      "tags": ["guard", "unspaced"]
+    },
+    {
+      "id": "artists-split-024",
+      "input": "Drum&Bass Arena & Andy C - Anthems",
+      "expected": {
+        "artists": [
+          { "name": "Drum&Bass Arena", "joiner": null },
+          { "name": "Andy C", "joiner": "&" }
+        ],
+        "title": "Anthems"
+      },
+      "rules": ["R7.3"],
+      "tags": ["guard", "unspaced"]
+    },
+    {
+      "id": "artists-split-025",
+      "input": "Ant+Shift - Sick Sounds",
+      "expected": { "artists": ["Ant+Shift"], "title": "Sick Sounds" },
+      "rules": ["R7.3"],
+      "tags": ["guard", "unspaced"]
+    },
+    {
+      "id": "artists-split-026",
+      "input": "Malcolm X & Y - Speech",
+      "expected": {
+        "artists": [
+          { "name": "Malcolm X", "joiner": null },
+          { "name": "Y", "joiner": "&" }
+        ],
+        "title": "Speech"
+      },
+      "rules": ["R7.3"],
+      "tags": ["guard", "x", "case"],
+      "note": "Joiner 'x' is caseSensitive: uppercase ' X ' never splits."
+    },
+    {
+      "id": "artists-split-027",
+      "input": "1,000 Homo DJs - Supernaut",
+      "expected": { "position": null, "artists": ["1,000 Homo DJs"], "title": "Supernaut" },
+      "rules": ["R7.3", "R4.2"],
+      "tags": ["guard", "digits"],
+      "note": "',' between two digits never splits; '1,' is not a position."
+    },
+    {
+      "id": "artists-split-028",
+      "input": "Armin van Buuren vs Vini Vici feat. Hilight Tribe - Great Spirit",
+      "match": "exact",
+      "expected": {
+        "input": "Armin van Buuren vs Vini Vici feat. Hilight Tribe - Great Spirit",
+        "mode": "clean",
+        "position": null,
+        "timestamp": null,
+        "artists": [
+          { "name": "Armin van Buuren", "role": "primary", "joiner": null, "source": "artist" },
+          { "name": "Vini Vici", "role": "primary", "joiner": "vs", "source": "artist" },
+          { "name": "Hilight Tribe", "role": "featured", "joiner": "feat.", "source": "artist" }
+        ],
+        "title": "Great Spirit",
+        "fullTitle": "Great Spirit",
+        "versions": [],
+        "year": null,
+        "flags": { "explicit": false, "clean": false, "unknownArtist": false, "unknownTitle": false },
+        "junk": [],
+        "warnings": []
+      },
+      "rules": ["R7.2", "R7.3"],
+      "tags": ["feat", "vs"],
+      "note": "A vs B feat. C: primaries left of the feat marker, featured right of it."
+    },
+    {
+      "id": "artists-split-029",
+      "input": "Pendulum feat. Steven Wilson vs Knife Party - The Tempest",
+      "expected": {
+        "artists": [
+          { "name": "Pendulum", "role": "primary", "joiner": null, "source": "artist" },
+          { "name": "Steven Wilson", "role": "featured", "joiner": "feat.", "source": "artist" },
+          { "name": "Knife Party", "role": "featured", "joiner": "vs", "source": "artist" }
+        ],
+        "title": "The Tempest"
+      },
+      "rules": ["R7.2", "R7.3"],
+      "tags": ["feat", "vs", "leftmost"],
+      "note": "A feat. B vs C: the leftmost feat marker splits; everything right of it is featured."
+    },
+    {
+      "id": "artists-split-030",
+      "input": "Wilkinson & Sub Focus ft. Karen Harding & Tom Cane - Illuminate",
+      "expected": {
+        "artists": [
+          { "name": "Wilkinson", "role": "primary", "joiner": null },
+          { "name": "Sub Focus", "role": "primary", "joiner": "&" },
+          { "name": "Karen Harding", "role": "featured", "joiner": "ft." },
+          { "name": "Tom Cane", "role": "featured", "joiner": "&" }
+        ],
+        "title": "Illuminate"
+      },
+      "rules": ["R7.2", "R7.3"],
+      "tags": ["feat"]
+    },
+    {
+      "id": "artists-split-031",
+      "input": "Featurecast x Ftampa - Tick Tock",
+      "expected": {
+        "artists": [
+          { "name": "Featurecast", "role": "primary", "joiner": null },
+          { "name": "Ftampa", "role": "primary", "joiner": "x" }
+        ],
+        "title": "Tick Tock"
+      },
+      "rules": ["R7.2"],
+      "tags": ["feat", "trap"],
+      "note": "Names containing marker letters never match a feat marker (whole-word comparison)."
+    },
+    {
+      "id": "artists-split-032",
+      "input": "The Feat - Everyone Knows",
+      "expected": { "artists": [{ "name": "The Feat", "role": "primary" }], "title": "Everyone Knows" },
+      "rules": ["R7.2"],
+      "tags": ["feat", "trap"],
+      "note": "'Feat' is the last word of the artist side: R7.2 requires a space on its right, so it is not a marker."
+    },
+    {
+      "id": "artists-split-033",
+      "input": "Tyler, The Creator - EARFQUAKE",
+      "expected": {
+        "artists": [
+          { "name": "Tyler", "joiner": null },
+          { "name": "The Creator", "joiner": "," }
+        ],
+        "title": "EARFQUAKE"
+      },
+      "rules": ["R7.3"],
+      "tags": ["tight", "no-known-artists"],
+      "note": "No built-in list: use knownArtists to keep it whole (see known-artists.json)."
+    },
+    {
+      "id": "artists-split-034",
+      "input": "\"Noisia\" & 'Phace' - Non-Responsive",
+      "expected": { "artists": ["Noisia", "Phace"], "title": "Non-Responsive" },
+      "rules": ["R7.4"],
+      "tags": ["cleanup", "quotes"],
+      "note": "One pair of wrapping quotes stripped per name. Unspaced '-' in the title never splits in clean mode."
+    },
+    {
+      "id": "artists-split-035",
+      "input": "Noisia, - Tentacles",
+      "expected": { "artists": [{ "name": "Noisia", "joiner": null }], "title": "Tentacles" },
+      "rules": ["R7.4", "R7.3"],
+      "tags": ["cleanup"],
+      "note": "Trailing ',' produces an empty name which is dropped."
+    },
+    {
+      "id": "artists-split-036",
+      "input": "by Noisia & Phace - Program",
+      "expected": {
+        "artists": [
+          { "name": "Noisia", "joiner": null },
+          { "name": "Phace", "joiner": "&" }
+        ],
+        "title": "Program"
+      },
+      "rules": ["R7.4"],
+      "tags": ["cleanup", "by"]
+    },
+    {
+      "id": "artists-split-037",
+      "input": "A$AP Rocky - Praise the Lord (Da Shine) (feat. Skepta)",
+      "expected": {
+        "artists": [
+          { "name": "A$AP Rocky", "role": "primary", "source": "artist" },
+          { "name": "Skepta", "role": "featured", "joiner": "feat.", "source": "title" }
+        ],
+        "title": "Praise the Lord (Da Shine)"
+      },
+      "rules": ["R7.4", "R5.8", "R5.2"],
+      "tags": ["symbols"]
+    },
+    {
+      "id": "artists-split-038",
+      "input": "P!nk - So What",
+      "expected": { "artists": ["P!nk"], "title": "So What" },
+      "rules": ["R7.4"],
+      "tags": ["symbols"]
+    },
+    {
+      "id": "artists-split-039",
+      "input": "will.i.am & Britney Spears - Scream & Shout",
+      "expected": { "artists": ["will.i.am", "Britney Spears"], "title": "Scream & Shout" },
+      "rules": ["R7.4", "R7.3"],
+      "tags": ["symbols"]
+    },
+    {
+      "id": "artists-split-040",
+      "input": "Mr. Oizo - Flat Beat",
+      "expected": { "artists": ["Mr. Oizo"], "title": "Flat Beat" },
+      "rules": ["R7.4"],
+      "tags": ["symbols"]
+    },
+    {
+      "id": "artists-split-041",
+      "input": "deadmau5 & Kaskade - I Remember",
+      "expected": { "artists": ["deadmau5", "Kaskade"], "title": "I Remember" },
+      "rules": ["R7.4", "R7.3"],
+      "tags": ["symbols"]
+    },
+    {
+      "id": "artists-split-042",
+      "input": "Johny J.P.R., Noisia - Dustup",
+      "expected": {
+        "artists": [
+          { "name": "Johny J.P.R.", "joiner": null },
+          { "name": "Noisia", "joiner": "," }
+        ],
+        "title": "Dustup"
+      },
+      "rules": ["R7.4", "R7.3"],
+      "tags": ["symbols"],
+      "note": "Trailing '.' is kept (only trailing ',' ';' are stripped)."
+    },
+    {
+      "id": "artists-split-043",
+      "input": "GYDRA & Gydra - Wolf",
+      "expected": { "artists": [{ "name": "GYDRA", "role": "primary", "joiner": null }], "title": "Wolf" },
+      "rules": ["R9.2", "R0.4"],
+      "tags": ["dedup"]
+    },
+    {
+      "id": "artists-split-044",
+      "input": "Tiësto & Tiesto - Red Lights",
+      "expected": { "artists": [{ "name": "Tiësto", "joiner": null }], "title": "Red Lights" },
+      "rules": ["R9.2", "R0.4"],
+      "tags": ["dedup", "diacritics"],
+      "note": "Dedup key strips combining marks, so the diacritic-less duplicate is dropped; the first spelling is kept."
+    },
+    {
+      "id": "artists-split-045",
+      "input": "Noisia & Mefjus feat. Noisia - Hexed",
+      "expected": {
+        "artists": [
+          { "name": "Noisia", "role": "primary", "joiner": null },
+          { "name": "Mefjus", "role": "primary", "joiner": "&" }
+        ],
+        "title": "Hexed"
+      },
+      "rules": ["R9.2", "R7.2"],
+      "tags": ["dedup", "feat"],
+      "note": "Featured duplicate of a primary is removed (primary > featured)."
+    },
+    {
+      "id": "artists-split-046",
+      "input": "\"Camo & Krooked\" - Watch It Burn",
+      "expected": {
+        "artists": [
+          { "name": "Camo", "role": "primary", "joiner": null, "source": "artist" },
+          { "name": "Krooked", "role": "primary", "joiner": "&", "source": "artist" }
+        ],
+        "title": "Watch It Burn"
+      },
+      "rules": ["R7.4", "R7.3"],
+      "tags": ["quotes"],
+      "note": "Wrapping quotes around the whole credit list are stripped before splitting."
+    },
+    {
+      "id": "artists-split-047",
+      "input": "Mumford & Sons,will.i.am - Mix",
+      "expected": {
+        "artists": [
+          { "name": "Mumford & Sons", "role": "primary", "joiner": null, "source": "artist" },
+          { "name": "will.i.am", "role": "primary", "joiner": ",", "source": "artist" }
+        ],
+        "title": "Mix"
+      },
+      "rules": ["R7.3"],
+      "tags": ["no-split-before", "tight"],
+      "note": "The next word for the no-split-before guard ends at the tight joiner."
+    },
+    {
+      "id": "artists-split-048",
+      "input": "Noisia; Phace and Mefjus - Stigma",
+      "expected": {
+        "artists": [
+          { "name": "Noisia", "role": "primary", "joiner": null, "source": "artist" },
+          { "name": "Phace", "role": "primary", "joiner": ";", "source": "artist" },
+          { "name": "Mefjus", "role": "primary", "joiner": "and", "source": "artist" }
+        ],
+        "title": "Stigma"
+      },
+      "rules": ["R7.3"],
+      "tags": ["and", "tight"],
+      "note": "splitAnd auto: 'and' splits after any tight joiner (',' or ';')."
+    },
+    {
+      "id": "artists-split-049",
+      "input": "ID, Noisia & Phace - Stigma",
+      "expected": {
+        "artists": [
+          { "name": "Noisia", "role": "primary", "joiner": null, "source": "artist" },
+          { "name": "Phace", "role": "primary", "joiner": "&", "source": "artist" }
+        ],
+        "title": "Stigma",
+        "flags": { "unknownArtist": true }
+      },
+      "rules": ["R7.5", "R7.6"],
+      "tags": ["id", "joiner"],
+      "note": "The dropped first name passes its null joiner on."
+    }
+  ]
+}

@@ -1,0 +1,95 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/4matic/trackparse/spec/schema/parsed-track.schema.json",
+  "title": "ParsedTrack",
+  "description": "Output of parse(). Canonical JSON form shared by every port (camelCase keys).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["input", "mode", "position", "timestamp", "artists", "title", "fullTitle", "versions", "year", "flags", "junk", "warnings"],
+  "properties": {
+    "input": { "type": "string", "description": "The original, unmodified input string." },
+    "mode": { "enum": ["clean", "youtube", "filename"], "description": "Resolved mode (never 'auto')." },
+    "position": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["raw", "number"],
+          "properties": { "raw": { "type": "string" }, "number": { "type": "integer", "minimum": 0 } }
+        }
+      ]
+    },
+    "timestamp": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["raw", "seconds"],
+          "properties": { "raw": { "type": "string" }, "seconds": { "type": "integer", "minimum": 0 } }
+        }
+      ]
+    },
+    "artists": { "type": "array", "items": { "$ref": "#/$defs/artist" } },
+    "title": { "type": "string" },
+    "fullTitle": { "type": "string" },
+    "versions": { "type": "array", "items": { "$ref": "#/$defs/version" } },
+    "year": { "oneOf": [{ "type": "null" }, { "type": "integer", "minimum": 1900, "maximum": 2099 }] },
+    "flags": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["explicit", "clean", "unknownArtist", "unknownTitle"],
+      "properties": {
+        "explicit": { "type": "boolean" },
+        "clean": { "type": "boolean" },
+        "unknownArtist": { "type": "boolean" },
+        "unknownTitle": { "type": "boolean" }
+      }
+    },
+    "junk": { "type": "array", "items": { "$ref": "#/$defs/junk" } },
+    "warnings": { "type": "array", "items": { "$ref": "#/$defs/warning" } }
+  },
+  "$defs": {
+    "artist": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "role", "joiner", "source"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "role": { "enum": ["primary", "featured", "remixer", "producer"] },
+        "joiner": { "type": ["string", "null"], "description": "Raw joiner/marker text that preceded this name in its credit list (trimmed, case kept). null for the first name of a list." },
+        "source": { "enum": ["artist", "title", "version"] }
+      }
+    },
+    "version": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "raw", "artists", "modifiers", "descriptor", "year", "unknownArtist", "delimiter"],
+      "properties": {
+        "type": {
+          "enum": ["remix", "bootleg", "vip", "edit", "flip", "refix", "rework", "mashup", "blend", "dub", "mix", "extended", "radio", "club", "original", "instrumental", "acapella", "live", "acoustic", "remaster", "demo", "reprise", "cover", "version", "spedUp", "slowed", "nightcore"]
+        },
+        "raw": { "type": "string", "description": "The version text as written (group inner text or dash-suffix text), whitespace-collapsed." },
+        "artists": { "type": "array", "items": { "$ref": "#/$defs/artist" } },
+        "modifiers": { "type": "array", "items": { "type": "string" }, "description": "Canonical lowercase keys of type-capable/descriptor words that did not become the type." },
+        "descriptor": { "type": ["string", "null"], "description": "Leftover non-credit text (genre, possessive, 'at Wembley'), as written." },
+        "year": { "oneOf": [{ "type": "null" }, { "type": "integer", "minimum": 1900, "maximum": 2099 }] },
+        "unknownArtist": { "type": "boolean" },
+        "delimiter": { "enum": ["(", "[", "{", "-"] }
+      }
+    },
+    "junk": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["raw", "kind"],
+      "properties": {
+        "raw": { "type": "string" },
+        "kind": { "enum": ["video", "audio", "lyrics", "quality", "promo", "platform", "label", "genre", "other"] }
+      }
+    },
+    "warning": {
+      "enum": ["noSeparator", "ambiguousSeparator", "unspacedDashSplit", "asymmetricDashSplit", "bySplit", "quotedTitleSplit", "ambiguousMixCredit", "unbalancedBrackets"]
+    }
+  }
+}

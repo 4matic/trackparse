@@ -1,0 +1,678 @@
+{
+  "$schema": "../../schema/fixture-file.schema.json",
+  "description": "R1 normalization: normalize() output for Unicode/whitespace/dash/bracket/quote noise, plus parse() cases proving that noise does not change results",
+  "defaults": {
+    "fn": "normalize",
+    "options": {
+      "mode": "clean"
+    }
+  },
+  "cases": [
+    {
+      "id": "normalization-001",
+      "input": "Beyoncé - Halo",
+      "expected": "Beyoncé - Halo",
+      "rules": [
+        "R1.1"
+      ],
+      "tags": [
+        "nfc"
+      ],
+      "note": "Decomposed e + combining acute composes to U+00E9"
+    },
+    {
+      "id": "normalization-002",
+      "input": "Мумий Тролль - Утекай",
+      "expected": "Мумий Тролль - Утекай",
+      "rules": [
+        "R1.1"
+      ],
+      "tags": [
+        "nfc",
+        "cyrillic"
+      ],
+      "note": "Cyrillic и + U+0306 combining breve composes to й"
+    },
+    {
+      "id": "normalization-003",
+      "input": "Noi​sia‌ - Sti‍gma⁠",
+      "expected": "Noisia‌ - Sti‍gma",
+      "rules": [
+        "R1.2"
+      ],
+      "tags": [
+        "zero-width"
+      ],
+      "note": "U+200B and U+2060 are removed; U+200C (ZWNJ) and U+200D (ZWJ) are kept (R1.2)."
+    },
+    {
+      "id": "normalization-004",
+      "input": "﻿Noisia - Stigma",
+      "expected": "Noisia - Stigma",
+      "rules": [
+        "R1.2"
+      ],
+      "tags": [
+        "zero-width",
+        "bom"
+      ]
+    },
+    {
+      "id": "normalization-005",
+      "input": "Mef­jus - Sinkhole",
+      "expected": "Mefjus - Sinkhole",
+      "rules": [
+        "R1.2"
+      ],
+      "tags": [
+        "soft-hyphen"
+      ],
+      "note": "U+00AD soft hyphen is removed, not mapped to a dash"
+    },
+    {
+      "id": "normalization-006",
+      "input": "Noisia -\tStigma",
+      "expected": "Noisia - Stigma",
+      "rules": [
+        "R1.6",
+        "R0.2"
+      ],
+      "tags": [
+        "whitespace",
+        "nbsp"
+      ]
+    },
+    {
+      "id": "normalization-007",
+      "input": "　Sub Focus  - Timewarp\r\n",
+      "expected": "Sub Focus - Timewarp",
+      "rules": [
+        "R1.6",
+        "R0.2"
+      ],
+      "tags": [
+        "whitespace"
+      ],
+      "note": "Ideographic space, thin space, narrow NBSP, CR/LF all map to U+0020, collapse, trim"
+    },
+    {
+      "id": "normalization-008",
+      "input": "Noisia – Stigma",
+      "expected": "Noisia - Stigma",
+      "rules": [
+        "R1.5"
+      ],
+      "tags": [
+        "dash",
+        "en-dash"
+      ]
+    },
+    {
+      "id": "normalization-009",
+      "input": "Noisia — Stigma",
+      "expected": "Noisia - Stigma",
+      "rules": [
+        "R1.5"
+      ],
+      "tags": [
+        "dash",
+        "em-dash"
+      ]
+    },
+    {
+      "id": "normalization-010",
+      "input": "Noisia ‒ Stigma ― VIP",
+      "expected": "Noisia - Stigma - VIP",
+      "rules": [
+        "R1.5"
+      ],
+      "tags": [
+        "dash",
+        "figure-dash"
+      ],
+      "note": "U+2012 figure dash and U+2015 horizontal bar"
+    },
+    {
+      "id": "normalization-011",
+      "input": "Noisia − Stigma",
+      "expected": "Noisia - Stigma",
+      "rules": [
+        "R1.5"
+      ],
+      "tags": [
+        "dash",
+        "minus"
+      ]
+    },
+    {
+      "id": "normalization-012",
+      "input": "Jay‐Z ﹣ Numb﹘Encore － Live",
+      "expected": "Jay-Z - Numb-Encore - Live",
+      "rules": [
+        "R1.5"
+      ],
+      "tags": [
+        "dash"
+      ],
+      "note": "U+2010 hyphen, U+FE63 small hyphen-minus, U+FE58 small em dash, U+FF0D fullwidth hyphen-minus"
+    },
+    {
+      "id": "normalization-013",
+      "input": "Noisia -- Stigma",
+      "expected": "Noisia - Stigma",
+      "rules": [
+        "R1.5"
+      ],
+      "tags": [
+        "dash",
+        "double-dash"
+      ]
+    },
+    {
+      "id": "normalization-014",
+      "input": "Noisia --- Stigma —— VIP",
+      "expected": "Noisia - Stigma - VIP",
+      "rules": [
+        "R1.5"
+      ],
+      "tags": [
+        "dash",
+        "double-dash"
+      ],
+      "note": "Two em dashes become '--' first, then the spaced run collapses"
+    },
+    {
+      "id": "normalization-015",
+      "input": "Track--Name",
+      "expected": "Track--Name",
+      "rules": [
+        "R1.5"
+      ],
+      "tags": [
+        "dash"
+      ],
+      "note": "Dash runs not surrounded by whitespace are kept"
+    },
+    {
+      "id": "normalization-016",
+      "input": "Noisia - Stigma （Mefjus Remix）",
+      "expected": "Noisia - Stigma (Mefjus Remix)",
+      "rules": [
+        "R1.3"
+      ],
+      "tags": [
+        "fullwidth"
+      ]
+    },
+    {
+      "id": "normalization-017",
+      "input": "Noisia - Stigma 【Official Video】",
+      "expected": "Noisia - Stigma [Official Video]",
+      "rules": [
+        "R1.3"
+      ],
+      "tags": [
+        "cjk-brackets"
+      ]
+    },
+    {
+      "id": "normalization-018",
+      "input": "〔HD〕 Noisia - Stigma ［VIP］ ｛Edit｝",
+      "expected": "[HD] Noisia - Stigma [VIP] {Edit}",
+      "rules": [
+        "R1.3"
+      ],
+      "tags": [
+        "fullwidth",
+        "cjk-brackets"
+      ]
+    },
+    {
+      "id": "normalization-019",
+      "input": "“Weird Al” Yankovic - White ‘n’ Nerdy",
+      "expected": "\"Weird Al\" Yankovic - White 'n' Nerdy",
+      "rules": [
+        "R1.4"
+      ],
+      "tags": [
+        "quotes"
+      ]
+    },
+    {
+      "id": "normalization-020",
+      "input": "Кино - «Группа крови»",
+      "expected": "Кино - \"Группа крови\"",
+      "rules": [
+        "R1.4"
+      ],
+      "tags": [
+        "quotes",
+        "guillemets",
+        "cyrillic"
+      ]
+    },
+    {
+      "id": "normalization-021",
+      "input": "Kraftwerk - „Das Model“ 「Remix」 『Live』 ＂X＂",
+      "expected": "Kraftwerk - \"Das Model\" \"Remix\" \"Live\" \"X\"",
+      "rules": [
+        "R1.4"
+      ],
+      "tags": [
+        "quotes"
+      ]
+    },
+    {
+      "id": "normalization-022",
+      "input": "Don’t ‚Stop‘ `Me` Now´",
+      "expected": "Don't 'Stop' 'Me' Now'",
+      "rules": [
+        "R1.4"
+      ],
+      "tags": [
+        "quotes",
+        "apostrophe"
+      ]
+    },
+    {
+      "id": "normalization-023",
+      "input": "Skepta × JME - That's Not Me",
+      "expected": "Skepta × JME - That's Not Me",
+      "rules": [
+        "R1.7"
+      ],
+      "tags": [
+        "multiplication-sign"
+      ],
+      "note": "U+00D7 is a joiner and must survive normalization"
+    },
+    {
+      "id": "normalization-024",
+      "input": "   Sub   Focus    -   Timewarp   ",
+      "expected": "Sub Focus - Timewarp",
+      "rules": [
+        "R1.6"
+      ],
+      "tags": [
+        "whitespace"
+      ]
+    },
+    {
+      "id": "normalization-025",
+      "input": "",
+      "expected": "",
+      "rules": [
+        "R1"
+      ],
+      "tags": [
+        "empty"
+      ]
+    },
+    {
+      "id": "normalization-026",
+      "input": " ​ \t﻿ ",
+      "expected": "",
+      "rules": [
+        "R1.2",
+        "R1.6"
+      ],
+      "tags": [
+        "empty",
+        "whitespace"
+      ]
+    },
+    {
+      "id": "normalization-027",
+      "input": "Noisia - Stigma (Mefjus Remix) [Official Video]",
+      "expected": "Noisia - Stigma (Mefjus Remix) [Official Video]",
+      "rules": [
+        "R1"
+      ],
+      "tags": [
+        "idempotent"
+      ],
+      "note": "Already-normalized input is unchanged"
+    },
+    {
+      "id": "normalization-028",
+      "fn": "parse",
+      "input": "Noisia — Stigma​",
+      "match": "exact",
+      "expected": {
+        "input": "Noisia — Stigma​",
+        "mode": "clean",
+        "position": null,
+        "timestamp": null,
+        "artists": [
+          {
+            "name": "Noisia",
+            "role": "primary",
+            "joiner": null,
+            "source": "artist"
+          }
+        ],
+        "title": "Stigma",
+        "fullTitle": "Stigma",
+        "versions": [],
+        "year": null,
+        "flags": {
+          "explicit": false,
+          "clean": false,
+          "unknownArtist": false,
+          "unknownTitle": false
+        },
+        "junk": [],
+        "warnings": []
+      },
+      "rules": [
+        "R1.2",
+        "R1.5",
+        "R1.6",
+        "R6.1"
+      ],
+      "tags": [
+        "dash",
+        "exact"
+      ],
+      "note": "input field keeps the original, un-normalized string"
+    },
+    {
+      "id": "normalization-029",
+      "fn": "parse",
+      "input": "Noisia – Stigma",
+      "expected": {
+        "artists": [
+          "Noisia"
+        ],
+        "title": "Stigma",
+        "warnings": []
+      },
+      "rules": [
+        "R1.5",
+        "R6.1"
+      ],
+      "tags": [
+        "dash",
+        "en-dash"
+      ]
+    },
+    {
+      "id": "normalization-030",
+      "fn": "parse",
+      "input": "Noisia −− Stigma",
+      "expected": {
+        "artists": [
+          "Noisia"
+        ],
+        "title": "Stigma",
+        "warnings": []
+      },
+      "rules": [
+        "R1.5",
+        "R6.1"
+      ],
+      "tags": [
+        "dash",
+        "minus",
+        "double-dash"
+      ]
+    },
+    {
+      "id": "normalization-031",
+      "fn": "parse",
+      "input": "  Noi​sia   -\t  Stigma  ",
+      "expected": {
+        "artists": [
+          "Noisia"
+        ],
+        "title": "Stigma",
+        "warnings": []
+      },
+      "rules": [
+        "R1.2",
+        "R1.6"
+      ],
+      "tags": [
+        "whitespace",
+        "zero-width"
+      ]
+    },
+    {
+      "id": "normalization-032",
+      "fn": "parse",
+      "input": "Kid Cudi – Pursuit of Happiness — Steve Aoki Remix",
+      "expected": {
+        "artists": [
+          "Kid Cudi"
+        ],
+        "title": "Pursuit of Happiness",
+        "fullTitle": "Pursuit of Happiness - Steve Aoki Remix",
+        "versions": [
+          {
+            "type": "remix",
+            "raw": "Steve Aoki Remix",
+            "artists": [
+              "Steve Aoki"
+            ],
+            "delimiter": "-"
+          }
+        ],
+        "warnings": []
+      },
+      "rules": [
+        "R1.5",
+        "R6.2",
+        "R5.7"
+      ],
+      "tags": [
+        "dash",
+        "dash-suffix"
+      ],
+      "note": "Mixed en/em dashes behave exactly like ' - '"
+    },
+    {
+      "id": "normalization-033",
+      "fn": "parse",
+      "input": "Noisia – Stigma 【Official Video】",
+      "expected": {
+        "artists": [
+          "Noisia"
+        ],
+        "title": "Stigma",
+        "junk": [
+          {
+            "raw": "Official Video",
+            "kind": "video"
+          }
+        ]
+      },
+      "rules": [
+        "R1.3",
+        "R1.5",
+        "R5.1",
+        "R8.1"
+      ],
+      "tags": [
+        "cjk-brackets",
+        "junk"
+      ]
+    },
+    {
+      "id": "normalization-034",
+      "fn": "parse",
+      "input": "Кино — «Группа крови»",
+      "expected": {
+        "artists": [
+          "Кино"
+        ],
+        "title": "Группа крови"
+      },
+      "rules": [
+        "R1.4",
+        "R1.5",
+        "R8.5"
+      ],
+      "tags": [
+        "guillemets",
+        "cyrillic"
+      ],
+      "note": "Guillemets become '\"', then R8.5 strips the wrapping pair from the title"
+    },
+    {
+      "id": "normalization-035",
+      "fn": "parse",
+      "input": "Beyoncé – Halo",
+      "expected": {
+        "artists": [
+          "Beyoncé"
+        ],
+        "title": "Halo"
+      },
+      "rules": [
+        "R1.1",
+        "R1.5"
+      ],
+      "tags": [
+        "nfc"
+      ]
+    },
+    {
+      "id": "normalization-036",
+      "fn": "parse",
+      "input": "Кино – Группа крови （Remastered 2015）",
+      "match": "exact",
+      "expected": {
+        "input": "Кино – Группа крови （Remastered 2015）",
+        "mode": "clean",
+        "position": null,
+        "timestamp": null,
+        "artists": [
+          {
+            "name": "Кино",
+            "role": "primary",
+            "joiner": null,
+            "source": "artist"
+          }
+        ],
+        "title": "Группа крови",
+        "fullTitle": "Группа крови (Remastered 2015)",
+        "versions": [
+          {
+            "type": "remaster",
+            "raw": "Remastered 2015",
+            "artists": [],
+            "modifiers": [],
+            "descriptor": null,
+            "year": 2015,
+            "unknownArtist": false,
+            "delimiter": "("
+          }
+        ],
+        "year": null,
+        "flags": {
+          "explicit": false,
+          "clean": false,
+          "unknownArtist": false,
+          "unknownTitle": false
+        },
+        "junk": [],
+        "warnings": []
+      },
+      "rules": [
+        "R1.3",
+        "R1.5",
+        "R5.7",
+        "R9.4"
+      ],
+      "tags": [
+        "fullwidth",
+        "cyrillic",
+        "exact"
+      ],
+      "note": "Fullwidth parens become '(' ')' so the version is recognised and fullTitle uses the ASCII delimiter"
+    },
+    {
+      "id": "normalization-037",
+      "fn": "parse",
+      "input": "Jay‐Z - 99 Problems",
+      "expected": {
+        "artists": [
+          "Jay-Z"
+        ],
+        "title": "99 Problems"
+      },
+      "rules": [
+        "R1.5"
+      ],
+      "tags": [
+        "dash"
+      ]
+    },
+    {
+      "id": "normalization-038",
+      "input": "Mo​saic 🏳️‍🌈",
+      "expected": "Mosaic 🏳️‍🌈",
+      "rules": [
+        "R1.2"
+      ],
+      "tags": [
+        "zero-width",
+        "zwj"
+      ],
+      "note": "U+200B is removed, U+200D inside the emoji is kept."
+    },
+    {
+      "id": "normalization-039",
+      "input": "Beyonce­́",
+      "expected": "Beyoncé",
+      "rules": [
+        "R1.1",
+        "R1.2",
+        "R1.8"
+      ],
+      "tags": [
+        "nfc",
+        "idempotent"
+      ],
+      "note": "Removing the soft hyphen leaves e + U+0301; the final NFC pass composes it, so normalize stays idempotent."
+    },
+    {
+      "id": "normalization-040",
+      "input": "Artist - Title -  Remix",
+      "expected": "Artist - Title - Remix",
+      "rules": [
+        "R1.2"
+      ],
+      "tags": [
+        "placeholder"
+      ],
+      "note": "U+E000 is reserved as the R3.4 group placeholder and is removed from input"
+    },
+    {
+      "id": "normalization-041",
+      "fn": "parse",
+      "input": "Artist - Title -  Remix",
+      "expected": {
+        "artists": [
+          "Artist"
+        ],
+        "title": "Title",
+        "versions": [
+          {
+            "type": "remix",
+            "artists": [],
+            "delimiter": "-"
+          }
+        ]
+      },
+      "rules": [
+        "R1.2",
+        "R6.2"
+      ],
+      "tags": [
+        "placeholder"
+      ],
+      "note": "A literal U+E000 in input must not be mistaken for a bracket group"
+    }
+  ]
+}

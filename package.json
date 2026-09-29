@@ -1,0 +1,19 @@
+{
+  "name": "trackparse-monorepo",
+  "private": true,
+  "description": "Monorepo for trackparse: spec, shared fixtures and language ports",
+  "license": "MIT",
+  "packageManager": "pnpm@11.1.1",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "gen:data": "pnpm --filter trackparse gen:data",
+    "gen:fixtures": "pnpm --filter @trackparse/fixture-gen gen",
+    "gen:check": "pnpm --filter @trackparse/fixture-gen check && pnpm --filter trackparse gen:data:check",
+    "test": "pnpm -r test",
+    "build": "pnpm --filter trackparse build",
+    "lint": "pnpm -r lint",
+    "conformance": "pnpm --filter trackparse conformance"
+  }
+}

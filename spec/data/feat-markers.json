@@ -1,0 +1,9 @@
+{
+  "$comment": "Featuring markers (SPEC.md R5.2, R7.2, R8.3). titleMarkers / titleProducer are the only unbracketed markers recognised on the title side (R8.3). ASCII lowercase. A marker matches a whole whitespace-delimited word (case-insensitive). 'bracketOnly' markers only count at the start of a bracket group.",
+  "markers": ["feat.", "feat", "ft.", "ft", "featuring", "feat:", "ft:"],
+  "bracketOnly": ["with", "w/"],
+  "producer": ["prod.", "prod", "produced", "prod.by", "prod:"],
+  "titleMarkers": ["feat.", "ft.", "featuring"],
+  "titleProducer": ["prod.", "prod. by", "produced by", "prod.by"],
+  "producerBy": "by"
+}

@@ -1,0 +1,405 @@
+{
+  "$schema": "../../schema/fixture-file.schema.json",
+  "description": "R5.3 producer groups and R8.3 unbracketed producer credits: markers as written, joiners, role/source values, dedup, interaction with feat",
+  "defaults": { "fn": "parse", "options": { "mode": "clean" } },
+  "cases": [
+    {
+      "id": "producer-001",
+      "input": "Travis Scott - Sicko Mode (prod. Hit-Boy)",
+      "match": "exact",
+      "expected": {
+        "input": "Travis Scott - Sicko Mode (prod. Hit-Boy)",
+        "mode": "clean",
+        "position": null,
+        "timestamp": null,
+        "artists": [
+          { "name": "Travis Scott", "role": "primary", "joiner": null, "source": "artist" },
+          { "name": "Hit-Boy", "role": "producer", "joiner": "prod.", "source": "title" }
+        ],
+        "title": "Sicko Mode",
+        "fullTitle": "Sicko Mode",
+        "versions": [],
+        "year": null,
+        "flags": { "explicit": false, "clean": false, "unknownArtist": false, "unknownTitle": false },
+        "junk": [],
+        "warnings": []
+      },
+      "rules": ["R5.3", "R8.1"],
+      "tags": ["producer", "exact"]
+    },
+    {
+      "id": "producer-002",
+      "input": "Future - Mask Off (prod. by Metro Boomin)",
+      "expected": {
+        "artists": ["Future", { "name": "Metro Boomin", "role": "producer", "joiner": "prod. by", "source": "title" }],
+        "title": "Mask Off"
+      },
+      "rules": ["R5.3"],
+      "tags": ["producer", "by"]
+    },
+    {
+      "id": "producer-003",
+      "input": "Travis Scott - Skyfall [Prod. Mike Dean & Kanye West]",
+      "expected": {
+        "artists": [
+          "Travis Scott",
+          { "name": "Mike Dean", "role": "producer", "joiner": "Prod.", "source": "title" },
+          { "name": "Kanye West", "role": "producer", "joiner": "&", "source": "title" }
+        ],
+        "title": "Skyfall"
+      },
+      "rules": ["R5.3", "R7.3"],
+      "tags": ["producer", "square", "joiners"]
+    },
+    {
+      "id": "producer-004",
+      "input": "Clipse - Grindin' (produced by The Neptunes)",
+      "expected": {
+        "artists": ["Clipse", { "name": "The Neptunes", "role": "producer", "joiner": "produced by", "source": "title" }],
+        "title": "Grindin'"
+      },
+      "rules": ["R5.3"],
+      "tags": ["producer", "produced-by"]
+    },
+    {
+      "id": "producer-005",
+      "input": "Future - Mask Off (prod Metro Boomin)",
+      "expected": {
+        "artists": ["Future", { "name": "Metro Boomin", "role": "producer", "joiner": "prod" }],
+        "title": "Mask Off"
+      },
+      "rules": ["R5.3"],
+      "tags": ["producer"]
+    },
+    {
+      "id": "producer-006",
+      "input": "Young Thug - Relationship (prod.by Wheezy)",
+      "expected": {
+        "artists": ["Young Thug", { "name": "Wheezy", "role": "producer", "joiner": "prod.by" }],
+        "title": "Relationship"
+      },
+      "rules": ["R5.3"],
+      "tags": ["producer"],
+      "note": "'prod.by' as a single word is accepted"
+    },
+    {
+      "id": "producer-007",
+      "input": "Chris Brown - Run It! (Prod: Scott Storch)",
+      "expected": {
+        "artists": ["Chris Brown", { "name": "Scott Storch", "role": "producer", "joiner": "Prod:" }],
+        "title": "Run It!"
+      },
+      "rules": ["R5.3", "R0.3"],
+      "tags": ["producer"]
+    },
+    {
+      "id": "producer-008",
+      "input": "Future - Mask Off (Prod. By Metro Boomin)",
+      "expected": {
+        "artists": ["Future", { "name": "Metro Boomin", "role": "producer", "joiner": "Prod. By" }],
+        "title": "Mask Off"
+      },
+      "rules": ["R5.3", "R0.3"],
+      "tags": ["producer", "case"]
+    },
+    {
+      "id": "producer-009",
+      "input": "Lil Uzi Vert - XO Tour Llif3 prod. by TM88",
+      "expected": {
+        "artists": ["Lil Uzi Vert", { "name": "TM88", "role": "producer", "joiner": "prod. by", "source": "title" }],
+        "title": "XO Tour Llif3",
+        "fullTitle": "XO Tour Llif3"
+      },
+      "rules": ["R8.3"],
+      "tags": ["producer", "unbracketed"]
+    },
+    {
+      "id": "producer-010",
+      "input": "Clipse - Grindin' produced by The Neptunes",
+      "expected": {
+        "artists": ["Clipse", { "name": "The Neptunes", "role": "producer", "joiner": "produced by", "source": "title" }],
+        "title": "Grindin'"
+      },
+      "rules": ["R8.3"],
+      "tags": ["producer", "unbracketed"]
+    },
+    {
+      "id": "producer-011",
+      "input": "Playboi Carti - Magnolia prod. Pi'erre Bourne (Official Video)",
+      "options": { "mode": "youtube" },
+      "expected": {
+        "artists": ["Playboi Carti", { "name": "Pi'erre Bourne", "role": "producer", "joiner": "prod.", "source": "title" }],
+        "title": "Magnolia",
+        "junk": [{ "raw": "Official Video", "kind": "video" }]
+      },
+      "rules": ["R8.3", "R8.1"],
+      "tags": ["producer", "unbracketed", "junk"],
+      "note": "The unbracketed credit ends at the next placeholder"
+    },
+    {
+      "id": "producer-012",
+      "input": "Lil Uzi Vert - XO Tour Llif3 prod. TM88 (Skrillex Remix)",
+      "expected": {
+        "artists": ["Lil Uzi Vert", { "name": "TM88", "role": "producer", "joiner": "prod." }],
+        "title": "XO Tour Llif3",
+        "fullTitle": "XO Tour Llif3 (Skrillex Remix)",
+        "versions": [{ "type": "remix", "artists": ["Skrillex"] }]
+      },
+      "rules": ["R8.3", "R5.7"],
+      "tags": ["producer", "unbracketed", "remix"]
+    },
+    {
+      "id": "producer-013",
+      "input": "Future - Mask Off (feat. Kendrick Lamar) (prod. Metro Boomin)",
+      "match": "exact",
+      "expected": {
+        "input": "Future - Mask Off (feat. Kendrick Lamar) (prod. Metro Boomin)",
+        "mode": "clean",
+        "position": null,
+        "timestamp": null,
+        "artists": [
+          { "name": "Future", "role": "primary", "joiner": null, "source": "artist" },
+          { "name": "Kendrick Lamar", "role": "featured", "joiner": "feat.", "source": "title" },
+          { "name": "Metro Boomin", "role": "producer", "joiner": "prod.", "source": "title" }
+        ],
+        "title": "Mask Off",
+        "fullTitle": "Mask Off",
+        "versions": [],
+        "year": null,
+        "flags": { "explicit": false, "clean": false, "unknownArtist": false, "unknownTitle": false },
+        "junk": [],
+        "warnings": []
+      },
+      "rules": ["R5.2", "R5.3", "R9.1"],
+      "tags": ["producer", "feat", "exact"]
+    },
+    {
+      "id": "producer-014",
+      "input": "Future - Mask Off (prod. Metro Boomin) (feat. Kendrick Lamar)",
+      "expected": {
+        "artists": [
+          { "name": "Future", "role": "primary" },
+          { "name": "Metro Boomin", "role": "producer" },
+          { "name": "Kendrick Lamar", "role": "featured" }
+        ],
+        "title": "Mask Off"
+      },
+      "rules": ["R9.1"],
+      "tags": ["producer", "feat", "order"],
+      "note": "Title-side credits are in text order, not grouped by role"
+    },
+    {
+      "id": "producer-015",
+      "input": "Migos - Bad and Boujee (prod. Metro Boomin, Southside & 808 Mafia)",
+      "expected": {
+        "artists": [
+          "Migos",
+          { "name": "Metro Boomin", "role": "producer", "joiner": "prod." },
+          { "name": "Southside", "role": "producer", "joiner": "," },
+          { "name": "808 Mafia", "role": "producer", "joiner": "&" }
+        ],
+        "title": "Bad and Boujee"
+      },
+      "rules": ["R5.3", "R7.3"],
+      "tags": ["producer", "joiners"]
+    },
+    {
+      "id": "producer-016",
+      "input": "Metro Boomin - Space Cadet (prod. Metro Boomin)",
+      "expected": {
+        "artists": [
+          { "name": "Metro Boomin", "role": "primary", "joiner": null, "source": "artist" },
+          { "name": "Metro Boomin", "role": "producer", "joiner": "prod.", "source": "title" }
+        ],
+        "title": "Space Cadet"
+      },
+      "rules": ["R9.2", "R5.3"],
+      "tags": ["producer", "dedup"],
+      "note": "Self-produced: producers are a separate credit class (R9.2), so the primary is also kept as producer."
+    },
+    {
+      "id": "producer-017",
+      "input": "Future - Mask Off (feat. Metro Boomin) (prod. Metro Boomin)",
+      "expected": {
+        "artists": [
+          "Future",
+          { "name": "Metro Boomin", "role": "featured", "joiner": "feat.", "source": "title" },
+          { "name": "Metro Boomin", "role": "producer", "joiner": "prod.", "source": "title" }
+        ],
+        "title": "Mask Off"
+      },
+      "rules": ["R9.2"],
+      "tags": ["producer", "feat", "dedup"],
+      "note": "Featured and producer are separate classes (R9.2): the same name is kept in both roles."
+    },
+    {
+      "id": "producer-018",
+      "input": "Future - Mask Off (prod. Metro Boomin) (feat. Metro Boomin)",
+      "expected": {
+        "artists": [
+          "Future",
+          { "name": "Metro Boomin", "role": "producer", "joiner": "prod.", "source": "title" },
+          { "name": "Metro Boomin", "role": "featured", "joiner": "feat.", "source": "title" }
+        ],
+        "title": "Mask Off"
+      },
+      "rules": ["R9.2", "R9.1"],
+      "tags": ["producer", "feat", "dedup"],
+      "note": "No role upgrade across classes (R9.2): the producer stays, the featured credit follows in text order (R9.1)."
+    },
+    {
+      "id": "producer-019",
+      "input": "Travis Scott [Prod. Mike Dean] - Skyfall",
+      "expected": {
+        "artists": [
+          { "name": "Travis Scott", "role": "primary", "source": "artist" },
+          { "name": "Mike Dean", "role": "producer", "joiner": "Prod.", "source": "artist" }
+        ],
+        "title": "Skyfall"
+      },
+      "rules": ["R5.3", "R7.1"],
+      "tags": ["producer", "artist-side"]
+    },
+    {
+      "id": "producer-020",
+      "input": "Noisia - Stigma (prod.)",
+      "expected": { "artists": ["Noisia"], "title": "Stigma (prod.)" },
+      "rules": ["R5.3", "R5.8"],
+      "tags": ["producer", "negative"]
+    },
+    {
+      "id": "producer-021",
+      "input": "Noisia - Stigma (Production Music)",
+      "expected": { "artists": ["Noisia"], "title": "Stigma (Production Music)" },
+      "rules": ["R5.3", "R5.8"],
+      "tags": ["producer", "negative"],
+      "note": "'production' is not a producer marker"
+    },
+    {
+      "id": "producer-022",
+      "input": "Oxxxymiron - Город под подошвой (prod. by Porchy)",
+      "expected": {
+        "artists": ["Oxxxymiron", { "name": "Porchy", "role": "producer", "joiner": "prod. by" }],
+        "title": "Город под подошвой"
+      },
+      "rules": ["R5.3"],
+      "tags": ["producer", "cyrillic"]
+    },
+    {
+      "id": "producer-023",
+      "input": "Kendrick Lamar - HUMBLE. (Skrillex Remix) (prod. Mike WiLL Made-It)",
+      "expected": {
+        "artists": ["Kendrick Lamar", { "name": "Mike WiLL Made-It", "role": "producer", "joiner": "prod." }],
+        "title": "HUMBLE.",
+        "fullTitle": "HUMBLE. (Skrillex Remix)",
+        "versions": [{ "type": "remix", "artists": ["Skrillex"] }]
+      },
+      "rules": ["R5.3", "R5.7", "R9.4"],
+      "tags": ["producer", "remix"],
+      "note": "Producers are not re-attached in fullTitle"
+    },
+    {
+      "id": "producer-024",
+      "input": "21 Savage - Bank Account (prod. by 21 Savage & Metro Boomin) [Official Audio]",
+      "options": { "mode": "auto" },
+      "expected": {
+        "mode": "youtube",
+        "artists": [
+          { "name": "21 Savage", "role": "primary" },
+          { "name": "21 Savage", "role": "producer", "joiner": "prod. by", "source": "title" },
+          { "name": "Metro Boomin", "role": "producer", "joiner": "&", "source": "title" }
+        ],
+        "title": "Bank Account",
+        "junk": [{ "raw": "Official Audio", "kind": "audio" }]
+      },
+      "rules": ["R5.3", "R9.2", "R2.1"],
+      "tags": ["producer", "dedup", "junk"],
+      "note": "A producer that is also the primary is kept (R9.2: producers are deduped only among producers)."
+    },
+    {
+      "id": "producer-025",
+      "input": "21 Savage - a lot ft. J. Cole prod. DJ Dahi",
+      "expected": {
+        "artists": [
+          "21 Savage",
+          { "name": "J. Cole", "role": "featured", "joiner": "ft." },
+          { "name": "DJ Dahi", "role": "producer", "joiner": "prod." }
+        ],
+        "title": "a lot"
+      },
+      "rules": ["R8.3"],
+      "tags": ["producer", "feat", "unbracketed"],
+      "note": "A title-side feat list also ends at a producer marker (R8.3)."
+    },
+    {
+      "id": "producer-026",
+      "input": "Noisia - Stigma (prod. Phace & Mefjus) (feat. Phace)",
+      "expected": {
+        "artists": [
+          "Noisia",
+          { "name": "Phace", "role": "producer", "joiner": "prod.", "source": "title" },
+          { "name": "Mefjus", "role": "producer", "joiner": "&", "source": "title" },
+          { "name": "Phace", "role": "featured", "joiner": "feat.", "source": "title" }
+        ],
+        "title": "Stigma"
+      },
+      "rules": ["R9.2", "R9.1"],
+      "tags": ["dedup", "producer", "feat"],
+      "note": "No role upgrade across classes: Phace stays first producer and is also featured; order is text order (R9.1)."
+    },
+    {
+      "id": "producer-027",
+      "input": "Noisia - Stigma prod Mefjus",
+      "expected": {
+        "artists": ["Noisia"],
+        "title": "Stigma prod Mefjus"
+      },
+      "rules": ["R8.3"],
+      "tags": ["unbracketed"],
+      "note": "Undotted 'prod' is a producer marker only inside brackets."
+    },
+    {
+      "id": "producer-028",
+      "input": "Noisia - Stigma prod.by Mefjus",
+      "expected": {
+        "artists": [
+          "Noisia",
+          { "name": "Mefjus", "role": "producer", "joiner": "prod.by", "source": "title" }
+        ],
+        "title": "Stigma"
+      },
+      "rules": ["R8.3"],
+      "tags": ["unbracketed"]
+    },
+    {
+      "id": "producer-029",
+      "input": "Noisia x Mefjus - Hollow (prod. by Noisia)",
+      "expected": {
+        "artists": [
+          "Noisia",
+          { "name": "Mefjus", "role": "primary", "joiner": "x", "source": "artist" },
+          { "name": "Noisia", "role": "producer", "joiner": "prod. by", "source": "title" }
+        ],
+        "title": "Hollow"
+      },
+      "rules": ["R9.2", "R5.3"],
+      "tags": ["producer", "dedup"],
+      "note": "Producers are a separate credit class (R9.2): Noisia is kept as primary and as producer."
+    },
+    {
+      "id": "producer-030",
+      "input": "Noisia - Stigma (prod. Mefjus) [prod. by MEFJUS & Phace]",
+      "expected": {
+        "artists": [
+          "Noisia",
+          { "name": "Mefjus", "role": "producer", "joiner": "prod.", "source": "title" },
+          { "name": "Phace", "role": "producer", "joiner": "prod. by", "source": "title" }
+        ],
+        "title": "Stigma"
+      },
+      "rules": ["R9.2", "R7.6", "R0.4"],
+      "tags": ["producer", "dedup"],
+      "note": "Producers are deduped among producers (R0.4 keys): MEFJUS is removed and, as the first of its list, passes the marker to Phace (R7.6)."
+    }
+  ]
+}

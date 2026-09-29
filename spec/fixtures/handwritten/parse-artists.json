@@ -1,0 +1,579 @@
+{
+  "$schema": "../../schema/fixture-file.schema.json",
+  "description": "parseArtists (R10): whole string as an artist side (R1, R3, R7, R9.2); no mode prelude, prefixes or separator",
+  "defaults": {
+    "fn": "parseArtists"
+  },
+  "cases": [
+    {
+      "id": "parse-artists-001",
+      "input": "Noisia",
+      "expected": [
+        {
+          "name": "Noisia",
+          "role": "primary",
+          "joiner": null,
+          "source": "artist"
+        }
+      ],
+      "rules": [
+        "R10"
+      ],
+      "tags": [
+        "single"
+      ]
+    },
+    {
+      "id": "parse-artists-002",
+      "input": "Noisia & The Upbeats",
+      "expected": [
+        {
+          "name": "Noisia",
+          "role": "primary",
+          "joiner": null,
+          "source": "artist"
+        },
+        {
+          "name": "The Upbeats",
+          "role": "primary",
+          "joiner": "&",
+          "source": "artist"
+        }
+      ],
+      "rules": [
+        "R10",
+        "R7.3"
+      ],
+      "tags": [
+        "joiner"
+      ]
+    },
+    {
+      "id": "parse-artists-003",
+      "input": "Sub Focus, Wilkinson, Dimension",
+      "expected": [
+        {
+          "name": "Sub Focus",
+          "joiner": null
+        },
+        {
+          "name": "Wilkinson",
+          "joiner": ","
+        },
+        {
+          "name": "Dimension",
+          "joiner": ","
+        }
+      ],
+      "rules": [
+        "R10",
+        "R7.3"
+      ],
+      "tags": [
+        "tight"
+      ]
+    },
+    {
+      "id": "parse-artists-004",
+      "input": "Noisia feat. Foreign Beggars",
+      "expected": [
+        {
+          "name": "Noisia",
+          "role": "primary",
+          "joiner": null,
+          "source": "artist"
+        },
+        {
+          "name": "Foreign Beggars",
+          "role": "featured",
+          "joiner": "feat.",
+          "source": "artist"
+        }
+      ],
+      "rules": [
+        "R10",
+        "R7.2"
+      ],
+      "tags": [
+        "feat"
+      ]
+    },
+    {
+      "id": "parse-artists-005",
+      "input": "Armin van Buuren vs Vini Vici feat. Hilight Tribe",
+      "expected": [
+        {
+          "name": "Armin van Buuren",
+          "role": "primary",
+          "joiner": null,
+          "source": "artist"
+        },
+        {
+          "name": "Vini Vici",
+          "role": "primary",
+          "joiner": "vs",
+          "source": "artist"
+        },
+        {
+          "name": "Hilight Tribe",
+          "role": "featured",
+          "joiner": "feat.",
+          "source": "artist"
+        }
+      ],
+      "rules": [
+        "R10",
+        "R7.2",
+        "R7.3"
+      ],
+      "tags": [
+        "feat",
+        "vs"
+      ]
+    },
+    {
+      "id": "parse-artists-006",
+      "input": "Noisia (feat. Foreign Beggars)",
+      "expected": [
+        {
+          "name": "Noisia",
+          "role": "primary",
+          "joiner": null,
+          "source": "artist"
+        },
+        {
+          "name": "Foreign Beggars",
+          "role": "featured",
+          "joiner": "feat.",
+          "source": "artist"
+        }
+      ],
+      "rules": [
+        "R10",
+        "R7.1",
+        "R5.2"
+      ],
+      "tags": [
+        "feat",
+        "groups"
+      ]
+    },
+    {
+      "id": "parse-artists-007",
+      "input": "Noisia (prod. Phace)",
+      "expected": [
+        {
+          "name": "Noisia",
+          "role": "primary",
+          "joiner": null,
+          "source": "artist"
+        },
+        {
+          "name": "Phace",
+          "role": "producer",
+          "joiner": "prod.",
+          "source": "artist"
+        }
+      ],
+      "rules": [
+        "R10",
+        "R7.1",
+        "R5.3"
+      ],
+      "tags": [
+        "producer",
+        "groups"
+      ]
+    },
+    {
+      "id": "parse-artists-008",
+      "input": "BTS (방탄소년단)",
+      "expected": [
+        "BTS (방탄소년단)"
+      ],
+      "rules": [
+        "R10",
+        "R5.8"
+      ],
+      "tags": [
+        "groups",
+        "verbatim"
+      ]
+    },
+    {
+      "id": "parse-artists-009",
+      "input": "Hybrid Minds (Josh & Matt) & Tiffani Juno",
+      "expected": [
+        {
+          "name": "Hybrid Minds (Josh & Matt)",
+          "joiner": null
+        },
+        {
+          "name": "Tiffani Juno",
+          "joiner": "&"
+        }
+      ],
+      "rules": [
+        "R10",
+        "R3.4",
+        "R7.3"
+      ],
+      "tags": [
+        "groups",
+        "verbatim"
+      ],
+      "note": "Joiners inside an Unknown group never split (skeleton)."
+    },
+    {
+      "id": "parse-artists-010",
+      "input": "Noisia (VIP Mix)",
+      "expected": [
+        "Noisia (VIP Mix)"
+      ],
+      "rules": [
+        "R10",
+        "R7.1"
+      ],
+      "tags": [
+        "groups",
+        "verbatim"
+      ],
+      "note": "Version groups stay verbatim in artist text."
+    },
+    {
+      "id": "parse-artists-011",
+      "input": "Noisia (2010) [Official]",
+      "expected": [
+        "Noisia"
+      ],
+      "rules": [
+        "R10",
+        "R7.1"
+      ],
+      "tags": [
+        "groups",
+        "year",
+        "junk"
+      ],
+      "note": "Year and junk groups are extracted and removed."
+    },
+    {
+      "id": "parse-artists-012",
+      "input": "Chase & Status, Sub Focus",
+      "options": {
+        "knownArtists": [
+          "Chase & Status"
+        ]
+      },
+      "expected": [
+        {
+          "name": "Chase & Status",
+          "joiner": null
+        },
+        {
+          "name": "Sub Focus",
+          "joiner": ","
+        }
+      ],
+      "rules": [
+        "R10",
+        "R7.3a"
+      ],
+      "tags": [
+        "known-artists"
+      ]
+    },
+    {
+      "id": "parse-artists-013",
+      "input": "Chase & Status, Sub Focus",
+      "expected": [
+        "Chase",
+        "Status",
+        "Sub Focus"
+      ],
+      "rules": [
+        "R10",
+        "R7.3"
+      ],
+      "tags": [
+        "known-artists",
+        "default"
+      ]
+    },
+    {
+      "id": "parse-artists-014",
+      "input": "Tyler, The Creator",
+      "options": {
+        "knownArtists": [
+          "Tyler, The Creator"
+        ]
+      },
+      "expected": [
+        "Tyler, The Creator"
+      ],
+      "rules": [
+        "R10",
+        "R7.3a"
+      ],
+      "tags": [
+        "known-artists"
+      ]
+    },
+    {
+      "id": "parse-artists-015",
+      "input": "Noisia & NOISIA & Noísia",
+      "expected": [
+        {
+          "name": "Noisia",
+          "role": "primary",
+          "joiner": null,
+          "source": "artist"
+        }
+      ],
+      "rules": [
+        "R10",
+        "R9.2",
+        "R0.4"
+      ],
+      "tags": [
+        "dedup"
+      ]
+    },
+    {
+      "id": "parse-artists-016",
+      "input": "Noisia feat. Noisia",
+      "expected": [
+        {
+          "name": "Noisia",
+          "role": "primary"
+        }
+      ],
+      "rules": [
+        "R10",
+        "R9.2"
+      ],
+      "tags": [
+        "dedup",
+        "feat"
+      ]
+    },
+    {
+      "id": "parse-artists-017",
+      "input": "",
+      "expected": [],
+      "rules": [
+        "R10",
+        "R9.5"
+      ],
+      "tags": [
+        "empty"
+      ]
+    },
+    {
+      "id": "parse-artists-018",
+      "input": " \u200b\u00a0 ",
+      "expected": [],
+      "rules": [
+        "R10",
+        "R1.2",
+        "R1.6"
+      ],
+      "tags": [
+        "empty"
+      ],
+      "note": "Only whitespace/zero-width characters -> empty after normalization."
+    },
+    {
+      "id": "parse-artists-019",
+      "input": "Simon and Garfunkel",
+      "expected": [
+        "Simon and Garfunkel"
+      ],
+      "rules": [
+        "R10",
+        "R7.3"
+      ],
+      "tags": [
+        "and",
+        "splitAnd"
+      ]
+    },
+    {
+      "id": "parse-artists-020",
+      "input": "Simon and Garfunkel",
+      "options": {
+        "splitAnd": "always"
+      },
+      "expected": [
+        {
+          "name": "Simon",
+          "joiner": null
+        },
+        {
+          "name": "Garfunkel",
+          "joiner": "and"
+        }
+      ],
+      "rules": [
+        "R10",
+        "R7.3"
+      ],
+      "tags": [
+        "and",
+        "splitAnd"
+      ]
+    },
+    {
+      "id": "parse-artists-021",
+      "input": "01. Noisia",
+      "expected": [
+        "01. Noisia"
+      ],
+      "rules": [
+        "R10",
+        "R4.3"
+      ],
+      "tags": [
+        "no-prefix"
+      ],
+      "note": "parseArtists never applies R4: no position is stripped."
+    },
+    {
+      "id": "parse-artists-022",
+      "input": "Noisia - Phace",
+      "expected": [
+        "Noisia - Phace"
+      ],
+      "rules": [
+        "R10"
+      ],
+      "tags": [
+        "no-separator"
+      ],
+      "note": "parseArtists never applies R6 and '-' is not a joiner."
+    },
+    {
+      "id": "parse-artists-023",
+      "input": "ID & Noisia",
+      "expected": [
+        { "name": "Noisia", "joiner": null }
+      ],
+      "rules": ["R10", "R7.5", "R7.6"],
+      "tags": ["id"],
+      "note": "The dropped unknown token was the first name; the next name inherits its null joiner (R7.6)."
+    },
+    {
+      "id": "parse-artists-024",
+      "input": "Wilkinson x Sub Focus & Malcolm X",
+      "expected": [
+        {
+          "name": "Wilkinson",
+          "joiner": null
+        },
+        {
+          "name": "Sub Focus",
+          "joiner": "x"
+        },
+        {
+          "name": "Malcolm X",
+          "joiner": "&"
+        }
+      ],
+      "rules": [
+        "R10",
+        "R7.3"
+      ],
+      "tags": [
+        "x",
+        "case"
+      ]
+    },
+    {
+      "id": "parse-artists-025",
+      "input": "A$AP Rocky, A$AP Ferg; will.i.am",
+      "expected": [
+        {
+          "name": "A$AP Rocky",
+          "joiner": null
+        },
+        {
+          "name": "A$AP Ferg",
+          "joiner": ","
+        },
+        {
+          "name": "will.i.am",
+          "joiner": ";"
+        }
+      ],
+      "rules": [
+        "R10",
+        "R7.4"
+      ],
+      "tags": [
+        "symbols"
+      ]
+    },
+    {
+      "id": "parse-artists-026",
+      "input": "Mumford & Sons",
+      "expected": [
+        "Mumford & Sons"
+      ],
+      "rules": [
+        "R10",
+        "R7.3"
+      ],
+      "tags": [
+        "guard"
+      ]
+    },
+    {
+      "id": "parse-artists-027",
+      "input": "Баста ft. Гуф",
+      "expected": [
+        {
+          "name": "Баста",
+          "role": "primary",
+          "joiner": null
+        },
+        {
+          "name": "Гуф",
+          "role": "featured",
+          "joiner": "ft."
+        }
+      ],
+      "rules": [
+        "R10",
+        "R7.2"
+      ],
+      "tags": [
+        "cyrillic",
+        "feat"
+      ]
+    },
+    {
+      "id": "parse-artists-028",
+      "input": "by Noisia",
+      "expected": [
+        "Noisia"
+      ],
+      "rules": [
+        "R10",
+        "R7.4"
+      ],
+      "tags": [
+        "cleanup"
+      ]
+    },
+    {
+      "id": "parse-artists-029",
+      "input": "01. Gydra",
+      "expected": [
+        { "name": "01. Gydra", "role": "primary", "joiner": null }
+      ],
+      "rules": ["R10"],
+      "tags": ["position"],
+      "note": "Intended: parseArtists does not apply R4."
+    }
+  ]
+}

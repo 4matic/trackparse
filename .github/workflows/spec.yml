@@ -1,0 +1,34 @@
+name: spec
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    paths:
+      - "spec/**"
+      - "js/scripts/gen-data.ts"
+      - "js/src/data.generated.ts"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "package.json"
+      - ".github/workflows/spec.yml"
+
+jobs:
+  spec:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Validate fixtures against schema + unique ids
+        run: pnpm --filter @trackparse/fixture-gen validate
+      - name: Generated fixtures are up to date
+        run: pnpm --filter @trackparse/fixture-gen check
+      - name: Generator tests
+        run: pnpm --filter @trackparse/fixture-gen test
+      - name: Port data codegen is up to date
+        run: pnpm --filter trackparse gen:data:check

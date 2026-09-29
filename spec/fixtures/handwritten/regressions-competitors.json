@@ -1,0 +1,2057 @@
+{
+  "$schema": "../../schema/fixture-file.schema.json",
+  "description": "Known failures of other title parsers (get-artist-title, youtube_title_parse, metadata-filter) and representative inputs from the get-artist-title test suite, encoded under the trackparse spec.",
+  "defaults": {
+    "fn": "parse",
+    "options": {
+      "mode": "youtube"
+    }
+  },
+  "cases": [
+    {
+      "id": "regressions-competitors-001",
+      "input": "Blink-182-All The Small Things",
+      "expected": {
+        "input": "Blink-182-All The Small Things",
+        "mode": "youtube",
+        "position": null,
+        "timestamp": null,
+        "artists": [
+          {
+            "name": "Blink-182",
+            "role": "primary",
+            "joiner": null,
+            "source": "artist"
+          }
+        ],
+        "title": "All The Small Things",
+        "fullTitle": "All The Small Things",
+        "versions": [],
+        "year": null,
+        "flags": {
+          "explicit": false,
+          "clean": false,
+          "unknownArtist": false,
+          "unknownTitle": false
+        },
+        "junk": [],
+        "warnings": [
+          "unspacedDashSplit"
+        ]
+      },
+      "match": "exact",
+      "rules": [
+        "R6.7"
+      ],
+      "source": "competitors: get-artist-title / youtube_title_parse / metadata-filter known failures",
+      "note": "'-182' is rejected as a candidate (right neighbour is a digit); the last letter-candidate splits."
+    },
+    {
+      "id": "regressions-competitors-002",
+      "input": "Rammstein - Du Hast (Official Video) | 4K",
+      "options": {
+        "mode": "auto"
+      },
+      "expected": {
+        "input": "Rammstein - Du Hast (Official Video) | 4K",
+        "mode": "youtube",
+        "position": null,
+        "timestamp": null,
+        "artists": [
+          {
+            "name": "Rammstein",
+            "role": "primary",
+            "joiner": null,
+            "source": "artist"
+          }
+        ],
+        "title": "Du Hast",
+        "fullTitle": "Du Hast",
+        "versions": [],
+        "year": null,
+        "flags": {
+          "explicit": false,
+          "clean": false,
+          "unknownArtist": false,
+          "unknownTitle": false
+        },
+        "junk": [
+          {
+            "raw": "Official Video",
+            "kind": "video"
+          },
+          {
+            "raw": "4K",
+            "kind": "quality"
+          }
+        ],
+        "warnings": []
+      },
+      "match": "exact",
+      "rules": [
+        "R2.1",
+        "R2.4",
+        "R5.1",
+        "R8.1"
+      ],
+      "source": "competitors: get-artist-title / youtube_title_parse / metadata-filter known failures",
+      "note": "mode auto resolves to youtube (top-level ' | '). The junk-only pipe segment is removed; junk ordered by appearance."
+    },
+    {
+      "id": "regressions-competitors-003",
+      "input": "Numb (Official Lyric Video)",
+      "expected": {
+        "artists": [],
+        "title": "Numb",
+        "junk": [
+          {
+            "raw": "Official Lyric Video",
+            "kind": "lyrics"
+          }
+        ],
+        "warnings": [
+          "noSeparator"
+        ]
+      },
+      "rules": [
+        "R5.1",
+        "R6.8"
+      ],
+      "source": "competitors: get-artist-title / youtube_title_parse / metadata-filter known failures"
+    },
+    {
+      "id": "regressions-competitors-004",
+      "input": "Numb (Official Lyric Video)",
+      "options": {
+        "mode": "youtube",
+        "uploader": "Linkin Park - Topic"
+      },
+      "expected": {
+        "artists": [
+          {
+            "name": "Linkin Park",
+            "role": "primary",
+            "joiner": null,
+            "source": "artist"
+          }
+        ],
+        "title": "Numb",
+        "junk": [
+          {
+            "raw": "Official Lyric Video",
+            "kind": "lyrics"
+          }
+        ]
+      },
+      "rules": [
+        "R6.8",
+        "R12"
+      ],
+      "source": "competitors: get-artist-title / youtube_title_parse / metadata-filter known failures",
+      "note": "Uploader fallback strips a trailing ' - Topic'."
+    },
+    {
+      "id": "regressions-competitors-005",
+      "input": "Strobe (Club Edit) - YouTube",
+      "options": {
+        "mode": "auto"
+      },
+      "expected": {
+        "mode": "youtube",
+        "artists": [],
+        "title": "Strobe",
+        "fullTitle": "Strobe (Club Edit)",
+        "versions": [
+          {
+            "type": "club",
+            "raw": "Club Edit",
+            "artists": [],
+            "delimiter": "("
+          }
+        ],
+        "junk": [
+          {
+            "raw": "YouTube",
+            "kind": "platform"
+          }
+        ]
+      },
+      "rules": [
+        "R2.1",
+        "R2.2",
+        "R5.7"
+      ],
+      "source": "competitors: get-artist-title / youtube_title_parse / metadata-filter known failures",
+      "note": "Platform suffix is removed before separator detection, so ' - YouTube' is never a title."
+    },
+    {
+      "id": "regressions-competitors-006",
+      "input": "Hey Jude - Remastered 2015",
+      "expected": {
+        "input": "Hey Jude - Remastered 2015",
+        "mode": "youtube",
+        "position": null,
+        "timestamp": null,
+        "artists": [],
+        "title": "Hey Jude",
+        "fullTitle": "Hey Jude - Remastered 2015",
+        "versions": [
+          {
+            "type": "remaster",
+            "raw": "Remastered 2015",
+            "artists": [],
+            "modifiers": [],
+            "descriptor": null,
+            "year": 2015,
+            "unknownArtist": false,
+            "delimiter": "-"
+          }
+        ],
+        "year": null,
+        "flags": {
+          "explicit": false,
+          "clean": false,
+          "unknownArtist": false,
+          "unknownTitle": false
+        },
+        "junk": [],
+        "warnings": [
+          "noSeparator"
+        ]
+      },
+      "match": "exact",
+      "rules": [
+        "R6.2",
+        "R5.7",
+        "R6.8",
+        "R9.4"
+      ],
+      "source": "competitors: get-artist-title / youtube_title_parse / metadata-filter known failures",
+      "note": "Dash suffix peeled (2 words + year); no artist. Version years do not set the top-level year."
+    },
+    {
+      "id": "regressions-competitors-007",
+      "input": "The Beatles - Hey Jude - Remastered 2015",
+      "expected": {
+        "artists": [
+          "The Beatles"
+        ],
+        "title": "Hey Jude",
+        "fullTitle": "Hey Jude - Remastered 2015",
+        "year": null,
+        "versions": [
+          {
+            "type": "remaster",
+            "year": 2015,
+            "delimiter": "-",
+            "descriptor": null
+          }
+        ]
+      },
+      "rules": [
+        "R6.2",
+        "R6.3"
+      ],
+      "source": "competitors: get-artist-title / youtube_title_parse / metadata-filter known failures"
+    },
+    {
+      "id": "regressions-competitors-008",
+      "input": "01. Aphex Twin - Xtal",
+      "expected": {
+        "input": "01. Aphex Twin - Xtal",
+        "mode": "youtube",
+        "position": {
+          "raw": "01",
+          "number": 1
+        },
+        "timestamp": null,
+        "artists": [
+          {
+            "name": "Aphex Twin",
+            "role": "primary",
+            "joiner": null,
+            "source": "artist"
+          }
+        ],
+        "title": "Xtal",
+        "fullTitle": "Xtal",
+        "versions": [],
+        "year": null,
+        "flags": {
+          "explicit": false,
+          "clean": false,
+          "unknownArtist": false,
+          "unknownTitle": false
+        },
+        "junk": [],
+        "warnings": []
+      },
+      "match": "exact",
+      "rules": [
+        "R4.2"
+      ],
+      "source": "competitors: get-artist-title / youtube_title_parse / metadata-filter known failures"
+    },
+    {
+      "id": "regressions-competitors-009",
+      "input": "Fly Me to the Moon by Frank Sinatra",
+      "expected": {
+        "input": "Fly Me to the Moon by Frank Sinatra",
+        "mode": "youtube",
+        "position": null,
+        "timestamp": null,
+        "artists": [
+          {
+            "name": "Frank Sinatra",
+            "role": "primary",
+            "joiner": null,
+            "source": "artist"
+          }
+        ],
+        "title": "Fly Me to the Moon",
+        "fullTitle": "Fly Me to the Moon",
+        "versions": [],
+        "year": null,
+        "flags": {
+          "explicit": false,
+          "clean": false,
+          "unknownArtist": false,
+          "unknownTitle": false
+        },
+        "junk": [],
+        "warnings": [
+          "bySplit"
+        ]
+      },
+      "match": "exact",
+      "rules": [
+        "R6.6"
+      ],
+      "source": "competitors: get-artist-title / youtube_title_parse / metadata-filter known failures"
+    },
+    {
+      "id": "regressions-competitors-010",
+      "input": "Daft Punk - Get Lucky (feat. Pharrell Williams & Nile Rodgers)",
+      "expected": {
+        "artists": [
+          {
+            "name": "Daft Punk",
+            "role": "primary",
+            "joiner": null,
+            "source": "artist"
+          },
+          {
+            "name": "Pharrell Williams",
+            "role": "featured",
+            "joiner": "feat.",
+            "source": "title"
+          },
+          {
+            "name": "Nile Rodgers",
+            "role": "featured",
+            "joiner": "&",
+            "source": "title"
+          }
+        ],
+        "title": "Get Lucky",
+        "versions": []
+      },
+      "rules": [
+        "R5.2",
+        "R7.3",
+        "R9.1"
+      ],
+      "source": "competitors: get-artist-title / youtube_title_parse / metadata-filter known failures"
+    },
+    {
+      "id": "regressions-competitors-011",
+      "input": "Calvin Harris ft. Rihanna - This Is What You Came For",
+      "expected": {
+        "artists": [
+          {
+            "name": "Calvin Harris",
+            "role": "primary",
+            "joiner": null,
+            "source": "artist"
+          },
+          {
+            "name": "Rihanna",
+            "role": "featured",
+            "joiner": "ft.",
+            "source": "artist"
+          }
+        ],
+        "title": "This Is What You Came For"
+      },
+      "rules": [
+        "R7.2"
+      ],
+      "source": "competitors: get-artist-title / youtube_title_parse / metadata-filter known failures"
+    },
+    {
+      "id": "regressions-competitors-012",
+      "input": "Travis Scott, Drake - Sicko Mode",
+      "expected": {
+        "artists": [
+          {
+            "name": "Travis Scott",
+            "role": "primary",
+            "joiner": null,
+            "source": "artist"
+          },
+          {
+            "name": "Drake",
+            "role": "primary",
+            "joiner": ",",
+            "source": "artist"
+          }
+        ],
+        "title": "Sicko Mode"
+      },
+      "rules": [
+        "R7.3"
+      ],
+      "source": "competitors: get-artist-title / youtube_title_parse / metadata-filter known failures"
+    },
+    {
+      "id": "regressions-competitors-013",
+      "input": "Skrillex & Diplo - Where Are Ü Now",
+      "expected": {
+        "artists": [
+          {
+            "name": "Skrillex",
+            "role": "primary",
+            "joiner": null,
+            "source": "artist"
+          },
+          {
+            "name": "Diplo",
+            "role": "primary",
+            "joiner": "&",
+            "source": "artist"
+          }
+        ],
+        "title": "Where Are Ü Now"
+      },
+      "rules": [
+        "R7.3"
+      ],
+      "source": "competitors: get-artist-title / youtube_title_parse / metadata-filter known failures"
+    },
+    {
+      "id": "regressions-competitors-014",
+      "input": "Lady Gaga x Ariana Grande - Rain On Me",
+      "expected": {
+        "artists": [
+          {
+            "name": "Lady Gaga",
+            "role": "primary",
+            "joiner": null,
+            "source": "artist"
+          },
+          {
+            "name": "Ariana Grande",
+            "role": "primary",
+            "joiner": "x",
+            "source": "artist"
+          }
+        ],
+        "title": "Rain On Me"
+      },
+      "rules": [
+        "R7.3"
+      ],
+      "source": "competitors: get-artist-title / youtube_title_parse / metadata-filter known failures"
+    },
+    {
+      "id": "regressions-competitors-015",
+      "input": "Tiësto vs. Hardwell - Zero 76",
+      "expected": {
+        "artists": [
+          {
+            "name": "Tiësto",
+            "role": "primary",
+            "joiner": null,
+            "source": "artist"
+          },
+          {
+            "name": "Hardwell",
+            "role": "primary",
+            "joiner": "vs.",
+            "source": "artist"
+          }
+        ],
+        "title": "Zero 76"
+      },
+      "rules": [
+        "R7.3",
+        "R1.1"
+      ],
+      "source": "competitors: get-artist-title / youtube_title_parse / metadata-filter known failures"
+    },
+    {
+      "id": "regressions-competitors-016",
+      "input": "Avicii - Levels (Skrillex Remix)",
+      "expected": {
+        "artists": [
+          {
+            "name": "Avicii",
+            "role": "primary",
+            "joiner": null,
+            "source": "artist"
+          }
+        ],
+        "title": "Levels",
+        "versions": [
+          {
+            "type": "remix",
+            "artists": [
+              {
+                "name": "Skrillex",
+                "role": "remixer",
+                "joiner": null,
+                "source": "version"
+              }
+            ]
+          }
+        ]
+      },
+      "rules": [
+        "R5.7"
+      ],
+      "source": "competitors: get-artist-title / youtube_title_parse / metadata-filter known failures"
+    },
+    {
+      "id": "regressions-competitors-017",
+      "input": "deadmau5 - Strobe (Extended Mix)",
+      "expected": {
+        "artists": [
+          "deadmau5"
+        ],
+        "title": "Strobe",
+        "versions": [
+          {
+            "type": "extended",
+            "artists": [],
+            "modifiers": []
+          }
+        ]
+      },
+      "rules": [
+        "R5.7"
+      ],
+      "source": "competitors: get-artist-title / youtube_title_parse / metadata-filter known failures"
+    },
+    {
+      "id": "regressions-competitors-018",
+      "input": "Avicii - Levels (Radio Edit)",
+      "expected": {
+        "artists": [
+          "Avicii"
+        ],
+        "title": "Levels",
+        "versions": [
+          {
+            "type": "radio",
+            "artists": []
+          }
+        ]
+      },
+      "rules": [
+        "R5.7"
+      ],
+      "source": "competitors: get-artist-title / youtube_title_parse / metadata-filter known failures"
+    },
+    {
+      "id": "regressions-competitors-019",
+      "input": "Queen - Bohemian Rhapsody (Remastered 2011)",
+      "expected": {
+        "artists": [
+          "Queen"
+        ],
+        "title": "Bohemian Rhapsody",
+        "year": null,
+        "versions": [
+          {
+            "type": "remaster",
+            "raw": "Remastered 2011",
+            "artists": [],
+            "year": 2011,
+            "descriptor": null
+          }
+        ]
+      },
+      "rules": [
+        "R5.7"
+      ],
+      "source": "competitors: get-artist-title / youtube_title_parse / metadata-filter known failures",
+      "note": "Prefix form (last word is not a head)."
+    },
+    {
+      "id": "regressions-competitors-020",
+      "input": "Queen - Bohemian Rhapsody (2011 Remaster)",
+      "expected": {
+        "artists": [
+          "Queen"
+        ],
+        "title": "Bohemian Rhapsody",
+        "year": null,
+        "versions": [
+          {
+            "type": "remaster",
+            "raw": "2011 Remaster",
+            "artists": [],
+            "year": 2011,
+            "modifiers": []
+          }
+        ]
+      },
+      "rules": [
+        "R5.7"
+      ],
+      "source": "competitors: get-artist-title / youtube_title_parse / metadata-filter known failures",
+      "note": "Head scan: year in the run."
+    },
+    {
+      "id": "regressions-competitors-021",
+      "input": "Queen - Bohemian Rhapsody - 2011 Remaster",
+      "expected": {
+        "artists": [
+          "Queen"
+        ],
+        "title": "Bohemian Rhapsody",
+        "fullTitle": "Bohemian Rhapsody - 2011 Remaster",
+        "versions": [
+          {
+            "type": "remaster",
+            "year": 2011,
+            "delimiter": "-"
+          }
+        ]
+      },
+      "rules": [
+        "R6.2",
+        "R5.7"
+      ],
+      "source": "competitors: get-artist-title / youtube_title_parse / metadata-filter known failures"
+    },
+    {
+      "id": "regressions-competitors-022",
+      "input": "Eric Prydz - Opus - Extended Mix",
+      "expected": {
+        "artists": [
+          "Eric Prydz"
+        ],
+        "title": "Opus",
+        "versions": [
+          {
+            "type": "extended",
+            "raw": "Extended Mix",
+            "delimiter": "-"
+          }
+        ]
+      },
+      "rules": [
+        "R6.2"
+      ],
+      "source": "competitors: get-artist-title / youtube_title_parse / metadata-filter known failures"
+    },
+    {
+      "id": "regressions-competitors-023",
+      "input": "Strobe - Radio Edit",
+      "expected": {
+        "artists": [],
+        "title": "Strobe",
+        "versions": [
+          {
+            "type": "radio",
+            "delimiter": "-"
+          }
+        ]
+      },
+      "rules": [
+        "R6.2",
+        "R6.8"
+      ],
+      "source": "competitors: get-artist-title / youtube_title_parse / metadata-filter known failures",
+      "note": "Two-word version suffix is peeled even without an artist."
+    },
+    {
+      "id": "regressions-competitors-024",
+      "input": "Kizaru - Karma (prod. by SHAMA)",
+      "expected": {
+        "artists": [
+          {
+            "name": "Kizaru",
+            "role": "primary",
+            "joiner": null,
+            "source": "artist"
+          },
+          {
+            "name": "SHAMA",
+            "role": "producer",
+            "joiner": "prod. by",
+            "source": "title"
+          }
+        ],
+        "title": "Karma",
+        "versions": []
+      },
+      "rules": [
+        "R5.3",
+        "R8.1"
+      ],
+      "source": "competitors: get-artist-title / youtube_title_parse / metadata-filter known failures"
+    },
+    {
+      "id": "regressions-competitors-025",
+      "input": "Nirvana - Lithium (Live)",
+      "expected": {
+        "artists": [
+          "Nirvana"
+        ],
+        "title": "Lithium",
+        "versions": [
+          {
+            "type": "live",
+            "raw": "Live",
+            "artists": [],
+            "descriptor": null
+          }
+        ]
+      },
+      "rules": [
+        "R5.7"
+      ],
+      "source": "competitors: get-artist-title / youtube_title_parse / metadata-filter known failures",
+      "note": "Prefix form 'Live'."
+    },
+    {
+      "id": "regressions-competitors-026",
+      "input": "Oasis - Wonderwall (Acoustic Version)",
+      "expected": {
+        "artists": [
+          "Oasis"
+        ],
+        "title": "Wonderwall",
+        "versions": [
+          {
+            "type": "acoustic",
+            "artists": []
+          }
+        ]
+      },
+      "rules": [
+        "R5.7"
+      ],
+      "source": "competitors: get-artist-title / youtube_title_parse / metadata-filter known failures"
+    },
+    {
+      "id": "regressions-competitors-027",
+      "input": "Eminem - Without Me [Explicit]",
+      "expected": {
+        "artists": [
+          "Eminem"
+        ],
+        "title": "Without Me",
+        "fullTitle": "Without Me",
+        "versions": [],
+        "flags": {
+          "explicit": true,
+          "clean": false,
+          "unknownArtist": false,
+          "unknownTitle": false
+        }
+      },
+      "rules": [
+        "R5.4",
+        "R8.1"
+      ],
+      "source": "competitors: get-artist-title / youtube_title_parse / metadata-filter known failures"
+    },
+    {
+      "id": "regressions-competitors-028",
+      "input": "Кино - Группа крови",
+      "expected": {
+        "artists": [
+          "Кино"
+        ],
+        "title": "Группа крови"
+      },
+      "rules": [
+        "R6.3"
+      ],
+      "source": "competitors: get-artist-title / youtube_title_parse / metadata-filter known failures"
+    },
+    {
+      "id": "regressions-competitors-029",
+      "input": "Земфира - Хочешь? (Official Video)",
+      "expected": {
+        "artists": [
+          "Земфира"
+        ],
+        "title": "Хочешь?",
+        "junk": [
+          {
+            "raw": "Official Video",
+            "kind": "video"
+          }
+        ]
+      },
+      "rules": [
+        "R5.1"
+      ],
+      "source": "competitors: get-artist-title / youtube_title_parse / metadata-filter known failures"
+    },
+    {
+      "id": "regressions-competitors-030",
+      "input": "Би-2 - Полковнику никто не пишет",
+      "expected": {
+        "artists": [
+          "Би-2"
+        ],
+        "title": "Полковнику никто не пишет",
+        "warnings": []
+      },
+      "rules": [
+        "R6.1",
+        "R6.3"
+      ],
+      "source": "competitors: get-artist-title / youtube_title_parse / metadata-filter known failures",
+      "note": "Unspaced hyphen in a Cyrillic name is not a separator when a spaced dash exists."
+    },
+    {
+      "id": "regressions-competitors-031",
+      "input": "AC/DC - Thunderstruck",
+      "expected": {
+        "artists": [
+          {
+            "name": "AC/DC",
+            "role": "primary",
+            "joiner": null,
+            "source": "artist"
+          }
+        ],
+        "title": "Thunderstruck"
+      },
+      "rules": [
+        "R7.3"
+      ],
+      "source": "competitors: get-artist-title / youtube_title_parse / metadata-filter known failures",
+      "note": "Unspaced '/' never splits."
+    },
+    {
+      "id": "regressions-competitors-032",
+      "input": "Jay-Z - 99 Problems",
+      "expected": {
+        "position": null,
+        "artists": [
+          {
+            "name": "Jay-Z",
+            "role": "primary",
+            "joiner": null,
+            "source": "artist"
+          }
+        ],
+        "title": "99 Problems"
+      },
+      "rules": [
+        "R6.3",
+        "R4.2"
+      ],
+      "source": "competitors: get-artist-title / youtube_title_parse / metadata-filter known failures"
+    },
+    {
+      "id": "regressions-competitors-033",
+      "input": "a-ha - Take On Me",
+      "expected": {
+        "artists": [
+          {
+            "name": "a-ha",
+            "role": "primary",
+            "joiner": null,
+            "source": "artist"
+          }
+        ],
+        "title": "Take On Me",
+        "warnings": []
+      },
+      "rules": [
+        "R6.3"
+      ],
+      "source": "competitors: get-artist-title / youtube_title_parse / metadata-filter known failures"
+    },
+    {
+      "id": "regressions-competitors-034",
+      "input": "Boats & BIrds - Gregory & the Hawk",
+      "expected": {
+        "artists": [
+          {
+            "name": "Boats",
+            "role": "primary",
+            "joiner": null,
+            "source": "artist"
+          },
+          {
+            "name": "BIrds",
+            "role": "primary",
+            "joiner": "&",
+            "source": "artist"
+          }
+        ],
+        "title": "Gregory & the Hawk"
+      },
+      "rules": [
+        "R7.3"
+      ],
+      "source": "get-artist-title (MIT, © 2016 René Kooi)",
+      "note": "get-artist-title keeps 'Boats & BIrds' as one string; the spec splits '&' (use knownArtists to keep it)."
+    },
+    {
+      "id": "regressions-competitors-035",
+      "input": "Sum 41 - In Too Deep (Official Video)",
+      "expected": {
+        "artists": [
+          "Sum 41"
+        ],
+        "title": "In Too Deep",
+        "junk": [
+          {
+            "raw": "Official Video",
+            "kind": "video"
+          }
+        ]
+      },
+      "rules": [
+        "R5.1"
+      ],
+      "source": "get-artist-title (MIT, © 2016 René Kooi)"
+    },
+    {
+      "id": "regressions-competitors-036",
+      "input": "FEMM - PoW! (Music Video)",
+      "expected": {
+        "artists": [
+          "FEMM"
+        ],
+        "title": "PoW!",
+        "junk": [
+          {
+            "raw": "Music Video",
+            "kind": "video"
+          }
+        ]
+      },
+      "rules": [
+        "R5.1"
+      ],
+      "source": "get-artist-title (MIT, © 2016 René Kooi)"
+    },
+    {
+      "id": "regressions-competitors-037",
+      "input": "The Wombats - Anti-D Official Video",
+      "expected": {
+        "artists": [
+          "The Wombats"
+        ],
+        "title": "Anti-D",
+        "junk": [
+          {
+            "raw": "Official Video",
+            "kind": "video"
+          }
+        ]
+      },
+      "rules": [
+        "R8.4",
+        "R0.3"
+      ],
+      "source": "get-artist-title (MIT, © 2016 René Kooi)",
+      "note": "Unbracketed trailing junk (youtube only), longest phrase first."
+    },
+    {
+      "id": "regressions-competitors-038",
+      "input": "4MINUTE – Whatever",
+      "expected": {
+        "position": null,
+        "artists": [
+          "4MINUTE"
+        ],
+        "title": "Whatever"
+      },
+      "rules": [
+        "R4.2",
+        "R1.5"
+      ],
+      "source": "get-artist-title (MIT, © 2016 René Kooi)"
+    },
+    {
+      "id": "regressions-competitors-039",
+      "input": "4MINUTE – Whatever (Test Ver)",
+      "expected": {
+        "artists": ["4MINUTE"],
+        "title": "Whatever",
+        "versions": [
+          {
+            "type": "version",
+            "raw": "Test Ver",
+            "artists": [],
+            "descriptor": "Test"
+          }
+        ]
+      },
+      "rules": ["R5.7"],
+      "source": "get-artist-title (MIT, © 2016 René Kooi)",
+      "note": "'Ver' is a version head; for type version the credit span is a descriptor, not a remixer (get-artist-title just deletes the group)."
+    },
+    {
+      "id": "regressions-competitors-040",
+      "input": "Low Roar - \"Half Asleep\"",
+      "expected": {
+        "artists": [
+          "Low Roar"
+        ],
+        "title": "Half Asleep"
+      },
+      "rules": [
+        "R8.5"
+      ],
+      "source": "get-artist-title (MIT, © 2016 René Kooi)"
+    },
+    {
+      "id": "regressions-competitors-041",
+      "input": "4MINUTE - 'Volume Up' (Official Music Video)",
+      "expected": {
+        "artists": [
+          "4MINUTE"
+        ],
+        "title": "Volume Up",
+        "junk": [
+          {
+            "raw": "Official Music Video",
+            "kind": "video"
+          }
+        ]
+      },
+      "rules": [
+        "R8.5",
+        "R5.1"
+      ],
+      "source": "get-artist-title (MIT, © 2016 René Kooi)"
+    },
+    {
+      "id": "regressions-competitors-042",
+      "input": "...AND YOU WILL KNOW US BY THE TRAIL OF DEAD - Summer Of All Dead Souls",
+      "expected": {
+        "artists": [
+          {
+            "name": "...AND YOU WILL KNOW US BY THE TRAIL OF DEAD",
+            "role": "primary",
+            "joiner": null,
+            "source": "artist"
+          }
+        ],
+        "title": "Summer Of All Dead Souls"
+      },
+      "rules": [
+        "R7.3",
+        "R0.3"
+      ],
+      "source": "get-artist-title (MIT, © 2016 René Kooi)",
+      "note": "'...AND' is not the joiner 'and' (word key keeps leading dots)."
+    },
+    {
+      "id": "regressions-competitors-043",
+      "input": "임정희 Lim Jeong Hee - I.O.U Official MV",
+      "expected": {
+        "artists": [
+          "임정희 Lim Jeong Hee"
+        ],
+        "title": "I.O.U",
+        "junk": [
+          {
+            "raw": "Official MV",
+            "kind": "video"
+          }
+        ]
+      },
+      "rules": [
+        "R8.4"
+      ],
+      "source": "get-artist-title (MIT, © 2016 René Kooi)"
+    },
+    {
+      "id": "regressions-competitors-044",
+      "input": "Big Limit [@RealBigLimit] - Samurai Jack [Music Video] (4K)",
+      "expected": {
+        "artists": [
+          {
+            "name": "Big Limit [@RealBigLimit]",
+            "role": "primary",
+            "joiner": null,
+            "source": "artist"
+          }
+        ],
+        "title": "Samurai Jack",
+        "junk": [
+          {
+            "raw": "Music Video",
+            "kind": "video"
+          },
+          {
+            "raw": "4K",
+            "kind": "quality"
+          }
+        ]
+      },
+      "rules": [
+        "R7.1",
+        "R5.8",
+        "R5.1"
+      ],
+      "source": "get-artist-title (MIT, © 2016 René Kooi)",
+      "note": "Unknown groups on the artist side stay verbatim in the name (get-artist-title deletes them)."
+    },
+    {
+      "id": "regressions-competitors-045",
+      "input": "HA:TFELT [핫펠트(예은)] \"Truth\" M/V",
+      "expected": {
+        "artists": [
+          {
+            "name": "HA:TFELT [핫펠트(예은)]",
+            "role": "primary",
+            "joiner": null,
+            "source": "artist"
+          }
+        ],
+        "title": "Truth",
+        "junk": [
+          {
+            "raw": "M/V",
+            "kind": "video"
+          }
+        ],
+        "warnings": [
+          "quotedTitleSplit"
+        ]
+      },
+      "rules": [
+        "R6.5",
+        "R6.9",
+        "R8.4",
+        "R7.1"
+      ],
+      "source": "get-artist-title (MIT, © 2016 René Kooi)",
+      "note": "':' is never a separator; quoted title split."
+    },
+    {
+      "id": "regressions-competitors-046",
+      "input": "T-ARA[티아라] \"NUMBER NINE [넘버나인]\" M/V",
+      "expected": {
+        "artists": [
+          {
+            "name": "T-ARA[티아라]",
+            "role": "primary",
+            "joiner": null,
+            "source": "artist"
+          }
+        ],
+        "title": "NUMBER NINE [넘버나인]",
+        "junk": [
+          {
+            "raw": "M/V",
+            "kind": "video"
+          }
+        ],
+        "warnings": [
+          "quotedTitleSplit"
+        ]
+      },
+      "rules": [
+        "R6.5",
+        "R8.4",
+        "R5.8"
+      ],
+      "source": "get-artist-title (MIT, © 2016 René Kooi)",
+      "note": "Quoted title wins before the unspaced-dash rule; Unknown groups stay."
+    },
+    {
+      "id": "regressions-competitors-047",
+      "input": "BLESSED ~ Sorrows (Audio)",
+      "expected": {
+        "artists": [],
+        "title": "BLESSED ~ Sorrows",
+        "junk": [
+          {
+            "raw": "Audio",
+            "kind": "audio"
+          }
+        ],
+        "warnings": [
+          "noSeparator"
+        ]
+      },
+      "rules": [
+        "R6.8",
+        "R5.1"
+      ],
+      "source": "get-artist-title (MIT, © 2016 René Kooi)",
+      "note": "'~' is not a separator in v1 (get-artist-title splits it)."
+    },
+    {
+      "id": "regressions-competitors-048",
+      "input": "Rush – Moving Pictures (Full Album)",
+      "expected": {
+        "artists": [
+          "Rush"
+        ],
+        "title": "Moving Pictures (Full Album)",
+        "junk": []
+      },
+      "rules": [
+        "R5.8"
+      ],
+      "source": "get-artist-title (MIT, © 2016 René Kooi)",
+      "note": "'Full Album' is not junk vocabulary: stays in the title."
+    },
+    {
+      "id": "regressions-competitors-049",
+      "input": "Rush - Moving Pictures (Full Album) (Official)",
+      "expected": {
+        "artists": [
+          "Rush"
+        ],
+        "title": "Moving Pictures (Full Album)",
+        "junk": [
+          {
+            "raw": "Official",
+            "kind": "other"
+          }
+        ]
+      },
+      "rules": [
+        "R5.1"
+      ],
+      "source": "get-artist-title (MIT, © 2016 René Kooi)"
+    },
+    {
+      "id": "regressions-competitors-050",
+      "input": "Dua Lipa - New Rules (Official Music Video) **NEW**",
+      "expected": {
+        "artists": [
+          "Dua Lipa"
+        ],
+        "title": "New Rules **NEW**",
+        "junk": [
+          {
+            "raw": "Official Music Video",
+            "kind": "video"
+          }
+        ]
+      },
+      "rules": [
+        "R5.1",
+        "R8.4"
+      ],
+      "source": "get-artist-title (MIT, © 2016 René Kooi)",
+      "note": "'**NEW**' is not a junk phrase."
+    },
+    {
+      "id": "regressions-competitors-051",
+      "input": "Muse — The 2nd Law (Full Album) [HD]",
+      "expected": {
+        "artists": [
+          "Muse"
+        ],
+        "title": "The 2nd Law (Full Album)",
+        "junk": [
+          {
+            "raw": "HD",
+            "kind": "quality"
+          }
+        ]
+      },
+      "rules": [
+        "R1.5",
+        "R5.1"
+      ],
+      "source": "get-artist-title (MIT, © 2016 René Kooi)"
+    },
+    {
+      "id": "regressions-competitors-052",
+      "input": "TWICE(트와이스) \"OOH-AHH하게(Like OOH-AHH)\" M/V",
+      "expected": {
+        "artists": [
+          {
+            "name": "TWICE(트와이스)",
+            "role": "primary",
+            "joiner": null,
+            "source": "artist"
+          }
+        ],
+        "title": "OOH-AHH하게(Like OOH-AHH)",
+        "junk": [
+          {
+            "raw": "M/V",
+            "kind": "video"
+          }
+        ],
+        "warnings": [
+          "quotedTitleSplit"
+        ]
+      },
+      "rules": [
+        "R6.5",
+        "R8.4"
+      ],
+      "source": "get-artist-title (MIT, © 2016 René Kooi)"
+    },
+    {
+      "id": "regressions-competitors-053",
+      "input": "GOT7 \"Just right(딱 좋아)\" M/V",
+      "expected": {
+        "artists": [
+          "GOT7"
+        ],
+        "title": "Just right(딱 좋아)"
+      },
+      "rules": [
+        "R6.5",
+        "R8.4"
+      ],
+      "source": "get-artist-title (MIT, © 2016 René Kooi)"
+    },
+    {
+      "id": "regressions-competitors-054",
+      "input": "miss A “Only You(다른 남자 말고 너)” M/V",
+      "expected": {
+        "artists": [
+          {
+            "name": "miss A",
+            "role": "primary",
+            "joiner": null,
+            "source": "artist"
+          }
+        ],
+        "title": "Only You(다른 남자 말고 너)"
+      },
+      "rules": [
+        "R1.4",
+        "R6.5",
+        "R8.4"
+      ],
+      "source": "get-artist-title (MIT, © 2016 René Kooi)"
+    },
+    {
+      "id": "regressions-competitors-055",
+      "input": "GOT7 \"A\" M/V",
+      "expected": {
+        "artists": [
+          "GOT7"
+        ],
+        "title": "A"
+      },
+      "rules": [
+        "R6.5"
+      ],
+      "source": "get-artist-title (MIT, © 2016 René Kooi)"
+    },
+    {
+      "id": "regressions-competitors-056",
+      "input": "J.Y. Park(박진영) \"Who's your mama?(어머님이 누구니) (feat. Jessi)\" M/V",
+      "expected": {
+        "artists": [
+          {
+            "name": "J.Y. Park(박진영)",
+            "role": "primary",
+            "joiner": null,
+            "source": "artist"
+          },
+          {
+            "name": "Jessi",
+            "role": "featured",
+            "joiner": "feat.",
+            "source": "title"
+          }
+        ],
+        "title": "Who's your mama?(어머님이 누구니)"
+      },
+      "rules": [
+        "R6.5",
+        "R8.1",
+        "R5.2"
+      ],
+      "source": "get-artist-title (MIT, © 2016 René Kooi)"
+    },
+    {
+      "id": "regressions-competitors-057",
+      "input": "2PM “GO CRAZY!(미친거 아니야?)” M/V",
+      "expected": {
+        "position": null,
+        "artists": [
+          "2PM"
+        ],
+        "title": "GO CRAZY!(미친거 아니야?)"
+      },
+      "rules": [
+        "R4.2",
+        "R6.5"
+      ],
+      "source": "get-artist-title (MIT, © 2016 René Kooi)"
+    },
+    {
+      "id": "regressions-competitors-058",
+      "input": "GOT7 \"I Like You(난 니가 좋아)\" Dance Practice",
+      "expected": {
+        "artists": [
+          "GOT7"
+        ],
+        "title": "I Like You(난 니가 좋아) Dance Practice",
+        "junk": []
+      },
+      "rules": [
+        "R6.5",
+        "R8.4"
+      ],
+      "source": "get-artist-title (MIT, © 2016 René Kooi)",
+      "note": "Text after the closing quote is appended to the title; 'Dance Practice' is not junk vocabulary."
+    },
+    {
+      "id": "regressions-competitors-059",
+      "input": "Baek A Yeon(백아연) “Shouldn’t Have…(이럴거면 그러지말지) (Feat. Young K)” M/V",
+      "expected": {
+        "artists": [
+          {
+            "name": "Baek A Yeon(백아연)",
+            "role": "primary",
+            "joiner": null,
+            "source": "artist"
+          },
+          {
+            "name": "Young K",
+            "role": "featured",
+            "joiner": "Feat.",
+            "source": "title"
+          }
+        ],
+        "title": "Shouldn't Have…(이럴거면 그러지말지)"
+      },
+      "rules": [
+        "R1.4",
+        "R6.5",
+        "R5.2"
+      ],
+      "source": "get-artist-title (MIT, © 2016 René Kooi)"
+    },
+    {
+      "id": "regressions-competitors-060",
+      "input": "DAY6 \"Congratulations\" M/V",
+      "expected": {
+        "artists": [
+          "DAY6"
+        ],
+        "title": "Congratulations"
+      },
+      "rules": [
+        "R6.5"
+      ],
+      "source": "get-artist-title (MIT, © 2016 René Kooi)"
+    },
+    {
+      "id": "regressions-competitors-061",
+      "input": "Wonder Girls \"Tell me\" M/V",
+      "expected": {
+        "artists": [
+          "Wonder Girls"
+        ],
+        "title": "Tell me"
+      },
+      "rules": [
+        "R6.5"
+      ],
+      "source": "get-artist-title (MIT, © 2016 René Kooi)"
+    },
+    {
+      "id": "regressions-competitors-062",
+      "input": "성시경 Sung Si Kyung - 내게 오는 길.mp4",
+      "options": {
+        "mode": "auto"
+      },
+      "expected": {
+        "mode": "filename",
+        "artists": [
+          "성시경 Sung Si Kyung"
+        ],
+        "title": "내게 오는 길"
+      },
+      "rules": [
+        "R2.1",
+        "R2.3"
+      ],
+      "source": "get-artist-title (MIT, © 2016 René Kooi)",
+      "note": "mode auto resolves to filename via the extension."
+    },
+    {
+      "id": "regressions-competitors-063",
+      "input": "에이핑크 - Mr.chu",
+      "expected": {
+        "artists": [
+          "에이핑크"
+        ],
+        "title": "Mr.chu"
+      },
+      "rules": [
+        "R6.3"
+      ],
+      "source": "get-artist-title (MIT, © 2016 René Kooi)"
+    },
+    {
+      "id": "regressions-competitors-064",
+      "input": "Far East Movement - Live My Life (Feat. Justin Bieber) cover by J.Fla",
+      "expected": {
+        "artists": [
+          {
+            "name": "Far East Movement",
+            "role": "primary",
+            "joiner": null,
+            "source": "artist"
+          },
+          {
+            "name": "Justin Bieber",
+            "role": "featured",
+            "joiner": "Feat.",
+            "source": "title"
+          }
+        ],
+        "title": "Live My Life cover by J.Fla",
+        "versions": []
+      },
+      "rules": [
+        "R6.3",
+        "R5.2",
+        "R6.6"
+      ],
+      "source": "get-artist-title (MIT, © 2016 René Kooi)",
+      "note": "' by ' only splits when no dash separator exists; unbracketed 'cover by' stays in the title."
+    },
+    {
+      "id": "regressions-competitors-065",
+      "input": "Baka Oppai - A Piece Of Toast",
+      "expected": {
+        "artists": [
+          "Baka Oppai"
+        ],
+        "title": "A Piece Of Toast"
+      },
+      "rules": [
+        "R6.3"
+      ],
+      "source": "get-artist-title (MIT, © 2016 René Kooi)"
+    },
+    {
+      "id": "regressions-competitors-066",
+      "input": "clipping. - Inside Out [OFFICIAL VIDEO]",
+      "expected": {
+        "artists": [
+          {
+            "name": "clipping.",
+            "role": "primary",
+            "joiner": null,
+            "source": "artist"
+          }
+        ],
+        "title": "Inside Out",
+        "junk": [
+          {
+            "raw": "OFFICIAL VIDEO",
+            "kind": "video"
+          }
+        ]
+      },
+      "rules": [
+        "R7.4",
+        "R5.1"
+      ],
+      "source": "get-artist-title (MIT, © 2016 René Kooi)",
+      "note": "Trailing dot kept in the name; junk matched case-insensitively, raw as written."
+    },
+    {
+      "id": "regressions-competitors-067",
+      "input": "Sleater-Kinney - Bury Our Friends (feat. Miranda July)",
+      "expected": {
+        "artists": [
+          {
+            "name": "Sleater-Kinney",
+            "role": "primary",
+            "joiner": null,
+            "source": "artist"
+          },
+          {
+            "name": "Miranda July",
+            "role": "featured",
+            "joiner": "feat.",
+            "source": "title"
+          }
+        ],
+        "title": "Bury Our Friends"
+      },
+      "rules": [
+        "R5.2"
+      ],
+      "source": "get-artist-title (MIT, © 2016 René Kooi)"
+    },
+    {
+      "id": "regressions-competitors-068",
+      "input": "Father John Misty - Chateau Lobby #4 (in C for Two Virgins) [OFFICIAL VIDEO]",
+      "expected": {
+        "artists": [
+          "Father John Misty"
+        ],
+        "title": "Chateau Lobby #4 (in C for Two Virgins)",
+        "junk": [
+          {
+            "raw": "OFFICIAL VIDEO",
+            "kind": "video"
+          }
+        ]
+      },
+      "rules": [
+        "R5.8",
+        "R5.1"
+      ],
+      "source": "get-artist-title (MIT, © 2016 René Kooi)"
+    },
+    {
+      "id": "regressions-competitors-069",
+      "input": "THEESatisfaction - Recognition  (not the video)",
+      "expected": {
+        "artists": [
+          "THEESatisfaction"
+        ],
+        "title": "Recognition (not the video)",
+        "junk": []
+      },
+      "rules": [
+        "R1.6",
+        "R5.8"
+      ],
+      "source": "get-artist-title (MIT, © 2016 René Kooi)",
+      "note": "'(not the video)' is not junk vocabulary."
+    },
+    {
+      "id": "regressions-competitors-070",
+      "input": "The Afghan Whigs - Every Little Thing She Does is Magic (cover of The Police)",
+      "expected": {
+        "artists": [
+          "The Afghan Whigs"
+        ],
+        "title": "Every Little Thing She Does is Magic (cover of The Police)",
+        "versions": []
+      },
+      "rules": [
+        "R5.7",
+        "R5.8"
+      ],
+      "source": "get-artist-title (MIT, © 2016 René Kooi)",
+      "note": "Head-by form needs 'by', not 'of'; last word is not a head -> Unknown."
+    },
+    {
+      "id": "regressions-competitors-071",
+      "input": "Shabazz Palaces - #CAKE (Animal Collective Premature Deflirt Mix)",
+      "expected": {
+        "artists": [
+          "Shabazz Palaces"
+        ],
+        "title": "#CAKE",
+        "versions": [
+          {
+            "type": "remix",
+            "artists": [
+              {
+                "name": "Animal Collective Premature Deflirt",
+                "role": "remixer",
+                "joiner": null,
+                "source": "version"
+              }
+            ]
+          }
+        ],
+        "warnings": [
+          "ambiguousMixCredit"
+        ]
+      },
+      "rules": [
+        "R5.7"
+      ],
+      "source": "get-artist-title (MIT, © 2016 René Kooi)",
+      "note": "Generic 'Mix' + credit -> remix; 4-word credit -> ambiguousMixCredit."
+    },
+    {
+      "id": "regressions-competitors-072",
+      "input": "Lee Bains III & The Glory Fires - The Company Man [OFFICIAL VIDEO]",
+      "expected": {
+        "artists": [
+          {
+            "name": "Lee Bains III",
+            "role": "primary",
+            "joiner": null,
+            "source": "artist"
+          },
+          {
+            "name": "The Glory Fires",
+            "role": "primary",
+            "joiner": "&",
+            "source": "artist"
+          }
+        ],
+        "title": "The Company Man"
+      },
+      "rules": [
+        "R7.3"
+      ],
+      "source": "get-artist-title (MIT, © 2016 René Kooi)",
+      "note": "Band name with '&' splits by default."
+    },
+    {
+      "id": "regressions-competitors-073",
+      "input": "Lee Bains III & The Glory Fires - The Company Man [OFFICIAL VIDEO]",
+      "options": {
+        "mode": "youtube",
+        "knownArtists": [
+          "Lee Bains III & The Glory Fires"
+        ]
+      },
+      "expected": {
+        "artists": [
+          {
+            "name": "Lee Bains III & The Glory Fires",
+            "role": "primary",
+            "joiner": null,
+            "source": "artist"
+          }
+        ],
+        "title": "The Company Man"
+      },
+      "rules": [
+        "R7.3",
+        "R12"
+      ],
+      "source": "get-artist-title (MIT, © 2016 René Kooi)",
+      "note": "knownArtists keeps it whole."
+    },
+    {
+      "id": "regressions-competitors-074",
+      "input": "The Postal Service - Nothing Better [LIVE]",
+      "expected": {
+        "artists": [
+          "The Postal Service"
+        ],
+        "title": "Nothing Better",
+        "fullTitle": "Nothing Better [LIVE]",
+        "versions": [
+          {
+            "type": "live",
+            "raw": "LIVE",
+            "delimiter": "["
+          }
+        ],
+        "junk": []
+      },
+      "rules": [
+        "R5.7",
+        "R9.4"
+      ],
+      "source": "get-artist-title (MIT, © 2016 René Kooi)"
+    },
+    {
+      "id": "regressions-competitors-075",
+      "input": "clipping. - Work Work (feat. Cocc Pistol Cree) [OFFICIAL VIDEO]",
+      "expected": {
+        "artists": [
+          {
+            "name": "clipping.",
+            "role": "primary",
+            "joiner": null,
+            "source": "artist"
+          },
+          {
+            "name": "Cocc Pistol Cree",
+            "role": "featured",
+            "joiner": "feat.",
+            "source": "title"
+          }
+        ],
+        "title": "Work Work",
+        "junk": [
+          {
+            "raw": "OFFICIAL VIDEO",
+            "kind": "video"
+          }
+        ]
+      },
+      "rules": [
+        "R5.2",
+        "R5.1"
+      ],
+      "source": "get-artist-title (MIT, © 2016 René Kooi)"
+    },
+    {
+      "id": "regressions-competitors-076",
+      "input": "Lyla Foy -  Impossible [OFFICIAL PERFORMANCE VIDEO]",
+      "expected": {
+        "artists": [
+          "Lyla Foy"
+        ],
+        "title": "Impossible",
+        "junk": [
+          {
+            "raw": "OFFICIAL PERFORMANCE VIDEO",
+            "kind": "video"
+          }
+        ]
+      },
+      "rules": [
+        "R1.6",
+        "R5.1"
+      ],
+      "source": "get-artist-title (MIT, © 2016 René Kooi)"
+    },
+    {
+      "id": "regressions-competitors-077",
+      "input": "Dum Dum Girls -  Are You Okay? [OFFICIAL SHORT FILM VIDEO]",
+      "expected": {
+        "artists": [
+          "Dum Dum Girls"
+        ],
+        "title": "Are You Okay? [OFFICIAL SHORT FILM VIDEO]",
+        "junk": []
+      },
+      "rules": [
+        "R5.1",
+        "R5.8"
+      ],
+      "source": "get-artist-title (MIT, © 2016 René Kooi)",
+      "note": "'short film' is not junk vocabulary, so the group is Unknown."
+    },
+    {
+      "id": "regressions-competitors-078",
+      "input": "THUMPERS - Lungs (Originally Performed by Chvrches) [not the video]",
+      "expected": {
+        "artists": [
+          "THUMPERS"
+        ],
+        "title": "Lungs (Originally Performed by Chvrches) [not the video]",
+        "versions": []
+      },
+      "rules": [
+        "R5.8",
+        "R6.6"
+      ],
+      "source": "get-artist-title (MIT, © 2016 René Kooi)"
+    },
+    {
+      "id": "regressions-competitors-079",
+      "input": "Washed Out - All I Know [Moby Remix] (not the video)",
+      "expected": {
+        "artists": [
+          "Washed Out"
+        ],
+        "title": "All I Know (not the video)",
+        "fullTitle": "All I Know (not the video) [Moby Remix]",
+        "versions": [
+          {
+            "type": "remix",
+            "artists": [
+              "Moby"
+            ],
+            "delimiter": "["
+          }
+        ]
+      },
+      "rules": [
+        "R5.7",
+        "R9.4"
+      ],
+      "source": "get-artist-title (MIT, © 2016 René Kooi)"
+    },
+    {
+      "id": "regressions-competitors-080",
+      "input": "Death Vessel - Ilsa Drown (feat. Jónsi) [not the video]",
+      "expected": {
+        "artists": [
+          {
+            "name": "Death Vessel",
+            "role": "primary",
+            "joiner": null,
+            "source": "artist"
+          },
+          {
+            "name": "Jónsi",
+            "role": "featured",
+            "joiner": "feat.",
+            "source": "title"
+          }
+        ],
+        "title": "Ilsa Drown [not the video]"
+      },
+      "rules": [
+        "R5.2",
+        "R5.8"
+      ],
+      "source": "get-artist-title (MIT, © 2016 René Kooi)"
+    },
+    {
+      "id": "regressions-competitors-081",
+      "input": "J Mascis - Fade Into You (a Mazzy Star cover)",
+      "expected": {
+        "artists": ["J Mascis"],
+        "title": "Fade Into You",
+        "versions": [
+          {
+            "type": "cover",
+            "raw": "a Mazzy Star cover",
+            "artists": [],
+            "descriptor": "a Mazzy Star"
+          }
+        ]
+      },
+      "rules": ["R5.7"],
+      "source": "get-artist-title (MIT, © 2016 René Kooi)",
+      "note": "For type cover the credit span is a descriptor (R5.7): the covered artist is not a remixer."
+    },
+    {
+      "id": "regressions-competitors-082",
+      "input": "Deaf Wish - St Vincent's",
+      "expected": {
+        "artists": [
+          "Deaf Wish"
+        ],
+        "title": "St Vincent's"
+      },
+      "rules": [
+        "R6.3"
+      ],
+      "source": "get-artist-title (MIT, © 2016 René Kooi)"
+    },
+    {
+      "id": "regressions-competitors-083",
+      "input": "Shearwater - Black Is The Color  (from the \"Colors\" episode of Radiolab)",
+      "expected": {
+        "artists": [
+          "Shearwater"
+        ],
+        "title": "Black Is The Color (from the \"Colors\" episode of Radiolab)"
+      },
+      "rules": [
+        "R5.8",
+        "R8.5"
+      ],
+      "source": "get-artist-title (MIT, © 2016 René Kooi)"
+    },
+    {
+      "id": "regressions-competitors-084",
+      "input": "The Head and the Heart - Another Story [OFFICIAL VIDEO]",
+      "expected": {
+        "artists": [
+          {
+            "name": "The Head and the Heart",
+            "role": "primary",
+            "joiner": null,
+            "source": "artist"
+          }
+        ],
+        "title": "Another Story"
+      },
+      "rules": [
+        "R7.3"
+      ],
+      "source": "get-artist-title (MIT, © 2016 René Kooi)",
+      "note": "splitAnd auto: no preceding comma split, so 'and' does not split."
+    },
+    {
+      "id": "regressions-competitors-085",
+      "input": "clipping. - Body & Blood [CENSORED VERSION of OFFICIAL VIDEO]",
+      "expected": {
+        "artists": [
+          "clipping."
+        ],
+        "title": "Body & Blood [CENSORED VERSION of OFFICIAL VIDEO]",
+        "versions": [],
+        "junk": []
+      },
+      "rules": [
+        "R5.1",
+        "R5.7",
+        "R5.8"
+      ],
+      "source": "get-artist-title (MIT, © 2016 René Kooi)"
+    },
+    {
+      "id": "regressions-competitors-086",
+      "input": "THUMPERS - Unkinder (A Tougher Love) [OFFICIAL VIDEO]",
+      "expected": {
+        "artists": [
+          "THUMPERS"
+        ],
+        "title": "Unkinder (A Tougher Love)"
+      },
+      "rules": [
+        "R5.8",
+        "R5.1"
+      ],
+      "source": "get-artist-title (MIT, © 2016 René Kooi)"
+    },
+    {
+      "id": "regressions-competitors-087",
+      "input": "Shabazz Palaces - #CAKE [OFFICIAL VIDEO]",
+      "expected": {
+        "artists": [
+          "Shabazz Palaces"
+        ],
+        "title": "#CAKE"
+      },
+      "rules": [
+        "R5.1"
+      ],
+      "source": "get-artist-title (MIT, © 2016 René Kooi)"
+    },
+    {
+      "id": "regressions-competitors-088",
+      "input": "Father John Misty - Bored In The USA",
+      "expected": {
+        "artists": [
+          "Father John Misty"
+        ],
+        "title": "Bored In The USA"
+      },
+      "rules": [
+        "R6.3"
+      ],
+      "source": "get-artist-title (MIT, © 2016 René Kooi)"
+    },
+    {
+      "id": "regressions-competitors-089",
+      "input": "Title",
+      "options": {
+        "mode": "youtube",
+        "uploader": "Artist"
+      },
+      "expected": {
+        "artists": [
+          {
+            "name": "Artist",
+            "role": "primary",
+            "joiner": null,
+            "source": "artist"
+          }
+        ],
+        "title": "Title"
+      },
+      "rules": [
+        "R6.8"
+      ],
+      "source": "get-artist-title (MIT, © 2016 René Kooi)",
+      "note": "defaultArtist -> uploader option."
+    }
+  ]
+}

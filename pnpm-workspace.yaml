@@ -1,0 +1,5 @@
+packages:
+  - js
+  - spec/generator
+allowBuilds:
+  esbuild: true

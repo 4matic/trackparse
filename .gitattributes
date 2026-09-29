@@ -1,0 +1,3 @@
+* text=auto eol=lf
+spec/fixtures/generated/** linguist-generated=true -diff
+js/src/data.generated.ts linguist-generated=true

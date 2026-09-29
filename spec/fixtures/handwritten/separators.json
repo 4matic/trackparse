@@ -1,0 +1,280 @@
+{
+  "$schema": "../../schema/fixture-file.schema.json",
+  "description": "R6 artist/title separator: spaced dashes, multiple dashes, asymmetric dashes, unspaced dashes by mode, no separator, empty input",
+  "defaults": { "fn": "parse", "options": { "mode": "clean" } },
+  "cases": [
+    {
+      "id": "separators-001",
+      "input": "Sub Focus - Timewarp",
+      "expected": { "artists": ["Sub Focus"], "title": "Timewarp", "warnings": [] },
+      "rules": ["R6.1", "R6.3"],
+      "tags": ["spaced-dash"]
+    },
+    {
+      "id": "separators-002",
+      "input": "Sub Focus – Timewarp",
+      "expected": { "artists": ["Sub Focus"], "title": "Timewarp", "warnings": [] },
+      "rules": ["R1.5", "R6.1"],
+      "tags": ["spaced-dash", "en-dash"]
+    },
+    {
+      "id": "separators-003",
+      "input": "Sub Focus — Timewarp",
+      "expected": { "artists": ["Sub Focus"], "title": "Timewarp", "warnings": [] },
+      "rules": ["R1.5", "R6.1"],
+      "tags": ["spaced-dash", "em-dash"]
+    },
+    {
+      "id": "separators-004",
+      "input": "Sub Focus -- Timewarp",
+      "expected": { "artists": ["Sub Focus"], "title": "Timewarp", "warnings": [] },
+      "rules": ["R1.5", "R6.1"],
+      "tags": ["spaced-dash", "double-dash"]
+    },
+    {
+      "id": "separators-005",
+      "input": "The Prodigy - Firestarter - Part 1 - Intro",
+      "expected": { "artists": ["The Prodigy"], "title": "Firestarter - Part 1 - Intro", "versions": [] },
+      "rules": ["R6.2", "R6.3"],
+      "tags": ["multiple-dashes"],
+      "note": "Unpeelable trailing segments: the first dash splits, later dashes stay in the title"
+    },
+    {
+      "id": "separators-006",
+      "input": "Pendulum - The Island - Pt. I (Dawn)",
+      "expected": { "artists": ["Pendulum"], "title": "The Island - Pt. I (Dawn)", "versions": [] },
+      "rules": ["R6.2", "R6.3", "R5.8"],
+      "tags": ["multiple-dashes"],
+      "note": "Last segment contains a placeholder, so classify() is Unknown and it is not peeled"
+    },
+    {
+      "id": "separators-007",
+      "input": "Noisia - Stigma (Part 1 - Intro)",
+      "expected": { "artists": ["Noisia"], "title": "Stigma (Part 1 - Intro)" },
+      "rules": ["R3.4", "R6.1"],
+      "tags": ["brackets"],
+      "note": "Dashes inside brackets are hidden by the skeleton"
+    },
+    {
+      "id": "separators-008",
+      "input": "- Stigma",
+      "expected": {
+        "artists": [],
+        "title": "Stigma",
+        "warnings": []
+      },
+      "rules": ["R6.1", "R6.3", "R6.4", "R8.5"],
+      "tags": ["leading-dash"],
+      "note": "The start of the string counts as a space (R6.1): empty s0, no artist, no warning."
+    },
+    {
+      "id": "separators-009",
+      "input": "Noisia -Stigma",
+      "match": "exact",
+      "expected": {
+        "input": "Noisia -Stigma",
+        "mode": "clean",
+        "position": null,
+        "timestamp": null,
+        "artists": [
+          { "name": "Noisia", "role": "primary", "joiner": null, "source": "artist" }
+        ],
+        "title": "Stigma",
+        "fullTitle": "Stigma",
+        "versions": [],
+        "year": null,
+        "flags": { "explicit": false, "clean": false, "unknownArtist": false, "unknownTitle": false },
+        "junk": [],
+        "warnings": ["asymmetricDashSplit"]
+      },
+      "rules": ["R6.4"],
+      "tags": ["asymmetric", "exact"]
+    },
+    {
+      "id": "separators-010",
+      "input": "Noisia- Stigma",
+      "expected": { "artists": ["Noisia"], "title": "Stigma", "warnings": ["asymmetricDashSplit"] },
+      "rules": ["R6.4"],
+      "tags": ["asymmetric"]
+    },
+    {
+      "id": "separators-011",
+      "input": "Jay-Z -Numb",
+      "expected": { "artists": ["Jay-Z"], "title": "Numb", "warnings": ["asymmetricDashSplit"] },
+      "rules": ["R6.4"],
+      "tags": ["asymmetric"],
+      "note": "The unspaced dash in Jay-Z has no space on either side, so the first asymmetric dash is the one before Numb"
+    },
+    {
+      "id": "separators-012",
+      "input": "Blink-182-All The Small Things",
+      "expected": { "artists": [], "title": "Blink-182-All The Small Things", "warnings": ["noSeparator"] },
+      "rules": ["R6.7", "R6.8"],
+      "tags": ["unspaced-dash", "clean"],
+      "note": "Unspaced dashes never split in clean mode"
+    },
+    {
+      "id": "separators-013",
+      "input": "Blink-182-All The Small Things",
+      "options": { "mode": "youtube" },
+      "match": "exact",
+      "expected": {
+        "input": "Blink-182-All The Small Things",
+        "mode": "youtube",
+        "position": null,
+        "timestamp": null,
+        "artists": [
+          { "name": "Blink-182", "role": "primary", "joiner": null, "source": "artist" }
+        ],
+        "title": "All The Small Things",
+        "fullTitle": "All The Small Things",
+        "versions": [],
+        "year": null,
+        "flags": { "explicit": false, "clean": false, "unknownArtist": false, "unknownTitle": false },
+        "junk": [],
+        "warnings": ["unspacedDashSplit"]
+      },
+      "rules": ["R6.7"],
+      "tags": ["unspaced-dash", "youtube", "exact"],
+      "note": "'-182' is rejected (right neighbour is a digit); the only candidate is before 'All'"
+    },
+    {
+      "id": "separators-014",
+      "input": "Jay-Z-Numb",
+      "options": { "mode": "youtube" },
+      "expected": { "artists": ["Jay-Z"], "title": "Numb", "warnings": ["unspacedDashSplit"] },
+      "rules": ["R6.7"],
+      "tags": ["unspaced-dash", "youtube"],
+      "note": "Two candidates; the last one wins"
+    },
+    {
+      "id": "separators-015",
+      "input": "Oxxxymiron-Где нас нет",
+      "options": { "mode": "youtube" },
+      "expected": { "artists": ["Oxxxymiron"], "title": "Где нас нет", "warnings": ["unspacedDashSplit"] },
+      "rules": ["R6.7", "R0.6"],
+      "tags": ["unspaced-dash", "youtube", "cyrillic"],
+      "note": "Cyrillic letters count as letters for the right-neighbour test"
+    },
+    {
+      "id": "separators-016",
+      "input": "Blink-182",
+      "options": { "mode": "youtube" },
+      "expected": { "artists": [], "title": "Blink-182", "warnings": ["noSeparator"] },
+      "rules": ["R6.7", "R6.8"],
+      "tags": ["unspaced-dash", "youtube"],
+      "note": "No candidate: the only dash is followed by a digit"
+    },
+    {
+      "id": "separators-017",
+      "input": "Jay-Z - 99 Problems",
+      "options": { "mode": "youtube" },
+      "expected": { "artists": ["Jay-Z"], "title": "99 Problems", "warnings": [] },
+      "rules": ["R6.3", "R6.7"],
+      "tags": ["unspaced-dash", "youtube"],
+      "note": "A spaced dash always wins over unspaced candidates"
+    },
+    {
+      "id": "separators-018",
+      "input": "Daft Punk-Around the World",
+      "expected": { "artists": [], "title": "Daft Punk-Around the World", "warnings": ["noSeparator"] },
+      "rules": ["R6.7", "R6.8"],
+      "tags": ["unspaced-dash", "clean"]
+    },
+    {
+      "id": "separators-019",
+      "input": "Stigma",
+      "expected": { "artists": [], "title": "Stigma", "fullTitle": "Stigma", "warnings": ["noSeparator"] },
+      "rules": ["R6.8"],
+      "tags": ["no-separator"]
+    },
+    {
+      "id": "separators-020",
+      "input": "Noisia: Stigma",
+      "expected": { "artists": [], "title": "Noisia: Stigma", "warnings": ["noSeparator"] },
+      "rules": ["R6.9", "R6.8"],
+      "tags": ["colon"]
+    },
+    {
+      "id": "separators-021",
+      "input": "Noisia : Stigma",
+      "options": { "mode": "youtube" },
+      "expected": { "artists": [], "title": "Noisia : Stigma", "warnings": ["noSeparator"] },
+      "rules": ["R6.9", "R6.8"],
+      "tags": ["colon", "youtube"]
+    },
+    {
+      "id": "separators-022",
+      "input": "",
+      "options": { "mode": "auto" },
+      "match": "exact",
+      "expected": {
+        "input": "",
+        "mode": "clean",
+        "position": null,
+        "timestamp": null,
+        "artists": [],
+        "title": "",
+        "fullTitle": "",
+        "versions": [],
+        "year": null,
+        "flags": { "explicit": false, "clean": false, "unknownArtist": false, "unknownTitle": false },
+        "junk": [],
+        "warnings": []
+      },
+      "rules": ["R9.5", "R2.1", "R6.8"],
+      "tags": ["empty", "exact"]
+    },
+    {
+      "id": "separators-023",
+      "input": "  \t​ ",
+      "options": { "mode": "auto" },
+      "expected": { "mode": "clean", "artists": [], "title": "", "fullTitle": "", "warnings": [] },
+      "rules": ["R9.5", "R1"],
+      "tags": ["empty"],
+      "note": "Empty after normalization counts as empty input"
+    },
+    {
+      "id": "separators-024",
+      "input": "Кино - Группа крови",
+      "expected": { "artists": ["Кино"], "title": "Группа крови", "warnings": [] },
+      "rules": ["R6.1", "R6.3"],
+      "tags": ["cyrillic"]
+    },
+    {
+      "id": "separators-025",
+      "input": "Би-2 - Полковнику никто не пишет",
+      "expected": { "artists": ["Би-2"], "title": "Полковнику никто не пишет", "warnings": [] },
+      "rules": ["R6.1", "R6.3"],
+      "tags": ["cyrillic", "unspaced-dash"]
+    },
+    {
+      "id": "separators-026",
+      "input": "Noisia - Stigma - Mefjus - Remix",
+      "expected": { "artists": ["Noisia"], "title": "Stigma - Mefjus", "versions": [{ "type": "remix", "raw": "Remix", "artists": [], "delimiter": "-" }] },
+      "rules": ["R6.2", "R6.3"],
+      "tags": ["multiple-dashes", "dash-suffix"],
+      "note": "Only the peelable 'Remix' is taken; 'Mefjus' is not classifiable and stays in the title"
+    },
+    {
+      "id": "separators-027",
+      "input": "Sub Focus - Timewarp",
+      "options": { "mode": "youtube" },
+      "expected": { "mode": "youtube", "artists": ["Sub Focus"], "title": "Timewarp", "warnings": [] },
+      "rules": ["R6.1", "R6.3"],
+      "tags": ["spaced-dash", "youtube"]
+    },
+    {
+      "id": "separators-028",
+      "input": "- Noisia - Stigma",
+      "expected": {
+        "artists": [],
+        "title": "Noisia - Stigma",
+        "warnings": []
+      },
+      "rules": ["R6.1", "R6.3"],
+      "tags": ["leading-dash"],
+      "note": "Leading dash: empty s0, so there is no artist side and the rest is the title side."
+    }
+  ]
+}
