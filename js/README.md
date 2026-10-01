@@ -127,7 +127,7 @@ r.junk;                       // [ { raw: 'Full Album', kind: 'other' } ]
 
 ### `SPEC_VERSION`
 
-The spec version this build implements (`"0.1.0"`).
+The spec version this build implements, e.g. `"0.2.0"`. Always equal to the package version.
 
 ## Options
 

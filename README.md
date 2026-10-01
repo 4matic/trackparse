@@ -97,7 +97,7 @@ Every key is always present. When a guess was involved, `warnings` says which on
 | Number | What it means |
 |---|---|
 | **11,891** shared fixtures | 900 written by hand, 10,991 generated from combinations. 100% pass in JS and Python, nothing skipped. |
-| **981** JS tests | fixtures, schema checks on every output, 14 property-based invariants, API tests |
+| **981** JS tests | every fixture, a schema check on every output, property-based tests of the spec invariants, API tests |
 | **27** version types | remix, VIP, bootleg, extended, radio, original, live, remaster, sped up, … |
 | **0** dependencies | ESM + CJS + TypeScript types, about 17 kB gzipped |
 | **Node 18+** | CI runs the full suite on 22 and 24, and every fixture against the built package on 18 and 20 |
@@ -170,8 +170,8 @@ full Python API is in [`python/README.md`](python/README.md).
 
 > [!TIP]
 > `&` is a joiner, so `Chase & Status` comes out as two artists. There's no built-in artist
-> database. Pass the names you know instead:
-> `parse(s, { knownArtists: ["Chase & Status"] })`.
+> database. Pass the names you know instead: `parse(s, { knownArtists: ["Chase & Status"] })` in
+> JS, `parse(s, known_artists=["Chase & Status"])` in Python.
 
 ## What it understands
 
@@ -211,8 +211,8 @@ These are real outputs of `parse(input)` with default options, unless noted.
 ## How it's tested
 
 The fixtures in [`spec/fixtures`](spec/fixtures) are the source of truth. The spec says what should
-happen, the fixtures pin it down, and every port has to pass all of them. The JS and Python packages both do:
-**11,891 of 11,891**, with empty skip lists, in CI on every push.
+happen, the fixtures pin it down, and every port has to pass all of them. The JS and Python
+packages both do: **11,891 of 11,891**, with empty skip lists, in CI on every push.
 
 Passing a fixture only checks the fields the case asserts, so
 [`scripts/compare-ports.mjs`](scripts/compare-ports.mjs) also runs every fixture input through both
@@ -387,8 +387,8 @@ are in [spec/SPEC.md](spec/SPEC.md).
 
 | Language | Package | Status |
 |---|---|---|
-| JavaScript / TypeScript | [`trackparse`](https://www.npmjs.com/package/trackparse) | 0.1.0, reference implementation, 11,891 / 11,891 fixtures |
-| Python | [`trackparse`](https://pypi.org/project/trackparse/) on PyPI | 0.2.0 (next release), 11,891 / 11,891 fixtures, output identical to JS |
+| JavaScript / TypeScript | [`trackparse`](https://www.npmjs.com/package/trackparse) on npm | 0.2.0, reference implementation, 11,891 / 11,891 fixtures |
+| Python | [`trackparse`](https://pypi.org/project/trackparse/) on PyPI | 0.2.0, 11,891 / 11,891 fixtures, output identical to JS |
 | Rust | `trackparse` on crates.io | planned, same fixtures |
 
 Want another language? The porting checklist is in [AGENTS.md](AGENTS.md).
@@ -410,7 +410,7 @@ trackparse is for when you need to know who did what.
 
 ## Limitations
 
-v0.1 parses one track string at a time. Not there yet:
+trackparse parses one track string at a time. Not there yet:
 
 - Multi-line tracklists and DJ cue sheets.
 - Label and catalogue numbers (`[HOSP123]`) as fields. Label-like groups currently land in `junk`.
