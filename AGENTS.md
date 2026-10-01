@@ -273,6 +273,10 @@ Version rules:
   `python-vX.Y.Z` and publishes to PyPI via trusted publishing (environment `pypi`), with the wheel
   and sdist attached to the release. `spec.yml` checks that all three versions match.
 - A future Rust port (`rs-vX.Y.Z`) will be added the same way.
+- **A publish job failed after the tags were created?** Fix the cause on `main` with a hidden commit
+  type (`ci`/`chore`, so no new release), then re-run publishing for the existing tag:
+  `gh workflow run release.yml -f python_tag=python-vX.Y.Z` (PyPI). The npm job always republishes
+  from a fresh release; a failed npm publish needs the same treatment by hand.
 - **Agents never merge release PRs, publish, push tags or bump versions on their own initiative.**
   Merging the release PR is the maintainer's publish decision.
 
