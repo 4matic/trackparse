@@ -1,0 +1,66 @@
+name: python
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    paths:
+      - "python/**"
+      - "spec/**"
+      - ".github/workflows/python.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14"]
+    defaults:
+      run:
+        working-directory: python
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: ${{ matrix.python }}
+          enable-cache: true
+          cache-dependency-glob: python/uv.lock
+      - run: uv sync --locked
+      - name: Data codegen is up to date
+        run: uv run python scripts/gen_data.py --check
+      - run: uv run ruff check .
+      - run: uv run ruff format --check .
+      - run: uv run mypy --strict src
+      - run: uv run pytest
+
+  # Build the sdist + wheel, then run every fixture against the installed wheel (not the source tree)
+  # in a clean venv, so packaging mistakes (missing modules, data) fail here rather than on PyPI.
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: python
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+          enable-cache: true
+          cache-dependency-glob: python/uv.lock
+      - run: uv build
+      - run: uvx twine check dist/*
+      - name: Install the wheel into a clean venv
+        run: |
+          uv venv "$RUNNER_TEMP/wheel-venv" --python 3.12
+          uv pip install --python "$RUNNER_TEMP/wheel-venv/bin/python" dist/*.whl
+      - name: Smoke import and conformance against the installed wheel
+        run: |
+          py="$RUNNER_TEMP/wheel-venv/bin/python"
+          # Run from outside the source tree so `import trackparse` can only resolve to the wheel.
+          cd "$RUNNER_TEMP"
+          "$py" -c "import trackparse, sys; print(trackparse.__version__, trackparse.SPEC_VERSION, trackparse.__file__); assert 'site-packages' in trackparse.__file__; print(trackparse.parse('Artist - Title (Remix Artist Remix)').to_dict())"
+          "$py" "$GITHUB_WORKSPACE/python/scripts/conformance.py" --strict
