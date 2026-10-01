@@ -1,5 +1,5 @@
 /** Per-call parse context: resolved options + vocabulary tables. */
-import type { Tables } from "./tables.js";
+import { stringList, type Tables } from "./tables.js";
 import type { ParseOptions, Warning } from "./types.js";
 import { dedupKey, isWhitespace } from "./words.js";
 
@@ -15,7 +15,7 @@ export interface Ctx {
 }
 
 export function makeCtx(t: Tables, options: ParseOptions | undefined): Ctx {
-  const known = (options?.knownArtists ?? []).filter((k) => typeof k === "string");
+  const known = stringList(options?.knownArtists);
   const knownKeys = new Set(known.map(dedupKey).filter((k) => k.length > 0));
   const knownMaxLen = known.reduce((m, k) => Math.max(m, k.length), 0);
   const splitAnd = options?.splitAnd ?? "auto";
