@@ -35,13 +35,13 @@ export function isAllDigits(s: string): boolean {
   return true;
 }
 
-const ALPHABETIC = /^\p{Alphabetic}$/u;
+const LETTER = /^\p{L}$/u;
 
-/** R0.6: Unicode Alphabetic, tested on the code point starting at `index`. */
+/** R0.6: Unicode general category L, tested on the code point starting at `index`. */
 export function isLetterAt(s: string, index: number): boolean {
   const cp = s.codePointAt(index);
   if (cp === undefined) return false;
-  return ALPHABETIC.test(String.fromCodePoint(cp));
+  return LETTER.test(String.fromCodePoint(cp));
 }
 
 /** ASCII-only lowercase (A–Z → a–z). */

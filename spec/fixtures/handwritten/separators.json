@@ -275,6 +275,24 @@
       "rules": ["R6.1", "R6.3"],
       "tags": ["leading-dash"],
       "note": "Leading dash: empty s0, so there is no artist side and the rest is the title side."
+    },
+    {
+      "id": "separators-029",
+      "input": "Queen-Ⅳ",
+      "options": { "mode": "youtube" },
+      "expected": { "artists": [], "title": "Queen-Ⅳ", "warnings": ["noSeparator"] },
+      "rules": ["R0.6", "R6.7", "R6.8"],
+      "tags": ["unspaced-dash", "youtube", "unicode"],
+      "note": "Ⅳ (U+2163) is a letter number (Nl), not general category L, so the dash is not a candidate."
+    },
+    {
+      "id": "separators-030",
+      "input": "Raga-\u093eRaag",
+      "options": { "mode": "youtube" },
+      "expected": { "artists": [], "title": "Raga-\u093eRaag", "warnings": ["noSeparator"] },
+      "rules": ["R0.6", "R6.7", "R6.8"],
+      "tags": ["unspaced-dash", "youtube", "unicode"],
+      "note": "U+093E is a spacing mark (Mc): Alphabetic, but not general category L, so the dash is not a candidate."
     }
   ]
 }
