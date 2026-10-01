@@ -7,7 +7,7 @@ import { normalize } from "./normalize.js";
 import { stripPrefixes } from "./prefix.js";
 import { type Skel, scan, trimSkel } from "./scanner.js";
 import { findSeparator } from "./separator.js";
-import { type Tables, tablesFor } from "./tables.js";
+import { stringEntries, stringList, type Tables, tablesFor } from "./tables.js";
 import { addPeeled, emptyExtracted, parseTitleSide } from "./title.js";
 import type { Artist, Mode, ParsedTrack, ParseOptions } from "./types.js";
 
@@ -155,15 +155,22 @@ export function createParser(base: ParseOptions = {}): Parser {
 }
 
 function mergeKeywords(a: ParseOptions, b: ParseOptions): ParseOptions["keywords"] {
-  const x = a.keywords ?? {};
-  const y = b.keywords ?? {};
+  const x: Record<string, unknown> = isRecord(a.keywords) ? a.keywords : {};
+  const y: Record<string, unknown> = isRecord(b.keywords) ? b.keywords : {};
+  const map = (k: string) =>
+    Object.fromEntries([...stringEntries(x[k]), ...stringEntries(y[k])]) as Record<string, never>;
+  const list = (k: string) => [...stringList(x[k]), ...stringList(y[k])];
   return {
-    versionHeads: { ...x.versionHeads, ...y.versionHeads },
-    descriptors: [...(x.descriptors ?? []), ...(y.descriptors ?? [])],
-    genres: [...(x.genres ?? []), ...(y.genres ?? [])],
-    junk: { ...x.junk, ...y.junk },
-    featMarkers: [...(x.featMarkers ?? []), ...(y.featMarkers ?? [])],
+    versionHeads: map("versionHeads"),
+    descriptors: list("descriptors"),
+    genres: list("genres"),
+    junk: map("junk"),
+    featMarkers: list("featMarkers"),
   };
+}
+
+function isRecord(v: unknown): v is Record<string, unknown> {
+  return typeof v === "object" && v !== null && !Array.isArray(v);
 }
 
 const defaultParser = createParser();

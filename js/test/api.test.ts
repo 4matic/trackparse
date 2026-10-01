@@ -90,3 +90,29 @@ describe("public API", () => {
     );
   });
 });
+
+describe("bad options never throw (R0.8)", () => {
+  const bad: unknown[] = [
+    { knownArtists: "Chase & Status" },
+    { knownArtists: 5 },
+    { knownArtists: { a: 1 } },
+    { keywords: "x" },
+    { keywords: [1] },
+    { keywords: { junk: "x", versionHeads: 5, genres: "g", descriptors: "abc", featMarkers: {} } },
+    { mode: 7, splitAnd: 5, uploader: 3 },
+  ];
+  it.each(bad)("%j", (options) => {
+    const opts = options as Parameters<typeof parse>[1];
+    expect(parse("Chase & Status - Blind Faith (Loadstar Remix)", opts).title).toBe("Blind Faith");
+    expect(createParser(opts).parse("A - T", opts).title).toBe("T");
+  });
+
+  it("ignores non-string entries but keeps valid ones", () => {
+    const opts = { knownArtists: [1, null, "Chase & Status"] } as unknown as Parameters<
+      typeof parse
+    >[1];
+    expect(parse("Chase & Status - X", opts).artists.map((a) => a.name)).toEqual([
+      "Chase & Status",
+    ]);
+  });
+});

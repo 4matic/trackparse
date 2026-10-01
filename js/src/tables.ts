@@ -60,8 +60,21 @@ export interface Tables {
   platformSuffixes: readonly string[];
 }
 
-function lowerKeys(list: readonly string[] | undefined): string[] {
-  return (list ?? []).map((s) => asciiLower(s).trim()).filter((s) => s.length > 0);
+/** R0.8: option lists may be anything at runtime; only arrays of strings count. */
+export function stringList(value: unknown): string[] {
+  return Array.isArray(value) ? value.filter((s): s is string => typeof s === "string") : [];
+}
+
+/** R0.8: option maps may be anything at runtime; only plain objects' string values count. */
+export function stringEntries(value: unknown): [string, string][] {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) return [];
+  return Object.entries(value).filter((e): e is [string, string] => typeof e[1] === "string");
+}
+
+function lowerKeys(list: unknown): string[] {
+  return stringList(list)
+    .map((s) => asciiLower(s).trim())
+    .filter((s) => s.length > 0);
 }
 
 export function buildTables(keywords?: KeywordOptions): Tables {
@@ -79,7 +92,7 @@ export function buildTables(keywords?: KeywordOptions): Tables {
 
   const junkEntries: [string, JunkKind][] = [
     ...(Object.entries(junkData.phrases) as [string, JunkKind][]),
-    ...(Object.entries(keywords?.junk ?? {}) as [string, JunkKind][]),
+    ...(stringEntries(keywords?.junk) as [string, JunkKind][]),
   ];
   const genres = [...genresData.genres, ...lowerKeys(keywords?.genres)];
   const junkPhrases = new PhraseTable<JunkKind>(junkEntries);
@@ -91,7 +104,7 @@ export function buildTables(keywords?: KeywordOptions): Tables {
 
   const headEntries: [string, VersionType][] = [
     ...(Object.entries(versionKeywordsData.heads) as [string, VersionType][]),
-    ...(Object.entries(keywords?.versionHeads ?? {}) as [string, VersionType][]),
+    ...(stringEntries(keywords?.versionHeads) as [string, VersionType][]),
   ];
   const heads = new PhraseTable<VersionType>(headEntries);
 
