@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.2.0](https://github.com/4matic/trackparse/compare/js-v0.1.0...js-v0.2.0) (2026-10-01)
+
+
+### Features
+
+* **spec:** define letter as unicode general category L ([5c26379](https://github.com/4matic/trackparse/commit/5c26379eb13757b8d2fe662d514a34f1c16ecf39))
+
+
+### Bug Fixes
+
+* **js:** never throw on malformed knownArtists or keyword options ([f6cd454](https://github.com/4matic/trackparse/commit/f6cd4541df96378c09bdb36e05f3fb85c48d6a71))
+
+
+### Performance
+
+* **js:** strip trailing junk in linear time ([53557b1](https://github.com/4matic/trackparse/commit/53557b185987c8537b1b36dbd446009387cbfc95))
+
 ## 0.1.0 (2026-09-29)
 
 
