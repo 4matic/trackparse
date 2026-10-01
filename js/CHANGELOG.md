@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.1](https://github.com/4matic/trackparse/compare/js-v0.2.0...js-v0.2.1) (2026-10-01)
+
+
+### Documentation
+
+* refresh readme for the 0.2.0 release ([a19642d](https://github.com/4matic/trackparse/commit/a19642df26801f7b0a4a4dea980fcb4551bfba3c))
+
 ## [0.2.0](https://github.com/4matic/trackparse/compare/js-v0.1.0...js-v0.2.0) (2026-10-01)
 
 
