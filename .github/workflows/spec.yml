@@ -9,6 +9,7 @@ on:
       - "js/package.json"
       - "js/scripts/gen-data.ts"
       - "js/src/data.generated.ts"
+      - "python/pyproject.toml"
       - "pnpm-lock.yaml"
       - "pnpm-workspace.yaml"
       - "package.json"
@@ -33,9 +34,11 @@ jobs:
         run: pnpm --filter @trackparse/fixture-gen test
       - name: Port data codegen is up to date
         run: pnpm --filter trackparse gen:data:check
-      - name: js and spec versions are linked
+      - name: js, python and spec versions are linked
         run: |
           js_version=$(node -p "require('./js/package.json').version")
+          py_version=$(python3 -c 'import tomllib; print(tomllib.load(open("python/pyproject.toml", "rb"))["project"]["version"])')
           spec_version=$(cat spec/VERSION)
-          echo "js=$js_version spec=$spec_version"
+          echo "js=$js_version python=$py_version spec=$spec_version"
           test "$js_version" = "$spec_version"
+          test "$py_version" = "$spec_version"

@@ -1,7 +1,8 @@
 name: release
 
 # release-please keeps a "chore: release" PR up to date from conventional commits on main.
-# Merging that PR tags js-vX.Y.Z / spec-vX.Y.Z, creates the GitHub Releases, and publishes to npm.
+# Merging that PR tags js-vX.Y.Z / spec-vX.Y.Z / python-vX.Y.Z, creates the GitHub Releases, and
+# publishes to npm and PyPI.
 
 on:
   push:
@@ -24,6 +25,9 @@ jobs:
       js_release_created: ${{ steps.release.outputs['js--release_created'] }}
       js_tag_name: ${{ steps.release.outputs['js--tag_name'] }}
       js_version: ${{ steps.release.outputs['js--version'] }}
+      python_release_created: ${{ steps.release.outputs['python--release_created'] }}
+      python_tag_name: ${{ steps.release.outputs['python--tag_name'] }}
+      python_version: ${{ steps.release.outputs['python--version'] }}
     steps:
       - uses: googleapis/release-please-action@v4
         id: release
@@ -118,3 +122,87 @@ jobs:
           EOF
           # js and spec release together; the npm package is the one to show as "Latest".
           gh release edit "$TAG" --notes-file notes.md --latest
+
+  publish-pypi:
+    needs: release-please
+    if: needs.release-please.outputs.python_release_created == 'true'
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/project/trackparse/${{ needs.release-please.outputs.python_version }}/
+    permissions:
+      contents: write # upload the wheel + sdist to the GitHub Release
+      id-token: write # PyPI trusted publishing (OIDC) + attestations
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.release-please.outputs.python_tag_name }}
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+          # No cache in the publishing job: nothing restored from a cache ends up in the release.
+          enable-cache: false
+
+      - name: Verify versions are in sync
+        env:
+          TAG_VERSION: ${{ needs.release-please.outputs.python_version }}
+        run: |
+          py_version=$(python3 -c 'import tomllib; print(tomllib.load(open("python/pyproject.toml", "rb"))["project"]["version"])')
+          js_version=$(python3 -c 'import json; print(json.load(open("js/package.json"))["version"])')
+          spec_version=$(cat spec/VERSION)
+          echo "python=$py_version js=$js_version spec=$spec_version tag=$TAG_VERSION"
+          test "$py_version" = "$TAG_VERSION"
+          test "$js_version" = "$TAG_VERSION"
+          test "$spec_version" = "$TAG_VERSION"
+
+      - name: Test
+        working-directory: python
+        run: |
+          uv sync --locked
+          uv run python scripts/gen_data.py --check
+          uv run pytest
+
+      - name: Build and check
+        working-directory: python
+        run: |
+          rm -rf dist
+          uv build
+          uvx twine check dist/*
+          ls -l dist
+
+      # Trusted publishing (OIDC): pypi.org trusts 4matic/trackparse, release.yml, environment "pypi".
+      # No token is stored anywhere; the action also uploads PEP 740 attestations by default.
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: python/dist/
+
+      - name: Attach wheel + sdist and install notes to the GitHub Release
+        working-directory: python
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.release-please.outputs.python_tag_name }}
+          VERSION: ${{ needs.release-please.outputs.python_version }}
+        run: |
+          gh release upload "$TAG" dist/*.whl dist/*.tar.gz --clobber
+          highlights="../.github/release-notes/${VERSION}.md"
+          : > notes.md
+          if [ -f "$highlights" ]; then
+            cat "$highlights" >> notes.md
+            printf '\n## Changelog\n\n' >> notes.md
+          fi
+          gh release view "$TAG" --json body --jq .body >> notes.md
+          cat >> notes.md <<EOF
+
+          ---
+
+          ### Install (Python)
+
+          \`\`\`sh
+          pip install trackparse==${VERSION}
+          \`\`\`
+
+          PyPI: https://pypi.org/project/trackparse/${VERSION}/ · implements spec ${VERSION} ([SPEC.md](https://github.com/${GITHUB_REPOSITORY}/blob/${TAG}/spec/SPEC.md))
+          EOF
+          # The npm release (js-vX.Y.Z) stays "Latest"; don't touch that flag here.
+          gh release edit "$TAG" --notes-file notes.md

@@ -5,7 +5,9 @@ conventional commits, one per component:
 
 - [`js/CHANGELOG.md`](js/CHANGELOG.md): the `trackparse` npm package
 - [`spec/CHANGELOG.md`](spec/CHANGELOG.md): the specification and shared fixtures
+- [`python/CHANGELOG.md`](python/CHANGELOG.md): the `trackparse` PyPI package (written by
+  release-please from 0.2.0, the first Python release)
 
-`js` and `spec` are released together with the same version. See
+`js`, `spec` and `python` are released together with the same version. See
 [AGENTS.md → Versioning and release](AGENTS.md#versioning-and-release) and the
 [GitHub Releases](https://github.com/4matic/trackparse/releases).

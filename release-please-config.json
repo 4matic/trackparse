@@ -4,7 +4,7 @@
   "tag-separator": "-",
   "bump-minor-pre-major": true,
   "bump-patch-for-minor-pre-major": false,
-  "pull-request-header": ":robot: Merging this PR tags the release, publishes a GitHub Release with these notes and publishes to npm.",
+  "pull-request-header": ":robot: Merging this PR tags the release, publishes a GitHub Release with these notes and publishes to npm and PyPI.",
   "changelog-sections": [
     {
       "type": "feat",
@@ -72,6 +72,23 @@
       "version-file": "VERSION",
       "changelog-path": "CHANGELOG.md",
       "initial-version": "0.1.0"
+    },
+    "python": {
+      "release-type": "python",
+      "component": "python",
+      "package-name": "trackparse",
+      "changelog-path": "CHANGELOG.md",
+      "extra-files": [
+        {
+          "type": "generic",
+          "path": "src/trackparse/__init__.py"
+        },
+        {
+          "type": "generic",
+          "path": "src/trackparse/_data.py"
+        }
+      ],
+      "initial-version": "0.1.0"
     }
   },
   "plugins": [
@@ -80,7 +97,8 @@
       "groupName": "trackparse",
       "components": [
         "js",
-        "spec"
+        "spec",
+        "python"
       ]
     }
   ]

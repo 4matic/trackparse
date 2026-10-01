@@ -5,9 +5,12 @@
 **Turn messy track names into structured data: who made it, who's featured, who remixed it, and what's just noise.**
 
 [![npm](https://img.shields.io/npm/v/trackparse?color=cb3837&logo=npm)](https://www.npmjs.com/package/trackparse)
+[![PyPI](https://img.shields.io/pypi/v/trackparse?color=3775a9&logo=pypi&logoColor=white)](https://pypi.org/project/trackparse/)
+[![Python versions](https://img.shields.io/pypi/pyversions/trackparse?logo=python&logoColor=white)](https://pypi.org/project/trackparse/)
 [![js](https://img.shields.io/github/actions/workflow/status/4matic/trackparse/js.yml?branch=main&label=js&logo=github)](https://github.com/4matic/trackparse/actions/workflows/js.yml)
+[![python](https://img.shields.io/github/actions/workflow/status/4matic/trackparse/python.yml?branch=main&label=python&logo=github)](https://github.com/4matic/trackparse/actions/workflows/python.yml)
 [![spec](https://img.shields.io/github/actions/workflow/status/4matic/trackparse/spec.yml?branch=main&label=spec&logo=github)](https://github.com/4matic/trackparse/actions/workflows/spec.yml)
-[![fixtures](https://img.shields.io/badge/fixtures-11%2C889%20passing-2ea44f)](spec/fixtures)
+[![fixtures](https://img.shields.io/badge/fixtures-11%2C891%20passing-2ea44f)](spec/fixtures)
 [![dependencies](https://img.shields.io/badge/dependencies-0-2ea44f)](js/package.json)
 [![gzip](https://img.shields.io/badge/gzip-17%20kB-informational)](https://www.npmjs.com/package/trackparse)
 [![types](https://img.shields.io/npm/types/trackparse)](js/src/types.ts)
@@ -93,12 +96,13 @@ Every key is always present. When a guess was involved, `warnings` says which on
 
 | Number | What it means |
 |---|---|
-| **11,889** shared fixtures | 898 written by hand, 10,991 generated from combinations. 100% pass, nothing skipped. |
-| **970** JS tests | fixtures, schema checks on every output, 14 property-based invariants, API tests |
+| **11,891** shared fixtures | 900 written by hand, 10,991 generated from combinations. 100% pass in JS and Python, nothing skipped. |
+| **981** JS tests | fixtures, schema checks on every output, 14 property-based invariants, API tests |
 | **27** version types | remix, VIP, bootleg, extended, radio, original, live, remaster, sped up, … |
 | **0** dependencies | ESM + CJS + TypeScript types, about 17 kB gzipped |
 | **Node 18+** | CI runs the full suite on 22 and 24, and every fixture against the built package on 18 and 20 |
-| **1 spec** | [`spec/SPEC.md`](spec/SPEC.md) defines the behaviour; the Python and Rust ports will run the same fixtures |
+| **Python 3.9+** | 991 pytest tests on 3.9 to 3.14, plus every fixture against the built wheel. Output is byte-identical to JS |
+| **1 spec** | [`spec/SPEC.md`](spec/SPEC.md) defines the behaviour; the Python port passes the same fixtures, and so will Rust |
 
 ## Install
 
@@ -106,7 +110,13 @@ Every key is always present. When a guess was involved, `warnings` says which on
 npm install trackparse   # or: pnpm add / yarn add / bun add trackparse
 ```
 
-Works in Node 18+ and any runtime with ES2020. Python and Rust ports are [on the way](#ports).
+Works in Node 18+ and any runtime with ES2020.
+
+```sh
+pip install trackparse   # or: uv add trackparse
+```
+
+Python 3.9+, no dependencies. A Rust port is [on the way](#ports).
 
 ## Quick start
 
@@ -127,6 +137,36 @@ format(parse("Wilkinson ft. Becky Hill - Afterglow (Sub Focus Remix)"), { feat: 
 ```
 
 CommonJS works too: `const { parse } = require("trackparse")`.
+
+### Python
+
+Same parser, same output. Functions are snake_case, results are frozen dataclasses, and
+`to_dict()` gives the spec's JSON with camelCase keys, identical to what the JS package returns.
+
+```python
+from trackparse import format_track, parse, parse_artists
+
+track = parse("Noisia feat. Foreign Beggars - Shellshock")
+track.artists
+# (Artist(name='Noisia', role='primary', joiner=None, source='artist'),
+#  Artist(name='Foreign Beggars', role='featured', joiner='feat.', source='artist'))
+
+parse("Queen - Bohemian Rhapsody (Live at Wembley 1986)").versions[0]
+# Version(type='live', raw='Live at Wembley 1986', artists=(), modifiers=(),
+#         descriptor='at Wembley', year=1986, unknown_artist=False, delimiter='(')
+
+[f"{a.name}:{a.role}" for a in parse_artists("Sub Focus, Wilkinson & Dimension feat. Kojo")]
+# ['Sub Focus:primary', 'Wilkinson:primary', 'Dimension:primary', 'Kojo:featured']
+
+format_track(parse("Wilkinson ft. Becky Hill - Afterglow (Sub Focus Remix)"), feat="title", joiners="canonical")
+# 'Wilkinson - Afterglow (feat. Becky Hill) (Sub Focus Remix)'
+
+track.to_dict()["artists"][1]
+# {'name': 'Foreign Beggars', 'role': 'featured', 'joiner': 'feat.', 'source': 'artist'}
+```
+
+Options are keyword arguments: `parse(s, mode="youtube", known_artists=["Chase & Status"])`. The
+full Python API is in [`python/README.md`](python/README.md).
 
 > [!TIP]
 > `&` is a joiner, so `Chase & Status` comes out as two artists. There's no built-in artist
@@ -171,10 +211,14 @@ These are real outputs of `parse(input)` with default options, unless noted.
 ## How it's tested
 
 The fixtures in [`spec/fixtures`](spec/fixtures) are the source of truth. The spec says what should
-happen, the fixtures pin it down, and every port has to pass all of them. The JS package does:
-**11,889 of 11,889**, with an empty skip list, in CI on every push.
+happen, the fixtures pin it down, and every port has to pass all of them. The JS and Python packages both do:
+**11,891 of 11,891**, with empty skip lists, in CI on every push.
 
-### Handwritten: 898 cases in 21 files
+Passing a fixture only checks the fields the case asserts, so
+[`scripts/compare-ports.mjs`](scripts/compare-ports.mjs) also runs every fixture input through both
+ports and diffs the complete outputs. Result: 0 differences, byte for byte.
+
+### Handwritten: 900 cases in 21 files
 
 Each case cites the spec rules it exercises. 58 of them spell out the complete output field by
 field, so nothing can drift unnoticed.
@@ -185,7 +229,7 @@ field, so nothing can drift unnoticed.
 | Versions and brackets | 90 | Every version keyword, generic heads (`Radio Edit` → radio), multi-version groups, feat inside brackets |
 | Artists | 76 | Joiners, guards (`AC/DC`, `Mumford & Sons`, `Malcolm X`), `knownArtists`, dedup |
 | Title credits and producers | 57 | `Title ft. X`, `(prod. by X)`, self-produced artists |
-| Separators and suffixes | 61 | Dash variants, `- Remastered 2015`, unspaced and asymmetric dashes |
+| Separators and suffixes | 63 | Dash variants, `- Remastered 2015`, unspaced and asymmetric dashes |
 | Prefixes, junk, flags | 111 | Track numbers vs `2 Unlimited`, cue times, every junk kind, years, explicit/clean |
 | Modes | 65 | YouTube pipes, `"Title" by Artist`, uploader fallback, filenames |
 | Unicode and normalization | 71 | NFC, zero-width characters, fullwidth brackets, Cyrillic, CJK, Turkish İ |
@@ -209,7 +253,8 @@ running a parser, so the generator can't just agree with the code it is testing.
 ### Properties
 
 [fast-check](https://github.com/dubzzz/fast-check) throws thousands of random strings at the parser to
-check the invariants from the spec:
+check the invariants from the spec ([Hypothesis](https://hypothesis.works) does the same for the
+Python port):
 - it never throws, on any input;
 - a 10,000-character input stays linear;
 - `normalize` is idempotent;
@@ -222,6 +267,8 @@ check the invariants from the spec:
 pnpm install
 pnpm test          # fixtures, properties, generator tests
 pnpm conformance   # pass rate per fixture file and per spec rule
+
+cd python && uv run pytest   # the same fixtures and invariants in Python
 ```
 
 ## API
@@ -340,8 +387,8 @@ are in [spec/SPEC.md](spec/SPEC.md).
 
 | Language | Package | Status |
 |---|---|---|
-| JavaScript / TypeScript | [`trackparse`](https://www.npmjs.com/package/trackparse) | 0.1.0, reference implementation, 11,889 / 11,889 fixtures |
-| Python | `trackparse` on PyPI | planned, same fixtures |
+| JavaScript / TypeScript | [`trackparse`](https://www.npmjs.com/package/trackparse) | 0.1.0, reference implementation, 11,891 / 11,891 fixtures |
+| Python | [`trackparse`](https://pypi.org/project/trackparse/) on PyPI | 0.2.0 (next release), 11,891 / 11,891 fixtures, output identical to JS |
 | Rust | `trackparse` on crates.io | planned, same fixtures |
 
 Want another language? The porting checklist is in [AGENTS.md](AGENTS.md).
@@ -370,7 +417,7 @@ v0.1 parses one track string at a time. Not there yet:
 - Key and BPM (`8A`, `174 BPM`).
 - An artist database. `Earth, Wind & Fire` splits unless it's in `knownArtists`.
 
-Planned next: the Python and Rust ports, then a browser playground, then tracklists.
+Planned next: the Rust port, then a browser playground, then tracklists.
 
 ## Contributing
 
