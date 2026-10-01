@@ -33,7 +33,7 @@ from .types import (
     Warning,
 )
 
-__version__ = "0.2.0"  # x-release-please-version
+__version__ = "0.2.1"  # x-release-please-version
 
 __all__ = [
     "SPEC_VERSION",
