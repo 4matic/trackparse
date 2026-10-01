@@ -86,6 +86,11 @@
         {
           "type": "generic",
           "path": "src/trackparse/_data.py"
+        },
+        {
+          "type": "toml",
+          "path": "uv.lock",
+          "jsonpath": "$.package[?(@.name.value=='trackparse')].version"
         }
       ],
       "initial-version": "0.1.0"
