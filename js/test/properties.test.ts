@@ -133,6 +133,8 @@ describe("invariants", () => {
       "prod. A feat. B ",
       "a by me ",
       "(x) - ",
+      "Official Video ",
+      "x - Official Video ",
       "Remix - ",
     ];
     for (const block of blocks) {
@@ -142,6 +144,17 @@ describe("invariants", () => {
       parse(input, { mode: "youtube" });
       expect(performance.now() - t0, JSON.stringify(block)).toBeLessThan(1000); // generous bound: catches super-linear blowups, not CI noise
     }
+  });
+
+  it("1. repeated trailing junk is linear", () => {
+    // R8.4 once rescanned the whole title per stripped phrase (quadratic): 40k code points of
+    // trailing junk took ~1.7 s before the fix; linear code needs well under a second.
+    const input = `A - T ${"Official Video ".repeat(2_666)}`;
+    const t0 = performance.now();
+    const track = parse(input, { mode: "youtube" });
+    expect(track.title).toBe("T");
+    expect(track.junk).toHaveLength(2_666);
+    expect(performance.now() - t0).toBeLessThan(1000);
   });
 
   it("2. normalize is idempotent", () => {

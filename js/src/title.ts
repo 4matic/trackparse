@@ -2,7 +2,7 @@
 import { classify, type VersionDraft } from "./classify.js";
 import type { Ctx } from "./context.js";
 import { type Credit, type PositionedYear, splitCredits } from "./credits.js";
-import { type PositionedJunk, trailingJunkPhrase } from "./mode.js";
+import type { PositionedJunk } from "./mode.js";
 import {
   cutSkel,
   groupsOf,
@@ -199,23 +199,33 @@ function extractUnbracketedCredits(input: Skel, out: Extracted, ctx: Ctx): Skel 
   return skel;
 }
 
-/** R8.4: strip trailing unbracketed junk phrases (optionally after a lone `-` / `|`). */
+/**
+ * R8.4: strip trailing unbracketed junk phrases (optionally after a lone `-` / `|`). Word spans are
+ * computed once and walked backwards, so repeated junk stays linear (R0.8).
+ */
 function stripTrailingJunk(input: Skel, out: Extracted, ctx: Ctx): Skel {
-  let skel = trimSkel(input);
+  const skel = trimSkel(input);
+  const spans = wordSpans(skel.text);
+  const words = spans.map((s) => s.text);
+  let end = spans.length; // words still in the title
   for (;;) {
-    const hit = trailingJunkPhrase(skel.text, ctx);
-    if (!hit) return skel;
-    let before = trimSkel(sliceSkel(skel, 0, hit.start));
-    const lastChar = before.text[before.text.length - 1];
-    const lone = before.text.length === 1 || before.text[before.text.length - 2] === " ";
-    if ((lastChar === "-" || lastChar === "|") && lone) {
-      before = trimSkel(sliceSkel(before, 0, before.text.length - 1));
-    }
-    if (before.text.length === 0) return skel; // never strip the whole title
-    const raw = collapseSpaces(skel.text.slice(hit.start));
-    out.junk.push({ raw, kind: hit.kind, pos: skel.pos[hit.start] ?? 0 });
-    skel = before;
+    const m = ctx.t.junkPhrases.matchEnding(words, end);
+    if (!m) break;
+    const first = end - m.length;
+    let keep = first;
+    if (keep > 0 && isLoneEdge(words[keep - 1])) keep--;
+    if (keep === 0) break; // never strip the whole title
+    const from = spans[first]?.start ?? 0;
+    const to = spans[end - 1]?.end ?? skel.text.length;
+    out.junk.push({
+      raw: collapseSpaces(skel.text.slice(from, to)),
+      kind: m.entry.value,
+      pos: skel.pos[from] ?? 0,
+    });
+    end = keep;
   }
+  if (end === spans.length) return skel;
+  return trimSkel(sliceSkel(skel, 0, spans[end - 1]?.end ?? 0));
 }
 
 function isLoneEdge(word: string | undefined): boolean {
