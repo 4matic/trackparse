@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.0](https://github.com/4matic/trackparse/compare/spec-v0.1.0...spec-v0.2.0) (2026-10-01)
+
+
+### Features
+
+* **spec:** define letter as unicode general category L ([5c26379](https://github.com/4matic/trackparse/commit/5c26379eb13757b8d2fe662d514a34f1c16ecf39))
+
 ## 0.1.0 (2026-09-29)
 
 
