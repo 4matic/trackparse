@@ -93,8 +93,9 @@ Every port must produce byte-identical output. The full text is SPEC.md R0; in s
 
 - **No regex lookaround, backreferences or `\p{…}` classes.** Recognition is done by hand-written
   scanners over code points. Small anchored regexes only for fixed shapes (digits, timestamps).
-  (The single exception, R0.6 "letter", may use JS `/\p{Alphabetic}/u`; it matches Python
-  `str.isalpha()` / Rust `char::is_alphabetic()`.)
+  (The single exception, R0.6 "letter", is general category L: JS `/\p{L}/u`, Python
+  `str.isalpha()`. Not `\p{Alphabetic}` and not Rust `char::is_alphabetic()`, which also accept Nl
+  and combining marks.)
 - **Explicit whitespace set** (R0.2): U+0009–U+000D, U+0020, U+0085, U+00A0, U+1680,
   U+2000–U+200A, U+2028, U+2029, U+202F, U+205F, U+3000. Never use a language's `\s` or `trim()`
   semantics without checking they match.

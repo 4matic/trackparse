@@ -123,9 +123,10 @@ Rules that keep JS, Python and Rust byte-identical.
 - **R0.4** *Dedup key* (R9 only): full Unicode lowercase → NFD → remove U+0300–U+036F → collapse
   whitespace → trim.
 - **R0.5** Iterate by code point. No index/offset is exposed in the output.
-- **R0.6** *Letter* means Unicode `Alphabetic` (JS `/\p{Alphabetic}/u` is acceptable here since it
-  is equivalent to Python `str.isalpha()` / Rust `char::is_alphabetic()` for this purpose; fixtures pin
-  edge cases). *Digit* means ASCII `0`–`9` only.
+- **R0.6** *Letter* means Unicode general category **L** (Lu, Ll, Lt, Lm, Lo): JS `/\p{L}/u`,
+  Python `str.isalpha()` on one code point, Rust via a general-category table. Letter numbers (Nl,
+  `Ⅰ`) and combining marks (Mn/Mc) are **not** letters. Only R6.7 uses this test. *Digit* means
+  ASCII `0`–`9` only.
 - **R0.7** A *word* is a maximal run of non-whitespace code points in a (sub)string.
 - **R0.8** Parsing is total: any string input returns a ParsedTrack; never throw/panic. Runtime is
   linear-ish in input length (no backtracking blowups).
