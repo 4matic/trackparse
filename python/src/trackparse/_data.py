@@ -5,7 +5,7 @@ from __future__ import annotations
 
 from typing import Any
 
-SPEC_VERSION = "0.2.0"  # x-release-please-version
+SPEC_VERSION = "0.2.1"  # x-release-please-version
 
 # spec/data/descriptors.json
 DESCRIPTORS_DATA: dict[str, Any] = {
