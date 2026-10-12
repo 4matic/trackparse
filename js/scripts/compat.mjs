@@ -74,7 +74,16 @@ function matchExact(expected, actual, path = "$") {
   return expected === actual ? null : `${path}: expected ${show(expected)}, got ${show(actual)}`;
 }
 
-const match = (e, a, mode) => (mode === "exact" ? matchExact(e, a) : matchPartial(e, a));
+// README rule 6: a top-level `specVersion` is never compared (it changes every release).
+const withoutSpecVersion = (v) => {
+  if (!isObject(v) || !("specVersion" in v)) return v;
+  const { specVersion: _, ...rest } = v;
+  return rest;
+};
+const match = (e, a, mode) => {
+  const [ev, av] = [withoutSpecVersion(e), withoutSpecVersion(a)];
+  return mode === "exact" ? matchExact(ev, av) : matchPartial(ev, av);
+};
 
 function walk(dir) {
   return readdirSync(dir)

@@ -9,7 +9,6 @@
       "id": "tracklist-lines-001",
       "input": "",
       "expected": {
-        "specVersion": "0.2.1",
         "entries": [],
         "warnings": [],
         "stats": {
@@ -206,7 +205,6 @@
       "id": "tracklist-lines-007",
       "input": "\n",
       "expected": {
-        "specVersion": "0.2.1",
         "entries": [
           {
             "line": 1,
@@ -767,7 +765,6 @@
       "id": "tracklist-lines-021",
       "input": "00:00:00 Intro\n00:01:07 01. Magnetude - ID",
       "expected": {
-        "specVersion": "0.2.1",
         "entries": [
           {
             "line": 1,
@@ -949,7 +946,6 @@
       "id": "tracklist-lines-024",
       "input": "Tracklist:\r\nhttps://neuropunk.ru\r\n\r\nRecorded live at Fabric, 2024",
       "expected": {
-        "specVersion": "0.2.1",
         "entries": [
           {
             "line": 1,

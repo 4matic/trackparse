@@ -53,3 +53,10 @@ def test_exact_requires_same_keys_and_no_shorthand() -> None:
 def test_match_dispatch() -> None:
     assert match({"a": 1}, {"a": 1, "b": 2}) is None
     assert match({"a": 1}, {"a": 1, "b": 2}, "exact") is not None
+
+
+def test_top_level_spec_version_is_ignored() -> None:
+    actual = {"specVersion": "9.9.9", "entries": []}
+    assert match({"entries": []}, actual, "exact") is None
+    assert match({"specVersion": "0.0.1", "entries": []}, actual) is None
+    assert match({"x": {"specVersion": "0"}}, {"x": {"specVersion": "1"}}) is not None
