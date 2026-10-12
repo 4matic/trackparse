@@ -294,8 +294,10 @@ describe("R13.11 tracklist invariants", () => {
         const del = applyEdits(text, [{ op: "delete", line }]);
         const kept = before.filter((_, i) => i !== line - 1);
         const got = parseTracklist(del.text).entries.map((e) => e.raw);
-        // Deleting the only content line can leave a text whose single empty line is not a line.
-        expect(got).toEqual(kept.length === 1 && kept[0] === "" ? got : kept);
+        // Deleting the last line moves its eol ("" here) up: an empty line that becomes last
+        // without an eol is not a line (R13.9.5), so trailing empty lines may disappear.
+        while (kept.at(-1) === "" && got.length < kept.length && line === before.length) kept.pop();
+        expect(got).toEqual(kept);
       }),
     );
   });

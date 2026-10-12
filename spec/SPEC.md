@@ -718,8 +718,9 @@ marker words). Bad values are ignored (R0.8).
 ### R13.11 Tracklist invariants
 
 1. Lossless (R13.1.2) and `lead + time + gap + rest === raw` for every string.
-2. Totality: any string and any edit list return without throwing; 10 000 lines finish well under
-   one second.
+2. Totality: any string and any edit list return without throwing, in time linear in the input
+   (no super-linear blowups). Each port's test suite sets its own ceiling for 10 000 lines (JS: 1 s;
+   Python, whose single-line parser is slower: 15 s).
 3. Locality and identity (R13.9.1).
 4. Round trip (R13.9.7).
 5. A one-line text's track equals `parse(rest, { mode: "tracklist" })` for a line without a bare
