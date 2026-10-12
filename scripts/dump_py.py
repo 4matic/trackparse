@@ -5,10 +5,11 @@ project so `trackparse` is importable:
 
     uv run --project python python scripts/dump_py.py < cases.jsonl > outputs.jsonl
 
-Each stdin line is {"i": int, "fn": "parse"|"parseArtists"|"format"|"normalize", "input": str,
-"options": {...}, "formatOptions": {...}} with the spec's camelCase option names (already merged
-with the fixture file defaults). Each stdout line is {"i": int, "ok": <output>} or
-{"i": int, "error": str}. Outputs use the spec JSON shape (ParsedTrack.to_dict()).
+Each stdin line is {"i": int, "fn": "parse"|"parseArtists"|"format"|"normalize"|"parseTracklist"|
+"applyEdits", "input": str, "options": {...}, "formatOptions": {...}, "edits": [...]} with the
+spec's camelCase option names (already merged with the fixture file defaults). Non-finite numbers
+are sent as {"$number": "Infinity"|"-Infinity"|"NaN"}. Each stdout line is {"i": int, "ok":
+<output>} or {"i": int, "error": str}. Outputs use the spec JSON shape (to_dict()).
 """
 
 from __future__ import annotations
@@ -19,6 +20,7 @@ import sys
 from typing import Any
 
 import trackparse
+import trackparse.tracklist
 
 PARSE_OPTIONS = {
     "mode": "mode",
@@ -26,6 +28,9 @@ PARSE_OPTIONS = {
     "knownArtists": "known_artists",
     "splitAnd": "split_and",
     "keywords": "keywords",
+    # R13.10 tracklist options
+    "audioSeconds": "audio_seconds",
+    "markerWords": "marker_words",
 }
 KEYWORD_OPTIONS = {
     "versionHeads": "version_heads",
@@ -61,7 +66,7 @@ def rename(obj: dict[str, Any], mapping: dict[str, str], what: str) -> dict[str,
 
 def parse_kwargs(options: dict[str, Any]) -> dict[str, Any]:
     kwargs = rename(options, PARSE_OPTIONS, "parse")
-    if "keywords" in kwargs:
+    if "keywords" in kwargs and isinstance(kwargs["keywords"], dict):
         kwargs["keywords"] = rename(kwargs["keywords"], KEYWORD_OPTIONS, "keywords")
     return kwargs
 
@@ -81,6 +86,13 @@ def to_json(value: Any) -> Any:
     return value
 
 
+def number_hook(obj: dict[str, Any]) -> Any:
+    """{"$number": "Infinity"} → float("inf") (JSON has no non-finite numbers)."""
+    if len(obj) == 1 and "$number" in obj and isinstance(obj["$number"], str):
+        return float(obj["$number"].replace("Infinity", "inf"))
+    return obj
+
+
 def run(case: dict[str, Any]) -> Any:
     fn = case["fn"]
     text = case["input"]
@@ -95,6 +107,11 @@ def run(case: dict[str, Any]) -> Any:
         return trackparse.format_track(track, **fmt)
     if fn == "normalize":
         return trackparse.normalize(text)
+    if fn == "parseTracklist":
+        return to_json(trackparse.tracklist.parse_tracklist(text, **kwargs))
+    if fn == "applyEdits":
+        edits = case.get("edits") or []
+        return to_json(trackparse.tracklist.apply_edits(text, edits, **kwargs))
     raise ValueError(f"unknown fn {fn!r}")
 
 
@@ -104,7 +121,7 @@ def main() -> None:
         line = raw.decode("utf-8").strip()
         if not line:
             continue
-        case = json.loads(line)
+        case = json.loads(line, object_hook=number_hook)
         try:
             record = {"i": case["i"], "ok": run(case)}
         except OptionError as err:

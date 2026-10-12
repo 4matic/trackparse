@@ -5,8 +5,10 @@ from __future__ import annotations
 from typing import NamedTuple, Optional
 
 from ._context import Ctx, match_known_at
+from ._digits import digit_run as _digit_run
+from ._digits import two_digits_up_to_59 as _two_digits_up_to_59
 from ._scanner import has_spaced_dash, scan
-from ._words import char_at, is_digit
+from ._words import char_at
 
 
 class PrefixResult(NamedTuple):
@@ -15,24 +17,6 @@ class PrefixResult(NamedTuple):
     base: int
     timestamp: Optional[tuple[str, int]]
     position: Optional[tuple[str, int]]
-
-
-def _digit_run(s: str, frm: int) -> int:
-    i = frm
-    while is_digit(char_at(s, i)):
-        i += 1
-    return i - frm
-
-
-def _two_digits_up_to_59(s: str, at: int) -> Optional[int]:
-    if (
-        not is_digit(char_at(s, at))
-        or not is_digit(char_at(s, at + 1))
-        or is_digit(char_at(s, at + 2))
-    ):
-        return None
-    n = int(s[at : at + 2])
-    return n if n <= 59 else None
 
 
 class _TimeMatch(NamedTuple):

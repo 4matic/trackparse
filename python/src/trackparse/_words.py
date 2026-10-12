@@ -120,6 +120,11 @@ def is_letter(ch: Optional[str]) -> bool:
     return ch is not None and len(ch) == 1 and ch.isalpha()
 
 
+def is_upper(ch: Optional[str]) -> bool:
+    """R6.10 uppercase letter: Unicode general category Lu (JS ``/\\p{Lu}/u``)."""
+    return ch is not None and len(ch) == 1 and unicodedata.category(ch) == "Lu"
+
+
 _ASCII_LOWER = {c: c + 32 for c in range(65, 91)}
 
 

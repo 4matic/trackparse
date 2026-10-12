@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any, Callable, NamedTuple, Optional
 
 import trackparse
+import trackparse.tracklist
 from match import match
 
 HERE = Path(__file__).resolve().parent
@@ -22,6 +23,9 @@ _PARSE_KEYS = {
     "knownArtists": "known_artists",
     "splitAnd": "split_and",
     "keywords": "keywords",
+    # R13.10 tracklist options
+    "audioSeconds": "audio_seconds",
+    "markerWords": "marker_words",
 }
 _KEYWORD_KEYS = {
     "versionHeads": "version_heads",
@@ -95,6 +99,10 @@ class CaseRun(NamedTuple):
     fn: str
     #: Every ParsedTrack produced while running the case (for schema validation).
     parsed: list[Any]
+    #: parse_tracklist output as JSON (validated against tracklist.schema.json), else None.
+    tracklist: Any
+    #: apply_edits output as JSON (validated against tracklist.schema.json#/$defs/editResult).
+    edit_result: Any
     actual: Any
     #: None when the case behaves as its status demands, else a failure description.
     failure: Optional[str]
@@ -108,6 +116,8 @@ def run_case(file: dict[str, Any], c: dict[str, Any]) -> CaseRun:
     options = parse_kwargs({**(defaults.get("options") or {}), **(c.get("options") or {})})
     fmt = format_kwargs({**(defaults.get("formatOptions") or {}), **(c.get("formatOptions") or {})})
     parsed: list[Any] = []
+    tracklist: Any = None
+    edit_result: Any = None
     actual: Any = None
     try:
         if fn == "parse":
@@ -122,12 +132,20 @@ def run_case(file: dict[str, Any], c: dict[str, Any]) -> CaseRun:
             actual = trackparse.format_track(r, **fmt)
         elif fn == "normalize":
             actual = trackparse.normalize(c["input"])
+        elif fn == "parseTracklist":
+            tracklist = trackparse.tracklist.parse_tracklist(c["input"], **options).to_dict()
+            actual = tracklist
+        elif fn == "applyEdits":
+            edits = c.get("edits") or []
+            result = trackparse.tracklist.apply_edits(c["input"], edits, **options)
+            edit_result = result.to_dict()
+            actual = edit_result
         else:
             msg = f"unknown fn {fn!r}"
-            return CaseRun(fn, parsed, None, msg, msg)
+            return CaseRun(fn, parsed, None, None, None, msg, msg)
     except Exception:
         msg = "threw: " + traceback.format_exc()
-        return CaseRun(fn, parsed, None, msg, msg)
+        return CaseRun(fn, parsed, tracklist, edit_result, None, msg, msg)
 
     status = c.get("status", "pass")
     mode = c.get("match", "partial")
@@ -144,7 +162,7 @@ def run_case(file: dict[str, Any], c: dict[str, Any]) -> CaseRun:
     failure = mismatch
     if status == "xfail":
         failure = "xfail case unexpectedly passes" if mismatch is None else None
-    return CaseRun(fn, parsed, actual, failure, mismatch)
+    return CaseRun(fn, parsed, tracklist, edit_result, actual, failure, mismatch)
 
 
 def describe_failure(c: dict[str, Any], problem: str) -> str:

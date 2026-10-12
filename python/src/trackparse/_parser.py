@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 from dataclasses import replace
-from typing import Any, Optional, cast
+from typing import Any, NamedTuple, Optional, cast
 
 from ._artists import parse_artist_side
 from ._assemble import by_pos, dedup_artists, full_title_of, to_version
@@ -12,7 +12,7 @@ from ._context import Ctx, warn
 from ._mode import Piece, prelude
 from ._normalize import normalize
 from ._prefix import strip_prefixes
-from ._scanner import Skel, scan, trim_skel
+from ._scanner import Skel, scan, split_at_spaced_dashes, trim_skel
 from ._separator import find_separator
 from ._tables import Tables, js_entries, tables_for
 from ._title import Extracted, add_peeled, parse_title_side
@@ -74,7 +74,9 @@ def _empty_track(inp: str, mode: str) -> ParsedTrack:
     )
 
 
-def _run(inp: str, options: Mapping[str, Any], t: Tables) -> ParsedTrack:
+def _run(
+    inp: str, options: Mapping[str, Any], t: Tables, list_context: bool = False
+) -> ParsedTrack:
     ctx = Ctx(t, options)
     norm = normalize(inp)
     requested = options.get("mode")
@@ -96,7 +98,9 @@ def _run(inp: str, options: Mapping[str, Any], t: Tables) -> ParsedTrack:
         title_skel = _skel_of(pre.pipe_title, ctx)
         relaxed = artist_skel is not None
     else:
-        sep = find_separator(working, pre.mode, _uploader_skel(options.get("uploader")), ctx)
+        sep = find_separator(
+            working, pre.mode, _uploader_skel(options.get("uploader")), ctx, list_context
+        )
         add_peeled(out, sep.peeled)
         artist_skel = sep.artist
         title_skel = sep.title
@@ -139,6 +143,47 @@ def _run(inp: str, options: Mapping[str, Any], t: Tables) -> ParsedTrack:
         junk=tuple(Junk(raw=j.raw, kind=cast(JunkKind, j.kind)) for j in junk),
         warnings=cast(tuple[Warning, ...], tuple(ctx.warnings)),
     )
+
+
+class LineProbe(NamedTuple):
+    """Facts about a line's prefix and separator search, for the tracklist module (R13.4.2,
+    R13.5)."""
+
+    #: R4.2 took a position.
+    position: bool
+    #: The skeleton R6 searches (after R2 and R4) has a spaced dash (R6.1).
+    spaced_dash: bool
+
+
+def _probe(inp: str, options: Mapping[str, Any], t: Tables) -> LineProbe:
+    """R1, R2 and R4 only, as ``_run`` does them: cheap, no artist/title parsing."""
+    ctx = Ctx(t, options)
+    norm = normalize(inp)
+    if len(norm) == 0:
+        return LineProbe(False, False)
+    requested = options.get("mode")
+    pre = prelude(norm, "auto" if requested is None else requested, ctx)
+    prefix = strip_prefixes(pre.working.text, pre.working.base, pre.mode, ctx)
+    if pre.pipe_title is not None:
+        return LineProbe(prefix.position is not None, False)
+    working = _skel_of(Piece(prefix.rest, prefix.base), ctx)
+    return LineProbe(prefix.position is not None, len(split_at_spaced_dashes(working, True)) >= 2)
+
+
+class ListParser:
+    """Internal (not exported from the package root): parsing hooks for the tracklist module,
+    with the base options compiled once."""
+
+    def __init__(self, options: Mapping[str, Any]) -> None:
+        self._options = _safe_options(options)
+        self._tables = tables_for(self._options.get("keywords"))
+
+    def parse(self, inp: str, list_context: bool) -> ParsedTrack:
+        """``parse`` with the R13.4.2 list-context flag (it only matters in tracklist mode)."""
+        return _run(inp, self._options, self._tables, list_context)
+
+    def probe(self, inp: str) -> LineProbe:
+        return _probe(inp, self._options, self._tables)
 
 
 def _run_artists(inp: str, options: Mapping[str, Any], t: Tables) -> list[Artist]:

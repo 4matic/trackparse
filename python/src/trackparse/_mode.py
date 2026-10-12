@@ -128,7 +128,8 @@ def prelude(normalized: str, requested: object, ctx: Ctx) -> Prelude:
     s = _strip_platform_suffixes(normalized, ctx, junk)
     had_platform = len(junk) > 0
 
-    if requested in ("clean", "youtube", "filename"):
+    # R13.6: tracklist is explicit only; R2.3/R2.4 do not run.
+    if requested in ("clean", "youtube", "filename", "tracklist"):
         mode = str(requested)
     elif _extension_of(s, ctx):
         mode = "filename"
