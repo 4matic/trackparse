@@ -11,8 +11,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Literal, Optional, cast
 
-Mode = Literal["clean", "youtube", "filename"]
-ModeOption = Literal["auto", "clean", "youtube", "filename"]
+#: R2 / R13.6: ``tracklist`` is only used when asked for (never resolved from ``auto``).
+Mode = Literal["clean", "youtube", "filename", "tracklist"]
+ModeOption = Literal["auto", "clean", "youtube", "filename", "tracklist"]
 ArtistRole = Literal["primary", "featured", "remixer", "producer"]
 ArtistSource = Literal["artist", "title", "version"]
 VersionType = Literal[

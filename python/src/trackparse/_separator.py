@@ -32,6 +32,7 @@ from ._words import (
     collapse_spaces,
     in_vocab,
     is_letter,
+    is_upper,
     is_whitespace,
     split_words,
     year_of,
@@ -101,8 +102,18 @@ def _split_at(s: Skel, cut_start: int, cut_end: int) -> tuple[Optional[Skel], Sk
     return _non_empty(slice_skel(s, 0, cut_start)), trim_skel(slice_skel(s, cut_end))
 
 
-def find_separator(skel: Skel, mode: str, uploader: Optional[Skel], ctx: Ctx) -> SeparatorResult:
+def find_separator(
+    skel: Skel,
+    mode: str,
+    uploader: Optional[Skel],
+    ctx: Ctx,
+    list_context: bool = False,
+) -> SeparatorResult:
+    """``list_context`` is the R13.4.2 list context (internal, set only by the tracklist
+    module): it enables the R6.10 tight ``letter-Uppercase`` dash in tracklist mode."""
     segments = split_at_spaced_dashes(skel, True)
+    if mode == "tracklist":
+        return _tracklist_separator(skel, segments, list_context, ctx)
     remaining, peeled = peel_suffixes(segments, False, ctx)
 
     # R6.3
@@ -124,6 +135,53 @@ def find_separator(skel: Skel, mode: str, uploader: Optional[Skel], ctx: Ctx) ->
     if len(rest.text) > 0 and artist is None:
         warn(ctx, "noSeparator")
     return SeparatorResult(artist, rest, False, peeled)
+
+
+def _tracklist_separator(
+    skel: Skel, segments: list[Segment], list_context: bool, ctx: Ctx
+) -> SeparatorResult:
+    """R6.10: tracklist mode. The first spaced dash always separates (no R6.2 peeling; R8.2
+    still peels later suffixes on the title side). Without one: R6.4, then the first ``_-_``,
+    then (list context only) the last tight ``letter-Uppercase`` dash; both of these warn
+    ``unspacedDashSplit``."""
+    if len(segments) >= 2:
+        first = segments[0]
+        second = segments[1]
+        last_seg = segments[-1]
+        artist = first.skel if len(first.skel.text) > 0 else None
+        title = slice_skel(skel, second.start, last_seg.end)
+        return SeparatorResult(artist, title, artist is not None, [])
+    rest = segments[0].skel
+    asym = _asymmetric_dash(rest.text)
+    if asym >= 0:
+        warn(ctx, "asymmetricDashSplit")
+        a, t = _split_at(rest, asym, asym + 1)
+        return SeparatorResult(a, t, a is not None, [])
+    underscore = rest.text.find("_-_")
+    if underscore >= 0:
+        warn(ctx, "unspacedDashSplit")
+        a, t = _split_at(rest, underscore, underscore + 3)
+        return SeparatorResult(a, t, a is not None, [])
+    if list_context:
+        tight = _tight_upper_dash(rest.text)
+        if tight >= 0:
+            warn(ctx, "unspacedDashSplit")
+            a, t = _split_at(rest, tight, tight + 1)
+            return SeparatorResult(a, t, a is not None, [])
+    if len(rest.text) > 0:
+        warn(ctx, "noSeparator")
+    return SeparatorResult(None, rest, False, [])
+
+
+def _tight_upper_dash(t: str) -> int:
+    """R6.10: the last ``-`` with a letter (R0.6) on its left and an uppercase letter (Lu) on
+    its right, as in R6.7 (``Jay-Z-Numb`` → ``Jay-Z`` / ``Numb``)."""
+    for i in range(len(t) - 2, 0, -1):
+        if t[i] != "-":
+            continue
+        if is_letter(t[i - 1]) and is_upper(t[i + 1]):
+            return i
+    return -1
 
 
 def _split_without_spaced_dash(

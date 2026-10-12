@@ -33,6 +33,33 @@ def _schema(name: str) -> Draft202012Validator:
 
 FILE_VALIDATOR = _schema("fixture-file.schema.json")
 TRACK_VALIDATOR = _schema("parsed-track.schema.json")
+
+
+def _tracklist_validators() -> tuple[Draft202012Validator, Draft202012Validator]:
+    """tracklist.schema.json (its entries $ref parsed-track.schema.json) and its editResult."""
+    from referencing import Registry, Resource
+
+    def load(name: str) -> dict[str, Any]:
+        data: dict[str, Any] = json.loads((SPEC_DIR / "schema" / name).read_text(encoding="utf-8"))
+        return data
+
+    tracklist = load("tracklist.schema.json")
+    track = load("parsed-track.schema.json")
+    base = tracklist["$id"].rsplit("/", 1)[0]
+    registry: Registry = Registry().with_resources(
+        [
+            (tracklist["$id"], Resource.from_contents(tracklist)),
+            (f"{base}/parsed-track.schema.json", Resource.from_contents(track)),
+        ]
+    )
+    edit_result = {"$ref": f"{tracklist['$id']}#/$defs/editResult"}
+    return (
+        Draft202012Validator(tracklist, registry=registry),
+        Draft202012Validator(edit_result, registry=registry),
+    )
+
+
+TRACKLIST_VALIDATOR, EDIT_RESULT_VALIDATOR = _tracklist_validators()
 FILES = load_fixture_files()
 SKIP = load_skip_list()
 
@@ -48,10 +75,14 @@ def problem_of(c: dict[str, Any], run: CaseRun) -> Optional[str]:
     schema_errors: list[str] = []
     for track in run.parsed:
         schema_errors.extend(_errors(TRACK_VALIDATOR, track.to_dict()))
+    if run.tracklist is not None:
+        schema_errors.extend("tracklist: " + e for e in _errors(TRACKLIST_VALIDATOR, run.tracklist))
+    if run.edit_result is not None:
+        schema_errors.extend(
+            "editResult: " + e for e in _errors(EDIT_RESULT_VALIDATOR, run.edit_result)
+        )
     problem = (
-        "output violates parsed-track schema: " + "; ".join(schema_errors)
-        if schema_errors
-        else run.failure
+        "output violates the schema: " + "; ".join(schema_errors) if schema_errors else run.failure
     )
     reason = SKIP.get(c["id"])
     if reason is not None:

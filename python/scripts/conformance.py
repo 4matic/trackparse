@@ -58,11 +58,15 @@ def main() -> int:
     skip = load_skip_list()
     by_file: dict[str, Tally] = {}
     by_rule: dict[str, Tally] = {}
+    #: Per fixture fn (parse, parseTracklist, applyEdits…). Schema checks run only in pytest.
+    by_fn: dict[str, Tally] = {}
     overall: Tally = [0, 0]
     skipped = 0
     for f in files:
         for c in f.data["cases"]:
-            ok = run_case(f.data, c).failure is None
+            run = run_case(f.data, c)
+            ok = run.failure is None
+            _bump(by_fn, run.fn, ok)
             if not ok and c["id"] in skip:
                 skipped += 1
             _bump(by_file, f.name, ok)
@@ -80,6 +84,9 @@ def main() -> int:
     print("By file:")
     for name, t in by_file.items():
         print(_row(name, t, width))
+    print("\nBy fn:")
+    for fn, t in by_fn.items():
+        print(_row(fn, t, width))
     print("\nBy rule:")
     for rule in sorted(by_rule, key=_rule_key):
         print(_row(rule, by_rule[rule], 10))

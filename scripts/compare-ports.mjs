@@ -8,7 +8,8 @@
 //
 // Options are merged like js/test/runner.ts ({...defaults.options, ...case.options}, same for
 // formatOptions). Python gets one process for all cases (JSONL over stdin/stdout); dump_py.py maps
-// the camelCase options to snake_case kwargs and serialises with ParsedTrack.to_dict().
+// the camelCase options to snake_case kwargs and serialises with to_dict() (ParsedTrack, and the
+// Tracklist / EditResult of trackparse.tracklist for parseTracklist / applyEdits).
 // Prints counts and the first 30 differences; exits 1 if any case differs.
 
 import { spawn } from "node:child_process";
@@ -19,13 +20,17 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const fixturesDir = join(root, "spec", "fixtures");
 const distEntry = join(root, "js", "dist", "index.js");
+const distTracklist = join(root, "js", "dist", "tracklist.js");
 const MAX_SHOWN = 30;
 
-if (!existsSync(distEntry)) {
-  console.error(`missing ${relative(root, distEntry)}: run \`pnpm --filter trackparse build\` first`);
-  process.exit(2);
+for (const entry of [distEntry, distTracklist]) {
+  if (!existsSync(entry)) {
+    console.error(`missing ${relative(root, entry)}: run \`pnpm --filter trackparse build\` first`);
+    process.exit(2);
+  }
 }
 const js = await import(pathToFileURL(distEntry).href);
+const jsTracklist = await import(pathToFileURL(distTracklist).href);
 
 function walk(dir) {
   const out = [];
@@ -37,7 +42,7 @@ function walk(dir) {
   return out;
 }
 
-const FNS = new Set(["parse", "parseArtists", "format", "normalize"]);
+const FNS = new Set(["parse", "parseArtists", "format", "normalize", "parseTracklist", "applyEdits"]);
 const cases = [];
 for (const full of walk(fixturesDir)) {
   const data = JSON.parse(readFileSync(full, "utf8"));
@@ -55,6 +60,7 @@ for (const full of walk(fixturesDir)) {
       input: c.input,
       options: { ...defaults.options, ...c.options },
       formatOptions: { ...defaults.formatOptions, ...c.formatOptions },
+      edits: c.edits ?? [],
     });
   }
 }
@@ -70,6 +76,10 @@ function runJs(c) {
         return { ok: js.format(js.parse(c.input, c.options), c.formatOptions) };
       case "normalize":
         return { ok: js.normalize(c.input) };
+      case "parseTracklist":
+        return { ok: jsTracklist.parseTracklist(c.input, c.options) };
+      case "applyEdits":
+        return { ok: jsTracklist.applyEdits(c.input, c.edits, c.options) };
     }
   } catch (err) {
     return { error: `${err?.name ?? "Error"}: ${err?.message ?? String(err)}` };
@@ -98,8 +108,12 @@ function runPython(all) {
     });
     child.stdin.on("error", reject);
     for (const c of all) {
-      const { i, fn, input, options, formatOptions } = c;
-      child.stdin.write(`${JSON.stringify({ i, fn, input, options, formatOptions })}\n`);
+      const { i, fn, input, options, formatOptions, edits } = c;
+      // Edits keep non-JSON numbers (fixtures write infinity as 1e999) via a tagged string.
+      const line = JSON.stringify({ i, fn, input, options, formatOptions, edits }, (_k, v) =>
+        typeof v === "number" && !Number.isFinite(v) ? { $number: String(v) } : v,
+      );
+      child.stdin.write(`${line}\n`);
     }
     child.stdin.end();
   });
@@ -159,7 +173,7 @@ for (const c of cases) {
 
 console.log(`compared ${cases.length} cases (JS dist vs Python)`);
 for (const [fn, s] of Object.entries(byFn)) {
-  console.log(`  ${fn.padEnd(13)} ${s.total - s.differ}/${s.total} identical`);
+  console.log(`  ${fn.padEnd(15)} ${s.total - s.differ}/${s.total} identical`);
 }
 if (bothThrew) console.log(`  (${bothThrew} cases threw in both ports)`);
 console.log(`differences: ${diffs.length}`);
