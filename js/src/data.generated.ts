@@ -175,6 +175,23 @@ export const genresData = {
   ]
 } as const;
 
+/** spec/data/header-words.json */
+export const headerWordsData = {
+  "words": [
+    "tracklist",
+    "setlist",
+    "playlist",
+    "part",
+    "hour",
+    "cd",
+    "disc",
+    "side",
+    "chapter",
+    "segment",
+    "set"
+  ]
+} as const;
+
 /** spec/data/joiners.json */
 export const joinersData = {
   "spaced": [
@@ -326,6 +343,33 @@ export const junkData = {
     "release",
     "records",
     "recordings"
+  ]
+} as const;
+
+/** spec/data/marker-words.json */
+export const markerWordsData = {
+  "words": [
+    "intro",
+    "outro",
+    "break",
+    "interlude",
+    "intermission",
+    "jingle",
+    "ad",
+    "advert",
+    "advertisement",
+    "talk",
+    "interview",
+    "speech",
+    "announcement",
+    "shoutout",
+    "shout-out",
+    "pause",
+    "start",
+    "end",
+    "silence",
+    "applause",
+    "skit"
   ]
 } as const;
 

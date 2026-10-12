@@ -32,6 +32,7 @@ verbatim. A reader of the output can always account for every word of the input.
 - [R10 parseArtists](#r10-parseartists)
 - [R11 format](#r11-format)
 - [R12 Options](#r12-options)
+- [R13 Tracklists](#r13-tracklists)
 - [Invariants](#invariants)
 - [Glossary](#glossary)
 
@@ -158,6 +159,8 @@ All later rules operate on the normalized string. `input` in the output is the o
      any top-level group classifies as junk (R5.1, excluding `genre`); the string ends with an
      unbracketed junk phrase (R8.4 test).
   3. `clean` otherwise.
+
+  `auto` never resolves to `tracklist`; that mode is only used when asked for (R13.6).
 - **R2.2 Platform suffixes (all modes).** While the string ends (ASCII case-insensitive) with an
   entry of `data/platform-suffixes.json` (longest first), remove it and push junk
   `{ raw: <suffix without its leading " - " / " | ">, kind: "platform" }`. Runs before anything else in R2–R6.
@@ -331,6 +334,12 @@ Operates on the skeleton of the working string (after R2, R4).
   the uploader with a trailing ` - Topic` and a trailing `VEVO` (case-sensitive, optionally preceded
   by a space) removed, and `noSeparator` is **not** emitted.
 - **R6.9** `:` is never a separator in v1 (except inside R6.5).
+- **R6.10 Tracklist mode.** With `mode: "tracklist"` (R13.6), R6.2 does not peel the segment that
+  follows the **first** spaced dash: if a spaced dash exists, the artist side is `s0` and the title
+  side is `s1 … sn` (R8.2 still peels later dash suffixes on the title side). Without a spaced dash,
+  R6.4 applies, then `_-_` (underscore, dash, underscore) is the separator, then, only when the caller
+  enables it (R13.6 list context), the first `-` with a letter on its left and an uppercase letter on
+  its right (warn `unspacedDashSplit`). R6.5–R6.7 (youtube/filename rules) do not apply.
 
 *Notes (intended):* a string whose only dash was peeled as a suffix and that has no artist still
 warns `noSeparator` (`Hey Jude - Remastered 2015`).
@@ -495,6 +504,166 @@ Schema: [`schema/options.schema.json`](schema/options.schema.json).
 | `knownArtists` | `[]` | R7.3a/R4.2/R6.7: names never split. There is **no built-in list**. |
 | `splitAnd` | `auto` | R7.3 guard for `and`. |
 | `keywords` | – | Additive vocabulary: `versionHeads` (key → type), `descriptors`, `genres`, `junk` (phrase → kind), `featMarkers`. Keys are lowercased with ASCII rules. |
+
+---
+
+## R13 Tracklists
+
+`parseTracklist(text, options)` reads a block of text line by line; `applyEdits(text, edits,
+options)` rewrites it. Both live in a separate entry (`trackparse/tracklist`, Python
+`trackparse.tracklist`). Schema: [`schema/tracklist.schema.json`](schema/tracklist.schema.json).
+The single-line rules R1–R12 are unchanged; tracklist behaviour is only reachable through this
+section and `mode: "tracklist"`.
+
+### R13.1 Lines and the lossless guarantee
+
+- **R13.1.1** Lines end at LF, CRLF or CR (only these: U+2028/U+2029, U+0085 and the other R0.2
+  characters are **not** line breaks). Each entry keeps its terminator in `eol`: `"\n"`, `"\r\n"`,
+  `"\r"`, or `""` for a last line without one. A trailing empty segment after the final terminator is
+  not an entry (`"a\n"` has one entry). `""` has no entries.
+- **R13.1.2 Lossless.** For every input: concatenating `raw + eol` over all entries gives the input
+  exactly. `raw` is never normalized (R1 runs only inside the per-line `parse`).
+- **R13.1.3 Parts.** Each entry has `parts = { lead, time, gap, rest }` (strings, no offsets, R0.5)
+  with `lead + time + gap + rest === raw`. Without a time (R13.2), `lead`, `time` and `gap` are `""`
+  and `rest === raw`.
+
+### R13.2 Times
+
+Read at the start of `raw` (this scanner is separate from R4.1, which is unchanged):
+
+- **R13.2.1 lead:** R0.2 whitespace, then an optional `[` or `(`.
+- **R13.2.2 time:** `A:B` or `A:B:C` in ASCII digits, then an optional fraction (`.` or `,` and 1–3
+  digits). With three parts: `A` is 1–2 digits (hours), `B` and `C` are 2 digits each and at most 59.
+  With two parts: `A` is 1–3 digits (minutes, **any value**, so `125:30` is 7530 s), `B` is 2 digits and
+  at most 59. `seconds` = hours·3600 + minutes·60 + seconds + fraction (a number; `07.500` → 7.5).
+- **R13.2.3 gap:** the matching `]` / `)` if one was opened (else no time), then R0.2 whitespace, then
+  optionally one separator from `-` `–` `—` `|` `.` `:` and whitespace, then optionally an arrow
+  `=>` / `==>` and whitespace. The time must be followed by end of line, whitespace, a separator or
+  the closing bracket; otherwise there is no time.
+- **R13.2.4 invalid times:** text at the start of the line (after lead) with the shape `digits:digits`
+  that fails R13.2.2 (`1:75`, `0:61:00`) is not a time: the entry has no time, `rest === raw`, and the
+  tracklist warns `invalid-time` for the line.
+- **R13.2.5** `time` in the output is `{ raw, seconds }` (`raw` without brackets), or `null`.
+
+### R13.3 Line kinds
+
+`kind` is decided in this order (word keys per R0.3):
+
+1. `blank`: `raw` is empty or only R0.2 whitespace.
+2. Lines **with** a time: `marker` when the track part (R13.4) has no separator and any of its words is
+   in [`data/marker-words.json`](data/marker-words.json) (plus `options.markerWords`); else `track`.
+3. Lines **without** a time: `link` when `rest` (trimmed) starts with `http://`, `https://` or `www.`
+   (ASCII case-insensitive); `header` when it ends with `:` or its first word is in
+   [`data/header-words.json`](data/header-words.json) and it has at most one more word; `marker` as in
+   2; `track` when the track part has a separator; else `note`.
+
+Only `track` and `marker` entries have a `track` (a ParsedTrack); the others have `track: null`.
+Nothing is ever dropped.
+
+### R13.4 The track part
+
+- **R13.4.1** The track part is `rest`, minus a bare position (R13.5). It is parsed with `parse(rest,
+  { mode, knownArtists, keywords, splitAnd })`, `mode` defaulting to `"tracklist"`.
+- **R13.4.2** *Candidate lines* are non-blank lines with a time or a spaced dash. List context for
+  R6.10's tight dash is enabled when at least half of the candidate lines contain a spaced dash.
+
+### R13.5 Bare positions
+
+A track part that starts with 1–3 ASCII digits and a space, where R4.2 does not take a position, has a
+**bare position** candidate `N`. It is a position when the nearest preceding or the nearest following
+candidate line (a line with a time or a spaced dash, R13.4.2) also has a bare candidate equal to
+`N - 1` or `N + 1`. The digits and the space are
+removed before parsing and `track.position = { raw, number }`. Dotted positions (`01.`) never count
+as neighbours, so `2 Unlimited - No Limit` between `01.` and `03.` lines stays an artist.
+
+### R13.6 Tracklist mode
+
+`mode: "tracklist"` is a single-line mode (R6.10) accepted by `parse()` too; `parseTracklist` uses it
+by default and adds the list context (R13.4.2, R13.5). R2's youtube and filename steps do not run.
+
+### R13.7 Warnings
+
+`warnings` is a list of `{ code, line, severity, suggestion }` in line order (`suggestion` is `null`
+unless stated). Per-line ParsedTrack warnings stay in `entries[].track.warnings` and are not
+repeated.
+
+| Code | Severity | When |
+|---|---|---|
+| `time-missing` | warning | a `track` entry has no time while at least one other entry has one |
+| `time-out-of-order` | warning | a timed entry's seconds are below the previous timed entry's |
+| `time-duplicate` | warning | equal to the previous timed entry's seconds |
+| `no-start-at-zero` | info | the first timed entry is not at 0 |
+| `time-after-audio-end` | warning | seconds above `options.audioSeconds` |
+| `invalid-time` | warning | R13.2.4 |
+| `position-gap` | warning | a positioned track entry's number is not the previous positioned entry's number + 1 (or equal) |
+| `position-duplicate` | warning | equal to the previous positioned entry's number |
+| `line-unparsed` | warning | a `track` entry whose ParsedTrack warns `noSeparator` |
+
+**Suggestion for `time-out-of-order`.** Let `p` be the previous timed entry's seconds and `n` the next
+timed entry's (if any). Candidates are the strings made by changing 1 digit, then 2 digits, of the
+entry's raw time (fraction digits excluded), that are valid under R13.2.2 and satisfy `p < t` and
+(`t < n` when `n` exists). At the smallest number of changed digits with any candidate, a **single**
+candidate becomes `suggestion: { raw, seconds }`; several candidates or none give `null`.
+(`00:06:29` between `01:04:39` and `01:08:10` → `01:06:29`.)
+
+### R13.8 Output
+
+`{ specVersion, entries, warnings, stats }`. Each entry is `{ line, kind, eol, raw, parts, time,
+track }`. `stats` = `{ lines, tracks, markers, timed, firstTime, lastTime }`: entry count, `track`
+count, `marker` count, entries with a time, the first and the last timed entry's seconds in line
+order (`null` when none). Every key is always present.
+
+### R13.9 Edits
+
+`applyEdits(text, edits, options)` → `{ text, changed, warnings }`. Edits apply in order, each to the
+result of the previous one; line numbers are 1-based in the text the edit sees.
+
+| Edit | Effect |
+|---|---|
+| `{ op: "set-time", line, seconds }` | rewrite that line's `parts.time` |
+| `{ op: "shift", seconds, lines?, from? }` | add `seconds` to the timed lines listed, or to every timed line from `from` on, or to all timed lines |
+| `{ op: "sort-by-time" }` | reorder blocks by time (below) |
+| `{ op: "set-rest", line, rest }` | replace `parts.rest` |
+| `{ op: "insert", after, text }` | insert a line after line `after` (`0` = at the top) |
+| `{ op: "delete", line }` | remove a line |
+
+- **R13.9.1 Locality.** Lines not named by an edit keep `raw` and `eol` byte for byte. `changed` lists
+  the line numbers, in the final text, of lines an edit wrote (sorted, unique; moved lines count;
+  deleted lines do not). `applyEdits(t, [])` returns `t`, `[]`, `[]`.
+- **R13.9.2 Time style.** A rewritten time keeps its line's style: hours present or not, the hour
+  and minute digit widths (as minimum widths), the fraction separator and digit count (values are
+  rounded half up to that precision). A value of an hour or more on a line without hours is written
+  `HH:MM:SS`, or `H:MM:SS` when the text's other times with hours use one-digit hours, and the edit
+  warns `style-upgraded`.
+- **R13.9.3 Clamp.** A time that would go below 0 becomes 0 and the edit warns `time-clamped`.
+- **R13.9.4 Sort.** A block is a timed line plus the untimed lines after it; lines before the first
+  timed line stay first. Blocks are sorted by seconds, stable for equal values. `eol` values stay in
+  their slots (slot *i* keeps the input's *i*-th `eol`), so a text without a trailing newline keeps it.
+- **R13.9.5 Insert and delete.** Inserted text must not contain a line break. The new line takes the
+  text's most common non-empty `eol` (`"\n"` if there is none); inserting after a last line whose
+  `eol` is `""` gives that line the new `eol` and the inserted line `""`. Deleting the last line moves
+  its `eol` to the new last line.
+- **R13.9.6 Totality.** An edit with a missing line, a line without a time (`set-time`), a non-finite
+  number, a line break in `rest`/`text`, or an unknown `op` changes nothing and warns `edit-invalid`.
+  Never throws. Edit warnings are `{ code, edit, line }` (`edit` = index in `edits`).
+- **R13.9.7 Round trip.** `shift(+s)` then `shift(-s)` on the same lines returns the original text
+  when neither edit warned `time-clamped` or `style-upgraded`.
+
+### R13.10 Options
+
+`parseTracklist` and `applyEdits` take `mode` (default `"tracklist"`), `knownArtists`, `keywords`,
+`splitAnd` (R12), `audioSeconds` (number, enables `time-after-audio-end`) and `markerWords` (extra
+marker words). Bad values are ignored (R0.8).
+
+### R13.11 Tracklist invariants
+
+1. Lossless (R13.1.2) and `lead + time + gap + rest === raw` for every string.
+2. Totality: any string and any edit list return without throwing; 10 000 lines finish well under
+   one second.
+3. Locality and identity (R13.9.1).
+4. Round trip (R13.9.7).
+5. A one-line text's track equals `parse(rest, { mode: "tracklist" })` for a line without a bare
+   position.
 
 ---
 

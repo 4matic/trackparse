@@ -1,0 +1,8 @@
+{
+  "$comment": "R13.3: a tracklist line whose track part has no separator and contains one of these words (word key, R0.3) is a marker, not a track. Extend per call with options.markerWords.",
+  "words": [
+    "intro", "outro", "break", "interlude", "intermission", "jingle", "ad", "advert", "advertisement",
+    "talk", "interview", "speech", "announcement", "shoutout", "shout-out", "pause", "start", "end",
+    "silence", "applause", "skit"
+  ]
+}
