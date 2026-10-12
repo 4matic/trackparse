@@ -10,18 +10,29 @@ behaviour; each language port implements them. The JS package is the reference p
 
 ```
 spec/
-  SPEC.md                 the contract: rules R0–R12 with stable IDs, invariants, glossary
+  SPEC.md                 the contract: rules R0–R13 with stable IDs, invariants, glossary
   VERSION                 spec version (MAJOR.MINOR.PATCH); ports share MAJOR.MINOR
   data/*.json             every word list (feat markers, joiners, version keywords, junk, genres...)
-  schema/*.json           JSON Schemas: parsed-track, options, fixture-file
+  schema/*.json           JSON Schemas: parsed-track, tracklist, options, fixture-file
   fixtures/README.md      fixture format and matching semantics
   fixtures/handwritten/   curated cases by topic (edit by hand)
   fixtures/generated/     combinatorial cases (NEVER edit by hand)
   generator/              @trackparse/fixture-gen: writes fixtures/generated
+                          (src/tracklist.ts + scenarios/tracklist.ts: multi-line tracklist cases)
+  proposals/tracklist.md  the platform proposal behind R13 (historical; SPEC.md wins)
+  corpus/                 git-ignored: private real-world corpora (platform data, never commit)
 js/                       npm package `trackparse`, reference implementation
   src/index.ts            public API exports
+  src/tracklist/          the `trackparse/tracklist` subpath entry (R13):
+    index.ts              exports parseTracklist, applyEdits and the tracklist types
+    types.ts              public tracklist types (mirror tracklist.schema.json)
+    options.ts            R13.10     split.ts     R13.1 lines + eol    times.ts  R13.2, R13.9.2
+    kinds.ts              R13.3, R13.4.2 candidate lines           positions.ts  R13.5
+    warnings.ts           R13.7 + out-of-order suggestion search   parse.ts  R13.1–R13.8
+    edits.ts              R13.9 applyEdits
   src/types.ts            public types (mirror the schemas)
   src/parser.ts           pipeline R1 → R2 → R4 → R3/R6 → R7 → R8 → R9, plus parseArtists (R10)
+                          and the internal ListParser (probe + parse with list context) for R13
   src/normalize.ts        R1          src/mode.ts        R2
   src/scanner.ts          R3          src/prefix.ts      R4
   src/classify.ts         R5          src/separator.ts   R6
@@ -29,16 +40,19 @@ js/                       npm package `trackparse`, reference implementation
   src/title.ts            R8          src/assemble.ts    R9
   src/format.ts           R11, allArtists
   src/words.ts            R0 word keys, dedup keys, whitespace set
+  src/digits.ts           ASCII digit runs shared by R4.1 and the R13.2 time scanner
   src/tables.ts           vocabulary tables built from data + options.keywords (R12)
   src/context.ts          per-call context: resolved options, tables, warnings
   src/data.generated.ts   GENERATED from spec/data + spec/VERSION (never edit)
   scripts/gen-data.ts     codegen for data.generated.ts
   scripts/conformance.ts  pass-rate report per file and per rule
+  scripts/size-check.mjs  size budget: the tracklist entry may add at most 8 KiB gzip
   test/runner.ts          loads and runs shared fixtures
   test/match.ts           partial/exact matcher (spec/fixtures/README.md)
   test/fixtures.test.ts   every fixture + schema validation + xfail/skip handling
   test/properties.test.ts SPEC invariants with fast-check
   test/api.test.ts        API surface
+  test/tracklist.*.test.ts  tracklist API tests and R13.11 invariants (fast-check)
   test/skip.json          port-specific known failures (only ever shrinks)
 python/                   PyPI package `trackparse` (Python 3.9+, zero deps, uv project)
   src/trackparse/         one module per js/src file, same rule IDs in comments:
@@ -48,14 +62,21 @@ python/                   PyPI package `trackparse` (Python 3.9+, zero deps, uv 
     _scanner.py           R3     _prefix.py    R4     _classify.py   R5     _separator.py R6
     _artists.py           R7     _credits.py   R7.3–R7.5             _title.py      R8
     _assemble.py          R9     _format.py    R11, all_artists      _words.py      R0
+    _digits.py            digit runs (js/src/digits.ts)
+    tracklist.py          public `trackparse.tracklist` (parse_tracklist, apply_edits, types)
+    _tracklist_*.py       one per js/src/tracklist file: _types, _options, _split, _times,
+                          _kinds, _positions, _warnings, _parse, _edits
     _tables.py            R12    _context.py   per-call context
     _data.py              GENERATED from spec/data + spec/VERSION (never edit)
   scripts/gen_data.py     codegen for _data.py (--check for CI)
   scripts/conformance.py  pass-rate report per file and per rule
   tests/                  runner.py, match.py, test_fixtures.py, test_properties.py (Hypothesis),
-                          test_api.py, test_match.py, skip.json (only ever shrinks)
+                          test_api.py, test_match.py, test_tracklist_api.py,
+                          test_tracklist_properties.py, skip.json (only ever shrinks)
 rust/                     planned crates.io port (README stub only)
 scripts/compare-ports.mjs every fixture through js/dist and the Python port, diffs the full outputs
+                          (parseTracklist and applyEdits included)
+scripts/corpus-check.mjs  R13 against a private tracklist corpus (JSONL in spec/corpus/), via js/dist
 scripts/dump_py.py        Python side of compare-ports (JSONL in, to_dict() JSON out)
 .github/workflows/        js.yml (full suite on Node 22/24; compat: fixtures vs built dist on Node 18/20),
                           python.yml (lint, mypy, pytest on 3.9–3.14; build: fixtures vs installed wheel),
@@ -113,9 +134,10 @@ Every port must produce byte-identical output. The full text is SPEC.md R0; in s
 
 - **No regex lookaround, backreferences or `\p{…}` classes.** Recognition is done by hand-written
   scanners over code points. Small anchored regexes only for fixed shapes (digits, timestamps).
-  (The single exception, R0.6 "letter", is general category L: JS `/\p{L}/u`, Python
+  (The first exception, R0.6 "letter", is general category L: JS `/\p{L}/u`, Python
   `str.isalpha()`. Not `\p{Alphabetic}` and not Rust `char::is_alphabetic()`, which also accept Nl
-  and combining marks.)
+  and combining marks. The second, R0.6 "uppercase letter" used only by R6.10, is category Lu: JS
+  `/\p{Lu}/u`, Python `unicodedata.category(c) == "Lu"`.)
 - **Explicit whitespace set** (R0.2): U+0009–U+000D, U+0020, U+0085, U+00A0, U+1680,
   U+2000–U+200A, U+2028, U+2029, U+202F, U+205F, U+3000. Never use a language's `\s` or `trim()`
   semantics without checking they match.
@@ -139,6 +161,7 @@ Run from the repo root (pnpm workspace; Node ≥ 20 for development).
 | `pnpm lint` | Biome lint + format check |
 | `pnpm conformance` | JS pass rate per fixture file and per rule ID |
 | `pnpm --filter trackparse compat` | After `build`: every fixture against `dist/` (ESM + CJS) with plain Node; runs on Node 18+ |
+| `pnpm --filter trackparse size` | After `build`: fail if `trackparse/tracklist` adds more than 8 KiB gzip (ESM and CJS) |
 | `pnpm gen:data` | Regenerate `js/src/data.generated.ts` from `spec/data` + `spec/VERSION` |
 | `pnpm gen:fixtures` | Regenerate `spec/fixtures/generated/*.json` |
 | `pnpm gen:check` | Fail if generated fixtures or JS codegen are stale |
@@ -147,7 +170,7 @@ Per package:
 
 | Package | Command |
 |---|---|
-| `js/` (`trackparse`) | `pnpm --filter trackparse build` · `test` · `typecheck` · `lint` · `conformance` · `gen:data` · `gen:data:check` · `check:package` (publint + attw) |
+| `js/` (`trackparse`) | `pnpm --filter trackparse build` · `test` · `typecheck` · `lint` · `conformance` · `gen:data` · `gen:data:check` · `check:package` (publint + attw) · `size` |
 | `spec/generator/` (`@trackparse/fixture-gen`) | `pnpm --filter @trackparse/fixture-gen gen` · `check` · `validate` (schema + unique ids for all fixtures) · `test` · `typecheck` |
 
 Python (run inside `python/`; uv picks up `.python-version` and `uv.lock`):
@@ -168,6 +191,18 @@ Cross-port check, from the repo root (needs `uv`):
 pnpm --filter trackparse build && node scripts/compare-ports.mjs   # must print "differences: 0"
 ```
 
+Corpus check for R13 changes, when you have the private corpus (JSONL, one object per tracklist
+with `title` and `track_list`, kept in the git-ignored `spec/corpus/`):
+
+```sh
+pnpm --filter trackparse build && node scripts/corpus-check.mjs spec/corpus/neuropunk-podcast.jsonl
+```
+
+It asserts losslessness, the platform regex's seconds on every line, the 81 bare positions, the 10
+out-of-order warnings and their 2 suggestions, and lists the lines still `line-unparsed` (2 today).
+Never commit the corpus itself. Fixture cases taken from it carry a `source`
+(`neuropunk podcast corpus: <list title>`).
+
 Run a single fixture case (tests are named by case id):
 
 ```sh
@@ -176,7 +211,8 @@ cd python && uv run pytest tests/test_fixtures.py -k "brackets-version-001"
 ```
 
 Before pushing, mirror CI: `pnpm lint && pnpm --filter trackparse typecheck && pnpm test &&
-pnpm build && pnpm gen:check && pnpm --filter @trackparse/fixture-gen validate`, and in `python/`
+pnpm build && pnpm --filter trackparse size && pnpm gen:check &&
+pnpm --filter @trackparse/fixture-gen validate`, and in `python/`
 `uv run python scripts/gen_data.py --check && uv run ruff check . && uv run ruff format --check . &&
 uv run mypy --strict src && uv run pytest`.
 
@@ -214,10 +250,13 @@ good second reference next to JS: its modules map one to one onto `js/src`. Chec
 3. **Pipeline** in the order of `js/src/parser.ts`: normalize (R1), mode prelude (R2), prefixes
    (R4), group scanner and skeleton (R3), separator (R6), artist side (R7), title side (R8),
    assembly and dedup (R9), then `parse_artists` (R10), `format` (R11), options (R12).
+   Then tracklists (R13) as a separate module/entry, in the order of `js/src/tracklist/parse.ts`
+   (see the R13 notes below).
 4. **Matcher** (~40 lines) implementing partial/exact matching and the artist shorthand exactly as
    in `spec/fixtures/README.md`.
 5. **Fixture runner** over `spec/fixtures/handwritten` and `spec/fixtures/generated`: validate each
-   file against the fixture schema, each output against `parsed-track.schema.json`, honour
+   file against the fixture schema, each output against `parsed-track.schema.json` (or
+   `tracklist.schema.json` for `fn: "parseTracklist"`; `applyEdits` cases also check `text`), honour
    `status` (pass / xfail / ambiguous), and keep a port-local skip list that can only shrink.
 6. **Property tests** for the SPEC invariants (Hypothesis for Python, proptest for Rust).
 7. **API** idiomatic for the language but equivalent: Python `parse`, `parse_artists`,
@@ -242,6 +281,32 @@ Hazards the Python port ran into. Fixtures alone did not catch all of them; comp
   first in ascending order, then insertion order. A plain dict iteration does not do that.
 - **Python 3.9 at runtime.** `X | None` in annotations evaluated at runtime (dataclasses,
   `get_type_hints`) breaks on 3.9; use `Optional[X]`. Ruff's UP007/UP045 are disabled for this.
+
+R13 (tracklists) notes for a new port:
+
+- **Two passes per text.** First a cheap *probe* per line: the R13.2 time scan, then R1, R2 and R4
+  only (`probe` in `js/src/parser.ts`), to learn whether R4.2 took a position and whether the
+  skeleton R6 would search has a spaced dash. Those facts decide the list context (R13.4.2: at
+  least half of the candidate lines have a spaced dash) and the bare positions (R13.5). Only then
+  is each line parsed once, with the list-context flag passed into R6.10. Testing ` - ` on `raw`
+  instead of the skeleton gets `00:00 - Intro` and `01 - Title` wrong.
+- **Line split is LF / CRLF / CR only.** U+2028, U+2029 and U+0085 are R0.2 whitespace but not
+  line breaks. `raw` is never normalized; R1 runs inside the per-line `parse` only.
+- **Suggestion search** (R13.7) is two steps: the out-of-order line's own time between its timed
+  neighbours, then, only if that found no candidate at all, the previous timed line's time. Change
+  1 digit, then 2 (never fraction digits); only the smallest digit count with any candidate counts,
+  and exactly one candidate gives a suggestion. On the real corpus this second step is what finds
+  `01:22:21` → `01:02:21`.
+- **Numbers.** Fractional seconds are the correctly rounded double of the decimal string (JS
+  `Number()`, Python `float()`); whole values must serialize as integers (`3167`, not `3167.0`).
+  Rewriting rounds half up with `floor(v · 10^d + 0.5)`, never a language `round()` (Python's is
+  banker's rounding). Edit fields follow JS number semantics: a bool is not a number, `null` and
+  non-finite values make the edit `edit-invalid` (`js_number` in `_tracklist_options.py`).
+- **Uppercase** for R6.10's tight dash is general category Lu (`unicodedata.category(c) == "Lu"`).
+- **No UTF-16 positions** in R13: everything is strings and line numbers, so the `utf16_len`
+  hazard above does not apply here.
+- **Time ceilings.** R13.11 asks for linear time; each port's suite picks its own 10,000-line
+  ceiling (JS 1 s, Python 15 s).
 
 ## Versioning and release
 
