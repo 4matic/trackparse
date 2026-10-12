@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.3.0](https://github.com/4matic/trackparse/compare/js-v0.2.1...js-v0.3.0) (2026-10-12)
+
+
+### Features
+
+* **js:** add trackparse/tracklist with parseTracklist and applyEdits ([68b1961](https://github.com/4matic/trackparse/commit/68b19611dc873b74cfce8d3ce7f10d97b396f4a5))
+* **spec:** add tracklist rules (R13) and schemas ([4e82571](https://github.com/4matic/trackparse/commit/4e82571fdca3ff5007dc58d53cc4613719bd2e90))
+* **spec:** handle bullet lists and bracketed markers in tracklists ([d91595f](https://github.com/4matic/trackparse/commit/d91595f3150be479a2b36b3869c1dc06958a045b))
+
+
+### Documentation
+
+* correct 0.3.0 docs after an audit ([b091923](https://github.com/4matic/trackparse/commit/b091923a7a95d6f4ab0e321318e54ec48f0f31f0))
+* document tracklists for 0.3.0 ([2d63252](https://github.com/4matic/trackparse/commit/2d6325234257364cf40cb0b48d8c969bf6a9eb4d))
+
 ## [0.2.1](https://github.com/4matic/trackparse/compare/js-v0.2.0...js-v0.2.1) (2026-10-01)
 
 
