@@ -1,0 +1,1485 @@
+{
+  "$schema": "../../schema/fixture-file.schema.json",
+  "description": "SPEC R13.5: bare positions found from neighbouring lines, the '2 Unlimited' guard, and R4.2 positions inside tracklists.",
+  "defaults": {
+    "fn": "parseTracklist"
+  },
+  "cases": [
+    {
+      "id": "tracklist-positions-001",
+      "input": "00:00:00 1 Dropzone - Break Away (Gydra remix) \r\n00:01:49 2 Gydra - Dungeon\r\n00:02:40 3 Redpill & Coppa - Genesis (Gydra remix) \r\n00:05:00 4 Gydra - Primitive Instinct\r\n00:06:12 5 Gydra - Chump\r\n00:07:23 6 Gydra - Nailsbucket \r\n00:08:10 7 Gydra - Caterpillar (Skrimor remix) \r\n00:09:20 8 Linkin Park_-_Points Of Authority (Gydra Bootleg) \r\n00:11:39 9 Gydra - Protocol\r\n00:13:05 10 BTK & Ink - Spiritual Thing (Gydra remix) \r\n00:14:44 11 Gydra - Split_Attack\r\n00:16:30 12 Teddy Killerz - New Drums (Gydra remix) \r\n00:17:58 13 Gydra - Problem\r\n00:18:52 14 Dirtyphonics_&_12th Planet - Freefall (feat. Julie Hardy) (Gydra remix)\r\n00:20:30 15 Gydra - Soul_King\r\n00:23:10 16 Gydra - Wipe (skantia Remix)\r\n00:22:12 17 Mean Teeth - Dust To Dust (Gydra remix)\r\n00:24:50 18 Gydra & Dextems - Chameleon Beats\r\n00:26:00 19 Gydra - Rampage\r\n00:27:21 20 Gydra - Kernel \r\n00:28:20 21 Gydra - Horror Room\r\n00:30:20 22 Gydra - Muzzle\r\n00:31:50 23 The Prodigy - Diesel Power (Gydra remix)\r\n00:33:17 24 Gydra - Game_Over\r\n00:34:40 25 Pythius & Gridlok - Sound Barrier (Gydra remix)\r\n00:35:45 26 Gydra - Frostbolt\r\n00:36:50 27 oneBYone & Gydra - Feel The Power \r\n00:38:25 28 Gydra - Plumber\r\n00:39:20 29 Teddy Killerz vs Gydra - Miles_High\r\n00:40:50 30 Gydra - Heist\r\n00:41:50 31 Nuvertal & Gydra - Comeback\r\n00:43:20 32 Groove - Worm Of Love (Gydra remix) \r\n00:44:45 33 Gydra - Hell_Crow \r\n00:46:25 34 Gydra - Hearing Damage\r\n00:47:32 35 Sitri & Gydra - Space Invaders\r\n00:48:55 36 Gydra - Neft\r\n00:50:13 37 Fatloaf - Samurai (Gydra VIP)\r\n00:52:00 38 Gydra - Knives\r\n00:53:24 39 Gydra - Stoning\r\n00:54:49 40 Optiv & BTK-Inception (Gydra remix)\r\n00:55:50 41 Mizo & Gydra - Chronometer\r\n00:56:57 42 Gydra - Trojan \r\n00:57:50 43 Gydra - Alarm\r\n00:59:00 44 Gydra - Solar Eclipse\r\n01:00:20 45 Gydra - Tranquilizer\r\n01:01:16 46 Gydra - Snake Style\r\n01:02:50 47 Gydra - Morai\r\n01:04:05 48 Gydra - Dystopia\r\n01:05:00 49 Gydra - Boundless\r\n01:06:42 50 Gydra - Everyday\r\n01:08:00 51 Gydra - Rats\r\n01:09:26 52 Gydra - Insurrection\r\n01:10:30 53 Gydra & Nuvertal - Meditation\r\n01:11:55 54 Gydra - Noise Of The_Machine\r\n01:13:16 55 Encode - Aught (Gydra Remix)\r\n01:14:10 56 Gydra - Beatdown\r\n01:15:20 57 Gydra - SLAB\r\n01:16:44 58 Gydra - Alpha\r\n01:18:07 59 Davip - Deadly Blessing (Gydra remix)\r\n01:19:15 60 Gydra - Epoch\r\n01:20:32 61 Gydra feat. Coppa - Bomb First\r\n01:22:10 62 Gydra - Wtf\r\n01:23:20 63 Gydra feat. Tayser - Make My Life (original) \r\n01:25:42 64 Rene LaVice - Cold Crush\r\n01:27:12 65 Gydra - Hangjaw\r\n01:28:57 66 Gydra - Shotgun\r\n01:30:00 67 Gydra ft. COPPA - Psycho\r\n01:32:02 68 Gydra - Bass Must Go On\r\n01:33:11 69 Gydra - Lava Run\r\n01:34:44 70 Gydra & Fatloaf - Sphere\r\n01:36:11 71 Gydra - Indoor Space\r\n01:37:15 72 Gydra - Ikra\r\n01:38:53 73 Gydra - ID\r\n01:40:05 74 Gydra & Ihr Caliban\r\n01:41:16 75 Gydra - Chain_Gang\r\n01:42:28 76 Gydra - Unhigned\r\n01:43:42 77 Gydra - Steel Rain\r\n01:45:00 78 Gydra (feat. Da Kooka) - Away Form Me\r\n01:46:29 79 Gydra & Mailky - Circles\r\n01:47:10 80 Ant+Shift feat. PLEXXAGLASS - Source Code (Cvpellv x Gydra remix) \r\n01:49:45 81 Gydra - Dream City",
+      "expected": {
+        "entries": [
+          {
+            "line": 1,
+            "kind": "track",
+            "track": {
+              "position": {
+                "number": 1
+              },
+              "artists": [
+                "Dropzone"
+              ]
+            }
+          },
+          {
+            "line": 2,
+            "kind": "track",
+            "track": {
+              "position": {
+                "number": 2
+              },
+              "artists": [
+                "Gydra"
+              ]
+            }
+          },
+          {
+            "line": 3,
+            "kind": "track",
+            "track": {
+              "position": {
+                "number": 3
+              },
+              "artists": [
+                "Redpill",
+                "Coppa"
+              ]
+            }
+          },
+          {
+            "line": 4,
+            "kind": "track",
+            "track": {
+              "position": {
+                "number": 4
+              },
+              "artists": [
+                "Gydra"
+              ]
+            }
+          },
+          {
+            "line": 5,
+            "kind": "track",
+            "track": {
+              "position": {
+                "number": 5
+              },
+              "artists": [
+                "Gydra"
+              ]
+            }
+          },
+          {
+            "line": 6,
+            "kind": "track",
+            "track": {
+              "position": {
+                "number": 6
+              },
+              "artists": [
+                "Gydra"
+              ]
+            }
+          },
+          {
+            "line": 7,
+            "kind": "track",
+            "track": {
+              "position": {
+                "number": 7
+              },
+              "artists": [
+                "Gydra"
+              ]
+            }
+          },
+          {
+            "line": 8,
+            "kind": "track",
+            "track": {
+              "position": {
+                "number": 8
+              },
+              "artists": [
+                "Linkin Park"
+              ]
+            }
+          },
+          {
+            "line": 9,
+            "kind": "track",
+            "track": {
+              "position": {
+                "number": 9
+              },
+              "artists": [
+                "Gydra"
+              ]
+            }
+          },
+          {
+            "line": 10,
+            "kind": "track",
+            "track": {
+              "position": {
+                "number": 10
+              },
+              "artists": [
+                "BTK",
+                "Ink"
+              ]
+            }
+          },
+          {
+            "line": 11,
+            "kind": "track",
+            "track": {
+              "position": {
+                "number": 11
+              },
+              "artists": [
+                "Gydra"
+              ]
+            }
+          },
+          {
+            "line": 12,
+            "kind": "track",
+            "track": {
+              "position": {
+                "number": 12
+              },
+              "artists": [
+                "Teddy Killerz"
+              ]
+            }
+          },
+          {
+            "line": 13,
+            "kind": "track",
+            "track": {
+              "position": {
+                "number": 13
+              },
+              "artists": [
+                "Gydra"
+              ]
+            }
+          },
+          {
+            "line": 14,
+            "kind": "track",
+            "track": {
+              "position": {
+                "number": 14
+              },
+              "artists": [
+                "Dirtyphonics_&_12th Planet",
+                "Julie Hardy"
+              ]
+            }
+          },
+          {
+            "line": 15,
+            "kind": "track",
+            "track": {
+              "position": {
+                "number": 15
+              },
+              "artists": [
+                "Gydra"
+              ]
+            }
+          },
+          {
+            "line": 16,
+            "kind": "track",
+            "track": {
+              "position": {
+                "number": 16
+              },
+              "artists": [
+                "Gydra"
+              ]
+            }
+          },
+          {
+            "line": 17,
+            "kind": "track",
+            "track": {
+              "position": {
+                "number": 17
+              },
+              "artists": [
+                "Mean Teeth"
+              ]
+            }
+          },
+          {
+            "line": 18,
+            "kind": "track",
+            "track": {
+              "position": {
+                "number": 18
+              },
+              "artists": [
+                "Gydra",
+                "Dextems"
+              ]
+            }
+          },
+          {
+            "line": 19,
+            "kind": "track",
+            "track": {
+              "position": {
+                "number": 19
+              },
+              "artists": [
+                "Gydra"
+              ]
+            }
+          },
+          {
+            "line": 20,
+            "kind": "track",
+            "track": {
+              "position": {
+                "number": 20
+              },
+              "artists": [
+                "Gydra"
+              ]
+            }
+          },
+          {
+            "line": 21,
+            "kind": "track",
+            "track": {
+              "position": {
+                "number": 21
+              },
+              "artists": [
+                "Gydra"
+              ]
+            }
+          },
+          {
+            "line": 22,
+            "kind": "track",
+            "track": {
+              "position": {
+                "number": 22
+              },
+              "artists": [
+                "Gydra"
+              ]
+            }
+          },
+          {
+            "line": 23,
+            "kind": "track",
+            "track": {
+              "position": {
+                "number": 23
+              },
+              "artists": [
+                "The Prodigy"
+              ]
+            }
+          },
+          {
+            "line": 24,
+            "kind": "track",
+            "track": {
+              "position": {
+                "number": 24
+              },
+              "artists": [
+                "Gydra"
+              ]
+            }
+          },
+          {
+            "line": 25,
+            "kind": "track",
+            "track": {
+              "position": {
+                "number": 25
+              },
+              "artists": [
+                "Pythius",
+                "Gridlok"
+              ]
+            }
+          },
+          {
+            "line": 26,
+            "kind": "track",
+            "track": {
+              "position": {
+                "number": 26
+              },
+              "artists": [
+                "Gydra"
+              ]
+            }
+          },
+          {
+            "line": 27,
+            "kind": "track",
+            "track": {
+              "position": {
+                "number": 27
+              },
+              "artists": [
+                "oneBYone",
+                "Gydra"
+              ]
+            }
+          },
+          {
+            "line": 28,
+            "kind": "track",
+            "track": {
+              "position": {
+                "number": 28
+              },
+              "artists": [
+                "Gydra"
+              ]
+            }
+          },
+          {
+            "line": 29,
+            "kind": "track",
+            "track": {
+              "position": {
+                "number": 29
+              },
+              "artists": [
+                "Teddy Killerz",
+                "Gydra"
+              ]
+            }
+          },
+          {
+            "line": 30,
+            "kind": "track",
+            "track": {
+              "position": {
+                "number": 30
+              },
+              "artists": [
+                "Gydra"
+              ]
+            }
+          },
+          {
+            "line": 31,
+            "kind": "track",
+            "track": {
+              "position": {
+                "number": 31
+              },
+              "artists": [
+                "Nuvertal",
+                "Gydra"
+              ]
+            }
+          },
+          {
+            "line": 32,
+            "kind": "track",
+            "track": {
+              "position": {
+                "number": 32
+              },
+              "artists": [
+                "Groove"
+              ]
+            }
+          },
+          {
+            "line": 33,
+            "kind": "track",
+            "track": {
+              "position": {
+                "number": 33
+              },
+              "artists": [
+                "Gydra"
+              ]
+            }
+          },
+          {
+            "line": 34,
+            "kind": "track",
+            "track": {
+              "position": {
+                "number": 34
+              },
+              "artists": [
+                "Gydra"
+              ]
+            }
+          },
+          {
+            "line": 35,
+            "kind": "track",
+            "track": {
+              "position": {
+                "number": 35
+              },
+              "artists": [
+                "Sitri",
+                "Gydra"
+              ]
+            }
+          },
+          {
+            "line": 36,
+            "kind": "track",
+            "track": {
+              "position": {
+                "number": 36
+              },
+              "artists": [
+                "Gydra"
+              ]
+            }
+          },
+          {
+            "line": 37,
+            "kind": "track",
+            "track": {
+              "position": {
+                "number": 37
+              },
+              "artists": [
+                "Fatloaf"
+              ]
+            }
+          },
+          {
+            "line": 38,
+            "kind": "track",
+            "track": {
+              "position": {
+                "number": 38
+              },
+              "artists": [
+                "Gydra"
+              ]
+            }
+          },
+          {
+            "line": 39,
+            "kind": "track",
+            "track": {
+              "position": {
+                "number": 39
+              },
+              "artists": [
+                "Gydra"
+              ]
+            }
+          },
+          {
+            "line": 40,
+            "kind": "track",
+            "track": {
+              "position": {
+                "number": 40
+              },
+              "artists": [
+                "Optiv",
+                "BTK"
+              ]
+            }
+          },
+          {
+            "line": 41,
+            "kind": "track",
+            "track": {
+              "position": {
+                "number": 41
+              },
+              "artists": [
+                "Mizo",
+                "Gydra"
+              ]
+            }
+          },
+          {
+            "line": 42,
+            "kind": "track",
+            "track": {
+              "position": {
+                "number": 42
+              },
+              "artists": [
+                "Gydra"
+              ]
+            }
+          },
+          {
+            "line": 43,
+            "kind": "track",
+            "track": {
+              "position": {
+                "number": 43
+              },
+              "artists": [
+                "Gydra"
+              ]
+            }
+          },
+          {
+            "line": 44,
+            "kind": "track",
+            "track": {
+              "position": {
+                "number": 44
+              },
+              "artists": [
+                "Gydra"
+              ]
+            }
+          },
+          {
+            "line": 45,
+            "kind": "track",
+            "track": {
+              "position": {
+                "number": 45
+              },
+              "artists": [
+                "Gydra"
+              ]
+            }
+          },
+          {
+            "line": 46,
+            "kind": "track",
+            "track": {
+              "position": {
+                "number": 46
+              },
+              "artists": [
+                "Gydra"
+              ]
+            }
+          },
+          {
+            "line": 47,
+            "kind": "track",
+            "track": {
+              "position": {
+                "number": 47
+              },
+              "artists": [
+                "Gydra"
+              ]
+            }
+          },
+          {
+            "line": 48,
+            "kind": "track",
+            "track": {
+              "position": {
+                "number": 48
+              },
+              "artists": [
+                "Gydra"
+              ]
+            }
+          },
+          {
+            "line": 49,
+            "kind": "track",
+            "track": {
+              "position": {
+                "number": 49
+              },
+              "artists": [
+                "Gydra"
+              ]
+            }
+          },
+          {
+            "line": 50,
+            "kind": "track",
+            "track": {
+              "position": {
+                "number": 50
+              },
+              "artists": [
+                "Gydra"
+              ]
+            }
+          },
+          {
+            "line": 51,
+            "kind": "track",
+            "track": {
+              "position": {
+                "number": 51
+              },
+              "artists": [
+                "Gydra"
+              ]
+            }
+          },
+          {
+            "line": 52,
+            "kind": "track",
+            "track": {
+              "position": {
+                "number": 52
+              },
+              "artists": [
+                "Gydra"
+              ]
+            }
+          },
+          {
+            "line": 53,
+            "kind": "track",
+            "track": {
+              "position": {
+                "number": 53
+              },
+              "artists": [
+                "Gydra",
+                "Nuvertal"
+              ]
+            }
+          },
+          {
+            "line": 54,
+            "kind": "track",
+            "track": {
+              "position": {
+                "number": 54
+              },
+              "artists": [
+                "Gydra"
+              ]
+            }
+          },
+          {
+            "line": 55,
+            "kind": "track",
+            "track": {
+              "position": {
+                "number": 55
+              },
+              "artists": [
+                "Encode"
+              ]
+            }
+          },
+          {
+            "line": 56,
+            "kind": "track",
+            "track": {
+              "position": {
+                "number": 56
+              },
+              "artists": [
+                "Gydra"
+              ]
+            }
+          },
+          {
+            "line": 57,
+            "kind": "track",
+            "track": {
+              "position": {
+                "number": 57
+              },
+              "artists": [
+                "Gydra"
+              ]
+            }
+          },
+          {
+            "line": 58,
+            "kind": "track",
+            "track": {
+              "position": {
+                "number": 58
+              },
+              "artists": [
+                "Gydra"
+              ]
+            }
+          },
+          {
+            "line": 59,
+            "kind": "track",
+            "track": {
+              "position": {
+                "number": 59
+              },
+              "artists": [
+                "Davip"
+              ]
+            }
+          },
+          {
+            "line": 60,
+            "kind": "track",
+            "track": {
+              "position": {
+                "number": 60
+              },
+              "artists": [
+                "Gydra"
+              ]
+            }
+          },
+          {
+            "line": 61,
+            "kind": "track",
+            "track": {
+              "position": {
+                "number": 61
+              },
+              "artists": [
+                "Gydra",
+                "Coppa"
+              ]
+            }
+          },
+          {
+            "line": 62,
+            "kind": "track",
+            "track": {
+              "position": {
+                "number": 62
+              },
+              "artists": [
+                "Gydra"
+              ]
+            }
+          },
+          {
+            "line": 63,
+            "kind": "track",
+            "track": {
+              "position": {
+                "number": 63
+              },
+              "artists": [
+                "Gydra",
+                "Tayser"
+              ]
+            }
+          },
+          {
+            "line": 64,
+            "kind": "track",
+            "track": {
+              "position": {
+                "number": 64
+              },
+              "artists": [
+                "Rene LaVice"
+              ]
+            }
+          },
+          {
+            "line": 65,
+            "kind": "track",
+            "track": {
+              "position": {
+                "number": 65
+              },
+              "artists": [
+                "Gydra"
+              ]
+            }
+          },
+          {
+            "line": 66,
+            "kind": "track",
+            "track": {
+              "position": {
+                "number": 66
+              },
+              "artists": [
+                "Gydra"
+              ]
+            }
+          },
+          {
+            "line": 67,
+            "kind": "track",
+            "track": {
+              "position": {
+                "number": 67
+              },
+              "artists": [
+                "Gydra",
+                "COPPA"
+              ]
+            }
+          },
+          {
+            "line": 68,
+            "kind": "track",
+            "track": {
+              "position": {
+                "number": 68
+              },
+              "artists": [
+                "Gydra"
+              ]
+            }
+          },
+          {
+            "line": 69,
+            "kind": "track",
+            "track": {
+              "position": {
+                "number": 69
+              },
+              "artists": [
+                "Gydra"
+              ]
+            }
+          },
+          {
+            "line": 70,
+            "kind": "track",
+            "track": {
+              "position": {
+                "number": 70
+              },
+              "artists": [
+                "Gydra",
+                "Fatloaf"
+              ]
+            }
+          },
+          {
+            "line": 71,
+            "kind": "track",
+            "track": {
+              "position": {
+                "number": 71
+              },
+              "artists": [
+                "Gydra"
+              ]
+            }
+          },
+          {
+            "line": 72,
+            "kind": "track",
+            "track": {
+              "position": {
+                "number": 72
+              },
+              "artists": [
+                "Gydra"
+              ]
+            }
+          },
+          {
+            "line": 73,
+            "kind": "track",
+            "track": {
+              "position": {
+                "number": 73
+              },
+              "artists": [
+                "Gydra"
+              ]
+            }
+          },
+          {
+            "line": 74,
+            "kind": "track",
+            "track": {
+              "position": {
+                "number": 74
+              },
+              "artists": []
+            }
+          },
+          {
+            "line": 75,
+            "kind": "track",
+            "track": {
+              "position": {
+                "number": 75
+              },
+              "artists": [
+                "Gydra"
+              ]
+            }
+          },
+          {
+            "line": 76,
+            "kind": "track",
+            "track": {
+              "position": {
+                "number": 76
+              },
+              "artists": [
+                "Gydra"
+              ]
+            }
+          },
+          {
+            "line": 77,
+            "kind": "track",
+            "track": {
+              "position": {
+                "number": 77
+              },
+              "artists": [
+                "Gydra"
+              ]
+            }
+          },
+          {
+            "line": 78,
+            "kind": "track",
+            "track": {
+              "position": {
+                "number": 78
+              },
+              "artists": [
+                "Gydra",
+                "Da Kooka"
+              ]
+            }
+          },
+          {
+            "line": 79,
+            "kind": "track",
+            "track": {
+              "position": {
+                "number": 79
+              },
+              "artists": [
+                "Gydra",
+                "Mailky"
+              ]
+            }
+          },
+          {
+            "line": 80,
+            "kind": "track",
+            "track": {
+              "position": {
+                "number": 80
+              },
+              "artists": [
+                "Ant+Shift",
+                "PLEXXAGLASS"
+              ]
+            }
+          },
+          {
+            "line": 81,
+            "kind": "track",
+            "track": {
+              "position": {
+                "number": 81
+              },
+              "artists": [
+                "Gydra"
+              ]
+            }
+          }
+        ],
+        "warnings": [
+          {
+            "code": "time-out-of-order",
+            "line": 17,
+            "severity": "warning",
+            "suggestion": null
+          },
+          {
+            "code": "line-unparsed",
+            "line": 74,
+            "severity": "warning",
+            "suggestion": null
+          }
+        ],
+        "stats": {
+          "lines": 81,
+          "tracks": 81,
+          "markers": 0,
+          "timed": 81,
+          "firstTime": 0,
+          "lastTime": 6585
+        }
+      },
+      "rules": [
+        "R13.5",
+        "R13.4.2",
+        "R6.10",
+        "R13.7",
+        "R13.8"
+      ],
+      "source": "neuropunk podcast corpus: Gydra 10 years mix",
+      "note": "The whole real list: every bare number is a position (each has a neighbour N-1/N+1). 00:22:12 after 00:23:10 is out of order; 00:23:12 and 00:24:12 both fit, so no suggestion."
+    },
+    {
+      "id": "tracklist-positions-002",
+      "input": "00:00 01. Noisia - Stigma\n03:00 2 Unlimited - No Limit\n06:00 03. Phace - Psycho",
+      "expected": {
+        "entries": [
+          {
+            "track": {
+              "position": {
+                "raw": "01",
+                "number": 1
+              },
+              "artists": [
+                "Noisia"
+              ]
+            }
+          },
+          {
+            "track": {
+              "position": null,
+              "artists": [
+                "2 Unlimited"
+              ],
+              "title": "No Limit"
+            }
+          },
+          {
+            "track": {
+              "position": {
+                "raw": "03",
+                "number": 3
+              },
+              "artists": [
+                "Phace"
+              ]
+            }
+          }
+        ],
+        "warnings": [
+          {
+            "code": "position-gap",
+            "line": 3,
+            "severity": "warning",
+            "suggestion": null
+          }
+        ]
+      },
+      "rules": [
+        "R13.5",
+        "R4.2",
+        "R13.7"
+      ],
+      "note": "Dotted positions never count as neighbours, so 2 stays in the artist; the positioned entries are 1 then 3, a gap."
+    },
+    {
+      "id": "tracklist-positions-003",
+      "input": "00:00 5 Seconds of Summer - Youngblood",
+      "expected": {
+        "entries": [
+          {
+            "track": {
+              "position": null,
+              "artists": [
+                "5 Seconds of Summer"
+              ],
+              "title": "Youngblood"
+            }
+          }
+        ]
+      },
+      "rules": [
+        "R13.5"
+      ],
+      "note": "A lone bare number with no neighbours stays text."
+    },
+    {
+      "id": "tracklist-positions-004",
+      "input": "00:00 2 Unlimited - No Limit\n03:30 50 Cent - In Da Club",
+      "expected": {
+        "entries": [
+          {
+            "track": {
+              "position": null,
+              "artists": [
+                "2 Unlimited"
+              ]
+            }
+          },
+          {
+            "track": {
+              "position": null,
+              "artists": [
+                "50 Cent"
+              ]
+            }
+          }
+        ],
+        "warnings": []
+      },
+      "rules": [
+        "R13.5"
+      ],
+      "note": "Bare numbers that are not N±1 of each other are not positions."
+    },
+    {
+      "id": "tracklist-positions-005",
+      "input": "00:00 1 Noisia - Stigma\nRecorded at Fabric\n03:00 2 Phace - Psycho",
+      "expected": {
+        "entries": [
+          {
+            "track": {
+              "position": {
+                "raw": "1",
+                "number": 1
+              },
+              "artists": [
+                "Noisia"
+              ],
+              "title": "Stigma"
+            }
+          },
+          {
+            "kind": "note",
+            "track": null
+          },
+          {
+            "track": {
+              "position": {
+                "raw": "2",
+                "number": 2
+              },
+              "artists": [
+                "Phace"
+              ],
+              "title": "Psycho"
+            }
+          }
+        ],
+        "warnings": []
+      },
+      "rules": [
+        "R13.5",
+        "R13.4.2"
+      ],
+      "note": "The note line is not a candidate line (no time, no spaced dash), so lines 1 and 3 are neighbours."
+    },
+    {
+      "id": "tracklist-positions-006",
+      "input": "00:00 1 Noisia - Stigma\n02:00 Intro\n03:00 2 Phace - Psycho",
+      "expected": {
+        "entries": [
+          {
+            "track": {
+              "position": null,
+              "artists": [
+                "1 Noisia"
+              ]
+            }
+          },
+          {
+            "kind": "marker"
+          },
+          {
+            "track": {
+              "position": null,
+              "artists": [
+                "2 Phace"
+              ]
+            }
+          }
+        ],
+        "warnings": []
+      },
+      "rules": [
+        "R13.5",
+        "R13.4.2"
+      ],
+      "note": "The timed marker is the nearest candidate line on both sides and has no bare number, so neither 1 nor 2 is a position."
+    },
+    {
+      "id": "tracklist-positions-007",
+      "input": "1 Noisia - Stigma\n2 Phace - Psycho\n4 Mefjus - Sinkhole",
+      "expected": {
+        "entries": [
+          {
+            "track": {
+              "position": {
+                "raw": "1",
+                "number": 1
+              },
+              "artists": [
+                "Noisia"
+              ]
+            }
+          },
+          {
+            "track": {
+              "position": {
+                "raw": "2",
+                "number": 2
+              },
+              "artists": [
+                "Phace"
+              ]
+            }
+          },
+          {
+            "track": {
+              "position": null,
+              "artists": [
+                "4 Mefjus"
+              ],
+              "title": "Sinkhole"
+            }
+          }
+        ],
+        "warnings": []
+      },
+      "rules": [
+        "R13.5",
+        "R13.4.2"
+      ],
+      "note": "Untimed lines with a spaced dash are candidate lines. 4 has only the neighbour 2, so it stays text (and no position-gap)."
+    },
+    {
+      "id": "tracklist-positions-008",
+      "input": "00:00 999 Noisia - Stigma\n03:00 1000 Phace - Psycho",
+      "expected": {
+        "entries": [
+          {
+            "track": {
+              "position": null,
+              "artists": [
+                "999 Noisia"
+              ]
+            }
+          },
+          {
+            "track": {
+              "position": null,
+              "artists": [
+                "1000 Phace"
+              ]
+            }
+          }
+        ]
+      },
+      "rules": [
+        "R13.5"
+      ],
+      "note": "1000 has 4 digits, so it is no bare candidate and 999 has no neighbour."
+    },
+    {
+      "id": "tracklist-positions-009",
+      "input": "00:00 01. Noisia - Stigma\n03:00 02. Phace - Psycho\n06:00 3) Mefjus - Sinkhole\n09:00 04 Black Sun Empire - Arrival",
+      "expected": {
+        "entries": [
+          {
+            "track": {
+              "position": {
+                "raw": "01",
+                "number": 1
+              },
+              "artists": [
+                "Noisia"
+              ]
+            }
+          },
+          {
+            "track": {
+              "position": {
+                "raw": "02",
+                "number": 2
+              },
+              "artists": [
+                "Phace"
+              ]
+            }
+          },
+          {
+            "track": {
+              "position": {
+                "raw": "3",
+                "number": 3
+              },
+              "artists": [
+                "Mefjus"
+              ]
+            }
+          },
+          {
+            "track": {
+              "position": {
+                "raw": "04",
+                "number": 4
+              },
+              "artists": [
+                "Black Sun Empire"
+              ]
+            }
+          }
+        ],
+        "warnings": []
+      },
+      "rules": [
+        "R4.2",
+        "R13.4.1"
+      ],
+      "note": "R4.2 positions (dotted, ')' and zero-padded) still work inside tracklists."
+    },
+    {
+      "id": "tracklist-positions-010",
+      "input": "00:00 10 Noisia - Stigma\n03:00 9 Phace - Psycho",
+      "expected": {
+        "entries": [
+          {
+            "track": {
+              "position": {
+                "raw": "10",
+                "number": 10
+              },
+              "artists": [
+                "Noisia"
+              ]
+            }
+          },
+          {
+            "track": {
+              "position": {
+                "raw": "9",
+                "number": 9
+              },
+              "artists": [
+                "Phace"
+              ]
+            }
+          }
+        ],
+        "warnings": [
+          {
+            "code": "position-gap",
+            "line": 2,
+            "severity": "warning",
+            "suggestion": null
+          }
+        ]
+      },
+      "rules": [
+        "R13.5",
+        "R13.7"
+      ],
+      "note": "N-1 counts as a neighbour too; a falling sequence is a position-gap."
+    },
+    {
+      "id": "tracklist-positions-011",
+      "input": "00:00:00 1 Dropzone - Break Away (Gydra remix) \r\n00:01:49 2 Gydra - Dungeon",
+      "expected": {
+        "entries": [
+          {
+            "raw": "00:00:00 1 Dropzone - Break Away (Gydra remix) ",
+            "parts": {
+              "rest": "1 Dropzone - Break Away (Gydra remix) "
+            },
+            "track": {
+              "position": {
+                "raw": "1",
+                "number": 1
+              },
+              "artists": [
+                "Dropzone"
+              ],
+              "title": "Break Away",
+              "versions": [
+                {
+                  "type": "remix",
+                  "artists": [
+                    "Gydra"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "track": {
+              "position": {
+                "raw": "2",
+                "number": 2
+              },
+              "artists": [
+                "Gydra"
+              ],
+              "title": "Dungeon"
+            }
+          }
+        ]
+      },
+      "rules": [
+        "R13.5",
+        "R13.1.3"
+      ],
+      "source": "neuropunk podcast corpus: Gydra 10 years mix",
+      "note": "The bare position is removed only from the parsed track part; parts.rest keeps it."
+    },
+    {
+      "id": "tracklist-positions-012",
+      "input": "00:00 - 1 Noisia - Stigma\n03:00 - 2 Phace - Psycho",
+      "expected": {
+        "entries": [
+          {
+            "parts": {
+              "gap": " - ",
+              "rest": "1 Noisia - Stigma"
+            },
+            "track": {
+              "position": {
+                "raw": "1",
+                "number": 1
+              },
+              "artists": [
+                "Noisia"
+              ],
+              "title": "Stigma"
+            }
+          },
+          {
+            "parts": {
+              "gap": " - ",
+              "rest": "2 Phace - Psycho"
+            },
+            "track": {
+              "position": {
+                "raw": "2",
+                "number": 2
+              },
+              "artists": [
+                "Phace"
+              ],
+              "title": "Psycho"
+            }
+          }
+        ],
+        "warnings": []
+      },
+      "rules": [
+        "R13.5",
+        "R13.2.3"
+      ],
+      "note": "The time separator is part of gap, so the bare number starts the track part."
+    }
+  ]
+}

@@ -1,0 +1,1305 @@
+{
+  "$schema": "../../schema/fixture-file.schema.json",
+  "description": "SPEC R13.1-R13.3, R13.8: line splitting, eol, the lossless parts split, line kinds and stats of parseTracklist.",
+  "defaults": {
+    "fn": "parseTracklist"
+  },
+  "cases": [
+    {
+      "id": "tracklist-lines-001",
+      "input": "",
+      "expected": {
+        "specVersion": "0.2.1",
+        "entries": [],
+        "warnings": [],
+        "stats": {
+          "lines": 0,
+          "tracks": 0,
+          "markers": 0,
+          "timed": 0,
+          "firstTime": null,
+          "lastTime": null
+        }
+      },
+      "match": "exact",
+      "rules": [
+        "R13.1.1",
+        "R13.8"
+      ],
+      "note": "\"\" has no entries; every stats key is still present."
+    },
+    {
+      "id": "tracklist-lines-002",
+      "input": "Noisia - Stigma\nPhace - Psycho",
+      "expected": {
+        "entries": [
+          {
+            "line": 1,
+            "kind": "track",
+            "eol": "\n",
+            "raw": "Noisia - Stigma",
+            "parts": {
+              "lead": "",
+              "time": "",
+              "gap": "",
+              "rest": "Noisia - Stigma"
+            },
+            "time": null,
+            "track": {
+              "artists": [
+                "Noisia"
+              ],
+              "title": "Stigma"
+            }
+          },
+          {
+            "line": 2,
+            "kind": "track",
+            "eol": "",
+            "raw": "Phace - Psycho",
+            "parts": {
+              "lead": "",
+              "time": "",
+              "gap": "",
+              "rest": "Phace - Psycho"
+            },
+            "time": null,
+            "track": {
+              "artists": [
+                "Phace"
+              ],
+              "title": "Psycho"
+            }
+          }
+        ],
+        "warnings": [],
+        "stats": {
+          "lines": 2,
+          "tracks": 2,
+          "markers": 0,
+          "timed": 0,
+          "firstTime": null,
+          "lastTime": null
+        }
+      },
+      "rules": [
+        "R13.1.1",
+        "R13.1.3",
+        "R13.3",
+        "R13.8"
+      ],
+      "note": "Untimed lines with a separator are tracks; time-missing needs at least one timed entry."
+    },
+    {
+      "id": "tracklist-lines-003",
+      "input": "Noisia - Stigma\n",
+      "expected": {
+        "entries": [
+          {
+            "line": 1,
+            "kind": "track",
+            "eol": "\n",
+            "raw": "Noisia - Stigma",
+            "parts": {
+              "lead": "",
+              "time": "",
+              "gap": "",
+              "rest": "Noisia - Stigma"
+            },
+            "time": null
+          }
+        ],
+        "stats": {
+          "lines": 1
+        }
+      },
+      "rules": [
+        "R13.1.1"
+      ],
+      "note": "The empty segment after the final terminator is not an entry."
+    },
+    {
+      "id": "tracklist-lines-004",
+      "input": "00:00 Noisia - Stigma\r\n03:30 Phace - Psycho\r\n",
+      "expected": {
+        "entries": [
+          {
+            "line": 1,
+            "eol": "\r\n",
+            "raw": "00:00 Noisia - Stigma",
+            "time": {
+              "raw": "00:00",
+              "seconds": 0
+            }
+          },
+          {
+            "line": 2,
+            "eol": "\r\n",
+            "raw": "03:30 Phace - Psycho",
+            "time": {
+              "raw": "03:30",
+              "seconds": 210
+            }
+          }
+        ],
+        "stats": {
+          "lines": 2,
+          "timed": 2
+        }
+      },
+      "rules": [
+        "R13.1.1",
+        "R13.1.2"
+      ]
+    },
+    {
+      "id": "tracklist-lines-005",
+      "input": "00:00 Noisia - Stigma\r03:30 Phace - Psycho",
+      "expected": {
+        "entries": [
+          {
+            "line": 1,
+            "eol": "\r",
+            "raw": "00:00 Noisia - Stigma"
+          },
+          {
+            "line": 2,
+            "eol": "",
+            "raw": "03:30 Phace - Psycho"
+          }
+        ]
+      },
+      "rules": [
+        "R13.1.1"
+      ]
+    },
+    {
+      "id": "tracklist-lines-006",
+      "input": "Noisia - Stigma\r\nPhace - Psycho\nMefjus - Sinkhole\rBlack Sun Empire - Arrival",
+      "expected": {
+        "entries": [
+          {
+            "eol": "\r\n",
+            "raw": "Noisia - Stigma"
+          },
+          {
+            "eol": "\n",
+            "raw": "Phace - Psycho"
+          },
+          {
+            "eol": "\r",
+            "raw": "Mefjus - Sinkhole"
+          },
+          {
+            "eol": "",
+            "raw": "Black Sun Empire - Arrival"
+          }
+        ]
+      },
+      "rules": [
+        "R13.1.1",
+        "R13.1.2"
+      ],
+      "note": "Each entry keeps its own terminator; nothing is unified."
+    },
+    {
+      "id": "tracklist-lines-007",
+      "input": "\n",
+      "expected": {
+        "specVersion": "0.2.1",
+        "entries": [
+          {
+            "line": 1,
+            "kind": "blank",
+            "eol": "\n",
+            "raw": "",
+            "parts": {
+              "lead": "",
+              "time": "",
+              "gap": "",
+              "rest": ""
+            },
+            "time": null,
+            "track": null
+          }
+        ],
+        "warnings": [],
+        "stats": {
+          "lines": 1,
+          "tracks": 0,
+          "markers": 0,
+          "timed": 0,
+          "firstTime": null,
+          "lastTime": null
+        }
+      },
+      "match": "exact",
+      "rules": [
+        "R13.1.1",
+        "R13.3",
+        "R13.8"
+      ]
+    },
+    {
+      "id": "tracklist-lines-008",
+      "input": "\r\r\n\n\r",
+      "expected": {
+        "entries": [
+          {
+            "line": 1,
+            "kind": "blank",
+            "eol": "\r",
+            "raw": ""
+          },
+          {
+            "line": 2,
+            "kind": "blank",
+            "eol": "\r\n",
+            "raw": ""
+          },
+          {
+            "line": 3,
+            "kind": "blank",
+            "eol": "\n",
+            "raw": ""
+          },
+          {
+            "line": 4,
+            "kind": "blank",
+            "eol": "\r",
+            "raw": ""
+          }
+        ],
+        "stats": {
+          "lines": 4
+        }
+      },
+      "rules": [
+        "R13.1.1",
+        "R13.1.2"
+      ],
+      "note": "A CR directly followed by CRLF is its own terminator; CRLF is one terminator; LF then CR are two."
+    },
+    {
+      "id": "tracklist-lines-009",
+      "input": "Noisia - Stigma\n   \n\t\n\u3000\u00a0\nPhace - Psycho",
+      "expected": {
+        "entries": [
+          {
+            "kind": "track"
+          },
+          {
+            "kind": "blank",
+            "raw": "   ",
+            "track": null,
+            "time": null
+          },
+          {
+            "kind": "blank",
+            "raw": "\t",
+            "track": null
+          },
+          {
+            "kind": "blank",
+            "raw": "\u3000\u00a0",
+            "track": null
+          },
+          {
+            "kind": "track",
+            "line": 5
+          }
+        ],
+        "stats": {
+          "lines": 5,
+          "tracks": 2
+        }
+      },
+      "rules": [
+        "R13.3",
+        "R0.2",
+        "R13.1.2"
+      ],
+      "note": "Whitespace-only lines (R0.2 set, incl. U+3000 and U+00A0) are blank entries, kept verbatim."
+    },
+    {
+      "id": "tracklist-lines-010",
+      "input": "00:00:00 01. Gydra - SLAB \r\n00:01:50 02. Mizo - Exhaust ",
+      "expected": {
+        "entries": [
+          {
+            "line": 1,
+            "kind": "track",
+            "eol": "\r\n",
+            "raw": "00:00:00 01. Gydra - SLAB ",
+            "parts": {
+              "lead": "",
+              "time": "00:00:00",
+              "gap": " ",
+              "rest": "01. Gydra - SLAB "
+            },
+            "time": {
+              "raw": "00:00:00",
+              "seconds": 0
+            },
+            "track": {
+              "input": "01. Gydra - SLAB ",
+              "position": {
+                "raw": "01",
+                "number": 1
+              },
+              "artists": [
+                "Gydra"
+              ],
+              "title": "SLAB"
+            }
+          },
+          {
+            "line": 2,
+            "kind": "track",
+            "eol": "",
+            "raw": "00:01:50 02. Mizo - Exhaust ",
+            "parts": {
+              "lead": "",
+              "time": "00:01:50",
+              "gap": " ",
+              "rest": "02. Mizo - Exhaust "
+            },
+            "time": {
+              "raw": "00:01:50",
+              "seconds": 110
+            },
+            "track": {
+              "position": {
+                "raw": "02",
+                "number": 2
+              },
+              "artists": [
+                "Mizo"
+              ],
+              "title": "Exhaust"
+            }
+          }
+        ],
+        "warnings": []
+      },
+      "rules": [
+        "R13.1.2",
+        "R13.1.3",
+        "R13.2.2",
+        "R13.4.1",
+        "R4.2"
+      ],
+      "source": "neuropunk podcast corpus: Neuropunk pt.54/2",
+      "note": "raw, rest and the ParsedTrack input keep trailing spaces; only parse() normalizes internally."
+    },
+    {
+      "id": "tracklist-lines-011",
+      "input": "Noisia - Stigma\u2028Phace - Psycho",
+      "expected": {
+        "entries": [
+          {
+            "line": 1,
+            "eol": "",
+            "raw": "Noisia - Stigma\u2028Phace - Psycho",
+            "kind": "track"
+          }
+        ],
+        "stats": {
+          "lines": 1
+        }
+      },
+      "rules": [
+        "R13.1.1"
+      ],
+      "note": "U+2028 is R0.2 whitespace, not a line break."
+    },
+    {
+      "id": "tracklist-lines-012",
+      "input": "00:00 Noisia - Stigma\u0085\u2029Phace - Psycho",
+      "expected": {
+        "entries": [
+          {
+            "line": 1,
+            "eol": "",
+            "raw": "00:00 Noisia - Stigma\u0085\u2029Phace - Psycho",
+            "parts": {
+              "lead": "",
+              "time": "00:00",
+              "gap": " ",
+              "rest": "Noisia - Stigma\u0085\u2029Phace - Psycho"
+            }
+          }
+        ],
+        "stats": {
+          "lines": 1,
+          "timed": 1
+        }
+      },
+      "rules": [
+        "R13.1.1",
+        "R13.1.3"
+      ]
+    },
+    {
+      "id": "tracklist-lines-013",
+      "input": "  00:00 Noisia - Stigma",
+      "expected": {
+        "entries": [
+          {
+            "line": 1,
+            "kind": "track",
+            "eol": "",
+            "raw": "  00:00 Noisia - Stigma",
+            "parts": {
+              "lead": "  ",
+              "time": "00:00",
+              "gap": " ",
+              "rest": "Noisia - Stigma"
+            },
+            "time": {
+              "raw": "00:00",
+              "seconds": 0
+            },
+            "track": {
+              "artists": [
+                "Noisia"
+              ],
+              "title": "Stigma",
+              "timestamp": null
+            }
+          }
+        ]
+      },
+      "rules": [
+        "R13.2.1",
+        "R13.1.3"
+      ]
+    },
+    {
+      "id": "tracklist-lines-014",
+      "input": "\t\u00a012:34 Noisia - Stigma",
+      "expected": {
+        "entries": [
+          {
+            "parts": {
+              "lead": "\t\u00a0",
+              "time": "12:34",
+              "gap": " ",
+              "rest": "Noisia - Stigma"
+            },
+            "time": {
+              "raw": "12:34",
+              "seconds": 754
+            }
+          }
+        ]
+      },
+      "rules": [
+        "R13.2.1",
+        "R0.2"
+      ]
+    },
+    {
+      "id": "tracklist-lines-015",
+      "input": "[00:12:34] Noisia - Stigma",
+      "expected": {
+        "entries": [
+          {
+            "line": 1,
+            "kind": "track",
+            "eol": "",
+            "raw": "[00:12:34] Noisia - Stigma",
+            "parts": {
+              "lead": "[",
+              "time": "00:12:34",
+              "gap": "] ",
+              "rest": "Noisia - Stigma"
+            },
+            "time": {
+              "raw": "00:12:34",
+              "seconds": 754
+            },
+            "track": {
+              "artists": [
+                "Noisia"
+              ],
+              "title": "Stigma"
+            }
+          }
+        ]
+      },
+      "rules": [
+        "R13.2.1",
+        "R13.2.3",
+        "R13.2.5"
+      ]
+    },
+    {
+      "id": "tracklist-lines-016",
+      "input": "(1:02:03) - Noisia - Stigma",
+      "expected": {
+        "entries": [
+          {
+            "line": 1,
+            "kind": "track",
+            "eol": "",
+            "raw": "(1:02:03) - Noisia - Stigma",
+            "parts": {
+              "lead": "(",
+              "time": "1:02:03",
+              "gap": ") - ",
+              "rest": "Noisia - Stigma"
+            },
+            "time": {
+              "raw": "1:02:03",
+              "seconds": 3723
+            },
+            "track": {
+              "artists": [
+                "Noisia"
+              ],
+              "title": "Stigma"
+            }
+          }
+        ]
+      },
+      "rules": [
+        "R13.2.1",
+        "R13.2.2",
+        "R13.2.3"
+      ]
+    },
+    {
+      "id": "tracklist-lines-017",
+      "input": "00:00 => No Rules ft. Thesys - Wolflair",
+      "expected": {
+        "entries": [
+          {
+            "line": 1,
+            "kind": "track",
+            "eol": "",
+            "raw": "00:00 => No Rules ft. Thesys - Wolflair",
+            "parts": {
+              "lead": "",
+              "time": "00:00",
+              "gap": " => ",
+              "rest": "No Rules ft. Thesys - Wolflair"
+            },
+            "time": {
+              "raw": "00:00",
+              "seconds": 0
+            },
+            "track": {
+              "artists": [
+                "No Rules",
+                {
+                  "name": "Thesys",
+                  "role": "featured",
+                  "joiner": "ft."
+                }
+              ],
+              "title": "Wolflair"
+            }
+          }
+        ]
+      },
+      "rules": [
+        "R13.2.3",
+        "R13.4.1"
+      ],
+      "source": "neuropunk podcast corpus: Neuropunk special Not Included 1",
+      "note": "The arrow belongs to gap, so it never reaches the artist."
+    },
+    {
+      "id": "tracklist-lines-018",
+      "input": "02:06:02 ==> E.Hill - Im Happy Yeah (Cattepilez rmx)",
+      "expected": {
+        "entries": [
+          {
+            "line": 1,
+            "kind": "track",
+            "eol": "",
+            "raw": "02:06:02 ==> E.Hill - Im Happy Yeah (Cattepilez rmx)",
+            "parts": {
+              "lead": "",
+              "time": "02:06:02",
+              "gap": " ==> ",
+              "rest": "E.Hill - Im Happy Yeah (Cattepilez rmx)"
+            },
+            "time": {
+              "raw": "02:06:02",
+              "seconds": 7562
+            },
+            "track": {
+              "artists": [
+                "E.Hill"
+              ],
+              "title": "Im Happy Yeah",
+              "versions": [
+                {
+                  "type": "remix",
+                  "artists": [
+                    "Cattepilez"
+                  ]
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "rules": [
+        "R13.2.3"
+      ],
+      "source": "neuropunk podcast corpus: Neuropunk pt.18"
+    },
+    {
+      "id": "tracklist-lines-019",
+      "input": "00:00 - Noisia - Stigma\n03:30 | Phace - Psycho\n07:00. Mefjus - Sinkhole\n10:00: Black Sun Empire - Arrival\n12:00 – Current Value - Skull",
+      "expected": {
+        "entries": [
+          {
+            "parts": {
+              "lead": "",
+              "time": "00:00",
+              "gap": " - ",
+              "rest": "Noisia - Stigma"
+            },
+            "track": {
+              "artists": [
+                "Noisia"
+              ],
+              "title": "Stigma"
+            }
+          },
+          {
+            "parts": {
+              "lead": "",
+              "time": "03:30",
+              "gap": " | ",
+              "rest": "Phace - Psycho"
+            },
+            "track": {
+              "artists": [
+                "Phace"
+              ],
+              "title": "Psycho"
+            }
+          },
+          {
+            "parts": {
+              "lead": "",
+              "time": "07:00",
+              "gap": ". ",
+              "rest": "Mefjus - Sinkhole"
+            },
+            "time": {
+              "raw": "07:00",
+              "seconds": 420
+            },
+            "track": {
+              "artists": [
+                "Mefjus"
+              ],
+              "title": "Sinkhole"
+            }
+          },
+          {
+            "parts": {
+              "lead": "",
+              "time": "10:00",
+              "gap": ": ",
+              "rest": "Black Sun Empire - Arrival"
+            },
+            "track": {
+              "artists": [
+                "Black Sun Empire"
+              ],
+              "title": "Arrival"
+            }
+          },
+          {
+            "parts": {
+              "lead": "",
+              "time": "12:00",
+              "gap": " – ",
+              "rest": "Current Value - Skull"
+            },
+            "track": {
+              "artists": [
+                "Current Value"
+              ],
+              "title": "Skull"
+            }
+          }
+        ]
+      },
+      "rules": [
+        "R13.2.3"
+      ],
+      "note": "Each of the time separators - | . : – goes into gap with its spaces; '07:00.' has no fraction digit, so '.' is the separator."
+    },
+    {
+      "id": "tracklist-lines-020",
+      "input": "00:00 - => Noisia - Stigma",
+      "expected": {
+        "entries": [
+          {
+            "parts": {
+              "lead": "",
+              "time": "00:00",
+              "gap": " - => ",
+              "rest": "Noisia - Stigma"
+            },
+            "track": {
+              "artists": [
+                "Noisia"
+              ],
+              "title": "Stigma"
+            }
+          }
+        ]
+      },
+      "rules": [
+        "R13.2.3"
+      ]
+    },
+    {
+      "id": "tracklist-lines-021",
+      "input": "00:00:00 Intro\n00:01:07 01. Magnetude - ID",
+      "expected": {
+        "specVersion": "0.2.1",
+        "entries": [
+          {
+            "line": 1,
+            "kind": "marker",
+            "eol": "\n",
+            "raw": "00:00:00 Intro",
+            "parts": {
+              "lead": "",
+              "time": "00:00:00",
+              "gap": " ",
+              "rest": "Intro"
+            },
+            "time": {
+              "raw": "00:00:00",
+              "seconds": 0
+            },
+            "track": {
+              "input": "Intro",
+              "mode": "tracklist",
+              "position": null,
+              "timestamp": null,
+              "artists": [],
+              "title": "Intro",
+              "fullTitle": "Intro",
+              "versions": [],
+              "year": null,
+              "flags": {
+                "explicit": false,
+                "clean": false,
+                "unknownArtist": false,
+                "unknownTitle": false
+              },
+              "junk": [],
+              "warnings": [
+                "noSeparator"
+              ]
+            }
+          },
+          {
+            "line": 2,
+            "kind": "track",
+            "eol": "",
+            "raw": "00:01:07 01. Magnetude - ID",
+            "parts": {
+              "lead": "",
+              "time": "00:01:07",
+              "gap": " ",
+              "rest": "01. Magnetude - ID"
+            },
+            "time": {
+              "raw": "00:01:07",
+              "seconds": 67
+            },
+            "track": {
+              "input": "01. Magnetude - ID",
+              "mode": "tracklist",
+              "position": {
+                "raw": "01",
+                "number": 1
+              },
+              "timestamp": null,
+              "artists": [
+                {
+                  "name": "Magnetude",
+                  "role": "primary",
+                  "joiner": null,
+                  "source": "artist"
+                }
+              ],
+              "title": "ID",
+              "fullTitle": "ID",
+              "versions": [],
+              "year": null,
+              "flags": {
+                "explicit": false,
+                "clean": false,
+                "unknownArtist": false,
+                "unknownTitle": true
+              },
+              "junk": [],
+              "warnings": []
+            }
+          }
+        ],
+        "warnings": [],
+        "stats": {
+          "lines": 2,
+          "tracks": 1,
+          "markers": 1,
+          "timed": 2,
+          "firstTime": 0,
+          "lastTime": 67
+        }
+      },
+      "match": "exact",
+      "rules": [
+        "R13.1",
+        "R13.2",
+        "R13.3",
+        "R13.4.1",
+        "R13.8",
+        "R6.8",
+        "R8.6"
+      ],
+      "source": "neuropunk podcast corpus: Neuropunk pt.58/1",
+      "note": "A marker keeps its ParsedTrack (with the per-line noSeparator warning); line-unparsed is only for track entries."
+    },
+    {
+      "id": "tracklist-lines-022",
+      "input": "01:19:32 => Paperclip interview",
+      "expected": {
+        "entries": [
+          {
+            "line": 1,
+            "kind": "marker",
+            "eol": "",
+            "raw": "01:19:32 => Paperclip interview",
+            "parts": {
+              "lead": "",
+              "time": "01:19:32",
+              "gap": " => ",
+              "rest": "Paperclip interview"
+            },
+            "time": {
+              "raw": "01:19:32",
+              "seconds": 4772
+            },
+            "track": {
+              "artists": [],
+              "title": "Paperclip interview"
+            }
+          }
+        ]
+      },
+      "rules": [
+        "R13.2.3",
+        "R13.3"
+      ],
+      "source": "neuropunk podcast corpus: Neuropunk pt.15"
+    },
+    {
+      "id": "tracklist-lines-023",
+      "input": "01:24:19 25. Engage Interview @ Тула",
+      "expected": {
+        "entries": [
+          {
+            "kind": "marker",
+            "time": {
+              "raw": "01:24:19",
+              "seconds": 5059
+            },
+            "track": {
+              "position": {
+                "raw": "25",
+                "number": 25
+              },
+              "artists": [],
+              "title": "Engage Interview @ Тула"
+            }
+          }
+        ],
+        "warnings": [
+          {
+            "code": "no-start-at-zero",
+            "line": 1,
+            "severity": "info",
+            "suggestion": null
+          }
+        ]
+      },
+      "rules": [
+        "R13.3",
+        "R4.2"
+      ],
+      "source": "neuropunk podcast corpus: Neuropunk.ru pt.14",
+      "note": "Marker word found anywhere in the track part (word key of 'Interview')."
+    },
+    {
+      "id": "tracklist-lines-024",
+      "input": "Tracklist:\r\nhttps://neuropunk.ru\r\n\r\nRecorded live at Fabric, 2024",
+      "expected": {
+        "specVersion": "0.2.1",
+        "entries": [
+          {
+            "line": 1,
+            "kind": "header",
+            "eol": "\r\n",
+            "raw": "Tracklist:",
+            "parts": {
+              "lead": "",
+              "time": "",
+              "gap": "",
+              "rest": "Tracklist:"
+            },
+            "time": null,
+            "track": null
+          },
+          {
+            "line": 2,
+            "kind": "link",
+            "eol": "\r\n",
+            "raw": "https://neuropunk.ru",
+            "parts": {
+              "lead": "",
+              "time": "",
+              "gap": "",
+              "rest": "https://neuropunk.ru"
+            },
+            "time": null,
+            "track": null
+          },
+          {
+            "line": 3,
+            "kind": "blank",
+            "eol": "\r\n",
+            "raw": "",
+            "parts": {
+              "lead": "",
+              "time": "",
+              "gap": "",
+              "rest": ""
+            },
+            "time": null,
+            "track": null
+          },
+          {
+            "line": 4,
+            "kind": "note",
+            "eol": "",
+            "raw": "Recorded live at Fabric, 2024",
+            "parts": {
+              "lead": "",
+              "time": "",
+              "gap": "",
+              "rest": "Recorded live at Fabric, 2024"
+            },
+            "time": null,
+            "track": null
+          }
+        ],
+        "warnings": [],
+        "stats": {
+          "lines": 4,
+          "tracks": 0,
+          "markers": 0,
+          "timed": 0,
+          "firstTime": null,
+          "lastTime": null
+        }
+      },
+      "match": "exact",
+      "rules": [
+        "R13.3",
+        "R13.8"
+      ]
+    },
+    {
+      "id": "tracklist-lines-025",
+      "input": "Part 2\nHour 1\nCD 2\nSide A\nPart 2 of the mix\nsetlist\nPart 1:",
+      "expected": {
+        "entries": [
+          {
+            "kind": "header",
+            "track": null
+          },
+          {
+            "kind": "header"
+          },
+          {
+            "kind": "header"
+          },
+          {
+            "kind": "header"
+          },
+          {
+            "kind": "note",
+            "track": null
+          },
+          {
+            "kind": "header"
+          },
+          {
+            "kind": "header"
+          }
+        ]
+      },
+      "rules": [
+        "R13.3"
+      ],
+      "note": "First word in header-words with at most one more word, or a trailing ':'. 'Part 2 of the mix' has too many words."
+    },
+    {
+      "id": "tracklist-lines-026",
+      "input": "www.neuropunk.ru\nHTTPS://example.com/set\n  http://x.y  \nhttp:/broken",
+      "expected": {
+        "entries": [
+          {
+            "kind": "link",
+            "track": null
+          },
+          {
+            "kind": "link"
+          },
+          {
+            "kind": "link",
+            "raw": "  http://x.y  "
+          },
+          {
+            "kind": "note"
+          }
+        ]
+      },
+      "rules": [
+        "R13.3"
+      ],
+      "note": "Prefix test is ASCII case-insensitive on trimmed rest; 'http:/' is not a link prefix."
+    },
+    {
+      "id": "tracklist-lines-027",
+      "input": "Intro\nNoisia - Stigma\nThanks for listening",
+      "expected": {
+        "entries": [
+          {
+            "kind": "marker",
+            "track": {
+              "title": "Intro",
+              "artists": []
+            }
+          },
+          {
+            "kind": "track",
+            "track": {
+              "artists": [
+                "Noisia"
+              ],
+              "title": "Stigma"
+            }
+          },
+          {
+            "kind": "note",
+            "track": null
+          }
+        ],
+        "warnings": [],
+        "stats": {
+          "lines": 3,
+          "tracks": 1,
+          "markers": 1,
+          "timed": 0,
+          "firstTime": null,
+          "lastTime": null
+        }
+      },
+      "rules": [
+        "R13.3",
+        "R13.7",
+        "R13.8"
+      ]
+    },
+    {
+      "id": "tracklist-lines-028",
+      "input": "00:45:00 Break\n00:47:00 Rolar - Break It\n00:50:00 Breakout",
+      "expected": {
+        "entries": [
+          {
+            "kind": "marker"
+          },
+          {
+            "kind": "track",
+            "track": {
+              "artists": [
+                "Rolar"
+              ],
+              "title": "Break It"
+            }
+          },
+          {
+            "kind": "track",
+            "track": {
+              "artists": [],
+              "title": "Breakout"
+            }
+          }
+        ],
+        "warnings": [
+          {
+            "code": "no-start-at-zero",
+            "line": 1,
+            "severity": "info",
+            "suggestion": null
+          },
+          {
+            "code": "line-unparsed",
+            "line": 3,
+            "severity": "warning",
+            "suggestion": null
+          }
+        ],
+        "stats": {
+          "lines": 3,
+          "tracks": 2,
+          "markers": 1,
+          "timed": 3,
+          "firstTime": 2700,
+          "lastTime": 3000
+        }
+      },
+      "rules": [
+        "R13.3",
+        "R13.7"
+      ],
+      "note": "A marker word on a line with a separator does not make a marker; 'Breakout' is not a marker word."
+    },
+    {
+      "id": "tracklist-lines-029",
+      "input": "00:00 Mixtape\n01:00 Noisia - Stigma",
+      "options": {
+        "markerWords": [
+          "mixtape"
+        ]
+      },
+      "expected": {
+        "entries": [
+          {
+            "kind": "marker"
+          },
+          {
+            "kind": "track"
+          }
+        ],
+        "warnings": []
+      },
+      "rules": [
+        "R13.3",
+        "R13.10"
+      ]
+    },
+    {
+      "id": "tracklist-lines-030",
+      "input": "00:00 Mixtape\n01:00 Noisia - Stigma",
+      "expected": {
+        "entries": [
+          {
+            "kind": "track",
+            "track": {
+              "artists": [],
+              "title": "Mixtape"
+            }
+          },
+          {
+            "kind": "track"
+          }
+        ],
+        "warnings": [
+          {
+            "code": "line-unparsed",
+            "line": 1,
+            "severity": "warning",
+            "suggestion": null
+          }
+        ]
+      },
+      "rules": [
+        "R13.3",
+        "R13.7"
+      ],
+      "note": "Near-miss of the previous case: without markerWords it is an unparsed track."
+    },
+    {
+      "id": "tracklist-lines-031",
+      "input": "Tracklist:\n\n00:00 Intro\n01:10 Noisia - Stigma\n05:20 Phace - Psycho\nhttps://x.y",
+      "expected": {
+        "entries": [
+          {
+            "line": 1,
+            "kind": "header"
+          },
+          {
+            "line": 2,
+            "kind": "blank"
+          },
+          {
+            "line": 3,
+            "kind": "marker"
+          },
+          {
+            "line": 4,
+            "kind": "track"
+          },
+          {
+            "line": 5,
+            "kind": "track"
+          },
+          {
+            "line": 6,
+            "kind": "link"
+          }
+        ],
+        "warnings": [],
+        "stats": {
+          "lines": 6,
+          "tracks": 2,
+          "markers": 1,
+          "timed": 3,
+          "firstTime": 0,
+          "lastTime": 320
+        }
+      },
+      "rules": [
+        "R13.3",
+        "R13.8"
+      ],
+      "note": "line counts every entry, blank ones too."
+    },
+    {
+      "id": "tracklist-lines-032",
+      "input": "Tracklist:  \nNoisia - Stigma",
+      "expected": {
+        "entries": [
+          {
+            "kind": "header",
+            "raw": "Tracklist:  "
+          },
+          {
+            "kind": "track"
+          }
+        ]
+      },
+      "rules": [
+        "R13.3"
+      ],
+      "note": "Reading: the ':' test, like the link test, looks at the trimmed rest. SPEC says 'trimmed' only for links."
+    }
+  ]
+}

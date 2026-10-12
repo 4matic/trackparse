@@ -7,6 +7,7 @@ import { filename } from "./filename.js";
 import { junkYoutube } from "./junk-youtube.js";
 import { kitchenSink } from "./kitchen-sink.js";
 import { prefixes } from "./prefixes.js";
+import { tracklist } from "./tracklist.js";
 import { unicode } from "./unicode.js";
 import { versions } from "./versions.js";
 
@@ -21,4 +22,5 @@ export const SCENARIOS: Scenario[] = [
   dashSuffix,
   dedupScenario,
   kitchenSink,
+  tracklist,
 ];

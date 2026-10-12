@@ -1,0 +1,1518 @@
+{
+  "$schema": "../../schema/fixture-file.schema.json",
+  "description": "SPEC R13.6 / R6.10: tracklist mode. All 17 real corpus lines single-line parse() gets wrong, the 6 real lines without a separator, and single-line parse() with mode tracklist.",
+  "defaults": {
+    "fn": "parseTracklist"
+  },
+  "cases": [
+    {
+      "id": "tracklist-mode-001",
+      "input": "01:13:14 20. Paperclip - Anticipation VIP",
+      "expected": {
+        "entries": [
+          {
+            "kind": "track",
+            "track": {
+              "position": {
+                "raw": "20",
+                "number": 20
+              },
+              "artists": [
+                "Paperclip"
+              ],
+              "title": "Anticipation VIP",
+              "versions": [],
+              "fullTitle": "Anticipation VIP",
+              "year": null
+            }
+          }
+        ]
+      },
+      "rules": [
+        "R13.6",
+        "R6.10",
+        "R13.4.1"
+      ],
+      "source": "neuropunk podcast corpus: Neuropunk.ru pt.6",
+      "note": "Unbracketed version words after the first spaced dash stay title text (R6.10); single-line parse() peels them as a version."
+    },
+    {
+      "id": "tracklist-mode-002",
+      "input": "34:37 10. Daly - Dreamer VIP",
+      "expected": {
+        "entries": [
+          {
+            "kind": "track",
+            "track": {
+              "position": {
+                "raw": "10",
+                "number": 10
+              },
+              "artists": [
+                "Daly"
+              ],
+              "title": "Dreamer VIP",
+              "versions": [],
+              "fullTitle": "Dreamer VIP",
+              "year": null
+            }
+          }
+        ]
+      },
+      "rules": [
+        "R13.6",
+        "R6.10",
+        "R13.4.1"
+      ],
+      "source": "neuropunk podcast corpus: THE DEEPSPACE 3",
+      "note": "Unbracketed version words after the first spaced dash stay title text (R6.10); single-line parse() peels them as a version."
+    },
+    {
+      "id": "tracklist-mode-003",
+      "input": "26:06 13. MaxNRG - Metro 2033 VIP",
+      "expected": {
+        "entries": [
+          {
+            "kind": "track",
+            "track": {
+              "position": {
+                "raw": "13",
+                "number": 13
+              },
+              "artists": [
+                "MaxNRG"
+              ],
+              "title": "Metro 2033 VIP",
+              "versions": [],
+              "fullTitle": "Metro 2033 VIP",
+              "year": null
+            }
+          }
+        ]
+      },
+      "rules": [
+        "R13.6",
+        "R6.10",
+        "R13.4.1"
+      ],
+      "source": "neuropunk podcast corpus: Neuropunk pt.28",
+      "note": "Unbracketed version words after the first spaced dash stay title text (R6.10); single-line parse() peels them as a version."
+    },
+    {
+      "id": "tracklist-mode-004",
+      "input": "01:01:40 28. Kije - Apathy VIP",
+      "expected": {
+        "entries": [
+          {
+            "kind": "track",
+            "track": {
+              "position": {
+                "raw": "28",
+                "number": 28
+              },
+              "artists": [
+                "Kije"
+              ],
+              "title": "Apathy VIP",
+              "versions": [],
+              "fullTitle": "Apathy VIP",
+              "year": null
+            }
+          }
+        ]
+      },
+      "rules": [
+        "R13.6",
+        "R6.10",
+        "R13.4.1"
+      ],
+      "source": "neuropunk podcast corpus: Neuropunk pt.29",
+      "note": "Unbracketed version words after the first spaced dash stay title text (R6.10); single-line parse() peels them as a version."
+    },
+    {
+      "id": "tracklist-mode-005",
+      "input": "21:28 11.  Lowriderz - Das Dem VIP",
+      "expected": {
+        "entries": [
+          {
+            "kind": "track",
+            "track": {
+              "position": {
+                "raw": "11",
+                "number": 11
+              },
+              "artists": [
+                "Lowriderz"
+              ],
+              "title": "Das Dem VIP",
+              "versions": [],
+              "fullTitle": "Das Dem VIP",
+              "year": null
+            }
+          }
+        ]
+      },
+      "rules": [
+        "R13.6",
+        "R6.10",
+        "R13.4.1"
+      ],
+      "source": "neuropunk podcast corpus: Neuropunk pt.53/2",
+      "note": "Unbracketed version words after the first spaced dash stay title text (R6.10); single-line parse() peels them as a version."
+    },
+    {
+      "id": "tracklist-mode-006",
+      "input": "00:05:31 04. Ozma - Bacteria VIP",
+      "expected": {
+        "entries": [
+          {
+            "kind": "track",
+            "track": {
+              "position": {
+                "raw": "04",
+                "number": 4
+              },
+              "artists": [
+                "Ozma"
+              ],
+              "title": "Bacteria VIP",
+              "versions": [],
+              "fullTitle": "Bacteria VIP",
+              "year": null
+            }
+          }
+        ]
+      },
+      "rules": [
+        "R13.6",
+        "R6.10",
+        "R13.4.1"
+      ],
+      "source": "neuropunk podcast corpus: Neuropunk pt.56/2",
+      "note": "Unbracketed version words after the first spaced dash stay title text (R6.10); single-line parse() peels them as a version."
+    },
+    {
+      "id": "tracklist-mode-007",
+      "input": "02:10:02 67. ez4cheezy - Zhukovskiy dub",
+      "expected": {
+        "entries": [
+          {
+            "kind": "track",
+            "track": {
+              "position": {
+                "raw": "67",
+                "number": 67
+              },
+              "artists": [
+                "ez4cheezy"
+              ],
+              "title": "Zhukovskiy dub",
+              "versions": [],
+              "fullTitle": "Zhukovskiy dub",
+              "year": null
+            }
+          }
+        ]
+      },
+      "rules": [
+        "R13.6",
+        "R6.10",
+        "R13.4.1"
+      ],
+      "source": "neuropunk podcast corpus: Neuropunk pt.56/2",
+      "note": "Unbracketed version words after the first spaced dash stay title text (R6.10); single-line parse() peels them as a version."
+    },
+    {
+      "id": "tracklist-mode-008",
+      "input": "00:20:37 13. Gydra - Lava Run VIP",
+      "expected": {
+        "entries": [
+          {
+            "kind": "track",
+            "track": {
+              "position": {
+                "raw": "13",
+                "number": 13
+              },
+              "artists": [
+                "Gydra"
+              ],
+              "title": "Lava Run VIP",
+              "versions": [],
+              "fullTitle": "Lava Run VIP",
+              "year": null
+            }
+          }
+        ]
+      },
+      "rules": [
+        "R13.6",
+        "R6.10",
+        "R13.4.1"
+      ],
+      "source": "neuropunk podcast corpus: THE HEADSHOT 14 mixed by Bes",
+      "note": "Unbracketed version words after the first spaced dash stay title text (R6.10); single-line parse() peels them as a version."
+    },
+    {
+      "id": "tracklist-mode-009",
+      "input": "01:18:03 27. Electrosoul System - Liquid Metal",
+      "expected": {
+        "entries": [
+          {
+            "kind": "track",
+            "track": {
+              "position": {
+                "raw": "27",
+                "number": 27
+              },
+              "artists": [
+                "Electrosoul System"
+              ],
+              "title": "Liquid Metal",
+              "junk": [],
+              "versions": [],
+              "warnings": []
+            }
+          }
+        ]
+      },
+      "rules": [
+        "R13.6",
+        "R6.10",
+        "R13.4.1"
+      ],
+      "source": "neuropunk podcast corpus: Neuropunk pt.22",
+      "note": "Genre words after the first spaced dash stay title text in tracklist mode; single-line parse() takes the segment as genre junk."
+    },
+    {
+      "id": "tracklist-mode-010",
+      "input": "30:31 09. ESS - Liquid Metal",
+      "expected": {
+        "entries": [
+          {
+            "kind": "track",
+            "track": {
+              "position": {
+                "raw": "09",
+                "number": 9
+              },
+              "artists": [
+                "ESS"
+              ],
+              "title": "Liquid Metal",
+              "junk": [],
+              "versions": [],
+              "warnings": []
+            }
+          }
+        ]
+      },
+      "rules": [
+        "R13.6",
+        "R6.10",
+        "R13.4.1"
+      ],
+      "source": "neuropunk podcast corpus: THE DEEPSPACE 3",
+      "note": "Genre words after the first spaced dash stay title text in tracklist mode; single-line parse() takes the segment as genre junk."
+    },
+    {
+      "id": "tracklist-mode-011",
+      "input": "33:35 19. Sub Mass - Jump Up",
+      "expected": {
+        "entries": [
+          {
+            "kind": "track",
+            "track": {
+              "position": {
+                "raw": "19",
+                "number": 19
+              },
+              "artists": [
+                "Sub Mass"
+              ],
+              "title": "Jump Up",
+              "junk": [],
+              "versions": [],
+              "warnings": []
+            }
+          }
+        ]
+      },
+      "rules": [
+        "R13.6",
+        "R6.10",
+        "R13.4.1"
+      ],
+      "source": "neuropunk podcast corpus: Neuropunk pt.31",
+      "note": "Genre words after the first spaced dash stay title text in tracklist mode; single-line parse() takes the segment as genre junk."
+    },
+    {
+      "id": "tracklist-mode-012",
+      "input": "02:07:06 66. NERVƎ - Chillout",
+      "expected": {
+        "entries": [
+          {
+            "kind": "track",
+            "track": {
+              "position": {
+                "raw": "66",
+                "number": 66
+              },
+              "artists": [
+                "NERVƎ"
+              ],
+              "title": "Chillout",
+              "junk": [],
+              "versions": [],
+              "warnings": []
+            }
+          }
+        ]
+      },
+      "rules": [
+        "R13.6",
+        "R6.10",
+        "R13.4.1"
+      ],
+      "source": "neuropunk podcast corpus: Neuropunk pt.56/2",
+      "note": "Genre words after the first spaced dash stay title text in tracklist mode; single-line parse() takes the segment as genre junk."
+    },
+    {
+      "id": "tracklist-mode-013",
+      "input": "27:28 10. Effector - 2012",
+      "expected": {
+        "entries": [
+          {
+            "kind": "track",
+            "track": {
+              "position": {
+                "raw": "10",
+                "number": 10
+              },
+              "artists": [
+                "Effector"
+              ],
+              "title": "2012",
+              "year": null,
+              "versions": [],
+              "warnings": []
+            }
+          }
+        ]
+      },
+      "rules": [
+        "R13.6",
+        "R6.10",
+        "R13.4.1"
+      ],
+      "source": "neuropunk podcast corpus: Neuropunk pt.26",
+      "note": "A year after the first spaced dash is the title in tracklist mode, not a year suffix; year stays null."
+    },
+    {
+      "id": "tracklist-mode-014",
+      "input": "29:25 30. Effector - 2012",
+      "expected": {
+        "entries": [
+          {
+            "kind": "track",
+            "track": {
+              "position": {
+                "raw": "30",
+                "number": 30
+              },
+              "artists": [
+                "Effector"
+              ],
+              "title": "2012",
+              "year": null,
+              "versions": [],
+              "warnings": []
+            }
+          }
+        ]
+      },
+      "rules": [
+        "R13.6",
+        "R6.10",
+        "R13.4.1"
+      ],
+      "source": "neuropunk podcast corpus: THE HEADSHOT 4",
+      "note": "A year after the first spaced dash is the title in tracklist mode, not a year suffix; year stays null."
+    },
+    {
+      "id": "tracklist-mode-015",
+      "input": "01:36:20 52. Nphonix & Item - 2007 ",
+      "expected": {
+        "entries": [
+          {
+            "kind": "track",
+            "track": {
+              "position": {
+                "raw": "52",
+                "number": 52
+              },
+              "artists": [
+                "Nphonix",
+                "Item"
+              ],
+              "title": "2007",
+              "year": null,
+              "versions": [],
+              "warnings": []
+            }
+          }
+        ]
+      },
+      "rules": [
+        "R13.6",
+        "R6.10",
+        "R13.4.1"
+      ],
+      "source": "neuropunk podcast corpus: Neuropunk pt.58/2",
+      "note": "A year after the first spaced dash is the title in tracklist mode, not a year suffix; year stays null."
+    },
+    {
+      "id": "tracklist-mode-016",
+      "input": "00:08:10 7 Gydra - Caterpillar (Skrimor remix) \r\n00:09:20 8 Linkin Park_-_Points Of Authority (Gydra Bootleg) \r\n00:11:39 9 Gydra - Protocol",
+      "expected": {
+        "entries": [
+          {
+            "track": {
+              "position": {
+                "raw": "7",
+                "number": 7
+              },
+              "artists": [
+                "Gydra"
+              ],
+              "title": "Caterpillar"
+            }
+          },
+          {
+            "kind": "track",
+            "track": {
+              "position": {
+                "raw": "8",
+                "number": 8
+              },
+              "artists": [
+                "Linkin Park"
+              ],
+              "title": "Points Of Authority",
+              "versions": [
+                {
+                  "type": "bootleg",
+                  "artists": [
+                    "Gydra"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "track": {
+              "position": {
+                "raw": "9",
+                "number": 9
+              },
+              "artists": [
+                "Gydra"
+              ],
+              "title": "Protocol"
+            }
+          }
+        ]
+      },
+      "rules": [
+        "R6.10",
+        "R13.5",
+        "R13.4.1"
+      ],
+      "source": "neuropunk podcast corpus: Gydra 10 years mix",
+      "note": "'_-_' is the separator when there is no spaced dash; the bare 8 is a position because its neighbours carry 7 and 9."
+    },
+    {
+      "id": "tracklist-mode-017",
+      "input": "00:53:24 39 Gydra - Stoning\r\n00:54:49 40 Optiv & BTK-Inception (Gydra remix)\r\n00:55:50 41 Mizo & Gydra - Chronometer",
+      "expected": {
+        "entries": [
+          {
+            "track": {
+              "position": {
+                "raw": "39",
+                "number": 39
+              }
+            }
+          },
+          {
+            "kind": "track",
+            "track": {
+              "position": {
+                "raw": "40",
+                "number": 40
+              },
+              "artists": [
+                "Optiv",
+                "BTK"
+              ],
+              "title": "Inception",
+              "versions": [
+                {
+                  "type": "remix",
+                  "artists": [
+                    "Gydra"
+                  ]
+                }
+              ],
+              "warnings": [
+                "unspacedDashSplit"
+              ]
+            }
+          },
+          {
+            "track": {
+              "position": {
+                "raw": "41",
+                "number": 41
+              },
+              "artists": [
+                "Mizo",
+                "Gydra"
+              ],
+              "title": "Chronometer"
+            }
+          }
+        ],
+        "warnings": [
+          {
+            "code": "no-start-at-zero",
+            "line": 1,
+            "severity": "info",
+            "suggestion": null
+          }
+        ]
+      },
+      "rules": [
+        "R6.10",
+        "R13.4.2",
+        "R13.5"
+      ],
+      "source": "neuropunk podcast corpus: Gydra 10 years mix",
+      "note": "List context (all 3 candidate lines have a spaced dash) enables the tight letter-Uppercase dash."
+    },
+    {
+      "id": "tracklist-mode-018",
+      "input": "00:00:00 Intro",
+      "expected": {
+        "entries": [
+          {
+            "kind": "marker",
+            "time": {
+              "raw": "00:00:00",
+              "seconds": 0
+            },
+            "track": {
+              "artists": [],
+              "title": "Intro",
+              "warnings": [
+                "noSeparator"
+              ]
+            }
+          }
+        ],
+        "warnings": [],
+        "stats": {
+          "tracks": 0,
+          "markers": 1
+        }
+      },
+      "rules": [
+        "R13.3",
+        "R6.10",
+        "R6.8"
+      ],
+      "source": "neuropunk podcast corpus: Neuropunk pt.58/1",
+      "note": "A real line without a separator: a marker, so no line-unparsed."
+    },
+    {
+      "id": "tracklist-mode-019",
+      "input": "00:00:00 Intro\r\n00:01:07 01. Magnetude - ID\r\n00:02:57 02. Mean Teeth - Airpusher (The Clamps Remix)",
+      "expected": {
+        "entries": [
+          {
+            "kind": "marker",
+            "eol": "\r\n"
+          },
+          {
+            "kind": "track",
+            "track": {
+              "position": {
+                "raw": "01",
+                "number": 1
+              },
+              "artists": [
+                "Magnetude"
+              ],
+              "title": "ID",
+              "flags": {
+                "unknownTitle": true
+              }
+            }
+          },
+          {
+            "kind": "track",
+            "track": {
+              "position": {
+                "raw": "02",
+                "number": 2
+              },
+              "artists": [
+                "Mean Teeth"
+              ],
+              "title": "Airpusher",
+              "versions": [
+                {
+                  "type": "remix",
+                  "artists": [
+                    "The Clamps"
+                  ]
+                }
+              ]
+            }
+          }
+        ],
+        "warnings": []
+      },
+      "rules": [
+        "R13.3",
+        "R6.10",
+        "R8.6"
+      ],
+      "source": "neuropunk podcast corpus: Neuropunk pt.58/1",
+      "note": "Second copy of the release (CRLF); the same Intro line."
+    },
+    {
+      "id": "tracklist-mode-020",
+      "input": "01:24:19 25. Engage Interview @ Тула",
+      "expected": {
+        "entries": [
+          {
+            "kind": "marker",
+            "track": {
+              "position": {
+                "raw": "25",
+                "number": 25
+              },
+              "artists": [],
+              "title": "Engage Interview @ Тула"
+            }
+          }
+        ]
+      },
+      "rules": [
+        "R13.3",
+        "R6.10"
+      ],
+      "source": "neuropunk podcast corpus: Neuropunk.ru pt.14"
+    },
+    {
+      "id": "tracklist-mode-021",
+      "input": "01:19:32 => Paperclip interview",
+      "expected": {
+        "entries": [
+          {
+            "kind": "marker",
+            "parts": {
+              "gap": " => ",
+              "rest": "Paperclip interview"
+            },
+            "track": {
+              "artists": [],
+              "title": "Paperclip interview"
+            }
+          }
+        ]
+      },
+      "rules": [
+        "R13.3",
+        "R13.2.3"
+      ],
+      "source": "neuropunk podcast corpus: Neuropunk pt.15"
+    },
+    {
+      "id": "tracklist-mode-022",
+      "input": "00:00:00 01. Grinder - Dark Dream  \r\n00:27:55 15. Grinda & Nic ZigZag  ",
+      "expected": {
+        "entries": [
+          {
+            "kind": "track",
+            "track": {
+              "artists": [
+                "Grinder"
+              ],
+              "title": "Dark Dream"
+            }
+          },
+          {
+            "kind": "track",
+            "track": {
+              "position": {
+                "raw": "15",
+                "number": 15
+              },
+              "artists": [],
+              "title": "Grinda & Nic ZigZag",
+              "warnings": [
+                "noSeparator"
+              ]
+            }
+          }
+        ],
+        "warnings": [
+          {
+            "code": "position-gap",
+            "line": 2,
+            "severity": "warning",
+            "suggestion": null
+          },
+          {
+            "code": "line-unparsed",
+            "line": 2,
+            "severity": "warning",
+            "suggestion": null
+          }
+        ]
+      },
+      "rules": [
+        "R13.3",
+        "R13.7",
+        "R6.10",
+        "R6.8"
+      ],
+      "source": "neuropunk podcast corpus: The Deepspace 14",
+      "note": "Really has no separator: a track with line-unparsed. Positions 01 then 15 also warn position-gap (table order puts it first). Line 1 is the list's real first line, so no-start-at-zero does not fire."
+    },
+    {
+      "id": "tracklist-mode-023",
+      "input": "01:38:53 73 Gydra - ID\r\n01:40:05 74 Gydra & Ihr Caliban\r\n01:41:16 75 Gydra - Chain_Gang",
+      "expected": {
+        "entries": [
+          {
+            "track": {
+              "position": {
+                "raw": "73",
+                "number": 73
+              },
+              "artists": [
+                "Gydra"
+              ],
+              "title": "ID"
+            }
+          },
+          {
+            "kind": "track",
+            "track": {
+              "position": {
+                "raw": "74",
+                "number": 74
+              },
+              "artists": [],
+              "title": "Gydra & Ihr Caliban",
+              "warnings": [
+                "noSeparator"
+              ]
+            }
+          },
+          {
+            "track": {
+              "position": {
+                "raw": "75",
+                "number": 75
+              },
+              "artists": [
+                "Gydra"
+              ],
+              "title": "Chain_Gang"
+            }
+          }
+        ],
+        "warnings": [
+          {
+            "code": "no-start-at-zero",
+            "line": 1,
+            "severity": "info",
+            "suggestion": null
+          },
+          {
+            "code": "line-unparsed",
+            "line": 2,
+            "severity": "warning",
+            "suggestion": null
+          }
+        ]
+      },
+      "rules": [
+        "R13.3",
+        "R13.5",
+        "R13.7",
+        "R6.10"
+      ],
+      "source": "neuropunk podcast corpus: Gydra 10 years mix",
+      "note": "No dash at all: the bare 74 is still a position (neighbours 73, 75); the rest stays the title. R2.3 does not run, so '_' stays."
+    },
+    {
+      "id": "tracklist-mode-024",
+      "fn": "parse",
+      "input": "Paperclip - Anticipation VIP",
+      "options": {
+        "mode": "tracklist"
+      },
+      "expected": {
+        "mode": "tracklist",
+        "artists": [
+          "Paperclip"
+        ],
+        "title": "Anticipation VIP",
+        "versions": [],
+        "warnings": []
+      },
+      "rules": [
+        "R13.6",
+        "R6.10"
+      ]
+    },
+    {
+      "id": "tracklist-mode-025",
+      "fn": "parse",
+      "input": "Electrosoul System - Liquid Metal",
+      "options": {
+        "mode": "tracklist"
+      },
+      "expected": {
+        "artists": [
+          "Electrosoul System"
+        ],
+        "title": "Liquid Metal",
+        "junk": []
+      },
+      "rules": [
+        "R13.6",
+        "R6.10"
+      ]
+    },
+    {
+      "id": "tracklist-mode-026",
+      "fn": "parse",
+      "input": "Effector - 2012",
+      "options": {
+        "mode": "tracklist"
+      },
+      "expected": {
+        "artists": [
+          "Effector"
+        ],
+        "title": "2012",
+        "year": null
+      },
+      "rules": [
+        "R13.6",
+        "R6.10"
+      ]
+    },
+    {
+      "id": "tracklist-mode-027",
+      "fn": "parse",
+      "input": "ez4cheezy - Zhukovskiy dub",
+      "options": {
+        "mode": "tracklist"
+      },
+      "expected": {
+        "artists": [
+          "ez4cheezy"
+        ],
+        "title": "Zhukovskiy dub",
+        "versions": []
+      },
+      "rules": [
+        "R13.6",
+        "R6.10"
+      ]
+    },
+    {
+      "id": "tracklist-mode-028",
+      "fn": "parse",
+      "input": "Optiv & BTK-Inception (Gydra remix)",
+      "options": {
+        "mode": "tracklist"
+      },
+      "expected": {
+        "artists": [],
+        "title": "Optiv & BTK-Inception",
+        "versions": [
+          {
+            "type": "remix",
+            "artists": [
+              "Gydra"
+            ]
+          }
+        ],
+        "warnings": [
+          "noSeparator"
+        ]
+      },
+      "rules": [
+        "R13.6",
+        "R6.10",
+        "R6.8"
+      ],
+      "note": "parse() has no list context, so the tight dash never splits."
+    },
+    {
+      "id": "tracklist-mode-029",
+      "fn": "parse",
+      "input": "Linkin Park_-_Points Of Authority (Gydra Bootleg)",
+      "options": {
+        "mode": "tracklist"
+      },
+      "expected": {
+        "artists": [
+          "Linkin Park"
+        ],
+        "title": "Points Of Authority",
+        "versions": [
+          {
+            "type": "bootleg",
+            "artists": [
+              "Gydra"
+            ]
+          }
+        ],
+        "warnings": [
+          "unspacedDashSplit"
+        ]
+      },
+      "rules": [
+        "R13.6",
+        "R6.10"
+      ],
+      "note": "'_-_' needs no list context and warns unspacedDashSplit."
+    },
+    {
+      "id": "tracklist-mode-030",
+      "fn": "parse",
+      "input": "Noisia-Stigma",
+      "options": {
+        "mode": "tracklist"
+      },
+      "expected": {
+        "artists": [],
+        "title": "Noisia-Stigma",
+        "warnings": [
+          "noSeparator"
+        ]
+      },
+      "rules": [
+        "R13.6",
+        "R6.10"
+      ]
+    },
+    {
+      "id": "tracklist-mode-031",
+      "fn": "parse",
+      "input": "Blink-182-All The Small Things",
+      "options": {
+        "mode": "tracklist"
+      },
+      "expected": {
+        "artists": [],
+        "title": "Blink-182-All The Small Things",
+        "warnings": [
+          "noSeparator"
+        ]
+      },
+      "rules": [
+        "R6.10"
+      ],
+      "note": "R6.7 (unspaced dash) does not apply in tracklist mode."
+    },
+    {
+      "id": "tracklist-mode-032",
+      "fn": "parse",
+      "input": "Noisia -Stigma",
+      "options": {
+        "mode": "tracklist"
+      },
+      "expected": {
+        "artists": [
+          "Noisia"
+        ],
+        "title": "Stigma",
+        "warnings": [
+          "asymmetricDashSplit"
+        ]
+      },
+      "rules": [
+        "R6.10",
+        "R6.4"
+      ]
+    },
+    {
+      "id": "tracklist-mode-033",
+      "fn": "parse",
+      "input": "Band - Live",
+      "options": {
+        "mode": "tracklist"
+      },
+      "expected": {
+        "artists": [
+          "Band"
+        ],
+        "title": "Live",
+        "versions": []
+      },
+      "rules": [
+        "R6.10"
+      ],
+      "note": "Same as clean mode."
+    },
+    {
+      "id": "tracklist-mode-034",
+      "fn": "parse",
+      "input": "Hey Jude - Remastered 2015",
+      "options": {
+        "mode": "tracklist"
+      },
+      "expected": {
+        "artists": [
+          "Hey Jude"
+        ],
+        "title": "Remastered 2015",
+        "versions": [],
+        "year": null,
+        "warnings": []
+      },
+      "rules": [
+        "R6.10"
+      ],
+      "note": "Near-miss of the clean-mode peel (separators.json): in tracklist mode the first spaced dash always separates."
+    },
+    {
+      "id": "tracklist-mode-035",
+      "fn": "parse",
+      "input": "The Beatles - Hey Jude - Remastered 2015",
+      "options": {
+        "mode": "tracklist"
+      },
+      "expected": {
+        "artists": [
+          "The Beatles"
+        ],
+        "title": "Hey Jude",
+        "fullTitle": "Hey Jude - Remastered 2015",
+        "versions": [
+          {
+            "type": "remaster",
+            "year": 2015,
+            "delimiter": "-"
+          }
+        ],
+        "year": null
+      },
+      "rules": [
+        "R6.10",
+        "R8.2"
+      ],
+      "note": "R8.2 still peels later dash suffixes."
+    },
+    {
+      "id": "tracklist-mode-036",
+      "fn": "parse",
+      "input": "Paperclip - Anticipation - VIP",
+      "options": {
+        "mode": "tracklist"
+      },
+      "expected": {
+        "artists": [
+          "Paperclip"
+        ],
+        "title": "Anticipation",
+        "versions": [
+          {
+            "type": "vip",
+            "raw": "VIP",
+            "delimiter": "-"
+          }
+        ]
+      },
+      "rules": [
+        "R6.10",
+        "R8.2"
+      ]
+    },
+    {
+      "id": "tracklist-mode-037",
+      "fn": "parse",
+      "input": "Noisia - Stigma - 2015",
+      "options": {
+        "mode": "tracklist"
+      },
+      "expected": {
+        "artists": [
+          "Noisia"
+        ],
+        "title": "Stigma",
+        "year": 2015
+      },
+      "rules": [
+        "R6.10",
+        "R8.2",
+        "R9.6"
+      ]
+    },
+    {
+      "id": "tracklist-mode-038",
+      "fn": "parse",
+      "input": "Noisia - Stigma (VIP)",
+      "options": {
+        "mode": "tracklist"
+      },
+      "expected": {
+        "artists": [
+          "Noisia"
+        ],
+        "title": "Stigma",
+        "versions": [
+          {
+            "type": "vip",
+            "delimiter": "("
+          }
+        ]
+      },
+      "rules": [
+        "R6.10",
+        "R8.1"
+      ],
+      "note": "Bracket groups are classified as in every mode."
+    },
+    {
+      "id": "tracklist-mode-039",
+      "fn": "parse",
+      "input": "Sub Mass - Jump Up (Neurofunk)",
+      "options": {
+        "mode": "tracklist"
+      },
+      "expected": {
+        "artists": [
+          "Sub Mass"
+        ],
+        "title": "Jump Up",
+        "junk": [
+          {
+            "raw": "Neurofunk",
+            "kind": "genre"
+          }
+        ]
+      },
+      "rules": [
+        "R6.10",
+        "R8.1",
+        "R5.1"
+      ]
+    },
+    {
+      "id": "tracklist-mode-040",
+      "fn": "parse",
+      "input": "Noisia - Stigma Official Video",
+      "options": {
+        "mode": "tracklist"
+      },
+      "expected": {
+        "artists": [
+          "Noisia"
+        ],
+        "title": "Stigma Official Video",
+        "junk": []
+      },
+      "rules": [
+        "R13.6",
+        "R8.4"
+      ],
+      "note": "R8.4 trailing junk is youtube-only."
+    },
+    {
+      "id": "tracklist-mode-041",
+      "fn": "parse",
+      "input": "Noisia - Stigma | Vision",
+      "options": {
+        "mode": "tracklist"
+      },
+      "expected": {
+        "artists": [
+          "Noisia"
+        ],
+        "title": "Stigma | Vision",
+        "junk": []
+      },
+      "rules": [
+        "R13.6",
+        "R2.4"
+      ],
+      "note": "R2.4 youtube pipes do not run in tracklist mode."
+    },
+    {
+      "id": "tracklist-mode-042",
+      "fn": "parse",
+      "input": "Noisia - Stigma.mp3",
+      "options": {
+        "mode": "tracklist"
+      },
+      "expected": {
+        "artists": [
+          "Noisia"
+        ],
+        "title": "Stigma.mp3"
+      },
+      "rules": [
+        "R13.6",
+        "R2.3"
+      ],
+      "note": "R2.3 filename steps do not run in tracklist mode."
+    },
+    {
+      "id": "tracklist-mode-043",
+      "fn": "parse",
+      "input": "01. Noisia - Stigma",
+      "options": {
+        "mode": "tracklist"
+      },
+      "expected": {
+        "position": {
+          "raw": "01",
+          "number": 1
+        },
+        "artists": [
+          "Noisia"
+        ],
+        "title": "Stigma"
+      },
+      "rules": [
+        "R6.10",
+        "R4.2"
+      ]
+    },
+    {
+      "id": "tracklist-mode-044",
+      "fn": "parse",
+      "input": "2 Unlimited - No Limit",
+      "options": {
+        "mode": "tracklist"
+      },
+      "expected": {
+        "position": null,
+        "artists": [
+          "2 Unlimited"
+        ],
+        "title": "No Limit"
+      },
+      "rules": [
+        "R13.6",
+        "R4.2"
+      ],
+      "note": "Reading: R4.2 treats tracklist mode like clean ((c)/(d) do not take a bare number); parse() has no neighbours for R13.5."
+    },
+    {
+      "id": "tracklist-mode-045",
+      "fn": "parse",
+      "input": "ID - ID",
+      "options": {
+        "mode": "tracklist"
+      },
+      "expected": {
+        "artists": [],
+        "title": "ID",
+        "flags": {
+          "unknownArtist": true,
+          "unknownTitle": true
+        }
+      },
+      "rules": [
+        "R6.10",
+        "R7.5",
+        "R8.6"
+      ]
+    },
+    {
+      "id": "tracklist-mode-046",
+      "input": "00:00 Optiv & BTK-Inception\n03:00 Noisia-Stigma\n06:00 Phace - Psycho",
+      "expected": {
+        "entries": [
+          {
+            "track": {
+              "artists": [],
+              "title": "Optiv & BTK-Inception"
+            }
+          },
+          {
+            "track": {
+              "artists": [],
+              "title": "Noisia-Stigma"
+            }
+          },
+          {
+            "track": {
+              "artists": [
+                "Phace"
+              ],
+              "title": "Psycho"
+            }
+          }
+        ],
+        "warnings": [
+          {
+            "code": "line-unparsed",
+            "line": 1,
+            "severity": "warning",
+            "suggestion": null
+          },
+          {
+            "code": "line-unparsed",
+            "line": 2,
+            "severity": "warning",
+            "suggestion": null
+          }
+        ]
+      },
+      "rules": [
+        "R13.4.2",
+        "R6.10",
+        "R13.7"
+      ],
+      "note": "Only 1 of 3 candidate lines has a spaced dash: no list context, no tight split."
+    },
+    {
+      "id": "tracklist-mode-047",
+      "input": "00:00 Optiv & BTK-Inception\n03:00 Phace - Psycho",
+      "expected": {
+        "entries": [
+          {
+            "track": {
+              "artists": [
+                "Optiv",
+                "BTK"
+              ],
+              "title": "Inception",
+              "warnings": [
+                "unspacedDashSplit"
+              ]
+            }
+          },
+          {
+            "track": {
+              "artists": [
+                "Phace"
+              ],
+              "title": "Psycho"
+            }
+          }
+        ],
+        "warnings": []
+      },
+      "rules": [
+        "R13.4.2",
+        "R6.10"
+      ],
+      "note": "Exactly half of the candidate lines have a spaced dash: list context is on."
+    },
+    {
+      "id": "tracklist-mode-048",
+      "input": "00:00 Optiv & BTK-inception\n03:00 Blink-182-All The Small Things\n06:00 Phace - Psycho\n09:00 Mefjus - Sinkhole",
+      "expected": {
+        "entries": [
+          {
+            "track": {
+              "artists": [],
+              "title": "Optiv & BTK-inception"
+            }
+          },
+          {
+            "track": {
+              "artists": [],
+              "title": "Blink-182-All The Small Things"
+            }
+          },
+          {},
+          {}
+        ],
+        "warnings": [
+          {
+            "code": "line-unparsed",
+            "line": 1,
+            "severity": "warning",
+            "suggestion": null
+          },
+          {
+            "code": "line-unparsed",
+            "line": 2,
+            "severity": "warning",
+            "suggestion": null
+          }
+        ]
+      },
+      "rules": [
+        "R6.10",
+        "R13.4.2"
+      ],
+      "note": "List context is on, but the tight dash needs a letter on its left and an uppercase letter on its right."
+    },
+    {
+      "id": "tracklist-mode-049",
+      "input": "00:00 Noisia - Stigma\n03:00 Jay-Z-Numb\n06:00 Phace - Psycho",
+      "expected": {
+        "entries": [
+          {
+            "kind": "track"
+          },
+          {
+            "kind": "track",
+            "track": {
+              "artists": [
+                "Jay-Z"
+              ],
+              "title": "Numb",
+              "warnings": [
+                "unspacedDashSplit"
+              ]
+            }
+          },
+          {
+            "kind": "track"
+          }
+        ],
+        "warnings": []
+      },
+      "rules": [
+        "R6.10",
+        "R13.4.2"
+      ],
+      "note": "In list context the tight dash is the LAST letter-dash-Lu dash, as in R6.7."
+    },
+    {
+      "id": "tracklist-mode-050",
+      "fn": "parse",
+      "input": "2 Unlimited No Limit",
+      "options": {
+        "mode": "tracklist"
+      },
+      "expected": {
+        "position": null,
+        "artists": [],
+        "title": "2 Unlimited No Limit"
+      },
+      "rules": [
+        "R4.2",
+        "R6.10"
+      ],
+      "note": "R4.2 in tracklist mode works like clean: (d) never takes a bare number."
+    }
+  ]
+}
