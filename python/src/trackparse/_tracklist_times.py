@@ -48,8 +48,20 @@ def _skip_whitespace(s: str, frm: int) -> int:
     return i
 
 
+def _is_bullet(ch: Optional[str]) -> bool:
+    """R13.2.1 bullets of a line without a time."""
+    return ch == "-" or ch == "–" or ch == "—" or ch == "*" or ch == "•"
+
+
 def _untimed(raw: str, invalid: bool) -> TimeScan:
-    return TimeScan(Parts("", "", "", raw), None, None, invalid)
+    """R13.1.3 / R13.2.1: a line without a time. ``lead`` holds an optional bullet: R0.2
+    whitespace, one of ``-`` ``–`` ``—`` ``*`` ``•``, then at least one R0.2 whitespace (all of
+    it); ``rest`` is the remainder."""
+    at = _skip_whitespace(raw, 0)
+    lead_end = 0
+    if _is_bullet(char_at(raw, at)) and is_whitespace(char_at(raw, at + 1)):
+        lead_end = _skip_whitespace(raw, at + 1)
+    return TimeScan(Parts(raw[:lead_end], "", "", raw[lead_end:]), None, None, invalid)
 
 
 def seconds_of(whole: int, frac: str) -> float:

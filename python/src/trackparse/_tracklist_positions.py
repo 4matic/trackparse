@@ -4,7 +4,8 @@ from __future__ import annotations
 
 from typing import NamedTuple, Optional
 
-from ._words import is_digit, is_whitespace
+from ._digits import digit_run
+from ._words import is_whitespace
 
 
 class BareCandidate(NamedTuple):
@@ -15,14 +16,13 @@ class BareCandidate(NamedTuple):
 
 
 def bare_candidate(rest: str, position_taken: bool) -> Optional[BareCandidate]:
-    """R13.5: a track part starting with 1–3 ASCII digits and a space, where R4.2 took no
-    position (``position_taken``), is a bare candidate. The remainder must be non-empty."""
+    """R13.5: a track part starting with 1–3 ASCII digits and a space (U+0020 only), where R4.2
+    took no position (``position_taken``), is a bare candidate. The remainder must be
+    non-empty."""
     if position_taken:
         return None
-    n = 0
-    while n < len(rest) and is_digit(rest[n]):
-        n += 1
-    if n < 1 or n > 3 or n >= len(rest) or not is_whitespace(rest[n]):
+    n = digit_run(rest, 0)
+    if n < 1 or n > 3 or rest[n : n + 1] != " ":
         return None
     stripped = rest[n + 1 :]
     if all(is_whitespace(c) for c in stripped):

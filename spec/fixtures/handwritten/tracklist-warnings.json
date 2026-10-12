@@ -761,6 +761,41 @@
         "R13.7"
       ],
       "note": "A line that is only a time is a track with an empty track part, and warns line-unparsed."
+    },
+    {
+      "id": "tracklist-warnings-036",
+      "input": "00:00 _-_Intro\n03:00 Noisia - Stigma",
+      "expected": {
+        "entries": [
+          {
+            "kind": "track",
+            "track": {
+              "artists": [],
+              "title": "Intro",
+              "warnings": [
+                "unspacedDashSplit"
+              ]
+            }
+          },
+          {
+            "kind": "track"
+          }
+        ],
+        "warnings": [
+          {
+            "code": "line-unparsed",
+            "line": 1,
+            "severity": "warning",
+            "suggestion": null
+          }
+        ]
+      },
+      "rules": [
+        "R13.3.4",
+        "R13.7",
+        "R6.10"
+      ],
+      "note": "A split with an empty artist side counts as no separator (R13.3.4): the timed track warns line-unparsed."
     }
   ]
 }

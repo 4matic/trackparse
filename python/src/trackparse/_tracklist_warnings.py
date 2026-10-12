@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from typing import Optional, Union
 
-from ._normalize import normalize
 from ._tracklist_times import seconds_of
 from ._tracklist_types import (
     Severity,
@@ -15,7 +14,6 @@ from ._tracklist_types import (
     TracklistWarningCode,
 )
 from ._words import is_digit
-from .types import ParsedTrack
 
 #: Table order of R13.7; warnings of one line are emitted in this order.
 _ORDER: tuple[TracklistWarningCode, ...] = (
@@ -167,18 +165,13 @@ def suggest_fix(times: list[_Timed], k: int) -> Optional[Suggestion]:
     return Suggestion(prev.line, back.raw, back.seconds) if isinstance(back, TimeValue) else None
 
 
-def _unparsed(t: ParsedTrack) -> bool:
-    return "noSeparator" in t.warnings
-
-
-def _empty_part(t: ParsedTrack) -> bool:
-    """R13.3: the track part is empty after R1 (a line that is only a time)."""
-    return len(normalize(t.input)) == 0
-
-
 def tracklist_warnings(
-    entries: list[TracklistEntry], invalid: list[bool], audio_seconds: Optional[float]
+    entries: list[TracklistEntry],
+    invalid: list[bool],
+    unparsed: list[bool],
+    audio_seconds: Optional[float],
 ) -> list[TracklistWarning]:
+    """R13.7. ``unparsed[i]``: a ``track`` entry whose track part has no separator (R13.3.4)."""
     per_line: list[list[TracklistWarning]] = [[] for _ in entries]
 
     def add(i: int, code: TracklistWarningCode, suggestion: Optional[Suggestion] = None) -> None:
@@ -192,12 +185,7 @@ def tracklist_warnings(
             add(i, "time-missing")
         if invalid[i]:
             add(i, "invalid-time")
-        # R13.3 / R13.7: an empty track part (a time-only line) is unparsed too.
-        if (
-            e.kind == "track"
-            and e.track is not None
-            and (_unparsed(e.track) or _empty_part(e.track))
-        ):
+        if unparsed[i]:
             add(i, "line-unparsed")
 
     times: list[_Timed] = []

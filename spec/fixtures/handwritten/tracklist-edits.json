@@ -1686,6 +1686,119 @@
         "R13.9.7"
       ],
       "note": "125:30 − 7000 s → 08:50 (width min(3, 2)); this shift is outside the round trip since the digit count changes."
+    },
+    {
+      "id": "tracklist-edits-071",
+      "input": "12:34\n00:00 A - B",
+      "edits": [
+        {
+          "op": "set-rest",
+          "line": 1,
+          "rest": "Title"
+        }
+      ],
+      "expected": {
+        "text": "12:34 Title\n00:00 A - B",
+        "changed": [
+          1
+        ],
+        "warnings": []
+      },
+      "rules": [
+        "R13.9"
+      ],
+      "note": "set-rest on a time-only line (gap \"\"): a non-empty rest gets one space as gap."
+    },
+    {
+      "id": "tracklist-edits-072",
+      "input": "12:34\n00:00 A - B",
+      "edits": [
+        {
+          "op": "set-rest",
+          "line": 1,
+          "rest": ""
+        }
+      ],
+      "expected": {
+        "text": "12:34\n00:00 A - B",
+        "changed": [
+          1
+        ],
+        "warnings": []
+      },
+      "rules": [
+        "R13.9",
+        "R13.9.1"
+      ],
+      "note": "An empty rest adds no gap; the line still counts as written."
+    },
+    {
+      "id": "tracklist-edits-073",
+      "input": "- Noisia - Stigma\n- Phace - Psycho",
+      "edits": [
+        {
+          "op": "set-rest",
+          "line": 2,
+          "rest": "Mefjus - Sorcery"
+        }
+      ],
+      "expected": {
+        "text": "- Noisia - Stigma\n- Mefjus - Sorcery",
+        "changed": [
+          2
+        ],
+        "warnings": []
+      },
+      "rules": [
+        "R13.9",
+        "R13.1.3",
+        "R13.2.1"
+      ],
+      "note": "On a line without a time the bullet is lead, so set-rest keeps it."
+    },
+    {
+      "id": "tracklist-edits-074",
+      "input": "[12:34]\n00:00 A - B",
+      "edits": [
+        {
+          "op": "set-rest",
+          "line": 1,
+          "rest": "Title"
+        }
+      ],
+      "expected": {
+        "text": "[12:34] Title\n00:00 A - B",
+        "changed": [
+          1
+        ],
+        "warnings": []
+      },
+      "rules": [
+        "R13.9"
+      ],
+      "note": "The gap ']' does not end with whitespace, so set-rest appends one space before a non-empty rest."
+    },
+    {
+      "id": "tracklist-edits-075",
+      "input": "12:34 - \n00:00 A - B",
+      "edits": [
+        {
+          "op": "set-rest",
+          "line": 1,
+          "rest": "Title"
+        }
+      ],
+      "expected": {
+        "text": "12:34 - Title\n00:00 A - B",
+        "changed": [
+          1
+        ],
+        "warnings": []
+      },
+      "rules": [
+        "R13.9"
+      ],
+      "note": "A gap that already ends with whitespace is kept as is."
     }
   ]
 }

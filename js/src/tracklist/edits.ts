@@ -1,4 +1,5 @@
 /** R13.9: applyEdits. Edits apply in order, each to the result of the previous one. */
+import { isWhitespace } from "../words.js";
 import { hasLineBreak, joinLines, splitLines } from "./split.js";
 import { formatTime, scanTime, type TimeScan } from "./times.js";
 import type {
@@ -15,14 +16,62 @@ interface WorkLine {
   eol: Eol;
   /** Written by an edit (R13.9.1). */
   changed: boolean;
+  /** `scanTime(raw)`, kept in step with `raw` (each line is scanned once per write). */
+  scan: TimeScan;
 }
 
 class InvalidEdit extends Error {}
 
+/**
+ * Edit state. Every edit validates its input before it mutates anything, so an invalid edit
+ * (R13.9.6) only has to drop the warnings it added: no snapshot of the lines is needed.
+ */
 interface EditCtx {
   lines: WorkLine[];
   index: number;
   warnings: EditWarning[];
+  /** R13.9.2: times with one-digit hours and with wider hours, over all lines. */
+  oneDigit: number;
+  wideHours: number;
+  /** R13.9.5: how many lines end with each non-empty eol. */
+  eols: Map<Eol, number>;
+}
+
+function workLine(raw: string, eol: Eol, changed: boolean): WorkLine {
+  return { raw, eol, changed, scan: scanTime(raw) };
+}
+
+/** Add (`by` = 1) or remove (`by` = -1) a line's time from the hour-width counts (R13.9.2). */
+function countHours(ctx: EditCtx, line: WorkLine, by: 1 | -1): void {
+  const style = line.scan.style;
+  if (!style?.hours) return;
+  if (style.hourWidth === 1) ctx.oneDigit += by;
+  else ctx.wideHours += by;
+}
+
+function countEol(ctx: EditCtx, eol: Eol, by: 1 | -1): void {
+  if (eol !== "") ctx.eols.set(eol, (ctx.eols.get(eol) ?? 0) + by);
+}
+
+function setEol(ctx: EditCtx, line: WorkLine, eol: Eol): void {
+  countEol(ctx, line.eol, -1);
+  line.eol = eol;
+  line.changed = true;
+  countEol(ctx, eol, 1);
+}
+
+/** A line enters (`by` = 1) or leaves (`by` = -1) the text. */
+function countLine(ctx: EditCtx, line: WorkLine, by: 1 | -1): void {
+  countHours(ctx, line, by);
+  countEol(ctx, line.eol, by);
+}
+
+function setRaw(ctx: EditCtx, line: WorkLine, raw: string): void {
+  countHours(ctx, line, -1);
+  line.raw = raw;
+  line.scan = scanTime(raw);
+  line.changed = true;
+  countHours(ctx, line, 1);
 }
 
 function warnEdit(ctx: EditCtx, code: EditWarningCode, line: number | null): void {
@@ -55,15 +104,8 @@ function singleLine(value: unknown): string {
 }
 
 /** R13.9.2: do the text's times with hours use one-digit hours? (All of them, at least one.) */
-function oneDigitHours(scans: readonly TimeScan[]): boolean {
-  let one = 0;
-  let more = 0;
-  for (const s of scans) {
-    if (!s.style?.hours) continue;
-    if (s.style.hourWidth === 1) one++;
-    else more++;
-  }
-  return one > 0 && more === 0;
+function oneDigitHours(ctx: EditCtx): boolean {
+  return ctx.oneDigit > 0 && ctx.wideHours === 0;
 }
 
 interface Retime {
@@ -74,13 +116,8 @@ interface Retime {
 }
 
 /** R13.9.2 / R13.9.3: the rewritten line for a new value, or InvalidEdit. */
-function retime(
-  index: number,
-  value: number,
-  scans: readonly TimeScan[],
-  oneDigit: boolean,
-): Retime {
-  const scan = scans[index] as TimeScan;
+function retime(ctx: EditCtx, index: number, value: number, oneDigit: boolean): Retime {
+  const scan = (ctx.lines[index] as WorkLine).scan;
   if (!scan.style || !scan.time) throw new InvalidEdit();
   const clamped = value < 0;
   const f = formatTime(clamped ? 0 : value, scan.style, oneDigit);
@@ -91,28 +128,24 @@ function retime(
 
 function commit(ctx: EditCtx, changes: readonly Retime[]): void {
   for (const c of changes) {
-    const line = ctx.lines[c.index] as WorkLine;
-    line.raw = c.raw;
-    line.changed = true;
+    setRaw(ctx, ctx.lines[c.index] as WorkLine, c.raw);
     if (c.clamped) warnEdit(ctx, "time-clamped", c.index + 1);
     if (c.upgraded) warnEdit(ctx, "style-upgraded", c.index + 1);
   }
 }
 
-function scansOf(lines: readonly WorkLine[]): TimeScan[] {
-  return lines.map((l) => scanTime(l.raw));
-}
+/** Lines whose neighbourhood `canonical` must check after an edit; null = every line. */
+type Touched = number[] | null;
 
-function setTime(ctx: EditCtx, edit: object): void {
+function setTime(ctx: EditCtx, edit: object): Touched {
   const index = lineIndex(ctx, field(edit, "line"));
   const value = finite(field(edit, "seconds"));
-  const scans = scansOf(ctx.lines);
-  commit(ctx, [retime(index, value, scans, oneDigitHours(scans))]);
+  commit(ctx, [retime(ctx, index, value, oneDigitHours(ctx))]);
+  return []; // a timed line is never empty and keeps its eol
 }
 
-function shift(ctx: EditCtx, edit: object): void {
+function shift(ctx: EditCtx, edit: object): Touched {
   const delta = finite(field(edit, "seconds"));
-  const scans = scansOf(ctx.lines);
   let targets: number[];
   if (has(edit, "lines")) {
     const list = field(edit, "lines");
@@ -124,23 +157,24 @@ function shift(ctx: EditCtx, edit: object): void {
     targets = [];
     for (let i = from; i < ctx.lines.length; i++) targets.push(i);
   }
-  const oneDigit = oneDigitHours(scans);
+  const oneDigit = oneDigitHours(ctx);
   const changes: Retime[] = [];
   for (const i of targets) {
-    const time = (scans[i] as TimeScan).time;
-    if (time) changes.push(retime(i, time.seconds + delta, scans, oneDigit));
+    const time = (ctx.lines[i] as WorkLine).scan.time;
+    if (time) changes.push(retime(ctx, i, time.seconds + delta, oneDigit));
   }
   commit(ctx, changes);
+  return [];
 }
 
 /** R13.9.4: stable sort of blocks (a timed line plus the untimed lines after it). */
-function sortByTime(ctx: EditCtx): void {
-  const scans = scansOf(ctx.lines);
-  const first = scans.findIndex((s) => s.time !== null);
-  if (first < 0) return;
+function sortByTime(ctx: EditCtx): Touched {
+  const lines = ctx.lines;
+  const first = lines.findIndex((l) => l.scan.time !== null);
+  if (first < 0) return [];
   const blocks: { seconds: number; from: number; to: number }[] = [];
-  for (let i = first; i < scans.length; i++) {
-    const t = (scans[i] as TimeScan).time;
+  for (let i = first; i < lines.length; i++) {
+    const t = (lines[i] as WorkLine).scan.time;
     if (t) blocks.push({ seconds: t.seconds, from: i, to: i + 1 });
     else (blocks[blocks.length - 1] as { to: number }).to = i + 1;
   }
@@ -155,92 +189,121 @@ function sortByTime(ctx: EditCtx): void {
   ctx.lines = order.map((src, slot) => {
     const line = old[src] as WorkLine;
     const eol = (old[slot] as WorkLine).eol; // eol values stay in their slots
-    return { raw: line.raw, eol, changed: line.changed || src !== slot };
+    return { raw: line.raw, eol, changed: line.changed || src !== slot, scan: line.scan };
   });
+  return null;
 }
 
-function setRest(ctx: EditCtx, edit: object): void {
+function setRest(ctx: EditCtx, edit: object): Touched {
   const index = lineIndex(ctx, field(edit, "line"));
   const rest = singleLine(field(edit, "rest"));
   const line = ctx.lines[index] as WorkLine;
-  const p = scanTime(line.raw).parts;
-  line.raw = p.lead + p.time + p.gap + rest;
-  line.changed = true;
+  const p = line.scan.parts;
+  // R13.9 set-rest: a non-empty rest after a time is preceded by whitespace; a gap that does
+  // not end with R0.2 whitespace (`""`, `]`, `)`) gets one space.
+  const spaced = p.gap.length > 0 && isWhitespace(p.gap[p.gap.length - 1]);
+  const gap = p.time !== "" && !spaced && rest !== "" ? `${p.gap} ` : p.gap;
+  setRaw(ctx, line, p.lead + p.time + gap + rest);
+  return [index];
 }
 
-/** R13.9.5: the most common non-empty eol (ties: the first seen), `"\n"` if none. */
-function commonEol(lines: readonly WorkLine[]): Eol {
-  const counts = new Map<Eol, number>();
-  for (const l of lines) if (l.eol !== "") counts.set(l.eol, (counts.get(l.eol) ?? 0) + 1);
-  let best: Eol = "\n";
-  let bestCount = 0;
-  // Map iteration follows first-seen order, so `>` keeps the first eol among equal counts.
-  for (const [eol, n] of counts) {
-    if (n > bestCount) {
-      best = eol;
-      bestCount = n;
-    }
+/**
+ * R13.9.5: the most common non-empty eol (ties: the one seen first in line order), `"\n"` if
+ * none. Counts are kept up to date; only a tie needs a look at the lines.
+ */
+function commonEol(ctx: EditCtx): Eol {
+  let best = 0;
+  const top: Eol[] = [];
+  for (const [eol, n] of ctx.eols) {
+    if (n <= 0 || n < best) continue;
+    if (n > best) top.length = 0;
+    best = n;
+    top.push(eol);
   }
-  return best;
+  if (top.length === 0) return "\n";
+  if (top.length === 1) return top[0] as Eol;
+  for (const l of ctx.lines) if (top.includes(l.eol)) return l.eol;
+  return "\n";
 }
 
-function insert(ctx: EditCtx, edit: object): void {
+function insert(ctx: EditCtx, edit: object): Touched {
   const after = field(edit, "after");
   if (typeof after !== "number" || !Number.isInteger(after)) throw new InvalidEdit();
   if (after < 0 || after > ctx.lines.length) throw new InvalidEdit();
   const text = singleLine(field(edit, "text"));
-  const eol = commonEol(ctx.lines);
+  const eol = commonEol(ctx);
   const last = ctx.lines[ctx.lines.length - 1];
   // R13.9.5: inserting into an empty text keeps it without a trailing newline.
-  const line: WorkLine = { raw: text, eol: ctx.lines.length === 0 ? "" : eol, changed: true };
+  const line = workLine(text, ctx.lines.length === 0 ? "" : eol, true);
   if (after === ctx.lines.length && last && last.eol === "") {
-    last.eol = eol;
-    last.changed = true;
+    setEol(ctx, last, eol);
     line.eol = "";
   }
   ctx.lines.splice(after, 0, line);
+  countLine(ctx, line, 1);
+  return [after];
 }
 
-function remove(ctx: EditCtx, edit: object): void {
+function remove(ctx: EditCtx, edit: object): Touched {
   const index = lineIndex(ctx, field(edit, "line"));
   const [gone] = ctx.lines.splice(index, 1);
+  if (gone) countLine(ctx, gone, -1);
   const last = ctx.lines[ctx.lines.length - 1];
   if (gone && index === ctx.lines.length && last && last.eol !== gone.eol) {
-    last.eol = gone.eol; // R13.9.5: the deleted last line's eol moves up
-    last.changed = true;
+    setEol(ctx, last, gone.eol); // R13.9.5: the deleted last line's eol moves up
   }
+  return [index];
+}
+
+/** A `"\r"` line followed by an empty `"\n"` line reads back as one CRLF line. */
+function mergeAt(ctx: EditCtx, k: number): void {
+  const prev = ctx.lines[k];
+  const next = ctx.lines[k + 1];
+  if (!prev || !next || prev.eol !== "\r" || next.raw !== "" || next.eol !== "\n") return;
+  setEol(ctx, prev, "\r\n");
+  ctx.lines.splice(k + 1, 1);
+  countLine(ctx, next, -1);
 }
 
 /**
- * Keep the work lines equal to what `splitLines(join(lines))` would give: a `"\r"` followed by an
- * empty `"\n"` line reads back as one CRLF, and an empty last line without eol is not a line.
+ * R13.9.5: keep the work lines equal to what `splitLines(join(lines))` would give: a `"\r"`
+ * followed by an empty `"\n"` line reads back as one CRLF, and an empty last line without eol is
+ * not a line. The lines are canonical before each edit, so only the neighbourhood of the lines
+ * the edit touched (and the end) is checked; `null` checks every line (sort-by-time).
  */
-function canonical(lines: WorkLine[]): WorkLine[] {
-  const out: WorkLine[] = [];
-  for (const l of lines) {
-    const prev = out[out.length - 1];
-    if (prev && prev.eol === "\r" && l.raw === "" && l.eol === "\n") {
-      prev.eol = "\r\n";
-      prev.changed = true;
-      continue;
+function canonical(ctx: EditCtx, touched: Touched): void {
+  const lines = ctx.lines;
+  let starts: number[];
+  if (touched === null) {
+    starts = [];
+    for (let k = lines.length - 2; k >= 0; k--) starts.push(k);
+  } else {
+    const set = new Set<number>([lines.length - 2]);
+    for (const t of touched) {
+      set.add(t - 1);
+      set.add(t);
     }
-    out.push(l);
+    starts = [...set].sort((a, b) => b - a);
   }
-  const last = out[out.length - 1];
-  if (last && last.raw === "" && last.eol === "") out.pop();
-  return out;
+  // Descending, so a merge at k never moves a pair still to be checked.
+  for (const k of starts) mergeAt(ctx, k);
+  const last = lines[lines.length - 1];
+  if (last && last.raw === "" && last.eol === "") {
+    lines.pop();
+    countLine(ctx, last, -1);
+  }
 }
 
-function applyOne(ctx: EditCtx, edit: unknown): void {
+function applyOne(ctx: EditCtx, edit: unknown): Touched {
   if (typeof edit !== "object" || edit === null || Array.isArray(edit)) throw new InvalidEdit();
   const op = field(edit, "op");
-  if (op === "set-time") setTime(ctx, edit);
-  else if (op === "shift") shift(ctx, edit);
-  else if (op === "sort-by-time") sortByTime(ctx);
-  else if (op === "set-rest") setRest(ctx, edit);
-  else if (op === "insert") insert(ctx, edit);
-  else if (op === "delete") remove(ctx, edit);
-  else throw new InvalidEdit();
+  if (op === "set-time") return setTime(ctx, edit);
+  if (op === "shift") return shift(ctx, edit);
+  if (op === "sort-by-time") return sortByTime(ctx);
+  if (op === "set-rest") return setRest(ctx, edit);
+  if (op === "insert") return insert(ctx, edit);
+  if (op === "delete") return remove(ctx, edit);
+  throw new InvalidEdit();
 }
 
 /** R13.9.6: an `edit-invalid` warning's line is the edit's integer `line`, else `after`, else null. */
@@ -257,10 +320,6 @@ function invalidLine(edit: unknown): number | null {
   }
 }
 
-function snapshot(lines: readonly WorkLine[]): WorkLine[] {
-  return lines.map((l) => ({ ...l }));
-}
-
 /**
  * R13.9: apply `edits` to `text`. Never throws (R13.9.6): an invalid edit changes nothing and
  * warns `edit-invalid`.
@@ -273,20 +332,23 @@ export function applyEdits(
   void options; // R13.10: accepted for symmetry; edits do not depend on parse options.
   const source = typeof text === "string" ? text : "";
   const list: readonly unknown[] = Array.isArray(edits) ? edits : [];
+  if (list.length === 0) return { text: source, changed: [], warnings: [] };
   const ctx: EditCtx = {
-    lines: splitLines(source).map((l) => ({ ...l, changed: false })),
+    lines: splitLines(source).map((l) => workLine(l.raw, l.eol, false)),
     index: 0,
     warnings: [],
+    oneDigit: 0,
+    wideHours: 0,
+    eols: new Map(),
   };
+  for (const l of ctx.lines) countLine(ctx, l, 1);
   for (let i = 0; i < list.length; i++) {
     ctx.index = i;
-    const before = snapshot(ctx.lines);
     const warningsBefore = ctx.warnings.length;
     try {
-      applyOne(ctx, list[i]);
-      ctx.lines = canonical(ctx.lines);
+      // Validation throws before any mutation, so the lines need no rollback (R13.9.6).
+      canonical(ctx, applyOne(ctx, list[i]));
     } catch {
-      ctx.lines = before;
       ctx.warnings.length = warningsBefore;
       warnEdit(ctx, "edit-invalid", invalidLine(list[i]));
     }
@@ -295,6 +357,5 @@ export function applyEdits(
   ctx.lines.forEach((l, i) => {
     if (l.changed) changed.push(i + 1);
   });
-  if (list.length === 0) return { text: source, changed: [], warnings: [] };
   return { text: joinLines(ctx.lines), changed, warnings: ctx.warnings };
 }

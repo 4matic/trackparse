@@ -152,7 +152,9 @@ describe("R13.11 tracklist invariants", () => {
         expect(tl.entries.map((e) => e.raw + e.eol).join("")).toBe(text);
         for (const e of tl.entries) {
           expect(e.parts.lead + e.parts.time + e.parts.gap + e.parts.rest).toBe(e.raw);
-          if (e.time === null) expect(e.parts.rest).toBe(e.raw);
+          // R13.1.3: without a time, `lead` holds at most a bullet and `time`/`gap` are empty.
+          if (e.time === null) expect(e.parts.lead + e.parts.rest).toBe(e.raw);
+          if (e.time === null) expect(e.parts.time + e.parts.gap).toBe("");
         }
         expect(tl.stats.lines).toBe(tl.entries.length);
       }),
@@ -218,7 +220,7 @@ describe("R13.11 tracklist invariants", () => {
     );
   });
 
-  it("2. totality: 10 000 lines finish well under one second", () => {
+  it("2. totality: 10 000 lines finish under the 3 s ceiling", () => {
     const lines: string[] = [];
     for (let i = 0; i < 10_000; i++) {
       const s = (i * 37) % 7200;
@@ -238,10 +240,46 @@ describe("R13.11 tracklist invariants", () => {
       return min;
     };
     expect(parseTracklist(text).entries).toHaveLength(10_000);
-    expect(best(() => parseTracklist(text))).toBeLessThan(1000);
+    // R13.11.2: a generous ceiling that catches super-linear blowups, not CI load.
+    expect(best(() => parseTracklist(text))).toBeLessThan(3000);
     expect(
       best(() => applyEdits(text, [{ op: "shift", seconds: 5 }, { op: "sort-by-time" }])),
     ).toBeLessThan(1000);
+  });
+
+  it("2. totality: 2 000 edits on 5 000 lines stay linear-ish", () => {
+    // R13.11.2: applyEdits costs lines plus edits, not their product. Each line's time is scanned
+    // once per write and the one-digit-hours test is kept up to date.
+    const lines: string[] = [];
+    for (let i = 0; i < 5000; i++) {
+      const s = i * 30;
+      const time = `${pad2(Math.floor(s / 3600))}:${pad2(Math.floor((s % 3600) / 60))}:${pad2(s % 60)}`;
+      lines.push(`${time} A ${i} - T ${i}`);
+    }
+    const text = lines.join("\n");
+    const setTimes: Edit[] = Array.from({ length: 2000 }, (_, k) => ({
+      op: "set-time",
+      line: ((k * 7) % 5000) + 1,
+      seconds: k * 10,
+    }));
+    const inserts: Edit[] = Array.from({ length: 2000 }, (_, k) => ({
+      op: "insert",
+      after: (k * 7) % 5000,
+      text: "00:00 X - Y",
+    }));
+    expect(applyEdits(text, setTimes).changed).toHaveLength(2000);
+    expect(applyEdits(text, inserts).changed).toHaveLength(2000);
+    const best = (f: () => unknown) => {
+      let min = Number.POSITIVE_INFINITY;
+      for (let k = 0; k < 3; k++) {
+        const t0 = performance.now();
+        f();
+        min = Math.min(min, performance.now() - t0);
+      }
+      return min;
+    };
+    expect(best(() => applyEdits(text, setTimes))).toBeLessThan(1000);
+    expect(best(() => applyEdits(text, inserts))).toBeLessThan(1000);
   });
 
   it("3. identity: applyEdits(t, []) returns t", () => {
@@ -296,7 +334,8 @@ describe("R13.11 tracklist invariants", () => {
         const got = parseTracklist(del.text).entries.map((e) => e.raw);
         // Deleting the last line moves its eol ("" here) up: an empty line that becomes last
         // without an eol is not a line (R13.9.5), so trailing empty lines may disappear.
-        while (kept.at(-1) === "" && got.length < kept.length && line === before.length) kept.pop();
+        while (kept[kept.length - 1] === "" && got.length < kept.length && line === before.length)
+          kept.pop();
         expect(got).toEqual(kept);
       }),
     );

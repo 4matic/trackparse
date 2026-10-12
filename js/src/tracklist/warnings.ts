@@ -1,6 +1,4 @@
 /** R13.7 tracklist warnings and the `time-out-of-order` suggestion search. */
-import { normalize } from "../normalize.js";
-import type { ParsedTrack } from "../types.js";
 import { isDigit } from "../words.js";
 import { secondsOf } from "./times.js";
 import type {
@@ -28,6 +26,8 @@ export interface WarningInput {
   entries: readonly TracklistEntry[];
   /** R13.2.4 per entry. */
   invalid: readonly boolean[];
+  /** R13.7 line-unparsed per entry: a `track` entry whose track part has no separator (R13.3). */
+  unparsed: readonly boolean[];
   audioSeconds: number | null;
 }
 
@@ -156,12 +156,8 @@ export function suggestFix(
   return back.kind === "one" ? { line: prev.line, ...back.time } : null;
 }
 
-const unparsed = (t: ParsedTrack) => t.warnings.includes("noSeparator");
-/** R13.3: the track part is empty after R1 (a line that is only a time). */
-const emptyPart = (t: ParsedTrack) => normalize(t.input).length === 0;
-
 export function tracklistWarnings(input: WarningInput): TracklistWarning[] {
-  const { entries, invalid, audioSeconds } = input;
+  const { entries, invalid, unparsed, audioSeconds } = input;
   const perLine: TracklistWarning[][] = entries.map(() => []);
   const add = (i: number, code: TracklistWarningCode, suggestion: TimeSuggestion | null = null) => {
     const line = (entries[i] as TracklistEntry).line;
@@ -177,10 +173,7 @@ export function tracklistWarnings(input: WarningInput): TracklistWarning[] {
   entries.forEach((e, i) => {
     if (e.kind === "track" && e.time === null && timed.length > 0) add(i, "time-missing");
     if (invalid[i]) add(i, "invalid-time");
-    // R13.3 / R13.7: an empty track part (a time-only line) is unparsed too.
-    if (e.kind === "track" && e.track && (unparsed(e.track) || emptyPart(e.track))) {
-      add(i, "line-unparsed");
-    }
+    if (unparsed[i]) add(i, "line-unparsed");
   });
 
   const times = timed.map((i) => {
