@@ -1,6 +1,6 @@
 # trackparse specification
 
-Spec version: see [`VERSION`](VERSION) (currently **0.1.0**).
+Spec version: see [`VERSION`](VERSION).
 
 This document is the contract every port implements. Behaviour is pinned by the fixtures in
 [`fixtures/`](fixtures/); every rule below has an ID (`R6.2`) that fixtures cite in their `rules` field.
@@ -71,7 +71,7 @@ present (use `null` / `[]` / `false`, never omit).
 | Field | Meaning |
 |---|---|
 | `input` | The original string, untouched (not normalized). |
-| `mode` | Resolved mode: `clean`, `youtube` or `filename` (R2). |
+| `mode` | Resolved mode: `clean`, `youtube`, `filename` (R2) or `tracklist` (explicit only, R13.6). |
 | `position` | Track number prefix (R4). `raw` is the digits as written (`"01"`), `number` the integer. |
 | `timestamp` | Leading cue time (R4). `raw` as written without brackets, `seconds` integer. |
 | `artists` | Track credits: `primary`, `featured`, `producer`. **Remixers are not here** — they live in `versions[].artists`. |
@@ -615,12 +615,12 @@ Nothing is ever dropped.
 
 ### R13.5 Bare positions
 
-A track part that starts with 1–3 ASCII digits and a space (U+0020 only, not other R0.2
-whitespace), where R4.2 does not take a position, has a
-**bare position** candidate `N`. It is a position when the nearest preceding or the nearest following
-candidate line (a line with a time or a spaced dash, R13.4.2) also has a bare candidate equal to
-`N - 1` or `N + 1`. The digits and the space are
-removed before parsing and `track.position = { raw, number }`. Dotted positions (`01.`) never count
+A track part that starts with 1–3 ASCII digits and a space (U+0020 only, not other R0.2 whitespace),
+where R4.2 does not take a position, has a **bare position** candidate `N` if the remainder after
+the space is not empty or only whitespace. It is a position when the nearest preceding or the
+nearest following candidate line (a line with a time or a spaced dash, R13.4.2) also has a bare
+candidate equal to `N - 1` or `N + 1`. The digits and the space are removed before parsing and
+`track.position = { raw, number }`. Dotted positions (`01.`) never count
 as neighbours, so `2 Unlimited - No Limit` between `01.` and `03.` lines stays an artist.
 
 ### R13.6 Tracklist mode
@@ -747,11 +747,11 @@ marker words). Bad values are ignored (R0.8).
    Python, whose single-line parser is slower: 15 s). `applyEdits` is linear-ish in lines plus
    edits, not their product: each edit costs time in the lines it touches (plus the lines a
    `shift`/`sort-by-time` covers, and the shifting of an insert or delete), so 2 000 `set-time` or
-   `insert` edits on 5 000 lines stay under the same ceilings.
+   `insert` edits on 5 000 lines stay within those ceilings.
 3. Locality and identity (R13.9.1).
 4. Round trip (R13.9.7).
-5. A one-line text's track equals `parse(rest, { mode: "tracklist" })` for a line without a bare
-   position.
+5. A one-line text's track equals `parse(rest, { mode: "tracklist" })` for a `track` or `marker`
+   line without a bare position (other kinds have `track: null`).
 
 ---
 
@@ -777,6 +777,8 @@ Property tests in every port assert:
    - `REMIX` ↔ `remix` changes only `raw`.
 8. **Round-trip** (R11.6).
 
+Tracklists (R13) have their own invariants: R13.11.
+
 ## Glossary
 
 - **Working string** — the normalized input after R2 stripping.
@@ -784,3 +786,10 @@ Property tests in every port assert:
 - **Credit list** — a substring that R7.3 splits into names.
 - **Word key** — R0.3.
 - **Dedup key** — R0.4.
+- **Track part** — a tracklist line's `rest` minus a bare position, parsed as a track (R13.4.1).
+- **Candidate line** — a non-blank tracklist line with a time or a spaced dash (R13.4.2).
+- **List context** — at least half of the candidate lines have a spaced dash; enables R6.10's
+  tight dash (R13.4.2).
+- **Bare position** — an undotted leading `N ` confirmed by a neighbouring `N ± 1` (R13.5).
+- **Block** — a timed line plus the untimed lines after it, moved together by `sort-by-time`
+  (R13.9.4).

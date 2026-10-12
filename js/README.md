@@ -205,7 +205,7 @@ The full field reference, a gallery of examples and the comparison with other li
 
 `trackparse/tracklist` parses a whole tracklist: one entry per line with its kind, start time and
 a full `ParsedTrack`, plus checks with line numbers. Joining `raw + eol` over the entries gives the
-input back byte for byte, whatever the line endings. It's a separate entry point (about 7.6 kB
+input back byte for byte, whatever the line endings. It's a separate entry point (about 7.6 KiB
 gzipped), so you only pay for it if you import it.
 
 ```js
@@ -257,9 +257,11 @@ result.warnings;                      // [ { code: 'style-upgraded', edit: 1, li
 result.text.split("\r\n")[4];         // '01:00:16 Alix Perez - Fade Away'  (was 59:31)
 ```
 
-Edits: `set-time`, `shift` (all timed lines, `lines: [...]` or `from: n`), `sort-by-time`,
-`set-rest`, `insert`, `delete`. A bad edit changes nothing and warns `edit-invalid`; a time pushed
-below zero stops at zero and warns `time-clamped`.
+Edits: `set-time {line, seconds}`, `shift {seconds, lines? | from?}`
+(all timed lines when neither is given), `sort-by-time {}`, `set-rest {line, rest}`,
+`insert {after, text}` (`after: 0` inserts at the top), `delete {line}`.
+A bad edit changes nothing and warns `edit-invalid`; a time pushed below zero stops at zero and
+warns `time-clamped`.
 
 Warning codes: `time-missing`, `time-out-of-order` (with a one- or two-digit `suggestion` when
 exactly one fix fits), `time-duplicate`, `no-start-at-zero`, `time-after-audio-end` (pass

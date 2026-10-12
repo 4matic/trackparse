@@ -10,7 +10,7 @@
 [![js](https://img.shields.io/github/actions/workflow/status/4matic/trackparse/js.yml?branch=main&label=js&logo=github)](https://github.com/4matic/trackparse/actions/workflows/js.yml)
 [![python](https://img.shields.io/github/actions/workflow/status/4matic/trackparse/python.yml?branch=main&label=python&logo=github)](https://github.com/4matic/trackparse/actions/workflows/python.yml)
 [![spec](https://img.shields.io/github/actions/workflow/status/4matic/trackparse/spec.yml?branch=main&label=spec&logo=github)](https://github.com/4matic/trackparse/actions/workflows/spec.yml)
-[![fixtures](https://img.shields.io/badge/fixtures-12%2C944%20passing-2ea44f)](spec/fixtures)
+[![fixtures](https://img.shields.io/badge/fixtures-12%2C965%20passing-2ea44f)](spec/fixtures)
 [![dependencies](https://img.shields.io/badge/dependencies-0-2ea44f)](js/package.json)
 [![gzip](https://img.shields.io/badge/gzip-17%20kB-informational)](https://www.npmjs.com/package/trackparse)
 [![types](https://img.shields.io/npm/types/trackparse)](js/src/types.ts)
@@ -297,6 +297,7 @@ Python has the same functions, snake_case, with frozen dataclasses:
 ```python
 from trackparse.tracklist import apply_edits, parse_tracklist
 
+# text: the same tracklist as in the JS example above
 parse_tracklist(text).warnings[1].suggestion
 # Suggestion(line=8, raw='01:11:02', seconds=4262)
 apply_edits(text, [{"op": "set-time", "line": 8, "seconds": 4262}]).changed
@@ -320,10 +321,11 @@ archive:
 | `8 Linkin Park_-_Points Of Authority (Gydra Bootleg)` | no separator | position 8, Linkin Park / `Points Of Authority`, bootleg by Gydra |
 | `10 Optiv & BTK-Inception (Gydra remix)` | no separator | position 10, Optiv, BTK / `Inception`, remix by Gydra |
 
-The last two rows need the neighbours. A bare `8 ` only counts as a position when the nearest track
-line before or after it starts with a bare 7 or 9. Dotted numbers like `01.` never count as
+The last two rows need the neighbours. A bare `8 ` only counts as a position when the nearest line
+before or after it that has a time or a spaced dash starts with a bare 7 or 9. Dotted numbers like `01.` never count as
 neighbours, so `2 Unlimited - No Limit` between `01.` and `03.` stays an artist. The tight
-`BTK-Inception` dash only splits when at least half of the list uses spaced dashes.
+`BTK-Inception` dash only splits on a timed line without a marker word, and only when at least half
+of the list uses spaced dashes.
 
 ## How it's tested
 
@@ -352,11 +354,11 @@ field, so nothing can drift unnoticed.
 | Modes | 65 | YouTube pipes, `"Title" by Artist`, uploader fallback, filenames |
 | Unicode and normalization | 71 | NFC, zero-width characters, fullwidth brackets, Cyrillic, CJK, Turkish İ |
 | `format`, `parseArtists`, unknown IDs | 94 | Round-trips, canonical joiners, `ID - ID` |
-| Tracklist mode | 50 | All 17 real podcast lines that single-line `parse()` gets wrong, the 6 real lines with no separator at all, `parse(s, { mode: "tracklist" })` |
-| Tracklist lines and times | 60 | LF/CRLF/CR, trailing spaces, line kinds, every time form, brackets, gap separators, `=>` arrows, invalid times |
-| Tracklist positions | 12 | The real 81-line list numbered `1 ` to `81 ` without dots, and the `2 Unlimited` guard |
-| Tracklist warnings | 35 | Each code with its near-miss, and the 10 real out-of-order lists with their suggestions |
-| Tracklist edits | 70 | `set-time` style keeping, shift, clamp, `sort-by-time`, insert/delete line endings, invalid edits, locality |
+| Tracklist mode | 54 | All 17 real podcast lines that single-line `parse()` gets wrong, the 6 real lines with no separator at all, `parse(s, { mode: "tracklist" })` |
+| Tracklist lines and times | 70 | LF/CRLF/CR, trailing spaces, line kinds, every time form, brackets, gap separators, `=>` arrows, invalid times |
+| Tracklist positions | 13 | The real 81-line list numbered `1 ` to `81 ` without dots, and the `2 Unlimited` guard |
+| Tracklist warnings | 36 | Each code with its near-miss, and the 10 real out-of-order lists with their suggestions |
+| Tracklist edits | 75 | `set-time` style keeping, shift, clamp, `sort-by-time`, insert/delete line endings, invalid edits, locality |
 
 ### Generated: 11,817 cases
 
@@ -395,7 +397,7 @@ For tracklists, on random multi-line text and random edit lists:
 - `raw + eol` over all entries gives the input back, and `lead + time + gap + rest` gives `raw`;
 - `applyEdits(t, [])` returns `t`, and an edit never touches a line it doesn't name;
 - `shift(+s)` then `shift(-s)` restores the text when nothing was clamped or upgraded;
-- 10,000 lines parse in linear time (under 1 s in JS);
+- 10,000 lines parse in linear time (the JS suite allows 3 s; it takes about 0.6 s);
 - a one-line list gives the same track as `parse(rest, { mode: "tracklist" })`.
 
 ### Real tracklists
@@ -414,7 +416,7 @@ built package over it and asserts:
 - only 2 lines stay `line-unparsed`, and both really have no separator
   (`Gydra & Ihr Caliban`, `Grinda & Nic ZigZag`).
 
-The whole corpus parses in about 0.4 s.
+The whole corpus parses in about 0.3 s.
 
 ```sh
 pnpm install
@@ -480,7 +482,7 @@ The vocabulary is in [`spec/data`](spec/data).
 |---|---|---|
 | `mode` | `"auto"` | `"clean"`, `"youtube"`, `"filename"`, `"tracklist"`, or detect from the string |
 | `knownArtists` | `[]` | Names that are never split (`Chase & Status`, `Earth, Wind & Fire`) |
-| `uploader` | – | YouTube channel, used as the artist when there's no separator (`- Topic` and `VEVO` are dropped) |
+| `uploader` | – | YouTube channel; in youtube mode it's used as the artist when there's no separator (`- Topic` and `VEVO` are dropped) |
 | `splitAnd` | `"auto"` | `and` splits only after a comma (`A, B and C`), so `Simon and Garfunkel` stays whole |
 | `keywords` | – | Extra vocabulary: `versionHeads`, `descriptors`, `genres`, `junk`, `featMarkers` |
 
@@ -538,7 +540,8 @@ that only parses single tracks never loads it.
 Kinds: a line with a time is a `marker` when it has no separator and a word like `intro`, `break`
 or `interview` ([`spec/data/marker-words.json`](spec/data/marker-words.json)), otherwise a
 `track`. Without a time, a URL is a `link`, `Tracklist:` or `Part 2` is a `header`, a line with a
-separator is a `track`, and anything else is a `note`. No line is ever dropped.
+separator is a `track`, one with a marker word and no separator is a `marker`, and anything else is
+a `note`. No line is ever dropped.
 
 `stats` is `{ lines, tracks, markers, timed, firstTime, lastTime }`.
 
@@ -577,7 +580,7 @@ Edits run in order, each on the result of the one before, with line numbers as t
 
 `changed` lists the final line numbers of every line an edit wrote. Every other line keeps its
 bytes and its line ending. Edit warnings are `{ code, edit, line }`, where `edit` is the index in
-`edits`:
+`edits` and `line` is `null` when the edit names no line (an unknown `op`, say):
 
 | Code | When |
 |---|---|
@@ -662,10 +665,12 @@ Not there yet:
 - Times at the end of a line (`Noisia - Stigma [12:34]`) and time ranges (`00:00 - 05:30`). A
   trailing time stays in the title. In a range only the start is the line's time; the end ends up
   in `track.timestamp` and nothing checks it.
-- Label and catalogue numbers (`[HOSP123]`) as fields. Label-like groups currently land in `junk`.
+- Label and catalogue numbers (`[HOSP123]`) as fields. Catalogue numbers stay in the title; only
+  known label phrases (`[NCS Release]`) land in `junk` as `label`.
 - Key and BPM (`8A`, `174 BPM`).
 - An artist database. `Earth, Wind & Fire` splits unless it's in `knownArtists`, and a tracklist
   doesn't yet learn names from its other lines.
+- Warnings for gaps or overlaps between consecutive tracklist times.
 
 Planned next: the Rust port, then a browser playground.
 

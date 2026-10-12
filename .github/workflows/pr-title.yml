@@ -1,6 +1,7 @@
 name: pr-title
 
-# PRs are squash-merged, so the PR title becomes the commit that release-please reads.
+# Feature PRs are rebase-merged (each commit message must be conventional too); release PRs
+# are squash-merged, so their title becomes the commit that release-please reads.
 
 on:
   pull_request:

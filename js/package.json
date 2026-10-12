@@ -1,7 +1,7 @@
 {
   "name": "trackparse",
   "version": "0.2.1",
-  "description": "Spec-driven parser for music track strings: artists, feat credits, remixes/versions, junk and more from single track strings (store titles, YouTube titles, filenames).",
+  "description": "Spec-driven parser for music track strings: artists, feat credits, remixes/versions, junk and more from single track strings (store titles, YouTube titles, filenames) and multi-line tracklists.",
   "license": "MIT",
   "author": "Maksim Maksimov",
   "repository": {
