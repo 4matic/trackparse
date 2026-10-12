@@ -1,5 +1,38 @@
 # Proposal: tracklists (multi-line parsing, checks and edits)
 
+> **Status: adopted as SPEC R13 (with R6.10) in 0.3.0.** [`SPEC.md`](../SPEC.md) is the contract
+> now; this file is kept as the record of why. The rule numbers below are the draft ones and do not
+> match R13's.
+>
+> **Corrections after verification.** Checking this draft against the corpus and the shipped
+> implementation turned up these errors. The text below is left as written.
+>
+> - Bare positions: the corpus has **81** lines with a bare number (the whole "Gydra 10 years mix"),
+>   not the 3 examples in 3a. All 81 are found (R13.5).
+> - The 23 `noSeparator` lines in 3a: only **17** were really parsed wrong. The other 6 genuinely
+>   have no separator: two `Intro` lines, two interviews, `Grinda & Nic ZigZag` and
+>   `Gydra & Ihr Caliban`. The first four are markers now; the last two warn `line-unparsed`.
+> - Time forms: `HH:MM:SS` is on **2,382** lines, not 2,112.
+> - Year rows (`Effector - 2012`): single-line `parse()` puts the year in `year`, not in a version.
+>   The artist name (`Effector`) becomes the title.
+> - Dub row (`ez4cheezy - Zhukovskiy dub`): the artist became the **title** (`ez4cheezy`, with a
+>   `dub` version), not "a version of the artist".
+> - The 3a table contradicts itself: `Anticipation VIP` is listed as the title *and* as a `vip`
+>   version, while `Dreamer VIP` is split into `Dreamer` + VIP. Resolved: in tracklist mode the
+>   text after the first spaced dash is kept verbatim, so the titles are `Anticipation VIP` and
+>   `Dreamer VIP` with no version (R6.10).
+> - The `neuropunk/web` regex in section 9 is not anchored and allows `\s{1,3}` (any whitespace)
+>   after the time, not `^` and 1–3 spaces. `scripts/corpus-check.mjs` uses the real one.
+> - Suggestions: of the 10 real out-of-order times, only **2** have a unique fix, and one of them
+>   needs a second search on the **previous** line: `01:22:21` then `01:03:55` is fixed by changing
+>   the first to `01:02:21`, not the second to `01:23:55` as 3a guessed (R13.7).
+> - Decided differently: the per-line mode defaults to `"tracklist"`, not `"clean"`; U+2028,
+>   U+2029 and U+0085 are not line breaks; per-line `ParsedTrack` warnings are not repeated in
+>   `tracklist.warnings`; entries have no `warnings` field; no `formatTime` export.
+> - Deferred, not in 0.3.0: `timeMeaning` (durations instead of start times), `timePosition`
+>   (trailing times), time ranges and `time.end`, `time-gap` / `time-overlap` and `gapThreshold`,
+>   `time-meaning-guessed`, cross-line `knownArtists` (draft R13.10), and a label/catalog junk kind.
+
 **Status:** draft requirements, written 2026-10-12 from the Neuropunk platform side. Not yet part of
 `SPEC.md`. Follows the repo's rule: spec first, then fixtures, then ports (`AGENTS.md`). The rule
 numbers below (R13.x) are placeholders; assign real ones when the text moves into `SPEC.md`.

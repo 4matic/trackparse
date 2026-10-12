@@ -19,7 +19,7 @@ doesn't recognise stays in the title, word for word.
 
 This is the Python port of [trackparse](https://github.com/4matic/trackparse). Its behaviour is
 defined by a [shared spec](https://github.com/4matic/trackparse/blob/main/spec/SPEC.md) and pinned
-by 11,891 fixtures. It passes all of them, and for every fixture input its output is byte-identical
+by 12,965 fixtures. It passes all of them, and for every fixture input its output is byte-identical
 to the JavaScript package.
 
 - Python 3.9 to 3.14
@@ -123,7 +123,7 @@ SPEC_VERSION, __version__
 
 | Option | Default | |
 |---|---|---|
-| `mode` | `"auto"` | `"clean"`, `"youtube"`, `"filename"`, or `"auto"` to detect from the string |
+| `mode` | `"auto"` | `"clean"`, `"youtube"`, `"filename"`, `"tracklist"`, or `"auto"` to detect from the string |
 | `uploader` | `None` | YouTube channel name, used as the artist when there's no separator (`- Topic` and `VEVO` are dropped) |
 | `known_artists` | `()` | Names that are never split. There is no built-in list |
 | `split_and` | `"auto"` | `"auto"` splits on `and` only after a comma (`A, B and C`), so `Simon and Garfunkel` stays whole. Also `"always"`, `"never"` |
@@ -164,7 +164,7 @@ the defaults. Passing something that isn't a `str` raises `TypeError`.
 | Attribute | Type | |
 |---|---|---|
 | `input` | `str` | The original string, untouched |
-| `mode` | `"clean" \| "youtube" \| "filename"` | Resolved mode |
+| `mode` | `"clean" \| "youtube" \| "filename" \| "tracklist"` | Resolved mode |
 | `position` | `Position \| None` | Track number: `Position(raw='01', number=1)` |
 | `timestamp` | `Timestamp \| None` | Leading cue time: `[12:34]` gives `Timestamp(raw='12:34', seconds=754)` |
 | `artists` | `tuple[Artist, ...]` | Primary, featured and producer credits. Remixers live in `versions` |
@@ -306,6 +306,7 @@ released together and always share one version number.
 | `youtube` | Video titles, scrobbles | Pipe segments, `"Title" by Artist`, `Artist: "Title"`, unspaced dashes, trailing junk, uploader fallback |
 | `filename` | Files | Strips the extension, `_` becomes a space, `01-Track` numbering |
 | `auto` | Anything | `filename` for known extensions, `youtube` when it sees junk, pipes or platform suffixes, `clean` otherwise |
+| `tracklist` | One line of a tracklist | The first spaced dash always separates; `_-_` too. Never picked by `auto` |
 
 ```python
 t = parse('"Numb" by Linkin Park', mode="youtube")
@@ -320,10 +321,117 @@ parse("Shelter", mode="youtube", uploader="Porter Robinson").artists
 # (Artist(name='Porter Robinson', role='primary', joiner=None, source='artist'),)
 ```
 
+## Tracklists
+
+`trackparse.tracklist` parses a whole tracklist, one entry per line, and checks it. Each entry
+keeps its line exactly as written plus its own line ending, so `"".join(e.raw + e.eol for e in
+tl.entries)` is always the input, CRLF or not.
+
+```python
+from trackparse.tracklist import apply_edits, parse_tracklist
+
+text = "\r\n".join(
+    [
+        "Hour 2",
+        "48:20 Noisia - Stigma",
+        "52:47 Mefjus & Kasra - Bandwagon (Phace Remix)",
+        "56:05 Black Sun Empire - ID",
+        "59:31 Alix Perez - Fade Away",
+        "01:03:10 Interview with Hybris",
+        "01:07:44 Imanu - Sacrifice",
+        "00:11:02 Current Value feat. Teddy Killerz - Payload",  # typo for 01:11:02
+        "01:15:36 Hybris - Spinning Top",
+    ]
+)
+
+tl = parse_tracklist(text)
+
+[e.kind for e in tl.entries]
+# ['header', 'track', 'track', 'track', 'track', 'marker', 'track', 'track', 'track']
+
+e = tl.entries[2]
+e.time  # TimeValue(raw='52:47', seconds=3167)
+e.parts  # Parts(lead='', time='52:47', gap=' ', rest='Mefjus & Kasra - Bandwagon (Phace Remix)')
+[a.name for a in e.track.artists], e.track.title, e.track.versions[0].type
+# (['Mefjus', 'Kasra'], 'Bandwagon', 'remix')
+tl.entries[3].track.flags.unknown_title  # True (the ID)
+
+tl.warnings
+# (TracklistWarning(code='no-start-at-zero', line=2, severity='info', suggestion=None),
+#  TracklistWarning(code='time-out-of-order', line=8, severity='warning',
+#                   suggestion=Suggestion(line=8, raw='01:11:02', seconds=4262)))
+
+tl.stats
+# Stats(lines=9, tracks=7, markers=1, timed=8, first_time=2900, last_time=4536)
+```
+
+The suggestion exists because exactly one time, one digit away from `00:11:02`, fits between its
+neighbours. With several candidates or none, `suggestion` is `None`.
+
+`apply_edits` takes a list of dicts with the spec's keys (`op`, `line`, `seconds`, `lines`, `from`,
+`after`, `text`, `rest`) and only rewrites the lines they name:
+
+```python
+fix = tl.warnings[1].suggestion
+r = apply_edits(
+    text,
+    [
+        {"op": "set-time", "line": fix.line, "seconds": fix.seconds},
+        {"op": "shift", "seconds": 45, "from": 5},
+    ],
+)
+
+r.changed  # (5, 6, 7, 8, 9)
+r.warnings  # (EditWarning(code='style-upgraded', edit=1, line=5),)
+r.text.split("\r\n")[4]  # '01:00:16 Alix Perez - Fade Away'  (was 59:31)
+
+apply_edits(text, [{"op": "shift", "seconds": -3000, "lines": [2, 3]}]).warnings
+# (EditWarning(code='time-clamped', edit=0, line=2),)
+```
+
+A rewritten time keeps its line's style: `52:47` stays `MM:SS`, and a time that crosses the hour
+gets hours like the rest of the list, with a `style-upgraded` warning. A bad edit changes nothing
+and warns `edit-invalid`. Neither function raises on `str` input.
+
+```python
+parse_tracklist(text, *, mode="tracklist", known_artists=(), keywords=None, split_and="auto",
+                audio_seconds=None, marker_words=()) -> Tracklist
+apply_edits(text, edits, *, <same options>) -> EditResult
+```
+
+| Result | Fields |
+|---|---|
+| `Tracklist` | `spec_version`, `entries`, `warnings`, `stats` |
+| `TracklistEntry` | `line` (1-based), `kind` (`track`, `marker`, `header`, `link`, `note`, `blank`), `eol`, `raw`, `parts`, `time`, `track` (`ParsedTrack` or `None`) |
+| `Parts` | `lead`, `time`, `gap`, `rest`, joined they give `raw` |
+| `TracklistWarning` | `code`, `line`, `severity` (`info` or `warning`), `suggestion` |
+| `Stats` | `lines`, `tracks`, `markers`, `timed`, `first_time`, `last_time` |
+| `EditResult` | `text`, `changed`, `warnings` (`EditWarning(code, edit, line)`) |
+
+Warning codes: `time-missing`, `time-out-of-order`, `time-duplicate`, `no-start-at-zero`,
+`time-after-audio-end` (needs `audio_seconds`), `invalid-time`, `position-gap`,
+`position-duplicate`, `line-unparsed`. Edits: `set-time`, `shift`, `sort-by-time`, `set-rest`,
+`insert`, `delete`. The
+[main README](https://github.com/4matic/trackparse#tracklist-api) explains each one.
+`to_dict()` gives the camelCase JSON from
+[`tracklist.schema.json`](https://github.com/4matic/trackparse/blob/main/spec/schema/tracklist.schema.json),
+byte-identical to the JS package's output.
+
+Every line is parsed with `mode="tracklist"`, where the first spaced dash always separates artist
+and title. `parse()` accepts it too:
+
+```python
+parse("Electrosoul System - Liquid Metal").junk
+# (Junk(raw='Liquid Metal', kind='genre'),)
+parse("Electrosoul System - Liquid Metal", mode="tracklist").title
+# 'Liquid Metal'
+```
+
 ## Typing
 
 The package ships `py.typed` and passes `mypy --strict`. `ParsedTrack`, `Artist`, `Version`,
-`Junk`, `Flags`, `Position` and `Timestamp` are frozen dataclasses with snake_case attributes.
+`Junk`, `Flags`, `Position` and `Timestamp` are frozen dataclasses with snake_case attributes, and
+so are the tracklist results in `trackparse.tracklist`.
 Sequences are tuples, so results are immutable and hashable and can go in sets or be used as dict
 keys. Option dicts have `TypedDict` types (`ParseOptions`, `KeywordOptions`, `FormatOptions`).
 
