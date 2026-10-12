@@ -45,6 +45,16 @@
         "default": "./dist/index.cjs"
       }
     },
+    "./tracklist": {
+      "import": {
+        "types": "./dist/tracklist.d.ts",
+        "default": "./dist/tracklist.js"
+      },
+      "require": {
+        "types": "./dist/tracklist.d.cts",
+        "default": "./dist/tracklist.cjs"
+      }
+    },
     "./package.json": "./package.json"
   },
   "scripts": {
@@ -55,8 +65,9 @@
     "typecheck": "tsc --noEmit",
     "lint": "biome check .",
     "conformance": "tsx scripts/conformance.ts",
-    "check:package": "publint && attw --pack .",
-    "compat": "node scripts/compat.mjs"
+    "check:package": "publint && attw --pack . --profile node16",
+    "compat": "node scripts/compat.mjs",
+    "size": "node scripts/size-check.mjs"
   },
   "devDependencies": {
     "@arethetypeswrong/cli": "^0.18.5",

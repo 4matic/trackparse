@@ -13,7 +13,16 @@ import {
   trimSkel,
 } from "./scanner.js";
 import type { Mode } from "./types.js";
-import { collapseSpaces, inVocab, isLetterAt, isWhitespace, splitWords, yearOf } from "./words.js";
+import {
+  collapseSpaces,
+  inVocab,
+  isLetterAt,
+  isLetterBefore,
+  isUpperAt,
+  isWhitespace,
+  splitWords,
+  yearOf,
+} from "./words.js";
 
 export type Peelable = Extract<Classification, { kind: "junk" | "flag" | "year" | "versions" }>;
 
@@ -78,6 +87,11 @@ export interface SeparatorInput {
   skel: Skel;
   mode: Mode;
   uploader: Skel | null;
+  /**
+   * R13.4.2 list context (internal, set only by the tracklist module): enables the R6.10 tight
+   * `letter-Uppercase` dash in tracklist mode.
+   */
+  listContext?: boolean;
 }
 
 function nonEmpty(s: Skel): Skel | null {
@@ -92,6 +106,8 @@ function splitAt(s: Skel, cutStart: number, cutEnd: number): { artist: Skel | nu
 export function findSeparator(input: SeparatorInput, ctx: Ctx): SeparatorResult {
   const { skel, mode } = input;
   const segments = splitAtSpacedDashes(skel, true);
+  if (mode === "tracklist")
+    return tracklistSeparator(skel, segments, input.listContext === true, ctx);
   const { remaining, peeled } = peelSuffixes(segments, false, ctx);
 
   // R6.3
@@ -112,6 +128,62 @@ export function findSeparator(input: SeparatorInput, ctx: Ctx): SeparatorResult 
   const artist = mode === "youtube" ? input.uploader : null;
   if (rest.text.length > 0 && artist === null) warn(ctx, "noSeparator");
   return { artist, title: rest, split: false, peeled };
+}
+
+/**
+ * R6.10: tracklist mode. The first spaced dash always separates (no R6.2 peeling; R8.2 still
+ * peels later suffixes on the title side). Without one: R6.4, then the first `_-_`, then (list
+ * context only) the last tight `letter-Uppercase` dash; both of these warn `unspacedDashSplit`.
+ */
+function tracklistSeparator(
+  skel: Skel,
+  segments: Segment[],
+  listContext: boolean,
+  ctx: Ctx,
+): SeparatorResult {
+  if (segments.length >= 2) {
+    const first = segments[0] as Segment;
+    const second = segments[1] as Segment;
+    const lastSeg = segments[segments.length - 1] as Segment;
+    const artist = first.skel.text.length > 0 ? first.skel : null;
+    const title = sliceSkel(skel, second.start, lastSeg.end);
+    return { artist, title, split: artist !== null, peeled: [] };
+  }
+  const rest = (segments[0] as Segment).skel;
+  const asym = asymmetricDash(rest.text);
+  if (asym >= 0) {
+    warn(ctx, "asymmetricDashSplit");
+    const parts = splitAt(rest, asym, asym + 1);
+    return { ...parts, split: parts.artist !== null, peeled: [] };
+  }
+  const underscore = rest.text.indexOf("_-_");
+  if (underscore >= 0) {
+    warn(ctx, "unspacedDashSplit");
+    const parts = splitAt(rest, underscore, underscore + 3);
+    return { ...parts, split: parts.artist !== null, peeled: [] };
+  }
+  if (listContext) {
+    const tight = tightUpperDash(rest.text);
+    if (tight >= 0) {
+      warn(ctx, "unspacedDashSplit");
+      const parts = splitAt(rest, tight, tight + 1);
+      return { ...parts, split: parts.artist !== null, peeled: [] };
+    }
+  }
+  if (rest.text.length > 0) warn(ctx, "noSeparator");
+  return { artist: null, title: rest, split: false, peeled: [] };
+}
+
+/**
+ * R6.10: the last `-` with a letter (R0.6) on its left and an uppercase letter (Lu) on its right,
+ * as in R6.7 (`Jay-Z-Numb` → `Jay-Z` / `Numb`).
+ */
+function tightUpperDash(t: string): number {
+  for (let i = t.length - 2; i >= 1; i--) {
+    if (t[i] !== "-") continue;
+    if (isLetterBefore(t, i) && isUpperAt(t, i + 1)) return i;
+  }
+  return -1;
 }
 
 function splitWithoutSpacedDash(

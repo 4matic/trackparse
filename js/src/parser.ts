@@ -5,7 +5,7 @@ import { type Ctx, makeCtx, warn } from "./context.js";
 import { type Piece, prelude } from "./mode.js";
 import { normalize } from "./normalize.js";
 import { stripPrefixes } from "./prefix.js";
-import { type Skel, scan, trimSkel } from "./scanner.js";
+import { type Skel, scan, splitAtSpacedDashes, trimSkel } from "./scanner.js";
 import { findSeparator } from "./separator.js";
 import { stringEntries, stringList, type Tables, tablesFor } from "./tables.js";
 import { addPeeled, emptyExtracted, parseTitleSide } from "./title.js";
@@ -52,7 +52,7 @@ function uploaderSkel(uploader: string | undefined): Skel | null {
   return scan(u, UPLOADER_BASE).skel;
 }
 
-function run(input: string, options: ParseOptions, t: Tables): ParsedTrack {
+function run(input: string, options: ParseOptions, t: Tables, listContext = false): ParsedTrack {
   const ctx = makeCtx(t, options);
   const norm = normalize(input);
   const requested = options.mode ?? "auto";
@@ -77,7 +77,7 @@ function run(input: string, options: ParseOptions, t: Tables): ParsedTrack {
     relaxed = artistSkel !== null;
   } else {
     const sep = findSeparator(
-      { skel: working, mode: pre.mode, uploader: uploaderSkel(options.uploader) },
+      { skel: working, mode: pre.mode, uploader: uploaderSkel(options.uploader), listContext },
       ctx,
     );
     addPeeled(out, sep.peeled);
@@ -151,6 +151,46 @@ export function createParser(base: ParseOptions = {}): Parser {
       const { merged, tables } = resolve(options);
       return runArtists(input, merged, tables);
     },
+  };
+}
+
+/** Facts about a line's prefix and separator search, for the tracklist module (R13.4.2, R13.5). */
+export interface LineProbe {
+  /** R4.2 took a position. */
+  position: boolean;
+  /** The skeleton R6 searches (after R2 and R4) has a spaced dash (R6.1). */
+  spacedDash: boolean;
+}
+
+/** R1, R2 and R4 only, as `run` does them: cheap, no artist/title parsing. */
+function probe(input: string, options: ParseOptions, t: Tables): LineProbe {
+  const ctx = makeCtx(t, options);
+  const norm = normalize(input);
+  if (norm.length === 0) return { position: false, spacedDash: false };
+  const pre = prelude(norm, options.mode ?? "auto", ctx);
+  const prefix = stripPrefixes(pre.working.text, pre.working.base, pre.mode, ctx);
+  if (pre.pipeTitle) return { position: prefix.position !== null, spacedDash: false };
+  const working = skelOf({ text: prefix.rest, base: prefix.base }, ctx);
+  return {
+    position: prefix.position !== null,
+    spacedDash: splitAtSpacedDashes(working, true).length >= 2,
+  };
+}
+
+/** Internal (not exported from the package root): parsing hooks for the tracklist module. */
+export interface ListParser {
+  /** `parse` with the R13.4.2 list-context flag (it only matters in tracklist mode, R6.10). */
+  parse(input: string, listContext: boolean): ParsedTrack;
+  probe(input: string): LineProbe;
+}
+
+/** A ListParser with `base` compiled once. */
+export function createListParser(base: ParseOptions): ListParser {
+  const options = safeOptions(base);
+  const tables = tablesFor(options.keywords);
+  return {
+    parse: (input, listContext) => run(input, options, tables, listContext),
+    probe: (input) => probe(input, options, tables),
   };
 }
 

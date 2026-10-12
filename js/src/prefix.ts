@@ -1,8 +1,8 @@
 /** R4: leading timestamp and track-position prefixes. */
 import { type Ctx, matchKnownAt } from "./context.js";
+import { digitRun, twoDigitsUpTo59 } from "./digits.js";
 import { hasSpacedDash, scan } from "./scanner.js";
 import type { Mode, Position, Timestamp } from "./types.js";
-import { isDigit } from "./words.js";
 
 export interface PrefixResult {
   rest: string;
@@ -10,18 +10,6 @@ export interface PrefixResult {
   base: number;
   timestamp: Timestamp | null;
   position: Position | null;
-}
-
-function digitRun(s: string, from: number): number {
-  let i = from;
-  while (isDigit(s[i])) i++;
-  return i - from;
-}
-
-function twoDigitsUpTo59(s: string, at: number): number | null {
-  if (!isDigit(s[at]) || !isDigit(s[at + 1]) || isDigit(s[at + 2])) return null;
-  const n = Number(s.slice(at, at + 2));
-  return n <= 59 ? n : null;
 }
 
 interface TimeMatch {

@@ -32,6 +32,8 @@ jobs:
       - run: pnpm --filter trackparse typecheck
       - run: pnpm --filter trackparse test
       - run: pnpm --filter trackparse build
+      - name: Size budget (trackparse/tracklist adds <= 8 KiB gzip)
+        run: pnpm --filter trackparse size
       - name: Package checks
         working-directory: js
         run: |
