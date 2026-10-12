@@ -25,3 +25,6 @@ rust/Cargo.lock
 .idea/
 .vscode/
 *.swp
+
+# Real-world corpora (platform data, not redistributable)
+spec/corpus/

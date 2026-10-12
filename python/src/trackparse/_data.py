@@ -179,6 +179,23 @@ GENRES_DATA: dict[str, Any] = {
     ],
 }
 
+# spec/data/header-words.json
+HEADER_WORDS_DATA: dict[str, Any] = {
+    "words": [
+        "tracklist",
+        "setlist",
+        "playlist",
+        "part",
+        "hour",
+        "cd",
+        "disc",
+        "side",
+        "chapter",
+        "segment",
+        "set",
+    ],
+}
+
 # spec/data/joiners.json
 JOINERS_DATA: dict[str, Any] = {
     "spaced": [
@@ -330,6 +347,33 @@ JUNK_DATA: dict[str, Any] = {
         "release",
         "records",
         "recordings",
+    ],
+}
+
+# spec/data/marker-words.json
+MARKER_WORDS_DATA: dict[str, Any] = {
+    "words": [
+        "intro",
+        "outro",
+        "break",
+        "interlude",
+        "intermission",
+        "jingle",
+        "ad",
+        "advert",
+        "advertisement",
+        "talk",
+        "interview",
+        "speech",
+        "announcement",
+        "shoutout",
+        "shout-out",
+        "pause",
+        "start",
+        "end",
+        "silence",
+        "applause",
+        "skit",
     ],
 }
 

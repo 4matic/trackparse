@@ -1,0 +1,108 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/4matic/trackparse/spec/schema/tracklist.schema.json",
+  "title": "Tracklist",
+  "description": "Output of parseTracklist() (SPEC.md R13.8) and of applyEdits() ($defs/editResult). Canonical JSON shared by every port; every key is always present.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["specVersion", "entries", "warnings", "stats"],
+  "properties": {
+    "specVersion": { "type": "string" },
+    "entries": { "type": "array", "items": { "$ref": "#/$defs/entry" } },
+    "warnings": { "type": "array", "items": { "$ref": "#/$defs/warning" } },
+    "stats": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["lines", "tracks", "markers", "timed", "firstTime", "lastTime"],
+      "properties": {
+        "lines": { "type": "integer", "minimum": 0 },
+        "tracks": { "type": "integer", "minimum": 0 },
+        "markers": { "type": "integer", "minimum": 0 },
+        "timed": { "type": "integer", "minimum": 0 },
+        "firstTime": { "type": ["number", "null"], "minimum": 0 },
+        "lastTime": { "type": ["number", "null"], "minimum": 0 }
+      }
+    }
+  },
+  "$defs": {
+    "entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["line", "kind", "eol", "raw", "parts", "time", "track"],
+      "properties": {
+        "line": { "type": "integer", "minimum": 1 },
+        "kind": { "enum": ["track", "marker", "header", "link", "note", "blank"] },
+        "eol": { "enum": ["\n", "\r\n", "\r", ""] },
+        "raw": { "type": "string" },
+        "parts": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["lead", "time", "gap", "rest"],
+          "properties": {
+            "lead": { "type": "string" },
+            "time": { "type": "string" },
+            "gap": { "type": "string" },
+            "rest": { "type": "string" }
+          }
+        },
+        "time": {
+          "oneOf": [
+            { "type": "null" },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["raw", "seconds"],
+              "properties": { "raw": { "type": "string" }, "seconds": { "type": "number", "minimum": 0 } }
+            }
+          ]
+        },
+        "track": { "oneOf": [{ "type": "null" }, { "$ref": "parsed-track.schema.json" }] }
+      }
+    },
+    "warning": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "line", "severity", "suggestion"],
+      "properties": {
+        "code": {
+          "enum": ["time-missing", "time-out-of-order", "time-duplicate", "no-start-at-zero", "time-after-audio-end", "invalid-time", "position-gap", "position-duplicate", "line-unparsed"]
+        },
+        "line": { "type": "integer", "minimum": 1 },
+        "severity": { "enum": ["info", "warning"] },
+        "suggestion": {
+          "oneOf": [
+            { "type": "null" },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["raw", "seconds"],
+              "properties": { "raw": { "type": "string" }, "seconds": { "type": "number", "minimum": 0 } }
+            }
+          ]
+        }
+      }
+    },
+    "editResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["text", "changed", "warnings"],
+      "properties": {
+        "text": { "type": "string" },
+        "changed": { "type": "array", "items": { "type": "integer", "minimum": 1 } },
+        "warnings": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["code", "edit", "line"],
+            "properties": {
+              "code": { "enum": ["edit-invalid", "time-clamped", "style-upgraded"] },
+              "edit": { "type": "integer", "minimum": 0 },
+              "line": { "type": ["integer", "null"] }
+            }
+          }
+        }
+      }
+    }
+  }
+}

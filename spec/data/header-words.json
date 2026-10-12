@@ -1,0 +1,4 @@
+{
+  "$comment": "R13.3: an untimed tracklist line whose first word (word key, R0.3) is one of these and that has at most one more word ('Part 2', 'Hour 1', 'Tracklist') is a header.",
+  "words": ["tracklist", "setlist", "playlist", "part", "hour", "cd", "disc", "side", "chapter", "segment", "set"]
+}
