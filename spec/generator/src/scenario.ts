@@ -24,16 +24,28 @@ export interface Dim {
 
 export type Choice = Record<string, Atom>;
 
+/** Fixture `fn` of a scenario's cases (spec/schema/fixture-file.schema.json). */
+export type ScenarioFn = "parse" | "parseTracklist";
+
 export interface Scenario {
   name: string;
   description: string;
+  /** Fixture `fn` written to the file's defaults (default `parse`). */
+  fn?: ScenarioFn;
   dims: Dim[];
   /**
    * Map a pick to a composition; return null to reject (scenario-level constraint).
    * Call `ignore(dim)` for dimensions that do not influence this composition: they are
    * shown as `none` in the case id (so equivalent picks collapse to one case).
+   * The composition is checked with `problem()` and rendered with `render()` (fn `parse`).
    */
-  build: (pick: Choice, ignore: (dim: string) => void) => Composition | null;
+  build?: (pick: Choice, ignore: (dim: string) => void) => Composition | null;
+  /**
+   * Scenarios with their own model (other `fn`s, multi-line inputs): map a pick straight to a
+   * rendered case, or null to reject. Same `ignore` contract as `build`. Exactly one of
+   * `build` / `buildCase` is set.
+   */
+  buildCase?: (pick: Choice, ignore: (dim: string) => void) => Rendered | null;
   /** Extra random sample on top of pairwise (ignored when exhaustive). */
   sample: number | ((cfg: Config) => number);
   assert?: AssertOpts;
@@ -46,6 +58,7 @@ export interface GeneratedCase extends Rendered {
 export interface ScenarioResult {
   name: string;
   description: string;
+  fn: ScenarioFn;
   cases: GeneratedCase[];
   stats: {
     strategy: "exhaustive" | "pairwise+sample";
@@ -83,8 +96,10 @@ export function runScenario(s: Scenario, cfg: Config): ScenarioResult {
     if (new Set(ids).size !== ids.length) throw new Error(`${s.name}: duplicate atom ids in dim ${d.name}`);
     for (const id of ids) if (!/^[a-z0-9][a-z0-9-]*$/.test(id)) throw new Error(`${s.name}: bad atom id ${id}`);
   }
-  const cache = new Map<string, { comp: Composition; ignored: Set<string> } | null>();
-  const compose = (c: Combo): { comp: Composition; ignored: Set<string> } | null => {
+  if ((s.build === undefined) === (s.buildCase === undefined)) throw new Error(`${s.name}: set exactly one of build/buildCase`);
+  type Built = { make: () => Rendered; ignored: Set<string> };
+  const cache = new Map<string, Built | null>();
+  const compose = (c: Combo): Built | null => {
     const key = c.join(",");
     const hit = cache.get(key);
     if (hit !== undefined) return hit;
@@ -93,8 +108,14 @@ export function runScenario(s: Scenario, cfg: Config): ScenarioResult {
       pick[d.name] = d.values[c[i]!]!;
     });
     const ignored = new Set<string>();
-    const comp = s.build(pick, (d) => ignored.add(d));
-    const res = comp && problem(comp) === null ? { comp, ignored } : null;
+    let res: Built | null = null;
+    if (s.buildCase) {
+      const r = s.buildCase(pick, (d) => ignored.add(d));
+      if (r) res = { make: () => r, ignored };
+    } else {
+      const comp = s.build!(pick, (d) => ignored.add(d));
+      if (comp && problem(comp) === null) res = { make: () => render(comp, s.name, s.assert), ignored };
+    }
     cache.set(key, res);
     return res;
   };
@@ -123,11 +144,11 @@ export function runScenario(s: Scenario, cfg: Config): ScenarioResult {
 
   const byId = new Map<string, { combo: Combo; rendered: Rendered }>();
   for (const c of combos) {
-    const { comp, ignored } = compose(c)!;
+    const { make, ignored } = compose(c)!;
     const eff = c.map((v, i) => (ignored.has(s.dims[i]!.name) ? -1 : v));
     const id = `gen:${s.name}:${eff.map((v, i) => (v < 0 ? "none" : s.dims[i]!.values[v]!.id)).join(".")}`;
     if (byId.has(id)) continue;
-    byId.set(id, { combo: eff, rendered: render(comp, s.name, s.assert) });
+    byId.set(id, { combo: eff, rendered: make() });
   }
   // Drop combos rendering the same input+options (keep the smallest id).
   const ids = [...byId.keys()].sort();
@@ -154,6 +175,7 @@ export function runScenario(s: Scenario, cfg: Config): ScenarioResult {
   return {
     name: s.name,
     description: s.description,
+    fn: s.fn ?? "parse",
     cases,
     stats: {
       strategy,

@@ -1,7 +1,7 @@
 {
   "generator": "@trackparse/fixture-gen",
   "seed": 20260929,
-  "total": 10991,
+  "total": 11817,
   "scenarios": {
     "artists-joiners": {
       "file": "artists-joiners.json",
@@ -1409,6 +1409,107 @@
           "produced-by-paren-gydra": 235,
           "prodby-tight-paren-mefjus": 247,
           "prod-by-inline-mo": 296
+        }
+      }
+    },
+    "tracklist": {
+      "file": "tracklist.json",
+      "fn": "parseTracklist",
+      "cases": 826,
+      "strategy": "pairwise+sample",
+      "productSize": 40255488,
+      "pairwiseCases": 127,
+      "sampledCases": 700,
+      "infeasiblePairs": 7,
+      "duplicateInputsDropped": 0,
+      "dims": {
+        "time": {
+          "untimed": 115,
+          "m-ss": 85,
+          "mm-ss": 92,
+          "long-min": 90,
+          "h-mm-ss": 89,
+          "hh-mm-ss": 88,
+          "frac-dot": 90,
+          "frac-comma": 82,
+          "hms-frac": 95
+        },
+        "lead": {
+          "plain": 125,
+          "square": 121,
+          "paren": 106,
+          "spaces": 118,
+          "tab": 116,
+          "spaces-square": 125,
+          "(n/a)": 115
+        },
+        "gap": {
+          "space": 76,
+          "two-spaces": 88,
+          "dash": 100,
+          "en-dash": 80,
+          "pipe": 89,
+          "dot": 71,
+          "arrow": 94,
+          "long-arrow": 113,
+          "(n/a)": 115
+        },
+        "pos": {
+          "none": 111,
+          "dotted-pad": 124,
+          "dotted": 126,
+          "paren": 131,
+          "padded": 138,
+          "bare": 99,
+          "bare-9": 97
+        },
+        "eol": {
+          "lf": 101,
+          "lf-end": 100,
+          "crlf": 106,
+          "crlf-end": 99,
+          "cr": 105,
+          "cr-end": 125,
+          "mixed": 99,
+          "mixed-end": 91
+        },
+        "frame": {
+          "none": 74,
+          "header": 68,
+          "header-word": 80,
+          "header-blank": 65,
+          "intro": 68,
+          "intro-untimed": 69,
+          "outro": 73,
+          "break-mid": 50,
+          "blank-mid": 48,
+          "ws-blank-mid": 62,
+          "note": 66,
+          "link": 61,
+          "full": 42
+        },
+        "order": {
+          "zero": 162,
+          "late": 185,
+          "dup": 181,
+          "missing": 183,
+          "(n/a)": 115
+        },
+        "count": {
+          "n1": 91,
+          "n2": 255,
+          "n3": 240,
+          "n4": 240
+        },
+        "set": {
+          "set-a": 105,
+          "set-b": 99,
+          "set-c": 103,
+          "set-d": 102,
+          "set-e": 114,
+          "set-f": 89,
+          "set-g": 117,
+          "set-h": 97
         }
       }
     }

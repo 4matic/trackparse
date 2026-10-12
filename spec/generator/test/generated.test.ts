@@ -25,15 +25,24 @@ interface FixtureCase {
 type ExpArtist = string | { name: string; role: string; joiner: string | null; source: string };
 const nameOf = (a: ExpArtist): string => (typeof a === "string" ? a : a.name);
 
-function allCases(g: Generated): FixtureCase[] {
+interface FixtureFile {
+  defaults: { fn: string; options: object };
+  cases: FixtureCase[];
+}
+
+/** Every case of every file, or only those of files whose `defaults.fn` is `fn`. */
+function allCases(g: Generated, fn?: string): FixtureCase[] {
   const out: FixtureCase[] = [];
   for (const [name, content] of g.files) {
     if (name === "summary.json") continue;
-    const file = JSON.parse(content) as { defaults: { options: object }; cases: FixtureCase[] };
+    const file = JSON.parse(content) as FixtureFile;
+    if (fn !== undefined && file.defaults.fn !== fn) continue;
     for (const c of file.cases) out.push({ ...c, options: { ...file.defaults.options, ...c.options } as { mode: string } });
   }
   return out;
 }
+
+const parseCases = (g: Generated) => allCases(g, "parse");
 
 describe("generated fixtures", () => {
   it("are deterministic (two runs byte-identical)", () => {
@@ -47,7 +56,7 @@ describe("generated fixtures", () => {
     expect(n).toBeLessThanOrEqual(15000);
     let bytes = 0;
     for (const content of first.files.values()) bytes += Buffer.byteLength(content);
-    expect(bytes).toBeLessThanOrEqual(6.5e6);
+    expect(bytes).toBeLessThanOrEqual(7.8e6);
   });
 
   it("have unique, schema-shaped ids and non-empty inputs", () => {
@@ -58,9 +67,19 @@ describe("generated fixtures", () => {
       expect(ids.has(c.id), c.id).toBe(false);
       ids.add(c.id);
       expect(c.input.trim().length, c.id).toBeGreaterThan(0);
-      expect(["clean", "youtube", "filename", "auto"]).toContain(c.options.mode);
       for (const r of c.rules) expect(r).toMatch(/^R[0-9]+(\.[0-9]+[a-z]?)*$/);
     }
+    for (const c of parseCases(first)) expect(["clean", "youtube", "filename", "auto"]).toContain(c.options.mode);
+  });
+
+  it("every file names its fn; tracklist cases use parseTracklist with default options", () => {
+    for (const [name, content] of first.files) {
+      if (name === "summary.json") continue;
+      const file = JSON.parse(content) as FixtureFile;
+      expect(file.defaults.fn, name).toBe(name === "tracklist.json" ? "parseTracklist" : "parse");
+    }
+    expect(allCases(first, "parseTracklist").length).toBeGreaterThanOrEqual(800);
+    for (const c of allCases(first, "parseTracklist")) expect(c.options, c.id).toEqual({});
   });
 
   it("cases are sorted by id and serialized one per line", () => {
@@ -77,7 +96,7 @@ describe("generated fixtures", () => {
   });
 
   it("expected artists are well-formed and never duplicated (R9.2 invariant)", () => {
-    for (const c of allCases(first)) {
+    for (const c of parseCases(first)) {
       const artists = c.expected.artists as ExpArtist[];
       // R9.2: producers are a separate class, deduped only among producers.
       const keys = artists.map(
@@ -100,7 +119,7 @@ describe("generated fixtures", () => {
   });
 
   it("fullTitle is title + versions (R9.4)", () => {
-    for (const c of allCases(first)) {
+    for (const c of parseCases(first)) {
       const e = c.expected as { title: string; fullTitle?: string; versions: { raw: string; delimiter: string }[] };
       // fullTitle is serialized only when there are versions (otherwise it equals title).
       if (e.versions.length === 0) {
@@ -124,7 +143,7 @@ describe("generated fixtures", () => {
 
   it("spot-check rendered cases against hand-computed expectations", () => {
     const byId = new Map(allCases(first).map((c) => [c.id, c]));
-    const find = (pred: (c: FixtureCase) => boolean) => allCases(first).find(pred);
+    const find = (pred: (c: FixtureCase) => boolean) => parseCases(first).find(pred);
 
     // numeric artist with no prefix: R4.2(d) never a position
     const numeric = find((c) => c.input.startsWith("808 State - ") && c.options.mode === "clean");
@@ -137,7 +156,7 @@ describe("generated fixtures", () => {
     expect(typeof featured === "string" ? null : featured?.joiner).toBe("with");
 
     // platform junk is always last
-    for (const c of allCases(first)) {
+    for (const c of parseCases(first)) {
       const junk = (c.expected.junk ?? []) as { kind: string }[];
       const idx = junk.findIndex((j) => j.kind === "platform");
       if (idx >= 0) expect(idx, c.id).toBe(junk.length - 1);

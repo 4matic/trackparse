@@ -208,11 +208,13 @@ Applied to the working string after R2, before R6. At most one timestamp, then a
   - **(b)** `N` zero-padded (starts with `0`, length ≥ 2) followed by a space → position, in every
     mode. (`01 Aphex Twin - Xtal`, `01 - Artist - Title`, `01 A - T.mp3` → 1)
   - **(c)** `N` not zero-padded followed by ` - `:
-    - `clean` / `youtube`: position **only if** the remainder still contains a spaced dash separator
+    - `clean` / `youtube` / `tracklist`: position **only if** the remainder still contains a spaced dash separator
       (R6.1). (`3 - Artist - Title` → 3; `311 - Amber` → artist `311`.)
     - `filename`: **always** a position (`311 - Amber.mp3` → 311, `10 - Double Digit.wav` → 10).
   - **(d)** `N` not zero-padded followed by a space and a word → **never** a position in `clean` /
-    `youtube` mode (`2 Unlimited`, `808 State`, `50 Cent`, `21 Savage`).
+    `youtube` / `tracklist` mode (`2 Unlimited`, `808 State`, `50 Cent`, `21 Savage`).
+  - `tracklist` mode (R13.6) behaves like `clean` throughout R4.2; bare numbers in a list are
+    R13.5's job.
   - **(e) filename mode only:** `N` followed by `-`, `_` or `.` directly followed by a non-space →
     position (`01-Track`, `03_name`); `N` followed by a space and a word → position **only if** the
     remainder contains no spaced dash (`3 My Song.mp3` → 3; `2 Unlimited - No Limit.mp3` → not).
@@ -337,9 +339,16 @@ Operates on the skeleton of the working string (after R2, R4).
 - **R6.10 Tracklist mode.** With `mode: "tracklist"` (R13.6), R6.2 does not peel the segment that
   follows the **first** spaced dash: if a spaced dash exists, the artist side is `s0` and the title
   side is `s1 … sn` (R8.2 still peels later dash suffixes on the title side). Without a spaced dash,
-  R6.4 applies, then `_-_` (underscore, dash, underscore) is the separator, then, only when the caller
-  enables it (R13.6 list context), the first `-` with a letter on its left and an uppercase letter on
-  its right (warn `unspacedDashSplit`). R6.5–R6.7 (youtube/filename rules) do not apply.
+  in this order:
+  - R6.4 applies;
+  - else the first `_-_` (underscore, dash, underscore) is the separator (warn `unspacedDashSplit`);
+  - else, only when the caller enables it (R13.4.2 list context), the **last** `-` with a letter
+    (R0.6) on its left and an uppercase letter on its right is the separator (warn
+    `unspacedDashSplit`). As in R6.7, the last candidate wins: `Jay-Z-Numb` → `Jay-Z` / `Numb`.
+    *Uppercase* is Unicode general category Lu (JS `/\p{Lu}/u`, Python
+    `unicodedata.category(c) == "Lu"`).
+
+  R6.5–R6.7 (youtube/filename rules) do not apply.
 
 *Notes (intended):* a string whose only dash was peeled as a suffix and that has no artist still
 warns `noSeparator` (`Hey Jude - Remastered 2015`).
@@ -535,14 +544,22 @@ Read at the start of `raw` (this scanner is separate from R4.1, which is unchang
 - **R13.2.2 time:** `A:B` or `A:B:C` in ASCII digits, then an optional fraction (`.` or `,` and 1–3
   digits). With three parts: `A` is 1–2 digits (hours), `B` and `C` are 2 digits each and at most 59.
   With two parts: `A` is 1–3 digits (minutes, **any value**, so `125:30` is 7530 s), `B` is 2 digits and
-  at most 59. `seconds` = hours·3600 + minutes·60 + seconds + fraction (a number; `07.500` → 7.5).
+  at most 59. With 4+ fraction digits there is no fraction: the `.`/`,` is a gap separator (R13.2.3).
+  - `seconds`: let `W` = hours·3600 + minutes·60 + seconds (an integer). Without a fraction,
+    `seconds = W`; with one, `seconds` is the double nearest the decimal string `"<W>.<fraction
+    digits>"` (correctly rounded: JS `Number()`, Python `float()`), so ports agree bit for bit
+    (`07.500` → 7.5).
 - **R13.2.3 gap:** the matching `]` / `)` if one was opened (else no time), then R0.2 whitespace, then
   optionally one separator from `-` `–` `—` `|` `.` `:` and whitespace, then optionally an arrow
   `=>` / `==>` and whitespace. The time must be followed by end of line, whitespace, a separator or
   the closing bracket; otherwise there is no time.
-- **R13.2.4 invalid times:** text at the start of the line (after lead) with the shape `digits:digits`
-  that fails R13.2.2 (`1:75`, `0:61:00`) is not a time: the entry has no time, `rest === raw`, and the
+- **R13.2.4 invalid times:** the time candidate (after lead) is the **maximal** run
+  `digits(:digits)+`, plus an optional fraction. When that run fails R13.2.2 (`1:75`, `0:61:00`,
+  `1:02:75`, `1:02:03:04`), it is not a time: the entry has no time, `rest === raw`, and the
   tracklist warns `invalid-time` for the line.
+  - There is no fallback to a shorter shape (`1:02:75` is not read as `1:02`).
+  - A well-formed time followed by a character R13.2.3 does not allow (`12:34x`), or an opened
+    bracket that is not closed after the time, means there is no time and **no** warning.
 - **R13.2.5** `time` in the output is `{ raw, seconds }` (`raw` without brackets), or `null`.
 
 ### R13.3 Line kinds
@@ -552,8 +569,11 @@ Read at the start of `raw` (this scanner is separate from R4.1, which is unchang
 1. `blank`: `raw` is empty or only R0.2 whitespace.
 2. Lines **with** a time: `marker` when the track part (R13.4) has no separator and any of its words is
    in [`data/marker-words.json`](data/marker-words.json) (plus `options.markerWords`); else `track`.
+   A line that is only a time (its track part is empty after R1) is a `track` and warns
+   `line-unparsed` (R13.7).
 3. Lines **without** a time: `link` when `rest` (trimmed) starts with `http://`, `https://` or `www.`
-   (ASCII case-insensitive); `header` when it ends with `:` or its first word is in
+   (ASCII case-insensitive); `header` when it (trimmed of R0.2 whitespace) ends with `:` or its
+   first word is in
    [`data/header-words.json`](data/header-words.json) and it has at most one more word; `marker` as in
    2; `track` when the track part has a separator; else `note`.
 
@@ -566,6 +586,9 @@ Nothing is ever dropped.
   { mode, knownArtists, keywords, splitAnd })`, `mode` defaulting to `"tracklist"`.
 - **R13.4.2** *Candidate lines* are non-blank lines with a time or a spaced dash. List context for
   R6.10's tight dash is enabled when at least half of the candidate lines contain a spaced dash.
+  "Contains a spaced dash" is tested on the skeleton R6 searches for the track part, i.e. after
+  R1, R2 and R4 (R6.1), not on `raw`: the ` - ` in a gap (`00:00 - Intro`) or one consumed by a
+  position (`01 - Title`) does not count.
 
 ### R13.5 Bare positions
 
@@ -583,8 +606,8 @@ by default and adds the list context (R13.4.2, R13.5). R2's youtube and filename
 
 ### R13.7 Warnings
 
-`warnings` is a list of `{ code, line, severity, suggestion }` in line order (`suggestion` is `null`
-unless stated). Per-line ParsedTrack warnings stay in `entries[].track.warnings` and are not
+`warnings` is a list of `{ code, line, severity, suggestion }` sorted by line, then by the order of
+the codes in the table below (`suggestion` is `null` unless stated). Per-line ParsedTrack warnings stay in `entries[].track.warnings` and are not
 repeated.
 
 | Code | Severity | When |
@@ -597,14 +620,23 @@ repeated.
 | `invalid-time` | warning | R13.2.4 |
 | `position-gap` | warning | a positioned track entry's number is not the previous positioned entry's number + 1 (or equal) |
 | `position-duplicate` | warning | equal to the previous positioned entry's number |
-| `line-unparsed` | warning | a `track` entry whose ParsedTrack warns `noSeparator` |
+| `line-unparsed` | warning | a `track` entry whose track part is empty after R1, or whose ParsedTrack warns `noSeparator` |
 
-**Suggestion for `time-out-of-order`.** Let `p` be the previous timed entry's seconds and `n` the next
-timed entry's (if any). Candidates are the strings made by changing 1 digit, then 2 digits, of the
-entry's raw time (fraction digits excluded), that are valid under R13.2.2 and satisfy `p < t` and
-(`t < n` when `n` exists). At the smallest number of changed digits with any candidate, a **single**
-candidate becomes `suggestion: { raw, seconds }`; several candidates or none give `null`.
-(`00:06:29` between `01:04:39` and `01:08:10` → `01:06:29`.)
+**Suggestion for `time-out-of-order`.** A *search* of a raw time between bounds `lo` and `hi` (each
+optional) makes the strings that change 1 digit, then 2 digits, of the raw time (fraction digits
+excluded) that are valid under R13.2.2 (fields after the first at most 59) and satisfy `lo < t` and
+`t < hi` (`t` per R13.2.2). Only the smallest number of changed digits with any candidate counts.
+
+1. Search the out-of-order entry's time between the previous timed entry's seconds and the next
+   timed entry's (if any).
+2. Only when step 1 finds **no** candidate at all: search the **previous** timed entry's time
+   between the timed entry before it (if any) and the out-of-order entry's seconds.
+
+When the step that ran last finds exactly **one** candidate, it becomes `suggestion: { line, raw,
+seconds }`, where `line` is the line to change (the warning's own line in step 1, the previous timed
+line in step 2); several candidates or none give `null`. The warning itself always stays on the
+out-of-order line. (`00:06:29` between `01:04:39` and `01:08:10` → line itself, `01:06:29`;
+`01:22:21` then `01:03:55` between `01:00:08` and `01:06:20` → previous line, `01:02:21`.)
 
 ### R13.8 Output
 
@@ -628,26 +660,54 @@ result of the previous one; line numbers are 1-based in the text the edit sees.
 | `{ op: "delete", line }` | remove a line |
 
 - **R13.9.1 Locality.** Lines not named by an edit keep `raw` and `eol` byte for byte. `changed` lists
-  the line numbers, in the final text, of lines an edit wrote (sorted, unique; moved lines count;
-  deleted lines do not). `applyEdits(t, [])` returns `t`, `[]`, `[]`.
+  the line numbers, in the final text, of lines an edit wrote (sorted, unique; deleted lines do
+  not count). `applyEdits(t, [])` returns `t`, `[]`, `[]`.
+  - A line counts when any edit rewrote its `raw` or its `eol`, even if the result equals the
+    original (a shift round trip lists its lines; `set-time` to the same value counts).
+  - Lines that only move up or down because of an insert or delete do not count. Lines that
+    `sort-by-time` moves to another slot count.
 - **R13.9.2 Time style.** A rewritten time keeps its line's style: hours present or not, the hour
   and minute digit widths (as minimum widths), the fraction separator and digit count (values are
-  rounded half up to that precision). A value of an hour or more on a line without hours is written
-  `HH:MM:SS`, or `H:MM:SS` when the text's other times with hours use one-digit hours, and the edit
-  warns `style-upgraded`.
+  rounded half up to that precision: units = `floor(v · 10^d + 0.5)` for `d` fraction digits). A value
+  of an hour or more on a line without hours is written `HH:MM:SS`, or `H:MM:SS` when all the text's
+  times with hours (at least one) use one-digit hours, and the edit warns `style-upgraded`.
+  - *Long-minute style:* a two-part time whose minutes are already 60 or more on that line stays
+    two-part when it grows (`125:30` + 600 → `135:30`, no warning). Its minimum minute width is
+    min(original width, 2), so a short result never keeps 3 minute digits (`125:30` − 7000 →
+    `08:50`).
+  - A value that cannot be written as a valid R13.2.2 time is `edit-invalid` (R13.9.6): 100 hours
+    or more, more than 999 minutes in long-minute style, or `v · 10^d` outside the safe-integer
+    range (±(2^53 − 1)).
 - **R13.9.3 Clamp.** A time that would go below 0 becomes 0 and the edit warns `time-clamped`.
 - **R13.9.4 Sort.** A block is a timed line plus the untimed lines after it; lines before the first
   timed line stay first. Blocks are sorted by seconds, stable for equal values. `eol` values stay in
   their slots (slot *i* keeps the input's *i*-th `eol`), so a text without a trailing newline keeps it.
+  A blank line that lands in the last slot (`eol` `""`) is no line on re-split (R13.1.1), so the
+  line count can drop by one; this is allowed. The lossless guarantee (R13.1.2) is about parsing,
+  not about the line count after edits.
 - **R13.9.5 Insert and delete.** Inserted text must not contain a line break. The new line takes the
-  text's most common non-empty `eol` (`"\n"` if there is none); inserting after a last line whose
-  `eol` is `""` gives that line the new `eol` and the inserted line `""`. Deleting the last line moves
-  its `eol` to the new last line.
-- **R13.9.6 Totality.** An edit with a missing line, a line without a time (`set-time`), a non-finite
-  number, a line break in `rest`/`text`, or an unknown `op` changes nothing and warns `edit-invalid`.
-  Never throws. Edit warnings are `{ code, edit, line }` (`edit` = index in `edits`).
+  text's most common non-empty `eol` (ties: the one seen first; `"\n"` if there is none); inserting
+  after a last line whose `eol` is `""` gives that line the new `eol` and the inserted line `""`.
+  Inserting into an empty text gives the line `eol` `""` (`""` + insert `x` → `"x"`): a text without
+  a trailing newline keeps that property. Deleting the last line moves its `eol` to the new last
+  line (that line counts as changed when its `eol` differs).
+  - After every edit the lines are re-read as R13.1.1 would split their concatenation: a line with
+    `eol` `"\r"` followed by an empty line with `eol` `"\n"` merges into one line with `"\r\n"`
+    (that line counts as changed), and an empty last line without `eol` disappears.
+- **R13.9.6 Totality.** An edit with a missing line, a line without a time (`set-time`), a missing or
+  non-finite number (`null` counts; fixtures write infinity as `1e999`), a time that cannot be
+  written (R13.9.2), a line break in `rest`/`text`, or an unknown `op` changes nothing and warns
+  `edit-invalid`. Never throws. Edit warnings are `{ code, edit, line }` (`edit` = index in `edits`).
+  - `edit-invalid`'s `line` is the edit's `line` when it is an integer, else its `after` when that is
+    an integer, else `null`. `time-clamped` / `style-upgraded` carry the rewritten line.
+  - `shift`: `lines` wins over `from`; listed lines without a time are skipped; every listed line
+    and `from` must be an existing line, otherwise the edit is invalid. Without either, all timed
+    lines shift.
 - **R13.9.7 Round trip.** `shift(+s)` then `shift(-s)` on the same lines returns the original text
-  when neither edit warned `time-clamped` or `style-upgraded`.
+  when neither edit warned (`time-clamped`, `style-upgraded`, `edit-invalid`) **and** no rewritten
+  time changed its digit count (widths are minimum widths: `0:00` + 600 → `10:00`, then − 600 →
+  `00:00`). The same holds only for shifts that are a multiple of each line's fraction precision
+  (otherwise rounding is lossy).
 
 ### R13.10 Options
 

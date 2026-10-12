@@ -1,0 +1,883 @@
+{
+  "$schema": "../../schema/fixture-file.schema.json",
+  "description": "SPEC R13.2: the tracklist time scanner (forms, fractions, brackets, gap separators, invalid times).",
+  "defaults": {
+    "fn": "parseTracklist"
+  },
+  "cases": [
+    {
+      "id": "tracklist-times-001",
+      "input": "00:00 Noisia - Stigma",
+      "expected": {
+        "entries": [
+          {
+            "parts": {
+              "lead": "",
+              "time": "00:00",
+              "gap": " ",
+              "rest": "Noisia - Stigma"
+            },
+            "time": {
+              "raw": "00:00",
+              "seconds": 0
+            },
+            "track": {
+              "artists": [
+                "Noisia"
+              ],
+              "title": "Stigma"
+            }
+          }
+        ]
+      },
+      "rules": [
+        "R13.2.2",
+        "R13.2.5"
+      ]
+    },
+    {
+      "id": "tracklist-times-002",
+      "input": "4:05 Noisia - Stigma",
+      "expected": {
+        "entries": [
+          {
+            "parts": {
+              "lead": "",
+              "time": "4:05",
+              "gap": " ",
+              "rest": "Noisia - Stigma"
+            },
+            "time": {
+              "raw": "4:05",
+              "seconds": 245
+            }
+          }
+        ]
+      },
+      "rules": [
+        "R13.2.2",
+        "R13.2.5"
+      ]
+    },
+    {
+      "id": "tracklist-times-003",
+      "input": "01:02:03 Noisia - Stigma",
+      "expected": {
+        "entries": [
+          {
+            "parts": {
+              "lead": "",
+              "time": "01:02:03",
+              "gap": " ",
+              "rest": "Noisia - Stigma"
+            },
+            "time": {
+              "raw": "01:02:03",
+              "seconds": 3723
+            }
+          }
+        ]
+      },
+      "rules": [
+        "R13.2.2",
+        "R13.2.5"
+      ]
+    },
+    {
+      "id": "tracklist-times-004",
+      "input": "1:02:03 Noisia - Stigma",
+      "expected": {
+        "entries": [
+          {
+            "parts": {
+              "lead": "",
+              "time": "1:02:03",
+              "gap": " ",
+              "rest": "Noisia - Stigma"
+            },
+            "time": {
+              "raw": "1:02:03",
+              "seconds": 3723
+            }
+          }
+        ]
+      },
+      "rules": [
+        "R13.2.2",
+        "R13.2.5"
+      ]
+    },
+    {
+      "id": "tracklist-times-005",
+      "input": "0:07 Noisia - Stigma",
+      "expected": {
+        "entries": [
+          {
+            "parts": {
+              "lead": "",
+              "time": "0:07",
+              "gap": " ",
+              "rest": "Noisia - Stigma"
+            },
+            "time": {
+              "raw": "0:07",
+              "seconds": 7
+            }
+          }
+        ]
+      },
+      "rules": [
+        "R13.2.2",
+        "R13.2.5"
+      ]
+    },
+    {
+      "id": "tracklist-times-006",
+      "input": "9:59:59 Noisia - Stigma",
+      "expected": {
+        "entries": [
+          {
+            "parts": {
+              "lead": "",
+              "time": "9:59:59",
+              "gap": " ",
+              "rest": "Noisia - Stigma"
+            },
+            "time": {
+              "raw": "9:59:59",
+              "seconds": 35999
+            }
+          }
+        ]
+      },
+      "rules": [
+        "R13.2.2",
+        "R13.2.5"
+      ]
+    },
+    {
+      "id": "tracklist-times-007",
+      "input": "125:30 Noisia - Stigma",
+      "expected": {
+        "entries": [
+          {
+            "parts": {
+              "lead": "",
+              "time": "125:30",
+              "gap": " ",
+              "rest": "Noisia - Stigma"
+            },
+            "time": {
+              "raw": "125:30",
+              "seconds": 7530
+            },
+            "track": {
+              "artists": [
+                "Noisia"
+              ],
+              "title": "Stigma"
+            }
+          }
+        ]
+      },
+      "rules": [
+        "R13.2.2",
+        "R13.2.5"
+      ],
+      "note": "Two-part times allow any minute value (long mixes)."
+    },
+    {
+      "id": "tracklist-times-008",
+      "input": "00:00:07.500 Noisia - Stigma",
+      "expected": {
+        "entries": [
+          {
+            "parts": {
+              "lead": "",
+              "time": "00:00:07.500",
+              "gap": " ",
+              "rest": "Noisia - Stigma"
+            },
+            "time": {
+              "raw": "00:00:07.500",
+              "seconds": 7.5
+            },
+            "track": {
+              "artists": [
+                "Noisia"
+              ],
+              "title": "Stigma"
+            }
+          }
+        ]
+      },
+      "rules": [
+        "R13.2.2"
+      ],
+      "note": "Fraction kept as a number; raw kept verbatim."
+    },
+    {
+      "id": "tracklist-times-009",
+      "input": "1:02,5 Noisia - Stigma",
+      "expected": {
+        "entries": [
+          {
+            "parts": {
+              "lead": "",
+              "time": "1:02,5",
+              "gap": " ",
+              "rest": "Noisia - Stigma"
+            },
+            "time": {
+              "raw": "1:02,5",
+              "seconds": 62.5
+            }
+          }
+        ]
+      },
+      "rules": [
+        "R13.2.2"
+      ],
+      "note": "',' is a fraction separator too."
+    },
+    {
+      "id": "tracklist-times-010",
+      "input": "00:07.25 Noisia - Stigma",
+      "expected": {
+        "entries": [
+          {
+            "parts": {
+              "lead": "",
+              "time": "00:07.25",
+              "gap": " ",
+              "rest": "Noisia - Stigma"
+            },
+            "time": {
+              "raw": "00:07.25",
+              "seconds": 7.25
+            }
+          }
+        ]
+      },
+      "rules": [
+        "R13.2.2"
+      ]
+    },
+    {
+      "id": "tracklist-times-011",
+      "input": "12:34 | Noisia - Stigma",
+      "expected": {
+        "entries": [
+          {
+            "parts": {
+              "lead": "",
+              "time": "12:34",
+              "gap": " | ",
+              "rest": "Noisia - Stigma"
+            },
+            "time": {
+              "raw": "12:34",
+              "seconds": 754
+            },
+            "track": {
+              "artists": [
+                "Noisia"
+              ],
+              "title": "Stigma"
+            }
+          }
+        ]
+      },
+      "rules": [
+        "R13.2.3"
+      ]
+    },
+    {
+      "id": "tracklist-times-012",
+      "input": "[00:12:34] x",
+      "expected": {
+        "entries": [
+          {
+            "parts": {
+              "lead": "[",
+              "time": "00:12:34",
+              "gap": "] ",
+              "rest": "x"
+            },
+            "time": {
+              "raw": "00:12:34",
+              "seconds": 754
+            }
+          }
+        ]
+      },
+      "rules": [
+        "R13.2.1",
+        "R13.2.3"
+      ]
+    },
+    {
+      "id": "tracklist-times-013",
+      "input": "(12:34) x",
+      "expected": {
+        "entries": [
+          {
+            "parts": {
+              "lead": "(",
+              "time": "12:34",
+              "gap": ") ",
+              "rest": "x"
+            },
+            "time": {
+              "raw": "12:34",
+              "seconds": 754
+            }
+          }
+        ]
+      },
+      "rules": [
+        "R13.2.1",
+        "R13.2.3"
+      ]
+    },
+    {
+      "id": "tracklist-times-014",
+      "input": "12:34 - x",
+      "expected": {
+        "entries": [
+          {
+            "parts": {
+              "lead": "",
+              "time": "12:34",
+              "gap": " - ",
+              "rest": "x"
+            },
+            "time": {
+              "raw": "12:34",
+              "seconds": 754
+            }
+          }
+        ]
+      },
+      "rules": [
+        "R13.2.3"
+      ]
+    },
+    {
+      "id": "tracklist-times-015",
+      "input": "00:00—Noisia - Stigma",
+      "expected": {
+        "entries": [
+          {
+            "parts": {
+              "lead": "",
+              "time": "00:00",
+              "gap": "—",
+              "rest": "Noisia - Stigma"
+            },
+            "time": {
+              "raw": "00:00",
+              "seconds": 0
+            },
+            "track": {
+              "artists": [
+                "Noisia"
+              ],
+              "title": "Stigma"
+            }
+          }
+        ]
+      },
+      "rules": [
+        "R13.2.3"
+      ],
+      "note": "A separator directly after the time ends it; the em dash goes into gap."
+    },
+    {
+      "id": "tracklist-times-016",
+      "input": "12:34",
+      "expected": {
+        "entries": [
+          {
+            "parts": {
+              "lead": "",
+              "time": "12:34",
+              "gap": "",
+              "rest": ""
+            },
+            "time": {
+              "raw": "12:34",
+              "seconds": 754
+            },
+            "kind": "track",
+            "track": {
+              "artists": [],
+              "title": "",
+              "warnings": []
+            }
+          }
+        ]
+      },
+      "rules": [
+        "R13.2.3",
+        "R13.3"
+      ],
+      "note": "Reading: a time-only line has an empty track part; no separator and no marker word make it a track, and the empty ParsedTrack has no noSeparator (R6.8), so no line-unparsed."
+    },
+    {
+      "id": "tracklist-times-017",
+      "input": "1:75 Noisia - Stigma",
+      "expected": {
+        "entries": [
+          {
+            "kind": "track",
+            "parts": {
+              "lead": "",
+              "time": "",
+              "gap": "",
+              "rest": "1:75 Noisia - Stigma"
+            },
+            "time": null,
+            "track": {
+              "timestamp": null,
+              "artists": [
+                "1:75 Noisia"
+              ],
+              "title": "Stigma"
+            }
+          }
+        ],
+        "warnings": [
+          {
+            "code": "invalid-time",
+            "line": 1,
+            "severity": "warning",
+            "suggestion": null
+          }
+        ]
+      },
+      "rules": [
+        "R13.2.4",
+        "R13.7"
+      ],
+      "note": "Not a time: it stays in rest and the per-line parse keeps it in the artist (R4.1 rejects it too)."
+    },
+    {
+      "id": "tracklist-times-018",
+      "input": "0:61:00 x",
+      "expected": {
+        "entries": [
+          {
+            "kind": "note",
+            "parts": {
+              "lead": "",
+              "time": "",
+              "gap": "",
+              "rest": "0:61:00 x"
+            },
+            "time": null
+          }
+        ],
+        "warnings": [
+          {
+            "code": "invalid-time",
+            "line": 1,
+            "severity": "warning",
+            "suggestion": null
+          }
+        ]
+      },
+      "rules": [
+        "R13.2.4",
+        "R13.7",
+        "R13.3"
+      ]
+    },
+    {
+      "id": "tracklist-times-019",
+      "input": "1234:00 x",
+      "expected": {
+        "entries": [
+          {
+            "kind": "note",
+            "parts": {
+              "lead": "",
+              "time": "",
+              "gap": "",
+              "rest": "1234:00 x"
+            },
+            "time": null
+          }
+        ],
+        "warnings": [
+          {
+            "code": "invalid-time",
+            "line": 1,
+            "severity": "warning",
+            "suggestion": null
+          }
+        ]
+      },
+      "rules": [
+        "R13.2.4"
+      ],
+      "note": "Two-part minutes are 1-3 digits."
+    },
+    {
+      "id": "tracklist-times-020",
+      "input": "00:5 x",
+      "expected": {
+        "entries": [
+          {
+            "kind": "note",
+            "parts": {
+              "lead": "",
+              "time": "",
+              "gap": "",
+              "rest": "00:5 x"
+            },
+            "time": null
+          }
+        ],
+        "warnings": [
+          {
+            "code": "invalid-time",
+            "line": 1,
+            "severity": "warning",
+            "suggestion": null
+          }
+        ]
+      },
+      "rules": [
+        "R13.2.4"
+      ],
+      "note": "Seconds must be 2 digits."
+    },
+    {
+      "id": "tracklist-times-021",
+      "input": "1:02:75 x",
+      "expected": {
+        "entries": [
+          {
+            "kind": "note",
+            "parts": {
+              "lead": "",
+              "time": "",
+              "gap": "",
+              "rest": "1:02:75 x"
+            },
+            "time": null
+          }
+        ],
+        "warnings": [
+          {
+            "code": "invalid-time",
+            "line": 1,
+            "severity": "warning",
+            "suggestion": null
+          }
+        ]
+      },
+      "rules": [
+        "R13.2.4"
+      ],
+      "note": "Reading: the whole digits:digits:digits run is the candidate and fails; it must not fall back to '1:02' followed by the ':' separator."
+    },
+    {
+      "id": "tracklist-times-022",
+      "input": "12:34x Noisia - Stigma",
+      "expected": {
+        "entries": [
+          {
+            "kind": "track",
+            "parts": {
+              "lead": "",
+              "time": "",
+              "gap": "",
+              "rest": "12:34x Noisia - Stigma"
+            },
+            "time": null,
+            "track": {
+              "artists": [
+                "12:34x Noisia"
+              ],
+              "title": "Stigma"
+            }
+          }
+        ],
+        "warnings": []
+      },
+      "rules": [
+        "R13.2.3"
+      ],
+      "note": "A time must be followed by end, whitespace, a separator or the closer. Reading: a well-formed time with a bad follower is not invalid-time (R13.2.4 is only for values failing R13.2.2)."
+    },
+    {
+      "id": "tracklist-times-023",
+      "input": "[12:34 x",
+      "expected": {
+        "entries": [
+          {
+            "kind": "note",
+            "parts": {
+              "lead": "",
+              "time": "",
+              "gap": "",
+              "rest": "[12:34 x"
+            },
+            "time": null
+          }
+        ],
+        "warnings": []
+      },
+      "rules": [
+        "R13.2.3"
+      ],
+      "note": "An opened bracket must close right after the time, else there is no time. Reading: no invalid-time."
+    },
+    {
+      "id": "tracklist-times-024",
+      "input": "55:51 31. T.Mas & G-Cuttah, MJ Free - Dark Prophecies\r\n57:42 32. Curare - Lab`s Robbery\r\n58:59 33. Toyfon - Pranks\r\n1:00:28 34. Mean Teeth - 3 Minutes\r\n1:02:17 35. Ozma - Killah",
+      "expected": {
+        "entries": [
+          {
+            "time": {
+              "raw": "55:51",
+              "seconds": 3351
+            }
+          },
+          {
+            "time": {
+              "raw": "57:42",
+              "seconds": 3462
+            }
+          },
+          {
+            "time": {
+              "raw": "58:59",
+              "seconds": 3539
+            }
+          },
+          {
+            "time": {
+              "raw": "1:00:28",
+              "seconds": 3628
+            },
+            "track": {
+              "position": {
+                "raw": "34",
+                "number": 34
+              },
+              "artists": [
+                "Mean Teeth"
+              ],
+              "title": "3 Minutes"
+            }
+          },
+          {
+            "time": {
+              "raw": "1:02:17",
+              "seconds": 3737
+            }
+          }
+        ],
+        "warnings": [
+          {
+            "code": "no-start-at-zero",
+            "line": 1,
+            "severity": "info",
+            "suggestion": null
+          }
+        ],
+        "stats": {
+          "lines": 5,
+          "tracks": 5,
+          "markers": 0,
+          "timed": 5,
+          "firstTime": 3351,
+          "lastTime": 3737
+        }
+      },
+      "rules": [
+        "R13.2.2",
+        "R13.8"
+      ],
+      "source": "neuropunk podcast corpus: Neuropunk pt.49",
+      "note": "MM:SS before the hour, H:MM:SS after it."
+    },
+    {
+      "id": "tracklist-times-025",
+      "input": "50:54 15. Faib - Teleport\r\n55:00 16. Kind of Zero - Byddha Birthday (Funk Masters rmx)\r\n01:00:40 17. Hightech - Dirty Money\r\n01:04:00 18. Engage - Bregna",
+      "expected": {
+        "entries": [
+          {
+            "time": {
+              "raw": "50:54",
+              "seconds": 3054
+            }
+          },
+          {
+            "time": {
+              "raw": "55:00",
+              "seconds": 3300
+            },
+            "track": {
+              "artists": [
+                "Kind of Zero"
+              ],
+              "title": "Byddha Birthday",
+              "versions": [
+                {
+                  "type": "remix",
+                  "artists": [
+                    "Funk Masters"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "time": {
+              "raw": "01:00:40",
+              "seconds": 3640
+            }
+          },
+          {
+            "time": {
+              "raw": "01:04:00",
+              "seconds": 3840
+            }
+          }
+        ],
+        "stats": {
+          "timed": 4,
+          "firstTime": 3054,
+          "lastTime": 3840
+        }
+      },
+      "rules": [
+        "R13.2.2",
+        "R13.8"
+      ],
+      "source": "neuropunk podcast corpus: Neuropunk.ru pt.6",
+      "note": "MM:SS before the hour, HH:MM:SS after it."
+    },
+    {
+      "id": "tracklist-times-026",
+      "input": "00:00 Noisia - Stigma\n1:02:75 Phace - Psycho",
+      "expected": {
+        "entries": [
+          {
+            "time": {
+              "raw": "00:00",
+              "seconds": 0
+            }
+          },
+          {
+            "time": null,
+            "parts": {
+              "lead": "",
+              "time": "",
+              "gap": "",
+              "rest": "1:02:75 Phace - Psycho"
+            }
+          }
+        ],
+        "warnings": [
+          {
+            "code": "time-missing",
+            "line": 2,
+            "severity": "warning",
+            "suggestion": null
+          },
+          {
+            "code": "invalid-time",
+            "line": 2,
+            "severity": "warning",
+            "suggestion": null
+          }
+        ]
+      },
+      "rules": [
+        "R13.2.4",
+        "R13.7"
+      ],
+      "note": "The full A:B:C shape fails R13.2.2 (seconds 75): invalid-time, with no fallback to the two-part 1:02."
+    },
+    {
+      "id": "tracklist-times-027",
+      "input": "00:00 Noisia - Stigma\n1:02:03:04 Phace - Psycho",
+      "expected": {
+        "entries": [
+          {
+            "time": {
+              "raw": "00:00",
+              "seconds": 0
+            }
+          },
+          {
+            "time": null,
+            "parts": {
+              "lead": "",
+              "time": "",
+              "gap": "",
+              "rest": "1:02:03:04 Phace - Psycho"
+            }
+          }
+        ],
+        "warnings": [
+          {
+            "code": "time-missing",
+            "line": 2,
+            "severity": "warning",
+            "suggestion": null
+          },
+          {
+            "code": "invalid-time",
+            "line": 2,
+            "severity": "warning",
+            "suggestion": null
+          }
+        ]
+      },
+      "rules": [
+        "R13.2.4"
+      ],
+      "note": "The time candidate is the maximal digits(:digits)+ run; four parts are never a time."
+    },
+    {
+      "id": "tracklist-times-028",
+      "input": "1:02.1234 Noisia - Stigma",
+      "expected": {
+        "entries": [
+          {
+            "time": {
+              "raw": "1:02",
+              "seconds": 62
+            },
+            "parts": {
+              "lead": "",
+              "time": "1:02",
+              "gap": ".",
+              "rest": "1234 Noisia - Stigma"
+            }
+          }
+        ],
+        "warnings": [
+          {
+            "code": "no-start-at-zero",
+            "line": 1,
+            "severity": "info",
+            "suggestion": null
+          }
+        ]
+      },
+      "rules": [
+        "R13.2.2",
+        "R13.2.3",
+        "R13.2.4"
+      ],
+      "note": "A fraction takes 1-3 digits; with four the '.' is the gap separator."
+    }
+  ]
+}

@@ -75,8 +75,12 @@
             {
               "type": "object",
               "additionalProperties": false,
-              "required": ["raw", "seconds"],
-              "properties": { "raw": { "type": "string" }, "seconds": { "type": "number", "minimum": 0 } }
+              "required": ["line", "raw", "seconds"],
+              "properties": {
+                "line": { "type": "integer", "minimum": 1 },
+                "raw": { "type": "string" },
+                "seconds": { "type": "number", "minimum": 0 }
+              }
             }
           ]
         }

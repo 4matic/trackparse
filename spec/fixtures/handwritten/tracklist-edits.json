@@ -1,0 +1,1691 @@
+{
+  "$schema": "../../schema/fixture-file.schema.json",
+  "description": "SPEC R13.9: applyEdits (set-time with style keeping, shift, clamp, sort-by-time, set-rest, insert, delete, invalid edits, locality).",
+  "defaults": {
+    "fn": "applyEdits"
+  },
+  "cases": [
+    {
+      "id": "tracklist-edits-001",
+      "input": "4:05 Noisia - Stigma",
+      "edits": [
+        {
+          "op": "set-time",
+          "line": 1,
+          "seconds": 125
+        }
+      ],
+      "expected": {
+        "text": "2:05 Noisia - Stigma",
+        "changed": [
+          1
+        ],
+        "warnings": []
+      },
+      "rules": [
+        "R13.9",
+        "R13.9.2"
+      ],
+      "note": "M:SS keeps one minute digit as a minimum width."
+    },
+    {
+      "id": "tracklist-edits-002",
+      "input": "04:05 Noisia - Stigma\n08:00 Phace - Psycho",
+      "edits": [
+        {
+          "op": "set-time",
+          "line": 2,
+          "seconds": 65
+        }
+      ],
+      "expected": {
+        "text": "04:05 Noisia - Stigma\n01:05 Phace - Psycho",
+        "changed": [
+          2
+        ],
+        "warnings": []
+      },
+      "rules": [
+        "R13.9.2",
+        "R13.9.1"
+      ]
+    },
+    {
+      "id": "tracklist-edits-003",
+      "input": "00:04:05 Noisia - Stigma",
+      "edits": [
+        {
+          "op": "set-time",
+          "line": 1,
+          "seconds": 3725
+        }
+      ],
+      "expected": {
+        "text": "01:02:05 Noisia - Stigma",
+        "changed": [
+          1
+        ],
+        "warnings": []
+      },
+      "rules": [
+        "R13.9.2"
+      ]
+    },
+    {
+      "id": "tracklist-edits-004",
+      "input": "0:04:05 Noisia - Stigma",
+      "edits": [
+        {
+          "op": "set-time",
+          "line": 1,
+          "seconds": 36000
+        }
+      ],
+      "expected": {
+        "text": "10:00:00 Noisia - Stigma",
+        "changed": [
+          1
+        ],
+        "warnings": []
+      },
+      "rules": [
+        "R13.9.2"
+      ],
+      "note": "Widths are minimums: a one-digit hour style grows to 10."
+    },
+    {
+      "id": "tracklist-edits-005",
+      "input": "00:07.500 Noisia - Stigma",
+      "edits": [
+        {
+          "op": "set-time",
+          "line": 1,
+          "seconds": 8.25
+        }
+      ],
+      "expected": {
+        "text": "00:08.250 Noisia - Stigma",
+        "changed": [
+          1
+        ],
+        "warnings": []
+      },
+      "rules": [
+        "R13.9.2"
+      ]
+    },
+    {
+      "id": "tracklist-edits-006",
+      "input": "00:07,5 Noisia - Stigma",
+      "edits": [
+        {
+          "op": "set-time",
+          "line": 1,
+          "seconds": 8.25
+        }
+      ],
+      "expected": {
+        "text": "00:08,3 Noisia - Stigma",
+        "changed": [
+          1
+        ],
+        "warnings": []
+      },
+      "rules": [
+        "R13.9.2"
+      ],
+      "note": "Fraction separator kept; 8.25 rounds half up to 8.3."
+    },
+    {
+      "id": "tracklist-edits-007",
+      "input": "00:59.9 Noisia - Stigma",
+      "edits": [
+        {
+          "op": "set-time",
+          "line": 1,
+          "seconds": 59.96
+        }
+      ],
+      "expected": {
+        "text": "01:00.0 Noisia - Stigma",
+        "changed": [
+          1
+        ],
+        "warnings": []
+      },
+      "rules": [
+        "R13.9.2"
+      ],
+      "note": "Rounding carries into the minutes."
+    },
+    {
+      "id": "tracklist-edits-008",
+      "input": "00:10 Noisia - Stigma",
+      "edits": [
+        {
+          "op": "set-time",
+          "line": 1,
+          "seconds": 65.5
+        }
+      ],
+      "expected": {
+        "text": "01:06 Noisia - Stigma",
+        "changed": [
+          1
+        ],
+        "warnings": []
+      },
+      "rules": [
+        "R13.9.2"
+      ],
+      "note": "No fraction in the style: round half up to whole seconds."
+    },
+    {
+      "id": "tracklist-edits-009",
+      "input": "[04:05] Noisia - Stigma\n(00:10:00) - Phace - Psycho",
+      "edits": [
+        {
+          "op": "set-time",
+          "line": 1,
+          "seconds": 10
+        },
+        {
+          "op": "set-time",
+          "line": 2,
+          "seconds": 3600
+        }
+      ],
+      "expected": {
+        "text": "[00:10] Noisia - Stigma\n(01:00:00) - Phace - Psycho",
+        "changed": [
+          1,
+          2
+        ],
+        "warnings": []
+      },
+      "rules": [
+        "R13.9.1",
+        "R13.9.2"
+      ],
+      "note": "Only parts.time is rewritten; lead and gap (brackets, separator) are untouched."
+    },
+    {
+      "id": "tracklist-edits-010",
+      "input": "00:00 Noisia - Stigma\n59:00 Phace - Psycho",
+      "edits": [
+        {
+          "op": "set-time",
+          "line": 2,
+          "seconds": 3600
+        }
+      ],
+      "expected": {
+        "text": "00:00 Noisia - Stigma\n01:00:00 Phace - Psycho",
+        "changed": [
+          2
+        ],
+        "warnings": [
+          {
+            "code": "style-upgraded",
+            "edit": 0,
+            "line": 2
+          }
+        ]
+      },
+      "rules": [
+        "R13.9.2"
+      ]
+    },
+    {
+      "id": "tracklist-edits-011",
+      "input": "9:00 Noisia - Stigma\n01:00:00 Phace - Psycho",
+      "edits": [
+        {
+          "op": "set-time",
+          "line": 1,
+          "seconds": 3700
+        }
+      ],
+      "expected": {
+        "text": "01:01:40 Noisia - Stigma\n01:00:00 Phace - Psycho",
+        "changed": [
+          1
+        ],
+        "warnings": [
+          {
+            "code": "style-upgraded",
+            "edit": 0,
+            "line": 1
+          }
+        ]
+      },
+      "rules": [
+        "R13.9.2"
+      ],
+      "note": "The other hour times use two-digit hours, so HH:MM:SS."
+    },
+    {
+      "id": "tracklist-edits-012",
+      "input": "125:30 Noisia - Stigma",
+      "edits": [
+        {
+          "op": "set-time",
+          "line": 1,
+          "seconds": 7600
+        }
+      ],
+      "expected": {
+        "text": "126:40 Noisia - Stigma",
+        "changed": [
+          1
+        ],
+        "warnings": []
+      },
+      "rules": [
+        "R13.9.2"
+      ],
+      "note": "Long-minute style: a two-part time already at 60 minutes or more stays two-part when it grows, without style-upgraded."
+    },
+    {
+      "id": "tracklist-edits-013",
+      "input": "57:42 32. Curare - Lab`s Robbery\r\n58:59 33. Toyfon - Pranks\r\n1:00:28 34. Mean Teeth - 3 Minutes",
+      "edits": [
+        {
+          "op": "shift",
+          "seconds": 90
+        }
+      ],
+      "expected": {
+        "text": "59:12 32. Curare - Lab`s Robbery\r\n1:00:29 33. Toyfon - Pranks\r\n1:01:58 34. Mean Teeth - 3 Minutes",
+        "changed": [
+          1,
+          2,
+          3
+        ],
+        "warnings": [
+          {
+            "code": "style-upgraded",
+            "edit": 0,
+            "line": 2
+          }
+        ]
+      },
+      "rules": [
+        "R13.9.2",
+        "R13.9"
+      ],
+      "source": "neuropunk podcast corpus: Neuropunk pt.49",
+      "note": "The list writes one-digit hours, so the upgraded time is H:MM:SS."
+    },
+    {
+      "id": "tracklist-edits-014",
+      "input": "00:00 Noisia - Stigma\n03:30 Phace - Psycho\nrecorded live\n07:15 Mefjus - Sinkhole",
+      "edits": [
+        {
+          "op": "shift",
+          "seconds": 30
+        }
+      ],
+      "expected": {
+        "text": "00:30 Noisia - Stigma\n04:00 Phace - Psycho\nrecorded live\n07:45 Mefjus - Sinkhole",
+        "changed": [
+          1,
+          2,
+          4
+        ],
+        "warnings": []
+      },
+      "rules": [
+        "R13.9"
+      ],
+      "note": "Untimed lines are skipped by shift."
+    },
+    {
+      "id": "tracklist-edits-015",
+      "input": "00:00 Noisia - Stigma\n03:30 Phace - Psycho\nrecorded live\n07:15 Mefjus - Sinkhole",
+      "edits": [
+        {
+          "op": "shift",
+          "seconds": -15,
+          "lines": [
+            2,
+            4
+          ]
+        }
+      ],
+      "expected": {
+        "text": "00:00 Noisia - Stigma\n03:15 Phace - Psycho\nrecorded live\n07:00 Mefjus - Sinkhole",
+        "changed": [
+          2,
+          4
+        ],
+        "warnings": []
+      },
+      "rules": [
+        "R13.9"
+      ]
+    },
+    {
+      "id": "tracklist-edits-016",
+      "input": "00:00 Noisia - Stigma\n03:30 Phace - Psycho\nrecorded live\n07:15 Mefjus - Sinkhole",
+      "edits": [
+        {
+          "op": "shift",
+          "seconds": 60,
+          "from": 3
+        }
+      ],
+      "expected": {
+        "text": "00:00 Noisia - Stigma\n03:30 Phace - Psycho\nrecorded live\n08:15 Mefjus - Sinkhole",
+        "changed": [
+          4
+        ],
+        "warnings": []
+      },
+      "rules": [
+        "R13.9"
+      ],
+      "note": "from is inclusive; line 3 is untimed."
+    },
+    {
+      "id": "tracklist-edits-017",
+      "input": "4:05 Noisia - Stigma\n9:30 Phace - Psycho",
+      "edits": [
+        {
+          "op": "shift",
+          "seconds": 600
+        }
+      ],
+      "expected": {
+        "text": "14:05 Noisia - Stigma\n19:30 Phace - Psycho",
+        "changed": [
+          1,
+          2
+        ],
+        "warnings": []
+      },
+      "rules": [
+        "R13.9.2"
+      ]
+    },
+    {
+      "id": "tracklist-edits-018",
+      "input": "00:07.5 Noisia - Stigma",
+      "edits": [
+        {
+          "op": "shift",
+          "seconds": 0.25
+        }
+      ],
+      "expected": {
+        "text": "00:07.8 Noisia - Stigma",
+        "changed": [
+          1
+        ],
+        "warnings": []
+      },
+      "rules": [
+        "R13.9.2"
+      ]
+    },
+    {
+      "id": "tracklist-edits-019",
+      "input": "00:00 Noisia - Stigma\n00:20 Phace - Psycho\n01:00 Mefjus - Sinkhole",
+      "edits": [
+        {
+          "op": "shift",
+          "seconds": -30,
+          "lines": [
+            2,
+            3
+          ]
+        }
+      ],
+      "expected": {
+        "text": "00:00 Noisia - Stigma\n00:00 Phace - Psycho\n00:30 Mefjus - Sinkhole",
+        "changed": [
+          2,
+          3
+        ],
+        "warnings": [
+          {
+            "code": "time-clamped",
+            "edit": 0,
+            "line": 2
+          }
+        ]
+      },
+      "rules": [
+        "R13.9.3"
+      ]
+    },
+    {
+      "id": "tracklist-edits-020",
+      "input": "00:20 Noisia - Stigma",
+      "edits": [
+        {
+          "op": "set-time",
+          "line": 1,
+          "seconds": -5
+        }
+      ],
+      "expected": {
+        "text": "00:00 Noisia - Stigma",
+        "changed": [
+          1
+        ],
+        "warnings": [
+          {
+            "code": "time-clamped",
+            "edit": 0,
+            "line": 1
+          }
+        ]
+      },
+      "rules": [
+        "R13.9.3"
+      ]
+    },
+    {
+      "id": "tracklist-edits-021",
+      "input": "00:00 Noisia - Stigma\r\n03:30 Phace - Psycho ",
+      "edits": [
+        {
+          "op": "shift",
+          "seconds": 45
+        },
+        {
+          "op": "shift",
+          "seconds": -45
+        }
+      ],
+      "expected": {
+        "text": "00:00 Noisia - Stigma\r\n03:30 Phace - Psycho ",
+        "warnings": []
+      },
+      "rules": [
+        "R13.9.7"
+      ],
+      "note": "Round trip. changed is not asserted: whether lines written back to their old text count is open."
+    },
+    {
+      "id": "tracklist-edits-022",
+      "input": "Tracklist:\n00:00 A - 1\n10:00 B - 2\n  note under B\n05:00 C - 3\n20:00 D - 4",
+      "edits": [
+        {
+          "op": "sort-by-time"
+        }
+      ],
+      "expected": {
+        "text": "Tracklist:\n00:00 A - 1\n05:00 C - 3\n10:00 B - 2\n  note under B\n20:00 D - 4",
+        "changed": [
+          3,
+          4,
+          5
+        ],
+        "warnings": []
+      },
+      "rules": [
+        "R13.9.4",
+        "R13.9.1"
+      ],
+      "note": "A block is a timed line plus the untimed lines after it; leading untimed lines stay first; moved lines count as changed."
+    },
+    {
+      "id": "tracklist-edits-023",
+      "input": "05:00 B - 2\n00:00 A - 1",
+      "edits": [
+        {
+          "op": "sort-by-time"
+        }
+      ],
+      "expected": {
+        "text": "00:00 A - 1\n05:00 B - 2",
+        "changed": [
+          1,
+          2
+        ],
+        "warnings": []
+      },
+      "rules": [
+        "R13.9.4"
+      ],
+      "note": "eol slots stay: still no trailing newline."
+    },
+    {
+      "id": "tracklist-edits-024",
+      "input": "05:00 B - 2\r\n00:00 A - 1\n10:00 C - 3",
+      "edits": [
+        {
+          "op": "sort-by-time"
+        }
+      ],
+      "expected": {
+        "text": "00:00 A - 1\r\n05:00 B - 2\n10:00 C - 3",
+        "changed": [
+          1,
+          2
+        ],
+        "warnings": []
+      },
+      "rules": [
+        "R13.9.4"
+      ],
+      "note": "Slot i keeps the input's i-th eol, whatever line lands there."
+    },
+    {
+      "id": "tracklist-edits-025",
+      "input": "00:00 A\n05:00 B\n05:00 C\n01:00 D",
+      "edits": [
+        {
+          "op": "sort-by-time"
+        }
+      ],
+      "expected": {
+        "text": "00:00 A\n01:00 D\n05:00 B\n05:00 C",
+        "changed": [
+          2,
+          3,
+          4
+        ],
+        "warnings": []
+      },
+      "rules": [
+        "R13.9.4"
+      ],
+      "note": "Stable for equal times."
+    },
+    {
+      "id": "tracklist-edits-026",
+      "input": "Intro text\n03:00 B - 2\n1:75 not a time\n00:00 A - 1",
+      "edits": [
+        {
+          "op": "sort-by-time"
+        }
+      ],
+      "expected": {
+        "text": "Intro text\n00:00 A - 1\n03:00 B - 2\n1:75 not a time",
+        "changed": [
+          2,
+          3,
+          4
+        ],
+        "warnings": []
+      },
+      "rules": [
+        "R13.9.4",
+        "R13.2.4"
+      ],
+      "note": "An invalid time is untimed, so it travels with the block above it."
+    },
+    {
+      "id": "tracklist-edits-027",
+      "input": "1:00:00 C\r\n05:00 A\r\n00:30:00 B\r\n",
+      "edits": [
+        {
+          "op": "sort-by-time"
+        }
+      ],
+      "expected": {
+        "text": "05:00 A\r\n00:30:00 B\r\n1:00:00 C\r\n",
+        "changed": [
+          1,
+          2,
+          3
+        ],
+        "warnings": []
+      },
+      "rules": [
+        "R13.9.4"
+      ],
+      "note": "Sorted by seconds across styles; times are not rewritten."
+    },
+    {
+      "id": "tracklist-edits-028",
+      "input": "00:00 A - 1\n05:00 B - 2\n",
+      "edits": [
+        {
+          "op": "sort-by-time"
+        }
+      ],
+      "expected": {
+        "text": "00:00 A - 1\n05:00 B - 2\n",
+        "changed": [],
+        "warnings": []
+      },
+      "rules": [
+        "R13.9.4",
+        "R13.9.1"
+      ],
+      "note": "Already sorted: nothing moves."
+    },
+    {
+      "id": "tracklist-edits-029",
+      "input": "00:00 01. Noisia - Stigma\n03:00 02. Phace - Psycho",
+      "edits": [
+        {
+          "op": "set-rest",
+          "line": 2,
+          "rest": "02. Phace - Psycho (VIP)"
+        }
+      ],
+      "expected": {
+        "text": "00:00 01. Noisia - Stigma\n03:00 02. Phace - Psycho (VIP)",
+        "changed": [
+          2
+        ],
+        "warnings": []
+      },
+      "rules": [
+        "R13.9"
+      ]
+    },
+    {
+      "id": "tracklist-edits-030",
+      "input": "Tracklist:\n00:00 Noisia - Stigma",
+      "edits": [
+        {
+          "op": "set-rest",
+          "line": 1,
+          "rest": "Setlist:"
+        }
+      ],
+      "expected": {
+        "text": "Setlist:\n00:00 Noisia - Stigma",
+        "changed": [
+          1
+        ],
+        "warnings": []
+      },
+      "rules": [
+        "R13.9"
+      ],
+      "note": "Untimed: rest is the whole raw."
+    },
+    {
+      "id": "tracklist-edits-031",
+      "input": "[00:10] - Noisia - Stigma",
+      "edits": [
+        {
+          "op": "set-rest",
+          "line": 1,
+          "rest": "Phace - Psycho"
+        }
+      ],
+      "expected": {
+        "text": "[00:10] - Phace - Psycho",
+        "changed": [
+          1
+        ],
+        "warnings": []
+      },
+      "rules": [
+        "R13.9"
+      ]
+    },
+    {
+      "id": "tracklist-edits-032",
+      "input": "00:00 Noisia - Stigma",
+      "edits": [
+        {
+          "op": "set-rest",
+          "line": 1,
+          "rest": "Phace\nPsycho"
+        }
+      ],
+      "expected": {
+        "text": "00:00 Noisia - Stigma",
+        "changed": [],
+        "warnings": [
+          {
+            "code": "edit-invalid",
+            "edit": 0,
+            "line": 1
+          }
+        ]
+      },
+      "rules": [
+        "R13.9.6"
+      ]
+    },
+    {
+      "id": "tracklist-edits-033",
+      "input": "00:00 A - B\r\n03:00 C - D",
+      "edits": [
+        {
+          "op": "insert",
+          "after": 0,
+          "text": "Tracklist:"
+        }
+      ],
+      "expected": {
+        "text": "Tracklist:\r\n00:00 A - B\r\n03:00 C - D",
+        "changed": [
+          1
+        ],
+        "warnings": []
+      },
+      "rules": [
+        "R13.9.5"
+      ],
+      "note": "The inserted line takes the most common eol. Lines pushed down are not written, so they are not in changed."
+    },
+    {
+      "id": "tracklist-edits-034",
+      "input": "00:00 A - B\n03:00 C - D\n",
+      "edits": [
+        {
+          "op": "insert",
+          "after": 1,
+          "text": "01:30 X - Y"
+        }
+      ],
+      "expected": {
+        "text": "00:00 A - B\n01:30 X - Y\n03:00 C - D\n",
+        "changed": [
+          2
+        ],
+        "warnings": []
+      },
+      "rules": [
+        "R13.9.5"
+      ]
+    },
+    {
+      "id": "tracklist-edits-035",
+      "input": "00:00 A - B\n03:00 C - D",
+      "edits": [
+        {
+          "op": "insert",
+          "after": 2,
+          "text": "06:00 E - F"
+        }
+      ],
+      "expected": {
+        "text": "00:00 A - B\n03:00 C - D\n06:00 E - F",
+        "warnings": []
+      },
+      "rules": [
+        "R13.9.5"
+      ],
+      "note": "The old last line takes the new eol and the new line gets ''. changed not asserted: whether line 2 (eol written) counts is open."
+    },
+    {
+      "id": "tracklist-edits-036",
+      "input": "a\r\nb\nc\r\n",
+      "edits": [
+        {
+          "op": "insert",
+          "after": 3,
+          "text": "d"
+        }
+      ],
+      "expected": {
+        "text": "a\r\nb\nc\r\nd\r\n",
+        "changed": [
+          4
+        ],
+        "warnings": []
+      },
+      "rules": [
+        "R13.9.5"
+      ]
+    },
+    {
+      "id": "tracklist-edits-037",
+      "input": "00:00 A - B",
+      "edits": [
+        {
+          "op": "insert",
+          "after": 0,
+          "text": "x\r"
+        }
+      ],
+      "expected": {
+        "text": "00:00 A - B",
+        "changed": [],
+        "warnings": [
+          {
+            "code": "edit-invalid",
+            "edit": 0
+          }
+        ]
+      },
+      "rules": [
+        "R13.9.6"
+      ]
+    },
+    {
+      "id": "tracklist-edits-038",
+      "input": "00:00 A - B",
+      "edits": [
+        {
+          "op": "insert",
+          "after": 2,
+          "text": "x"
+        }
+      ],
+      "expected": {
+        "text": "00:00 A - B",
+        "changed": [],
+        "warnings": [
+          {
+            "code": "edit-invalid",
+            "edit": 0
+          }
+        ]
+      },
+      "rules": [
+        "R13.9.6"
+      ],
+      "note": "after must be 0..line count."
+    },
+    {
+      "id": "tracklist-edits-039",
+      "input": "",
+      "edits": [
+        {
+          "op": "insert",
+          "after": 0,
+          "text": "00:00 A - B"
+        }
+      ],
+      "expected": {
+        "text": "00:00 A - B",
+        "changed": [
+          1
+        ],
+        "warnings": []
+      },
+      "rules": [
+        "R13.9.5"
+      ],
+      "note": "Inserting into an empty text gives the line with eol '': a text without a trailing newline keeps that property."
+    },
+    {
+      "id": "tracklist-edits-040",
+      "input": "00:00 A - B\n03:00 C - D\n06:00 E - F",
+      "edits": [
+        {
+          "op": "delete",
+          "line": 2
+        }
+      ],
+      "expected": {
+        "text": "00:00 A - B\n06:00 E - F",
+        "changed": [],
+        "warnings": []
+      },
+      "rules": [
+        "R13.9.5",
+        "R13.9.1"
+      ],
+      "note": "Reading: lines that only move up are not written."
+    },
+    {
+      "id": "tracklist-edits-041",
+      "input": "00:00 A - B\n03:00 C - D\n06:00 E - F",
+      "edits": [
+        {
+          "op": "delete",
+          "line": 3
+        }
+      ],
+      "expected": {
+        "text": "00:00 A - B\n03:00 C - D",
+        "warnings": []
+      },
+      "rules": [
+        "R13.9.5"
+      ],
+      "note": "The deleted last line's '' eol moves to the new last line. changed not asserted."
+    },
+    {
+      "id": "tracklist-edits-042",
+      "input": "a\nb\n",
+      "edits": [
+        {
+          "op": "delete",
+          "line": 2
+        }
+      ],
+      "expected": {
+        "text": "a\n",
+        "warnings": []
+      },
+      "rules": [
+        "R13.9.5"
+      ]
+    },
+    {
+      "id": "tracklist-edits-043",
+      "input": "00:00 A - B",
+      "edits": [
+        {
+          "op": "delete",
+          "line": 1
+        }
+      ],
+      "expected": {
+        "text": "",
+        "changed": [],
+        "warnings": []
+      },
+      "rules": [
+        "R13.9.5"
+      ]
+    },
+    {
+      "id": "tracklist-edits-044",
+      "input": "00:00 A - B\n03:00 C - D\n06:00 E - F",
+      "edits": [
+        {
+          "op": "delete",
+          "line": 4
+        }
+      ],
+      "expected": {
+        "text": "00:00 A - B\n03:00 C - D\n06:00 E - F",
+        "changed": [],
+        "warnings": [
+          {
+            "code": "edit-invalid",
+            "edit": 0
+          }
+        ]
+      },
+      "rules": [
+        "R13.9.6"
+      ]
+    },
+    {
+      "id": "tracklist-edits-045",
+      "input": "00:00 Noisia - Stigma\n03:30 Phace - Psycho\nrecorded live\n07:15 Mefjus - Sinkhole",
+      "edits": [
+        {
+          "op": "set-time",
+          "line": 0,
+          "seconds": 10
+        }
+      ],
+      "expected": {
+        "text": "00:00 Noisia - Stigma\n03:30 Phace - Psycho\nrecorded live\n07:15 Mefjus - Sinkhole",
+        "changed": [],
+        "warnings": [
+          {
+            "code": "edit-invalid",
+            "edit": 0
+          }
+        ]
+      },
+      "rules": [
+        "R13.9.6"
+      ]
+    },
+    {
+      "id": "tracklist-edits-046",
+      "input": "00:00 Noisia - Stigma\n03:30 Phace - Psycho\nrecorded live\n07:15 Mefjus - Sinkhole",
+      "edits": [
+        {
+          "op": "set-time",
+          "line": 3,
+          "seconds": 10
+        }
+      ],
+      "expected": {
+        "text": "00:00 Noisia - Stigma\n03:30 Phace - Psycho\nrecorded live\n07:15 Mefjus - Sinkhole",
+        "changed": [],
+        "warnings": [
+          {
+            "code": "edit-invalid",
+            "edit": 0,
+            "line": 3
+          }
+        ]
+      },
+      "rules": [
+        "R13.9.6"
+      ],
+      "note": "set-time on an untimed line."
+    },
+    {
+      "id": "tracklist-edits-047",
+      "input": "00:00 Noisia - Stigma\n03:30 Phace - Psycho\nrecorded live\n07:15 Mefjus - Sinkhole",
+      "edits": [
+        {
+          "op": "set-time",
+          "line": 2,
+          "seconds": 1e999
+        }
+      ],
+      "expected": {
+        "text": "00:00 Noisia - Stigma\n03:30 Phace - Psycho\nrecorded live\n07:15 Mefjus - Sinkhole",
+        "changed": [],
+        "warnings": [
+          {
+            "code": "edit-invalid",
+            "edit": 0
+          }
+        ]
+      },
+      "rules": [
+        "R13.9.6"
+      ],
+      "note": "1e999 parses as Infinity in JSON readers (JS, Python): a non-finite number."
+    },
+    {
+      "id": "tracklist-edits-048",
+      "input": "00:00 Noisia - Stigma\n03:30 Phace - Psycho\nrecorded live\n07:15 Mefjus - Sinkhole",
+      "edits": [
+        {
+          "op": "shift",
+          "seconds": -1e999
+        }
+      ],
+      "expected": {
+        "text": "00:00 Noisia - Stigma\n03:30 Phace - Psycho\nrecorded live\n07:15 Mefjus - Sinkhole",
+        "changed": [],
+        "warnings": [
+          {
+            "code": "edit-invalid",
+            "edit": 0
+          }
+        ]
+      },
+      "rules": [
+        "R13.9.6"
+      ],
+      "note": "-1e999 parses as -Infinity."
+    },
+    {
+      "id": "tracklist-edits-049",
+      "input": "00:00 Noisia - Stigma\n03:30 Phace - Psycho\nrecorded live\n07:15 Mefjus - Sinkhole",
+      "edits": [
+        {
+          "op": "set-time",
+          "line": 2,
+          "seconds": null
+        }
+      ],
+      "expected": {
+        "text": "00:00 Noisia - Stigma\n03:30 Phace - Psycho\nrecorded live\n07:15 Mefjus - Sinkhole",
+        "changed": [],
+        "warnings": [
+          {
+            "code": "edit-invalid",
+            "edit": 0
+          }
+        ]
+      },
+      "rules": [
+        "R13.9.6",
+        "R0.8"
+      ],
+      "note": "Reading: a missing/non-number value is invalid like a non-finite one."
+    },
+    {
+      "id": "tracklist-edits-050",
+      "input": "00:00 Noisia - Stigma\n03:30 Phace - Psycho\nrecorded live\n07:15 Mefjus - Sinkhole",
+      "edits": [
+        {
+          "op": "rename",
+          "line": 1
+        }
+      ],
+      "expected": {
+        "text": "00:00 Noisia - Stigma\n03:30 Phace - Psycho\nrecorded live\n07:15 Mefjus - Sinkhole",
+        "changed": [],
+        "warnings": [
+          {
+            "code": "edit-invalid",
+            "edit": 0
+          }
+        ]
+      },
+      "rules": [
+        "R13.9.6"
+      ]
+    },
+    {
+      "id": "tracklist-edits-051",
+      "input": "00:00 Noisia - Stigma\n03:30 Phace - Psycho\nrecorded live\n07:15 Mefjus - Sinkhole",
+      "edits": [
+        {
+          "op": "set-time",
+          "line": 9,
+          "seconds": 10
+        },
+        {
+          "op": "shift",
+          "seconds": 10
+        }
+      ],
+      "expected": {
+        "text": "00:10 Noisia - Stigma\n03:40 Phace - Psycho\nrecorded live\n07:25 Mefjus - Sinkhole",
+        "changed": [
+          1,
+          2,
+          4
+        ],
+        "warnings": [
+          {
+            "code": "edit-invalid",
+            "edit": 0
+          }
+        ]
+      },
+      "rules": [
+        "R13.9.6",
+        "R13.9"
+      ],
+      "note": "An invalid edit is skipped; the next one still applies, and warnings carry the edit index."
+    },
+    {
+      "id": "tracklist-edits-052",
+      "input": "00:00 Noisia - Stigma\n03:30 Phace - Psycho\nrecorded live\n07:15 Mefjus - Sinkhole",
+      "edits": [],
+      "expected": {
+        "text": "00:00 Noisia - Stigma\n03:30 Phace - Psycho\nrecorded live\n07:15 Mefjus - Sinkhole",
+        "changed": [],
+        "warnings": []
+      },
+      "rules": [
+        "R13.9.1"
+      ],
+      "note": "Identity."
+    },
+    {
+      "id": "tracklist-edits-053",
+      "input": "00:00 A - B\n05:00 C - D",
+      "edits": [
+        {
+          "op": "set-time",
+          "line": 2,
+          "seconds": 360
+        },
+        {
+          "op": "insert",
+          "after": 0,
+          "text": "Tracklist:"
+        }
+      ],
+      "expected": {
+        "text": "Tracklist:\n00:00 A - B\n06:00 C - D",
+        "changed": [
+          1,
+          3
+        ],
+        "warnings": []
+      },
+      "rules": [
+        "R13.9",
+        "R13.9.1"
+      ],
+      "note": "changed uses line numbers of the final text."
+    },
+    {
+      "id": "tracklist-edits-054",
+      "input": "00:00 A - B\n05:00 C - D",
+      "edits": [
+        {
+          "op": "insert",
+          "after": 0,
+          "text": "Tracklist:"
+        },
+        {
+          "op": "set-time",
+          "line": 2,
+          "seconds": 30
+        }
+      ],
+      "expected": {
+        "text": "Tracklist:\n00:30 A - B\n05:00 C - D",
+        "changed": [
+          1,
+          2
+        ],
+        "warnings": []
+      },
+      "rules": [
+        "R13.9"
+      ],
+      "note": "Each edit sees the result of the previous one: line 2 is now 'A - B'."
+    },
+    {
+      "id": "tracklist-edits-055",
+      "input": "00:00 A - B\n05:00 C - D",
+      "edits": [
+        {
+          "op": "set-time",
+          "line": 1,
+          "seconds": 10
+        },
+        {
+          "op": "delete",
+          "line": 1
+        }
+      ],
+      "expected": {
+        "text": "05:00 C - D",
+        "changed": [],
+        "warnings": []
+      },
+      "rules": [
+        "R13.9",
+        "R13.9.1"
+      ],
+      "note": "Deleted lines are not in changed."
+    },
+    {
+      "id": "tracklist-edits-056",
+      "input": "00:00:00 01. Grinder - Dark Dream  \r\n00:02:35 02. Impish, Quadrant, Iris - Mute City  \r\n00:05:30 03. Xorgen & Mailky - Tunnel  \r\n00:06:40 04. Inverter - Namalsk  \r\n00:08:05 05. Invisible Landscape & K3SHVLOT - Leemeeteed Eedeeshn  \r\n00:10:00 06. Bodrak - Parts\r\n00:11:45 07. Paranoiac Del - Long Time Ago  \r\n00:13:55 08. David Guetta, MORTEN, Lanie Gardner - Dreams (Mage Bootleg)  ",
+      "edits": [
+        {
+          "op": "set-time",
+          "line": 3,
+          "seconds": 335
+        },
+        {
+          "op": "shift",
+          "seconds": 5,
+          "from": 7
+        }
+      ],
+      "expected": {
+        "text": "00:00:00 01. Grinder - Dark Dream  \r\n00:02:35 02. Impish, Quadrant, Iris - Mute City  \r\n00:05:35 03. Xorgen & Mailky - Tunnel  \r\n00:06:40 04. Inverter - Namalsk  \r\n00:08:05 05. Invisible Landscape & K3SHVLOT - Leemeeteed Eedeeshn  \r\n00:10:00 06. Bodrak - Parts\r\n00:11:50 07. Paranoiac Del - Long Time Ago  \r\n00:14:00 08. David Guetta, MORTEN, Lanie Gardner - Dreams (Mage Bootleg)  ",
+        "changed": [
+          3,
+          7,
+          8
+        ],
+        "warnings": []
+      },
+      "rules": [
+        "R13.9.1",
+        "R13.9.2"
+      ],
+      "source": "neuropunk podcast corpus: The Deepspace 14",
+      "note": "Only the named lines change; CRLF and trailing double spaces everywhere stay byte for byte."
+    },
+    {
+      "id": "tracklist-edits-057",
+      "input": "00:00:00 01. Grinder - Dark Dream  \r\n00:02:35 02. Impish, Quadrant, Iris - Mute City  \r\n00:05:30 03. Xorgen & Mailky - Tunnel  \r\n00:06:40 04. Inverter - Namalsk  \r\n00:08:05 05. Invisible Landscape & K3SHVLOT - Leemeeteed Eedeeshn  \r\n00:10:00 06. Bodrak - Parts\r\n00:11:45 07. Paranoiac Del - Long Time Ago  \r\n00:13:55 08. David Guetta, MORTEN, Lanie Gardner - Dreams (Mage Bootleg)  ",
+      "edits": [],
+      "expected": {
+        "text": "00:00:00 01. Grinder - Dark Dream  \r\n00:02:35 02. Impish, Quadrant, Iris - Mute City  \r\n00:05:30 03. Xorgen & Mailky - Tunnel  \r\n00:06:40 04. Inverter - Namalsk  \r\n00:08:05 05. Invisible Landscape & K3SHVLOT - Leemeeteed Eedeeshn  \r\n00:10:00 06. Bodrak - Parts\r\n00:11:45 07. Paranoiac Del - Long Time Ago  \r\n00:13:55 08. David Guetta, MORTEN, Lanie Gardner - Dreams (Mage Bootleg)  ",
+        "changed": [],
+        "warnings": []
+      },
+      "rules": [
+        "R13.9.1"
+      ],
+      "source": "neuropunk podcast corpus: The Deepspace 14"
+    },
+    {
+      "id": "tracklist-edits-058",
+      "input": "125:30 Noisia - Stigma\n130:00 Phace - Psycho",
+      "edits": [
+        {
+          "op": "shift",
+          "seconds": 600
+        }
+      ],
+      "expected": {
+        "text": "135:30 Noisia - Stigma\n140:00 Phace - Psycho",
+        "changed": [
+          1,
+          2
+        ],
+        "warnings": []
+      },
+      "rules": [
+        "R13.9.2"
+      ],
+      "note": "Long-minute lines past an hour stay two-part."
+    },
+    {
+      "id": "tracklist-edits-059",
+      "input": "",
+      "edits": [
+        {
+          "op": "insert",
+          "after": 0,
+          "text": "x"
+        }
+      ],
+      "expected": {
+        "text": "x",
+        "changed": [
+          1
+        ],
+        "warnings": []
+      },
+      "rules": [
+        "R13.9.5"
+      ]
+    },
+    {
+      "id": "tracklist-edits-060",
+      "input": "a\nb",
+      "edits": [
+        {
+          "op": "insert",
+          "after": 2,
+          "text": "c"
+        }
+      ],
+      "expected": {
+        "text": "a\nb\nc",
+        "changed": [
+          2,
+          3
+        ],
+        "warnings": []
+      },
+      "rules": [
+        "R13.9.1",
+        "R13.9.5"
+      ],
+      "note": "Line 2 only had its eol rewritten ('' to '\\n'); it still counts as changed."
+    },
+    {
+      "id": "tracklist-edits-061",
+      "input": "00:00 A - B\nnotes\n01:00 C - D",
+      "edits": [
+        {
+          "op": "shift",
+          "seconds": 10
+        },
+        {
+          "op": "shift",
+          "seconds": -10
+        }
+      ],
+      "expected": {
+        "text": "00:00 A - B\nnotes\n01:00 C - D",
+        "changed": [
+          1,
+          3
+        ],
+        "warnings": []
+      },
+      "rules": [
+        "R13.9.1",
+        "R13.9.7"
+      ],
+      "note": "A round trip lists the rewritten lines even though the text is unchanged; the untimed line is not written."
+    },
+    {
+      "id": "tracklist-edits-062",
+      "input": "00:00 A - B\n01:00 C - D",
+      "edits": [
+        {
+          "op": "set-time",
+          "line": 99,
+          "seconds": 1
+        },
+        {
+          "op": "insert",
+          "after": 9,
+          "text": "x"
+        },
+        {
+          "op": "set-time",
+          "line": "2",
+          "seconds": 1
+        },
+        {
+          "op": "set-time",
+          "line": 1,
+          "seconds": null
+        },
+        {
+          "op": "bogus",
+          "after": 2
+        },
+        {
+          "op": "shift",
+          "seconds": 5,
+          "from": 9
+        }
+      ],
+      "expected": {
+        "text": "00:00 A - B\n01:00 C - D",
+        "changed": [],
+        "warnings": [
+          {
+            "code": "edit-invalid",
+            "edit": 0,
+            "line": 99
+          },
+          {
+            "code": "edit-invalid",
+            "edit": 1,
+            "line": 9
+          },
+          {
+            "code": "edit-invalid",
+            "edit": 2,
+            "line": null
+          },
+          {
+            "code": "edit-invalid",
+            "edit": 3,
+            "line": 1
+          },
+          {
+            "code": "edit-invalid",
+            "edit": 4,
+            "line": 2
+          },
+          {
+            "code": "edit-invalid",
+            "edit": 5,
+            "line": null
+          }
+        ]
+      },
+      "rules": [
+        "R13.9.6",
+        "R13.9.4"
+      ],
+      "note": "edit-invalid line: the edit's integer line, else its integer after, else null. null seconds are invalid; shift's from must be an existing line."
+    },
+    {
+      "id": "tracklist-edits-063",
+      "input": "0:00 A - B",
+      "edits": [
+        {
+          "op": "shift",
+          "seconds": 600
+        },
+        {
+          "op": "shift",
+          "seconds": -600
+        }
+      ],
+      "expected": {
+        "text": "00:00 A - B",
+        "changed": [
+          1
+        ],
+        "warnings": []
+      },
+      "rules": [
+        "R13.9.7",
+        "R13.9.2"
+      ],
+      "note": "Outside the round trip: 10:00 has one more minute digit, and widths are minimum widths."
+    },
+    {
+      "id": "tracklist-edits-064",
+      "input": "00:30 A - B\n\n00:10 C - D",
+      "edits": [
+        {
+          "op": "sort-by-time"
+        }
+      ],
+      "expected": {
+        "text": "00:10 C - D\n00:30 A - B\n",
+        "changed": [
+          1,
+          2
+        ],
+        "warnings": []
+      },
+      "rules": [
+        "R13.9.4"
+      ],
+      "note": "The blank line lands in the last slot (eol '') and is no line any more on re-split."
+    },
+    {
+      "id": "tracklist-edits-065",
+      "input": "a\rb\n\n",
+      "edits": [
+        {
+          "op": "delete",
+          "line": 2
+        }
+      ],
+      "expected": {
+        "text": "a\r\n",
+        "changed": [
+          1
+        ],
+        "warnings": []
+      },
+      "rules": [
+        "R13.9.5",
+        "R13.9.1"
+      ],
+      "note": "A stray CR followed by an empty LF line merges into one CRLF line, as re-splitting would read it."
+    },
+    {
+      "id": "tracklist-edits-066",
+      "input": "a\r\nb\nc\nd\r\n",
+      "edits": [
+        {
+          "op": "insert",
+          "after": 1,
+          "text": "x"
+        }
+      ],
+      "expected": {
+        "text": "a\r\nx\r\nb\nc\nd\r\n",
+        "changed": [
+          2
+        ],
+        "warnings": []
+      },
+      "rules": [
+        "R13.9.5"
+      ],
+      "note": "Most common eol tie: the first one seen wins."
+    },
+    {
+      "id": "tracklist-edits-067",
+      "input": "00:00 A - B\n01:00 C - D\n02:00 E - F",
+      "edits": [
+        {
+          "op": "shift",
+          "seconds": 5,
+          "lines": [
+            1,
+            2
+          ],
+          "from": 3
+        }
+      ],
+      "expected": {
+        "text": "00:05 A - B\n01:05 C - D\n02:00 E - F",
+        "changed": [
+          1,
+          2
+        ],
+        "warnings": []
+      },
+      "rules": [
+        "R13.9"
+      ],
+      "note": "lines wins over from."
+    },
+    {
+      "id": "tracklist-edits-068",
+      "input": "00:00:00 A - B",
+      "edits": [
+        {
+          "op": "set-time",
+          "line": 1,
+          "seconds": 360000
+        },
+        {
+          "op": "set-time",
+          "line": 1,
+          "seconds": 359999
+        }
+      ],
+      "expected": {
+        "text": "99:59:59 A - B",
+        "changed": [
+          1
+        ],
+        "warnings": [
+          {
+            "code": "edit-invalid",
+            "edit": 0,
+            "line": 1
+          }
+        ]
+      },
+      "rules": [
+        "R13.9.2",
+        "R13.9.6"
+      ],
+      "note": "100 hours or more cannot be written."
+    },
+    {
+      "id": "tracklist-edits-069",
+      "input": "125:30 Noisia - Stigma",
+      "edits": [
+        {
+          "op": "set-time",
+          "line": 1,
+          "seconds": 530
+        }
+      ],
+      "expected": {
+        "text": "08:50 Noisia - Stigma",
+        "changed": [
+          1
+        ],
+        "warnings": []
+      },
+      "rules": [
+        "R13.9.2"
+      ],
+      "note": "Long-minute style: the minimum minute width is min(3, 2) = 2, so 530 s is 08:50, not 008:50."
+    },
+    {
+      "id": "tracklist-edits-070",
+      "input": "125:30 Noisia - Stigma",
+      "edits": [
+        {
+          "op": "shift",
+          "seconds": -7000
+        }
+      ],
+      "expected": {
+        "text": "08:50 Noisia - Stigma",
+        "changed": [
+          1
+        ],
+        "warnings": []
+      },
+      "rules": [
+        "R13.9.2",
+        "R13.9.7"
+      ],
+      "note": "125:30 − 7000 s → 08:50 (width min(3, 2)); this shift is outside the round trip since the digit count changes."
+    }
+  ]
+}

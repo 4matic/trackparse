@@ -1,0 +1,766 @@
+{
+  "$schema": "../../schema/fixture-file.schema.json",
+  "description": "SPEC R13.7: tracklist warnings, each code positive and near-miss, the real out-of-order lists with their suggestions.",
+  "defaults": {
+    "fn": "parseTracklist"
+  },
+  "cases": [
+    {
+      "id": "tracklist-warnings-001",
+      "input": "00:00 Noisia - Stigma\nPhace - Psycho\n05:00 Mefjus - Sinkhole",
+      "expected": {
+        "warnings": [
+          {
+            "code": "time-missing",
+            "line": 2,
+            "severity": "warning",
+            "suggestion": null
+          }
+        ]
+      },
+      "rules": [
+        "R13.7"
+      ]
+    },
+    {
+      "id": "tracklist-warnings-002",
+      "input": "00:00 Noisia - Stigma\nThanks for listening\nIntro\nTracklist:\n05:00 Mefjus - Sinkhole",
+      "expected": {
+        "warnings": []
+      },
+      "rules": [
+        "R13.7",
+        "R13.3"
+      ],
+      "note": "time-missing is only for track entries: the untimed note, marker and header do not count."
+    },
+    {
+      "id": "tracklist-warnings-003",
+      "input": "Noisia - Stigma\nPhace - Psycho",
+      "expected": {
+        "warnings": []
+      },
+      "rules": [
+        "R13.7"
+      ],
+      "note": "No entry has a time, so time-missing does not fire."
+    },
+    {
+      "id": "tracklist-warnings-004",
+      "input": "01:04:39 Noisia - Stigma\n00:06:29 Phace - Psycho\n01:08:10 Mefjus - Sinkhole",
+      "expected": {
+        "warnings": [
+          {
+            "code": "no-start-at-zero",
+            "line": 1,
+            "severity": "info",
+            "suggestion": null
+          },
+          {
+            "code": "time-out-of-order",
+            "line": 2,
+            "severity": "warning",
+            "suggestion": {
+              "line": 2,
+              "raw": "01:06:29",
+              "seconds": 3989
+            }
+          }
+        ]
+      },
+      "rules": [
+        "R13.7"
+      ],
+      "note": "The SPEC example."
+    },
+    {
+      "id": "tracklist-warnings-005",
+      "input": "00:00 Noisia - Stigma\n01:22:21 Phace - Psycho\n00:03:55 Mefjus - Sinkhole\n01:24:00 Black Sun Empire - Arrival",
+      "expected": {
+        "warnings": [
+          {
+            "code": "time-out-of-order",
+            "line": 3,
+            "severity": "warning",
+            "suggestion": {
+              "line": 3,
+              "raw": "01:23:55",
+              "seconds": 5035
+            }
+          }
+        ]
+      },
+      "rules": [
+        "R13.7"
+      ],
+      "note": "No 1-digit change fits between 01:22:21 and 01:24:00; exactly one 2-digit change does."
+    },
+    {
+      "id": "tracklist-warnings-006",
+      "input": "00:00 Noisia - Stigma\n04:10.5 Phace - Psycho\n02:20.5 Mefjus - Sinkhole\n04:30 Black Sun Empire - Arrival",
+      "expected": {
+        "warnings": [
+          {
+            "code": "time-out-of-order",
+            "line": 3,
+            "severity": "warning",
+            "suggestion": {
+              "line": 3,
+              "raw": "04:20.5",
+              "seconds": 260.5
+            }
+          }
+        ]
+      },
+      "rules": [
+        "R13.7",
+        "R13.2.2"
+      ],
+      "note": "Fraction digits are never changed but stay in the suggestion."
+    },
+    {
+      "id": "tracklist-warnings-007",
+      "input": "00:00 Noisia - Stigma\n10:00 Phace - Psycho\n05:00 Mefjus - Sinkhole",
+      "expected": {
+        "warnings": [
+          {
+            "code": "time-out-of-order",
+            "line": 3,
+            "severity": "warning",
+            "suggestion": null
+          }
+        ]
+      },
+      "rules": [
+        "R13.7"
+      ],
+      "note": "Last timed entry: only p < t applies; 15:00, 25:00 ... all fit, so the suggestion is null."
+    },
+    {
+      "id": "tracklist-warnings-008",
+      "input": "00:00 Noisia - Stigma\n05:00 Phace - Psycho\n03:00 Mefjus - Sinkhole\n04:00 Black Sun Empire - Arrival",
+      "expected": {
+        "warnings": [
+          {
+            "code": "time-out-of-order",
+            "line": 3,
+            "severity": "warning",
+            "suggestion": null
+          }
+        ]
+      },
+      "rules": [
+        "R13.7"
+      ],
+      "note": "Only the entry below its predecessor is flagged (04:00 > 03:00); no t fits 300 < t < 240, so no suggestion."
+    },
+    {
+      "id": "tracklist-warnings-009",
+      "input": "00:00 Noisia - Stigma\n03:00 Phace - Psycho\n03:00 Mefjus - Sinkhole",
+      "expected": {
+        "warnings": [
+          {
+            "code": "time-duplicate",
+            "line": 3,
+            "severity": "warning",
+            "suggestion": null
+          }
+        ]
+      },
+      "rules": [
+        "R13.7"
+      ]
+    },
+    {
+      "id": "tracklist-warnings-010",
+      "input": "00:00 Noisia - Stigma\n03:00 Phace - Psycho\nrecorded live\n03:00 Mefjus - Sinkhole",
+      "expected": {
+        "warnings": [
+          {
+            "code": "time-duplicate",
+            "line": 4,
+            "severity": "warning",
+            "suggestion": null
+          }
+        ]
+      },
+      "rules": [
+        "R13.7"
+      ],
+      "note": "Compared with the previous timed entry; untimed lines in between do not matter."
+    },
+    {
+      "id": "tracklist-warnings-011",
+      "input": "00:00 Noisia - Stigma\n03:00 Phace - Psycho\n03:00.5 Mefjus - Sinkhole",
+      "expected": {
+        "warnings": []
+      },
+      "rules": [
+        "R13.7",
+        "R13.2.2"
+      ],
+      "note": "Near-miss: 180.5 is not 180."
+    },
+    {
+      "id": "tracklist-warnings-012",
+      "input": "Tracklist:\n00:00 Noisia - Stigma",
+      "expected": {
+        "warnings": []
+      },
+      "rules": [
+        "R13.7"
+      ],
+      "note": "Near-miss: the first timed entry is at 0 even though it is not line 1."
+    },
+    {
+      "id": "tracklist-warnings-013",
+      "input": "00:00 Noisia - Stigma\n04:00 Phace - Psycho\n05:00 Mefjus - Sinkhole\n05:01 Black Sun Empire - Arrival",
+      "options": {
+        "audioSeconds": 300
+      },
+      "expected": {
+        "warnings": [
+          {
+            "code": "time-after-audio-end",
+            "line": 4,
+            "severity": "warning",
+            "suggestion": null
+          }
+        ]
+      },
+      "rules": [
+        "R13.7",
+        "R13.10"
+      ],
+      "note": "300 is not above audioSeconds; 301 is."
+    },
+    {
+      "id": "tracklist-warnings-014",
+      "input": "00:00 Noisia - Stigma\n04:00 Phace - Psycho\n05:01 Black Sun Empire - Arrival",
+      "expected": {
+        "warnings": []
+      },
+      "rules": [
+        "R13.7",
+        "R13.10"
+      ],
+      "note": "Without audioSeconds the check is off."
+    },
+    {
+      "id": "tracklist-warnings-015",
+      "input": "00:00 Noisia - Stigma\n04:00 Phace - Psycho\n05:01 Black Sun Empire - Arrival",
+      "options": {
+        "audioSeconds": "300"
+      },
+      "expected": {
+        "warnings": []
+      },
+      "rules": [
+        "R13.10",
+        "R0.8"
+      ],
+      "note": "A bad option value is ignored (no throw, check off)."
+    },
+    {
+      "id": "tracklist-warnings-016",
+      "input": "00:00 Noisia - Stigma\n0:61:00 x\n05:00 Mefjus - Sinkhole",
+      "expected": {
+        "warnings": [
+          {
+            "code": "invalid-time",
+            "line": 2,
+            "severity": "warning",
+            "suggestion": null
+          }
+        ],
+        "entries": [
+          {},
+          {
+            "kind": "note",
+            "time": null
+          },
+          {}
+        ]
+      },
+      "rules": [
+        "R13.2.4",
+        "R13.7"
+      ],
+      "note": "The invalid line is a note (no separator), so no time-missing either."
+    },
+    {
+      "id": "tracklist-warnings-017",
+      "input": "00:00 01. Noisia - Stigma\n02:00 Intro\n03:00 02. Phace - Psycho\n05:00 Mefjus - Sinkhole\n07:00 03. Black Sun Empire - Arrival",
+      "expected": {
+        "warnings": []
+      },
+      "rules": [
+        "R13.7"
+      ],
+      "note": "Unpositioned entries (a marker, an unnumbered track) do not break the position sequence."
+    },
+    {
+      "id": "tracklist-warnings-018",
+      "input": "00:00 Noisia\n03:00 Phace - Psycho\n06:00 Outro",
+      "expected": {
+        "warnings": [
+          {
+            "code": "line-unparsed",
+            "line": 1,
+            "severity": "warning",
+            "suggestion": null
+          }
+        ]
+      },
+      "rules": [
+        "R13.7",
+        "R13.3"
+      ],
+      "note": "'Outro' is a marker, so it is not line-unparsed."
+    },
+    {
+      "id": "tracklist-warnings-019",
+      "input": "00:00 01. Place 2b & Paimon - Signal\n04:48 02. Agressor Bunx - Move\n06:22 03. Neonlight & Receptor - 800-Pound Gorilla\n08:55 04. Dextems - Bad Blocks\n11:08 05. Teddy Killerz - New Drums\n13:23 06. Kubrak - No Fear\n15:15 07. Receptor & Engage - Gothic\n17:29 08. Dyamorph - Rainbow Vomit\n18:58 09. Noel & Kryzis - Operator\n21:33 10. Kije - Apathy (Directive4 rmx)\n26:26 11. Loud Sound - Domination\n24:35 12. Engage - Tyrant\n26:06 13. MaxNRG - Metro 2033 VIP\n28:19 14. Receptor - New Message\n29:37 15. Teddy Killerz & Nphonix - Earthshaker\n31:29 16. Inf - Mindeater\n32:56 17. Place 2b - Iron Man (Jabro Grow rmx)\n34:20 18. D-Iolax - Pyramid\n37:04 19. Absurd - Thereafter\n39:12 20. Astrix - Mir (Engage booleg)\n41:26 21. Noel - Bore\n43:40 22. Agressor Bunx - Disciples\n45:32 23. Nphonix & MJ Free - Speedway\n47:45 24. Receptor - Algebra\n48:53 25. Kije - Outsider\n51:06 26. Yabol - Paradise Lost (C.A.2K rmx)\n54:27 27. NU4M & Mistique ft. NIA - Expulsive\n55:57 28. Mizo - Hypersensibility\n58:24 29. Nickbee - I Say You\n01:00:42 30. Fade, Andy Pain & Z Connection - Target\n01:02:55 31. Hightech - After Us\n01:05:31 32. Nickbee - Human Philosophy\n01:07:01 33. Flame ft. Shamil - Back In Time\n01:09:38 34. Engage - Tourmaline\n01:11:07 35. Derrick & Tonika - Nowadays\n01:13:19 36. ExR - Contact",
+      "expected": {
+        "warnings": [
+          {
+            "code": "time-out-of-order",
+            "line": 12,
+            "severity": "warning",
+            "suggestion": null
+          }
+        ],
+        "stats": {
+          "lines": 36,
+          "timed": 36
+        }
+      },
+      "rules": [
+        "R13.7"
+      ],
+      "source": "neuropunk podcast corpus: Neuropunk pt.28",
+      "note": "26:26 then 24:35, next 26:06: no 1- or 2-digit change fits between the neighbours, so no suggestion."
+    },
+    {
+      "id": "tracklist-warnings-020",
+      "input": "00:00 01. Heamy - Burning In The Shadows\n03:10 02. NickBee - Apollon 18\n04:48 03. Agressor Bunx - Battlespace\n06:10 04. Dextems - Propeller\n07:20 05. Heamy - Insiders\n08:32 06. Limtek - Skynet\n10:10 07. Absurd - The Passage Of Time\n11:23 08. Loud Sound - Paradox\n12:23 09. Mr.Frenkie - The Hate\n14:04 10. Agressor Bunx - Sleeping Sun\n15:28 11. Heamy - Outrageous\n16:46 12. Dextems - Vaas\n17:55 13. Neocube - Ridden\n19:58 14. No remorse - Phenomenon\n21:03 15. Agressor Bunx - Swarm\n21:58 16. Heamy - Break\n23:15 17. Asphexia - Mechanical Crows\n25:05 18. Dub Head - Malfunction\n26:38 19. D_iolax - Chronicle\n27:38 20. Heamy - Jungle Terror\n28:53 21. No remorse - SBack\n29:55 22. NickBee - Animal Rage\n31:04 23. Dub Head - Blockhead\n33:05 24. Bionick - Holod\n34:55 25. Asphexia - Monster\n36:07 26. Dextems - Feel Fire\n37:49 27. Limtek - Surrogate\n39:45 28. Sub Mass - Predator\n41:05 29. Heamy - Solar Planet\n42:34 30. Enei - Centrifuge\n43:48 31. D_iolax - Oreon\n44:56 32. Traffic - Structures\n46:30 33. Bios Destruction - Fruitman\n47:02 34. NickBee - Era\n49:20 35. D_iolax - Optics\n50:02 36. Agnostetics & Bes - Meteor Mud\n51:15 37. Item & No Signal - Totem\n54:45 38. NickBee - Sleep Gates\n53:53 39. Exodum - Hades\n54:49 40. Paperclip & MJ Free - Raritet\n56:15 41. Jabro Grow - Engineer\n57:28 42. SVJ - War Viking\n58:40 43. Breekda - Batiskaf\n01:00:10 44. Agnostetics & Hightech - Antipode\n01:01:50 45. Paperclip - Reverse Walking",
+      "expected": {
+        "warnings": [
+          {
+            "code": "time-out-of-order",
+            "line": 39,
+            "severity": "warning",
+            "suggestion": null
+          }
+        ],
+        "stats": {
+          "lines": 45,
+          "timed": 45
+        }
+      },
+      "rules": [
+        "R13.7"
+      ],
+      "source": "neuropunk podcast corpus: THE FAT 5",
+      "note": "54:45 then 53:53, next 54:49: no 1- or 2-digit change fits between the neighbours, so no suggestion."
+    },
+    {
+      "id": "tracklist-warnings-021",
+      "input": "00:00 01. Maydin - Thunder\r\n03:41 02. NU4M - Holotropic Sense\r\n06:15 03. Disept - Open Fire\r\n07:32 04. Magnetude - Warpath\r\n08:50 05. Breekda - Melting Glacier\r\n10:18 06. Subminderz - The Eagle\r\n11:24 07. Davip & Micron - Nothing To Loose\r\n12:29 08. Receptor - Crossover (ft. MC Swift)\r\n14:20 09. MJ Free - Next Level\r\n15:26 10. Prophet - Nuclear Icebreaker\r\n16:33 11. Absurd - Quaqmire\r\n18:23 12. Chaser - Dark Territory\r\n19:51 13. Cod3x - Destined\r\n22:25 14. oneBYone - Roll That Philly\r\n23:54 15. Dyamorph - Permanent Panic\r\n25:22 16. Davip - One Big Things\r\n26:28 17. oneBYone & Ridley Dynamics - Lost\r\n28:58 18. MJ Free - Double Zero\r\n31:31 19. Gydra & Tony Anthem - F Up The System\r\n32:44 20. Gydra - A New Dawn\r\n34:56 21. Segment & Concept Vision - Charge\r\n36:02 22. oneBYone - Blast\r\n36:46 23. Ozma - Chicken Boy (Hectix remix)\r\n37:53 24. Mayel - Life Simulation\r\n38:59 25. Sniper FX - Admixture\r\n40:49 26. Critical Bang - Violet\r\n41:56 27. Fatloaf - I`m Burning\r\n44:08 28. Mr. Frenkie - Respawn\r\n45:14 29. Agressor Bunx - The Curse\r\n47:04 30. Linkin Park - Points Of Authority (Gydra remix)\r\n43:29 31. Cooldownik - Storm\r\n50:34 32. Bad District - Get Out (ft. Faib)\r\n52:03 33. Chaser - Encryptor\r\n53:31 34. Gydra & Dextems - Spirits\r\n54:15 35. Hector - ID\r\n56:06 36. Hightech - Techtune\r\n57:33 37. NU4M - Dark Energy (MJ Free remix)\r\n59:24 38. Prophet - Iceberg\r\n01:00:30 39. MJ Free - Locator\r\n01:01:36 40. Dyslexia - Call Of The Ancient\r\n01:02:47 41. Mastedix - Virus\r\n01:04:11 42. Item - Distraction (VIP)\r\n01:05:39 43. Gydra - One More Night\r\n01:07:51 44. Heamy - PSR 1913+16\r\n01:08:58 45. Gourski - Wasteland (Seibel remix)\r\n01:10:04 46. Agressor Bunx - Elephant\r\n01:11:32 47. Intelligent Manners & Command Strange - The Real Deal\r\n01:13:34 48. Tobax & Davip - Collisions\r\n01:14:29 49. Cod3x - Centrifuge\r\n01:15:35 50. Enei - Prometheus (VIP)\r\n01:17:03 51. Seibel - Bugle\r\n01:18:31 52. Tobax - Stop (ft. MC Talabun)\r\n01:20:44 53. Monista - Rewound (Noisitron remix)\r\n01:21:50 54. Segment & Concept Vision - Mammoth\r\n01:23:40 55. Project 71, Subminderz, Sub Daymon & Jae Overtech - Infected Cell\r\n01:25:08 56. Davip - Helicopters\r\n01:26:15 57. Nouwa - Detonation\r\n01:27:44 58. Paperclip & Steel Swater - Evil Uncle\r\n01:29:12 59. Breekda - Hell Raisers\r\n01:30:40 60. OFFsky - Don`t Move\r\n01:32:30 61. Rizla - Saviour\r\n01:34:20 62. Bad District - Sanctum\r\n01:35:04 63. Gridoptic & Dysphory - ID\r\n01:36:33 64. Enei - Just One Look (ft. Charli Brix)\r\n01:38:23 65. Gridoptic & Item - ID\r\n01:39:54 66. Nickbee - Matrix\r\n01:41:44 67. Electrosoul System - Telepath\r\n01:42:06 68. Code 906 - Deprivation\r\n01:43:40 69. Detail & Tiiu - Delusion (Eastcolors remix)\r\n01:45:52 70. Breakslinger, Seibel, Semuta - Highway Of Stars",
+      "expected": {
+        "warnings": [
+          {
+            "code": "time-out-of-order",
+            "line": 31,
+            "severity": "warning",
+            "suggestion": null
+          }
+        ],
+        "stats": {
+          "lines": 70,
+          "timed": 70
+        }
+      },
+      "rules": [
+        "R13.7"
+      ],
+      "source": "neuropunk podcast corpus: Neuropunk pt.39",
+      "note": "47:04 then 43:29, next 50:34: 47:29, 48:29, 49:29 all fit with the same number of changed digits, so no suggestion."
+    },
+    {
+      "id": "tracklist-warnings-022",
+      "input": "00:00 01. Gridoptic & Sesterce - Speedkilla\n01:50 02. MJ Free - Next Level\n02:55 03. BTK & Meth - It Gets Rough Sometimes (Gydra rmx)\n03:54 04. ChaseR - Vobla Punch\n04:47 05. Agressor Bunx - Elephant\n06:49 06. Segment & Concept Vision - Mammoth\n07:13 07. Enei - Prometheus (VIP)\n08:00 08. Mr.Frenkie - Tire Fire\n08:58 09. Item - Distraction (VIP)\n10:32 10. ChaseR - Isometric\n11:30 11. Hector - ID\n12:28 12. Gydra - Chain Gang\n13:34 13. NU4M - Dark Energy (MJ Free rmx)\n14:44 14. Gridoptic & Dysphory - ID\n13:44 15. Optiv & BTK - Inception (Gydra rmx)\n16:54 16. Agressor Bunx - The Curse\n17:54 17. Paperclip & Steel Swatter - Evil Uncle\n19:15 18. Mr.Frenkie - Respawn\n20:24 19. MJ Free - Double Zero\n21:31 20. Rizla - Saviour\n22:38 21. Gridoptic & Item - ID\n23:34 22. Limtek - Genesis\n24:50 23. MJ Free - Locator\n25:56 24. Mr. Frenkie - The Roof\n27:20 25. Gydra & Dextems - Spirits\n28:13 26. Davip - Helicopters\n29:40 27. Gourski & Kolter - Reaching Earth\n30:10 28. Breekda - Melting Glacier\n31:32 29. Valrus - Wooden Shark\n32:12 30. Seibel - Bugle\n33:08 31. Gridoptic & Sesterce - Marauder\n34:15 32. DJ Nospheratum - Deadpool\n36:25 33. OFFsky - Don't Move\n37:54 34. Breekda - Hell Raisers",
+      "expected": {
+        "warnings": [
+          {
+            "code": "time-out-of-order",
+            "line": 15,
+            "severity": "warning",
+            "suggestion": null
+          }
+        ],
+        "stats": {
+          "lines": 34,
+          "timed": 34
+        }
+      },
+      "rules": [
+        "R13.7"
+      ],
+      "source": "neuropunk podcast corpus: The Fat 8",
+      "note": "14:44 then 13:44, next 16:54: 15:44, 16:44 all fit with the same number of changed digits, so no suggestion."
+    },
+    {
+      "id": "tracklist-warnings-023",
+      "input": "00:00 01. Eastcolors - Crooked Cops\r\n02:48 02. Primal Tribes - Ancient Mech\r\n04:32 03. Sunchase - Slap\r\n06:34 04. Impish - Take Back\r\n09:10 05. NU4M - Landscapes\r\n11:37 06. Grinder - Starfall\r\n13:48 07. Nuvertal - Catch You\r\n16:00 08. The Stratta - Elements\r\n18:00 09. Impish - LFO\r\n20:47 10. Mewone! - Ammi\r\n22:31 11. Noel - Don't Leave Me\r\n24:36 12. The Stratta - Mechanism\r\n27:03 13. Eastcolors - Dubby\r\n29:27 14. Seibel - To The Moon\r\n32:20 15. Psynchro - Q Mind\r\n34:02 16. Chaser - Rebelfunk\r\n36:01 17. Dark Soul - Justly (ft. Lady Go)\r\n37:53 18. Moby - Why Does My Heart Feel So Bad (Ozma bootleg)\r\n40:02 19. Mage - A Combination Of Incongruous\r\n42:59 20. Sunchase & I Wannabe - Visionary\r\n44:54 21. Toyfon - Dormant\r\n47:02 22. Mage - Signals\r\n49:35 23. Primal Tribes - Deaf Chamber\r\n51:48 24. Cnof & Impish - Mind Crasher\r\n53:58 25. The Stratta - Kickdown\r\n56:12 26. Abis & Gydra - ID\r\n58:24 27. Duplum Ego - False Shepherd\r\n01:00:08 28. Eastcolors - Words Don't Matter\r\n01:22:21 29. Electrosoul System & Barbitura - El Camino\r\n01:03:55 30. Kije - Lie\r\n01:06:20 31. Mage - Memory Lane\r\n01:08:30 32. Nickbee - Arkaim\r\n01:11:07 33. Mage - Enchantment\r\n01:13:08 34. Cold00n - Intergalactic Shuttle\r\n01:15:04 35. Nuvertal - Faith\r\n01:17:47 36. Bop & Subwave - City Light\r\n01:20:23 37. Nelver - Empty Keys\r\n01:22:00 38. Eastcolors - Watching Seagulls\r\n01:23:39 39. Bop - Untitled Pattern 65\r\n01:25:48 40. Nelver - Headwind\r\n01:27:30 41. T.Mas & G-Cuttah - Method\r\n01:30:40 42. Mage - Heat Of The Night\r\n01:33:11 43. Mitra & Electrosoul System - Privet\r\n01:35:14 44. Mage - The Island\r\n01:37:16 45. Антоха МС - Ритм Сердца (Bop remix)\r\n01:39:11 46. Impish ft. Shawn Sanderson - ID",
+      "expected": {
+        "warnings": [
+          {
+            "code": "time-out-of-order",
+            "line": 30,
+            "severity": "warning",
+            "suggestion": {
+              "line": 29,
+              "raw": "01:02:21",
+              "seconds": 3741
+            }
+          }
+        ],
+        "stats": {
+          "lines": 46,
+          "timed": 46
+        }
+      },
+      "rules": [
+        "R13.7"
+      ],
+      "source": "neuropunk podcast corpus: The Deepspace 10",
+      "note": "01:22:21 then 01:03:55, next 01:06:20: no 1- or 2-digit change of line 30 fits, so the previous timed line (29) is searched between 01:00:08 and 01:03:55: only 01:02:21 fits (R13.7 step two)."
+    },
+    {
+      "id": "tracklist-warnings-024",
+      "input": "00:00 01. Gydra - Scourge\n02:00 02. Teddy Killerz - Drop It\n04:03 03. Psynchro & Toyfon - Bolgarka\n06:18 04. Encode & MJ Free, Steel Swatter - ID\n08:13 05. Engage - ID\n09:45 06. Synergy & Misanthrop - Slap The Ghost\n12:00 07. Doctor P - Yim Yam (Teddy Killerz remix)\n13:50 08. ChaseR - Bring Me Down\n15:30 09. Teddy Killerz & Synergy - Smooth\n16:40 10. Synergy - Pillow Puncher\n18:19 11. Fatloaf - Let Me Touch\n20:13 12. Mayel - Apache\n22:15 13. Mizo - Dust Devil\n24:23 14. Mewone! - Camelia\n26:22 15. Dist Hard - Bad Habit\n28:52 16. Razlom - Rambo\n30:45 17. Agressor Bunx - Massacre\n32:14 18. Vecster - No Jokes\n34:54 19. Teddy Killerz, Drumsound & Bassline Smith - Metal & Blood\n37:12 20. Agressor Bunx - Time To Rock\n39:05 21. Vecster - Resonate\n41:05 22. Teddy Killerz - Back To The Violence\n43:13 23. Nuvertal - Things We Shared (ft. Maureen)\n45:01 24. Rene LaVice, Gydra - Cold Crush\n47:35 25. Teddy Killerz - Person\n49:03 26. Mizo - Coliseum\n50:50 27. Mewone! - Unforgiven\n52:30 28. Bad District - Hyper Drone\n54:10 29. The Faraday, Bioglard & Saharaksha - Incubator\n55:50 30. Agressor Bunx - Obsession\n57:40 31. Mizo & ChaseR - Double Rush\n59:40 32. Decent & Snapper - It's Over\n01:01:47 33. Cod3x - Nothing\n01:03:40 34. Avenax - Somebody (ChaseR remix)\n01:05:37 35. Magnetude - Snatch\n01:07:29 36. The Brig, Rob Gasser, Ashley Apollodor - Take Me A Fall (Mewone! remix)\n01:00:22 37. Mizo & Joanna Syze - Dark Day's\n01:11:04 38. Abstractonia - Stupid Groove\n01:13:12 39. Decent & Snapper - The Hope\n01:15:22 40. Trilo & Mizo - The Pursuit\n01:17:34 41. Inward, Hanzo & Randie - Bloom (Gydra remix)\n01:19:15 42. Decent & Snapper - Hyperspeed\n01:21:17 43. Marina & The Diamonds - Sex Yeah (Mewone! remix)\n01:24:12 44. Ci-Energy - Reflection",
+      "expected": {
+        "warnings": [
+          {
+            "code": "time-out-of-order",
+            "line": 37,
+            "severity": "warning",
+            "suggestion": null
+          }
+        ],
+        "stats": {
+          "lines": 44,
+          "timed": 44
+        }
+      },
+      "rules": [
+        "R13.7"
+      ],
+      "source": "neuropunk podcast corpus: The Headshot 10",
+      "note": "01:07:29 then 01:00:22, next 01:11:04: 01:08:22, 01:09:22, 01:10:22 all fit with the same number of changed digits, so no suggestion."
+    },
+    {
+      "id": "tracklist-warnings-025",
+      "input": "00:00 01. Receptor & Gydra - Keep On\r\n02:07  02. The Prodigy - We Live Forever (Teddy Killerz remix)\r\n04:08  03. Mean Teeth - Blaze (Vowel remix)\r\n06:00  04. Agressor Bunx - Nitro Funk\r\n08:12  05. Magnetude - Made Of Ashes\r\n10:22  06. Agressor Bunx - Breathless\r\n11:53  07. Synergy - Spiral\r\n14:00  08. Pythius & Gridlok - Sound Barrier (Gydra remix)\r\n15:50   09. ChaseR - Wicked\r\n15:44  10. Synergy - Vector\r\n19:34  11. Agressor Bunx - Acid Mirage\r\n21:05  12. Fatloaf - Samurai\r\n23:14  13. Tenzor & Seafarer & Dreaman - Gloom\r\n25:07   14. Gancher & Ruin - Interceptor\r\n27:30  15. Abstractonia - Rally\r\n29:30  16. Despersion - Sawmill\r\n31:00 17. oneBYone - Spectrum\r\n33:23  18. Mewone! & Despersion - Opera\r\n35:03  19. Limtek - Not Over\r\n37:37  20. Paperclip - Adhesion\r\n39:06 21. Mewone! - Blood Rave\r\n40:39  22. Bad District - Hunter\r\n42:40  23. Despersion - Influx\r\n44:31  24. D_iolax - Deathrun\r\n47:04  25. Limtek - Drop Bombs\r\n48:23  26. Encode & Receptor - Suka (ft. Julia Marks)\r\n50:05  27. Mizo - Black Mirror\r\n51:40  28. Twenty One Pilots - Heathens (Magnetude bootleg)\r\n55:00  29. Dyslexia - We Are Cycle\r\n56:47  30. Mean Teeth - Multitude (The Clamps remix)\r\n58:40  31. Sound Priest - Vector\r\n59:58  32. Agressor Bunx - Rolling\r\n01:02:30  33. Fascad - Blocks\r\n01:03:39 34. Klax & Enei - Questions\r\n01:05:07  35. Mewone! - All Right\r\n01:06:57  36. Morgan Page - The Longest Road (Krot & Despersion remix)\r\n01:08:47 37. Mean Teeth - We Hold On (Nickbee remix)\r\n01:11:00 38. Ozma - Get Down\r\n01:13:24  39. Dist HarD - Death Machine\r\n01:14:55  40. Mean Teeth & Gydra - ID\r\n01:16:09  41. Mewone! - V\r\n01:17:37  42. Gancher & Ruin - Velocity\r\n01:19:51  43. Gydra - Beatdown (Tobax remix)\r\n01:22:02  44. Groove - Spirits (Green Vibes remix)\r\n01:23:53  45. Distributor - Madman\r\n01:26:49  46. Abstractonia - Slush\r\n01:29:24  47. Mean Teeth - Leviathan (remix)\r\n01:31:36  48. JP - Synesthesia\r\n01:33:26 49. oneBYone - Dangerous\r\n01:36:01  50. Lockjaw - Empath (Psynchro remix)\r\n01:37:29 51. HiTouchy - Back To 95\r\n01:39:40  52. Kasra & Enei - Projections (Mefjus remix)\r\n01:40:26  53. KAZKA - Свята (I Wannabe remix)\r\n01:43:55  54. Mewone! - Kojimbo\r\n01:45:12  55. Klax & Enei - Scraps\r\n01:47:03  56. Psynchro & Imp Force - Goliath\r\n01:49:37  57. Distributor - Bunglism\r\n01:52:00  58. Cod3x - Put Ya\r\n01:53:29  59. Grinder - MWB\r\n01:55:41  60. ChaseR - Cold Feet\r\n01:57:43  61. Abstractonia - Aurora Borealis\r\n01:59:55  62. Encode - Karma\r\n02:02:08  63. FS-X33 - Second Of The Future\r\n02:05:04 64. Enei - Faded (ft. Charli Brix)\r\n02:06:54  65. Grinder - Out Of Control (Mayel remix)\r\n02:08:24  66. Psynchro - Compromise\r\n02:09:51  67. Mizo - Gravity Fall\r\n02:12:03  68. ChaseR & Subminderz - Sick State\r\n02:14:16 69. Krot - Eastern Funk\r\n02:16:28  70. Gydra - No Kidding\r\n02:17:46  71. Nuvertal - Skarabei Room\r\n02:20:31  72. Distant Future & Lowriderz - Jungle Master\r\n02:23:05  73. Nichenka Zoryana - Delta (VIP)\r\n02:24:33  74. ChaseR - System Call\r\n02:26:46  75. Tesla Coil - Tunguska\r\n02:28:56  76. Synergy & Audio - Dungeon\r\n02:30:26  77. Receptor & ChaseR - Auroral (ft. Avenax)\r\n02:33:21  78. Enei - Deal With It\r\n02:34:40  79. Mewone! - Luna\r\n02:36:36  80. Enei & Hyroglifics - Never Tell Me\r\n02:38:32  81. Christ - Enter the Darkness\r\n02:40:23  82. Zerx - Bun Dem\r\n02:42:56  83. Primal Tribes - Drilling Machine\r\n02:44:26  84. Dissident - Lost In The Plot (Black Barrel remix)\r\n02:47:00  85. Decline - Pray\r\n02:48:28  86. Mage - The Brightness Of The Pulsar\r\n02:50:41  87. Magnetude - Before The Dawn (GLXY remix)\r\n02:53:15  88. Mage - Dance Along\r\n02:55:27  89. Green Vibes - New World\r\n02:57:40  90. Grinder - Palette\r\n02:59:52 91. Zephyrway - Taiga",
+      "expected": {
+        "warnings": [
+          {
+            "code": "time-out-of-order",
+            "line": 10,
+            "severity": "warning",
+            "suggestion": null
+          }
+        ],
+        "stats": {
+          "lines": 91,
+          "timed": 91
+        }
+      },
+      "rules": [
+        "R13.7"
+      ],
+      "source": "neuropunk podcast corpus: Neuropunk pt.47",
+      "note": "15:50 then 15:44, next 19:34: 15:54, 16:44, 17:44, 18:44 all fit with the same number of changed digits, so no suggestion."
+    },
+    {
+      "id": "tracklist-warnings-026",
+      "input": "00:00 01. Mizo - Mulcher\r\n02:34 02. Droptek - The Expance (Mean Teeth remix)\r\n04:30 03. Saint Robbers - Notaric\r\n07:15 04. Gancher & Ruin vs. Cod3x - Anti Vax\r\n08:27 05. Brain Wave & Vecster - Bones\r\n09:56 06. Hyper, Wargasm - Spolier (Recoil) (Davip & Mewone! remix)\r\n11:57 07. Despersion - Wake Up\r\n13:36 08. Gydra - Frostbolt\r\n15:27 09. Shadow Sect & Mizo - Genesis\r\n17:00 10. TR Tactics & 2Whales - Weak\r\n18:45 11. Nuvertal - Going Nowhere\r\n20:58 12. Teddy Killerz - Shine (Picota & Kumbh remix)\r\n22:26 13. Magnetude, Receptor - Goodbye\r\n23:54 14. Paperclip - Koef\r\n25:45 15. Theoretical - Cuttlefish\r\n27:35 16. ChaseR - Blastpit\r\n29:25 17. Agressor Bunx - Too Sensible\r\n31:16 18. A.M.C. - Nitro (Teddy Killerz remix)\r\n32:44 19. Focusfire - Mindhunter\r\n34:34 20. Disphonia & IHR - Tailwind\r\n36:25 21. Mages $ Bantikboy - Save The Rave (Fatloaf bootleg)\r\n37:53 22. Gancher & Ruin - Let It Be\r\n40:05 23. ChaseR - Marksmanship\r\n41:56 24. Paperclip & Despersion - Katoptrikos\r\n44:07 25. Nais - Bee Zone\r\n45:34 26. Halsey - Him & I (ARBETA remix)\r\n47:27 27. ChaseR - Stingray\r\n49:17 28. ДОРА - Втюрилась (KROT remix)\r\n51:06 29. Cogun - Obstacles\r\n52:36 30. Paperclip ft. 3XIL3 - Rastvor\r\n54:26 31. Gydra - Enlightenment\r\n57:45 32. Unclone - Transmission\r\n59:13 33. Cod3x - Mr. Bark Beetle\r\n01:01:37 34. Анна Пингина - Ласточка (2Whales remix)\r\n01:03:16 35. Saint Robbers - Torn Shoe\r\n01:05:06 36. Unclone & Finekin - Pigs\r\n01:06:36 37. Despersion & Tesla Coil - My Eyes\r\n01:07:46 38. polnalubvi - Кометы (Mewone! bootleg)\r\n01:09:38 39. Saint Robbers - Old Bass\r\n01:10:44 40. Teddy Killerz - Interference\r\n01:12:13 41. Tobax - Portupei\r\n01:13:41 42. Psynchro - Lexicon\r\n01:15:33 43. The Bloody Beetroots & Teddy Killerz - Elevate\r\n01:17:22 44. Psynchro & Ridley Dynamics - Universe\r\n01:19:34 45. Focusfire - Rustle\r\n01:21:24 46. Dyslexia - Defrag\r\n01:23:15 47. Nickbee - Miracles\r\n01:24:43 48. Gydra - Alfa\r\n01:26:33 49. Cyber Forms - Templerun\r\n01:28:02 50. Nuvertal - Arrival\r\n01:28:54 51. Bennny Page & Sweetie Irie - Fallen Soldier (Lowriderz & Distant Future remix)\r\n01:30:14 52. Theoretical - The Finder\r\n01:31:53 53. Focusfire - No Wasting\r\n01:33:44 54. Lowriderz - Murder\r\n01:35:34 55. Mean Teeth & Insect - Mudrub\r\n01:37:24 56. Focusfire & Agnostetics - Bad Strategy\r\n01:39:15 57. Bert MX - Eyewitness\r\n01:41:05 58. Unclone & Finekin - You See That\r\n01:42:33 59. FS-X33 - Rubber Love\r\n01:44:24 60. Hoji - Omut\r\n01:46:14 61. Ation - ID\r\n01:47:42 62. The Faraday - Something\r\n01:51:23 63. Grim Hellhound - Compressed Space\r\n01:51:13 64. D_iolax - Skywalker\r\n01:55:04 65. Focusfire - So Strong\r\n01:56:54 66. Screamarts - Dystopia (Nickbee remix)\r\n01:58:22 67. 75ins - Hide\r\n01:59:51 68. Uporny - 31\r\n02:01:41 69. Untrue - Go On\r\n02:03:31 70. Maachinen - Oof\r\n02:05:22 71. Brain Crisis - Tormento\r\n02:07:12 72. Komax - Ktulhu\r\n02:08:42 73. Mizo - Ghost\r\n02:10:20 74. Nic ZigZag & Nelver - Olimpic\r\n02:12:31 75. КУЧЕР, JANAGA - По Щекам Слезы (For The Future remix)\r\n02:14:00 76. FSJ ft. Tara Louise - Nightmare (Mage remix)\r\n02:15:51 77. Komax - Believe Me\r\n02:17:19 78. Dent & Mato - Circles\r\n02:18:25 79. Nelver - Someone Else\r\n02:19:17 80. Drimuzz - Way Back Home",
+      "expected": {
+        "warnings": [
+          {
+            "code": "time-out-of-order",
+            "line": 64,
+            "severity": "warning",
+            "suggestion": null
+          }
+        ],
+        "stats": {
+          "lines": 80,
+          "timed": 80
+        }
+      },
+      "rules": [
+        "R13.7"
+      ],
+      "source": "neuropunk podcast corpus: Neuropunk pt.52",
+      "note": "01:51:23 then 01:51:13, next 01:55:04: 01:51:33, 01:51:43, 01:51:53, 01:52:13, 01:53:13, 01:54:13 all fit with the same number of changed digits, so no suggestion."
+    },
+    {
+      "id": "tracklist-warnings-027",
+      "input": "00:00:00 01. Mean Teeth - Airpusher\r\n00:02:26 02. Despersion - December\r\n00:04:49 03. Vecster - Funky Fat\r\n00:06:51 04. Mindhead & Mellanox - I Know\r\n00:08:50 05. Sequend - The Oracle\r\n00:10:52 06. Teddy Killerz - Flux\r\n00:12:48 07. NLP - Bang On\r\n00:14:34 08. Bad District & Fatloaf - Entropy\r\n00:16:36 09. Synergy & Buunshin - Blue Veil\r\n00:18:31 10. D_iolax - Abandon\r\n00:20:27 11. Showtek & Noisecontrol - Get Loose (Teddy Killerz bootleg)\r\n00:22:20 12. Cod3x - ID\r\n00:24:00 13. Mindhead - Lying TV\r\n00:26:12 14. Vecster vs. Gydra - Patron\r\n00:27:29 15. GTA - Hard House (Teddy Killerz bootleg)\r\n00:29:14 16. Mean Teeth - Dust To Dust\r\n00:31:36 17. Teddy Killerz - Hammer\r\n00:33:17 18. Mindhead & Ada Vipe - Another Reality\r\n00:34:56 19. Focusfire - Kinetic\r\n00:37:37 20. Bert MX - Scan\r\n00:40:00 21. Place 2b & Paimon - Hazard\r\n00:41:56 22. Agressor Bunx ft. Coppa - Victorious\r\n00:43:46 23. Mizo - Bad Form\r\n00:45:13 24. Trempid & Annet - Not Lonely When Alone\r\n00:48:14 25. Cod3x - Sorry But I'm Rolling\r\n00:49:54 26. Unclone - Desolator\r\n00:51:55 27. Focusfire - New Order\r\n00:54:08 28. Darkw0rk - Absolutely Disgusting\r\n00:55:55 29. Ation - Grey Lemon\r\n00:57:06 30. Unclone - Comanche\r\n00:59:15 31. Trempid - Abstraction\r\n01:00:55 32. Bert MX - Old Club\r\n01:02:26 33. Synergy - Vortex\r\n01:04:39 34. Abstractonia - Emission\r\n00:06:29 35. Enei & Particle ft. Jakes - Fame\r\n01:08:42 36. Primal Tribes - Stone Biz / Manhunt\r\n01:10:32 37. Ozma - Hunter\r\n01:12:40 38. Nami - Ping\r\n01:14:10 39. Enei - Icon Face\r\n01:16:21 40. Drimuzz - Must Die\r\n01:18:00 41. ChaseR - ID\r\n01:20:17 42. Grinder - Haste\r\n01:22:17 43. Synestika - Melancholia\r\n01:23:45 44. Cnof - Stars Go Out (Grinder remix)\r\n01:25:59 45. Bert MX - Choice\r\n01:27:44 46. Grinder - Hypno\r\n01:28:55 47. Powers - Heavy (Mage bootleg)\r\n01:30:24 48. MI-KH - Dreamscape",
+      "expected": {
+        "warnings": [
+          {
+            "code": "time-out-of-order",
+            "line": 35,
+            "severity": "warning",
+            "suggestion": {
+              "line": 35,
+              "raw": "01:06:29",
+              "seconds": 3989
+            }
+          }
+        ],
+        "stats": {
+          "lines": 48,
+          "timed": 48
+        }
+      },
+      "rules": [
+        "R13.7"
+      ],
+      "source": "neuropunk podcast corpus: Neuropunk special Not Included 4",
+      "note": "01:04:39 then 00:06:29, next 01:08:42: the only fewest-digit fix is 01:06:29."
+    },
+    {
+      "id": "tracklist-warnings-028",
+      "input": "00:00:00 1 Dropzone - Break Away (Gydra remix) \r\n00:01:49 2 Gydra - Dungeon\r\n00:02:40 3 Redpill & Coppa - Genesis (Gydra remix) \r\n00:05:00 4 Gydra - Primitive Instinct\r\n00:06:12 5 Gydra - Chump\r\n00:07:23 6 Gydra - Nailsbucket \r\n00:08:10 7 Gydra - Caterpillar (Skrimor remix) \r\n00:09:20 8 Linkin Park_-_Points Of Authority (Gydra Bootleg) \r\n00:11:39 9 Gydra - Protocol\r\n00:13:05 10 BTK & Ink - Spiritual Thing (Gydra remix) \r\n00:14:44 11 Gydra - Split_Attack\r\n00:16:30 12 Teddy Killerz - New Drums (Gydra remix) \r\n00:17:58 13 Gydra - Problem\r\n00:18:52 14 Dirtyphonics_&_12th Planet - Freefall (feat. Julie Hardy) (Gydra remix)\r\n00:20:30 15 Gydra - Soul_King\r\n00:23:10 16 Gydra - Wipe (skantia Remix)\r\n00:22:12 17 Mean Teeth - Dust To Dust (Gydra remix)\r\n00:24:50 18 Gydra & Dextems - Chameleon Beats\r\n00:26:00 19 Gydra - Rampage\r\n00:27:21 20 Gydra - Kernel \r\n00:28:20 21 Gydra - Horror Room\r\n00:30:20 22 Gydra - Muzzle\r\n00:31:50 23 The Prodigy - Diesel Power (Gydra remix)\r\n00:33:17 24 Gydra - Game_Over\r\n00:34:40 25 Pythius & Gridlok - Sound Barrier (Gydra remix)\r\n00:35:45 26 Gydra - Frostbolt\r\n00:36:50 27 oneBYone & Gydra - Feel The Power \r\n00:38:25 28 Gydra - Plumber\r\n00:39:20 29 Teddy Killerz vs Gydra - Miles_High\r\n00:40:50 30 Gydra - Heist\r\n00:41:50 31 Nuvertal & Gydra - Comeback\r\n00:43:20 32 Groove - Worm Of Love (Gydra remix) \r\n00:44:45 33 Gydra - Hell_Crow \r\n00:46:25 34 Gydra - Hearing Damage\r\n00:47:32 35 Sitri & Gydra - Space Invaders\r\n00:48:55 36 Gydra - Neft\r\n00:50:13 37 Fatloaf - Samurai (Gydra VIP)\r\n00:52:00 38 Gydra - Knives\r\n00:53:24 39 Gydra - Stoning\r\n00:54:49 40 Optiv & BTK-Inception (Gydra remix)\r\n00:55:50 41 Mizo & Gydra - Chronometer\r\n00:56:57 42 Gydra - Trojan \r\n00:57:50 43 Gydra - Alarm\r\n00:59:00 44 Gydra - Solar Eclipse\r\n01:00:20 45 Gydra - Tranquilizer\r\n01:01:16 46 Gydra - Snake Style\r\n01:02:50 47 Gydra - Morai\r\n01:04:05 48 Gydra - Dystopia\r\n01:05:00 49 Gydra - Boundless\r\n01:06:42 50 Gydra - Everyday\r\n01:08:00 51 Gydra - Rats\r\n01:09:26 52 Gydra - Insurrection\r\n01:10:30 53 Gydra & Nuvertal - Meditation\r\n01:11:55 54 Gydra - Noise Of The_Machine\r\n01:13:16 55 Encode - Aught (Gydra Remix)\r\n01:14:10 56 Gydra - Beatdown\r\n01:15:20 57 Gydra - SLAB\r\n01:16:44 58 Gydra - Alpha\r\n01:18:07 59 Davip - Deadly Blessing (Gydra remix)\r\n01:19:15 60 Gydra - Epoch\r\n01:20:32 61 Gydra feat. Coppa - Bomb First\r\n01:22:10 62 Gydra - Wtf\r\n01:23:20 63 Gydra feat. Tayser - Make My Life (original) \r\n01:25:42 64 Rene LaVice - Cold Crush\r\n01:27:12 65 Gydra - Hangjaw\r\n01:28:57 66 Gydra - Shotgun\r\n01:30:00 67 Gydra ft. COPPA - Psycho\r\n01:32:02 68 Gydra - Bass Must Go On\r\n01:33:11 69 Gydra - Lava Run\r\n01:34:44 70 Gydra & Fatloaf - Sphere\r\n01:36:11 71 Gydra - Indoor Space\r\n01:37:15 72 Gydra - Ikra\r\n01:38:53 73 Gydra - ID\r\n01:40:05 74 Gydra & Ihr Caliban\r\n01:41:16 75 Gydra - Chain_Gang\r\n01:42:28 76 Gydra - Unhigned\r\n01:43:42 77 Gydra - Steel Rain\r\n01:45:00 78 Gydra (feat. Da Kooka) - Away Form Me\r\n01:46:29 79 Gydra & Mailky - Circles\r\n01:47:10 80 Ant+Shift feat. PLEXXAGLASS - Source Code (Cvpellv x Gydra remix) \r\n01:49:45 81 Gydra - Dream City",
+      "expected": {
+        "warnings": [
+          {
+            "code": "time-out-of-order",
+            "line": 17,
+            "severity": "warning",
+            "suggestion": null
+          },
+          {
+            "code": "line-unparsed",
+            "line": 74,
+            "severity": "warning",
+            "suggestion": null
+          }
+        ],
+        "stats": {
+          "lines": 81,
+          "timed": 81
+        }
+      },
+      "rules": [
+        "R13.7"
+      ],
+      "source": "neuropunk podcast corpus: Gydra 10 years mix",
+      "note": "00:23:10 then 00:22:12, next 00:24:50: 00:23:12, 00:24:12 all fit with the same number of changed digits, so no suggestion."
+    },
+    {
+      "id": "tracklist-warnings-029",
+      "input": "00:25  01. Crissy Criss & Teddy Killerz - War On Silence\r\n02:15  02. Magnetude - Friday\r\n04:50  03. E5kipta - Dead Paradise\r\n06:40  04. 2Whales - On My Back\r\n08:08  05. Abstractonia - Biohazard\r\n10:20  06. Bioglard - Disconnect\r\n11:49  07. Toyfon - Shadowdance\r\n14:12  08. 2Whales - Smola\r\n15:40  09. Razlom - Gunboi\r\n17:31  10. Abstractonia - Bacchanalia\r\n20:05  11. Teddy Killerz & Nais - Twinge\r\n21:34  12. Bad District -  It's Showtime\r\n24:08  13. Within Temptation - Supernova (Mewone! remix)\r\n26:10  14. Mizo - Hellhound\r\n27:27  15. Cod3x - Ravioli\r\n29:17  16. Imp Force & Toyfon - Haunt\r\n31:19  17. State Of Mind ft. Kryptomedic - Time Slip (Synergy remix)\r\n33:20  18. Dextems - Synthet\r\n34:48  19. IHR & Gydra - Wipe\r\n36:38  20. ChaseR - Superposition\r\n38:51  21. Lowriderz & Distant Future - Dub Horn\r\n40:41  22. Grinder - Mondayz\r\n42:32  23. Abstractonia, Beterror & Dyslexia - Oruzhie\r\n44:44 24. Mizo - Mechanical Paw\r\n46:34  25. Teddy Killerz - Bassline\r\n48:36  26. Irontype - Racer\r\n50:43 27. Despersion - Wow\r\n52:22 28. 2Whales - Suicide\r\n54:01  29. E5kipta - Meltdown\r\n55:51  30. Abstractonia - Anticipation\r\n58:15  31. Gancher & Ruin - Override\r\n59:54  32. Tesla Coil - Radiation\r\n01:01:45  33. Fascad - The Day After\r\n01:04:08  34. Razlom - Devastate\r\n01:05:47  35. Receptor - Find You (ft. Pat Fulgoni)\r\n01:07:38 36. Apashe - No Twerk (Krot bootleg)\r\n01:09:28 37. Lowriderz - Desperado\r\n01:11:19  38. Toyfon - Puppy\r\n01:12:47 39. Konstructor - Discrete Value\r\n01:14:59  40. Fascad - Gonna Be Alright\r\n01:17:23  41. Cod3x - Jackhammer\r\n01:19:02 42. D_iolax - Confusion\r\n01:20:52  43. Grinder - 9 Points\r\n01:23:04  44. Toyfon - Malediction\r\n01:25:17 45. D_iolax - Asylum Of Us\r\n01:26:56  46. Fascad - Spirals\r\n01:28:58  47. Bert - Old Game\r\n01:31:10  48. Distant Future & Lowriderz - Shadow\r\n01:33:23  49. D_iolax & E-Kid - Northen Side\r\n01:35:35  50. Grinder - Sparkles\r\n01:37:25 51. Mewone! - Vintage\r\n01:40:00  52. Bert - Waiting\r\n01:41:39  53. Blacklight - Spark\r\n01:43:29 54. 2Whales - WOW!\r\n01:45:42  55. Blacklight - Terminal\r\n01:47:54  56. Zerx - Pressure\r\n01:49:56  57. Sound Priest - Extinctions\r\n01:51:13  58. Blacklight - Enormous Machine\r\n01:53:03  59. D_iolax - Vintage\r\n01:55:27  60. Grim Hellhound - Aokigahara\r\n01:57:06  61. Lockpick - ID\r\n01:58:58 62. Mage - Rave Weapon\r\n02:01:21 63. Zephyrway - Serenity\r\n02:02:39  64. Let's Play & Arroy - Treasure\r\n02:04:20 65. Dent & Mato - Sunburn\r\n02:06:27  66. Nelver - Obsession\r\n02:08:01 67. Synestika - Bylina\r\n02:09:52  68. Ci-energy - Chronophage\r\n02:12:04  69. Shiny Radio - Hectic\r\n02:13:32  70. Whalespruce - Cherish It",
+      "expected": {
+        "warnings": [
+          {
+            "code": "no-start-at-zero",
+            "line": 1,
+            "severity": "info",
+            "suggestion": null
+          }
+        ]
+      },
+      "rules": [
+        "R13.7"
+      ],
+      "source": "neuropunk podcast corpus: Neuropunk pt.48",
+      "note": "The only real list that starts at 00:25."
+    },
+    {
+      "id": "tracklist-warnings-030",
+      "input": "00:00 01. Breekda & Dub Fist - Devil 39`s Tusk\r\n03:55 02. Agressor Bunx - Drop The Bass\r\n05:55 03. Dom & Roland - Get Up (Mr.Frenkie remix)\r\n08:22 04. Groove - Worm Of Love (Gydra remix)\r\n10:05 05. Davip & Downlink - Eliminators\r\n11:50 06. Future Prophecies - Black Dragon (Engage remix)\r\n13:55 07. Incube - Cerebro\r\n16:10 08. Thesys - Starting Over\r\n18:07 08. Rusty K - Frozen Heart\r\n20:29 10. Nouwa - Redskin\r\n22:03 11. Subwave & Fission - Conformist (Asphexia remix)\r\n24:35 12. Davip - Ranged Weapon\r\n26:45 13. Gydra - Rampage\r\n28:04 14. Teddy Killerz - Teddynator\r\n29:55 15. Davip - Earthquake\r\n32:04 16. Custom Phase - Panic\r\n33:40 17. Ember - Future Is Now\r\n35:14 18. Prophet - Tsunami\r\n37:06 19. The Prodigy - Smack My Bitch Up (Agressor Bunx remix)\r\n39:20 20. Eternal Vision - Seismic\r\n41:17 21. Davip - Deadly Blessing (Gydra remix)\r\n43:12 22. Agressor Bunx - Like That\r\n44:48 23. Kije - Stare Into The Sun\r\n46:24 24. Limtek - Changes\r\n49:00 25. Gydra & Mailky - Breathe\r\n50:57 26. Dextems - Monom\r\n52:13 27. D_iolax - Hurricane\r\n53:40 28. Davip & Imetic - Puncture Wound (Place 2b & Paimon remix)\r\n55:35 29. Future Prophecies - Jack The Groove (Gydra remix)\r\n56:30 30. Encode & Valrus - Zero Gravity\r\n58:20 31. Andy Pain & Z Connection - Outsider (Andy Pain VIP)\r\n01:00:22 32. Ember - Colossus\r\n01:02:00 33. Breekda & Dub Fist - Mon Ami\r\n01:03:52 34. Octopu1se - Malaria\r\n01:05:10 35. Teddy Killerz - Higher Ground (ft. Pat Fulgoni)\r\n01:06:50 36. oneBYone - Give Me Your Chance (ft. Alaine)\r\n01:08:55 37. MJ Free - Re-Starter\r\n01:10:21 38. Breekda & Dub Fist - Calamity\r\n01:12:32 39. SVJ & Markham - Oversight\r\n01:13:47 40. Cod3x - Strangulate\r\n01:15:50 41. Kije - Regimen\r\n01:17:17 42. Guru Groove Foundation - Golden Love (Mr. Frenkie remix)\r\n01:19:50 43. Ember - Genetic\r\n01:21:55 44. Gydra & Mailky - Circles\r\n01:23:22 45. NickBee - Glow\r\n01:24:40 46. Andy Pain - Magnetron (VIP)\r\n01:26:23 47. NU4M & Kije - Looking At Ghost\r\n01:28:07 48. Groove - Deep In My Soul (Mailky remix)\r\n01:30:27 49. Mr. Frenkie - Try Me\r\n01:32:54 50. Kije - Make Me",
+      "expected": {
+        "warnings": [
+          {
+            "code": "position-duplicate",
+            "line": 9,
+            "severity": "warning",
+            "suggestion": null
+          },
+          {
+            "code": "position-gap",
+            "line": 10,
+            "severity": "warning",
+            "suggestion": null
+          }
+        ]
+      },
+      "rules": [
+        "R13.7"
+      ],
+      "source": "neuropunk podcast corpus: Neuropunk pt.36",
+      "note": "08, 08, 10."
+    },
+    {
+      "id": "tracklist-warnings-031",
+      "input": "00:00 01. Teddy Killerz - Dominus\r\n02:45 02. Fascad - Inflow\r\n05:17 03. Magnetude - Mantis\r\n07:52 04. Nais - Breaking Up\r\n09:20 05. Teddy Killerz - Pursuit\r\n11:12 06. Nais - Selecta\r\n12:38 07. Magnetude - Falling\r\n14:51 08. Despersion - Landing\r\n16:20 09. Nais - Get It\r\n18:32 10. Cod3x - Roll Up\r\n20:22 11. Dub Elements & Gydra - Firing Pin\r\n22:35 12. Toyfon - Threat\r\n24:04 13. Abstractonia & Dyslexia - Piece Of Cake\r\n25:52 14. Toyfon - Tattleboads\r\n27:21 15. Gydra - Verse Tonijn\r\n28:49 16. Tobax - Levelcrusher\r\n30:40 17. Mizo - Molten Heart\r\n32:10 18. Despersion - Offensive\r\n33:58 19. Distant Future & Lowriderz - Bagoshit (bootleg)\r\n36:11 20. Toyfon - Rusty Slicer\r\n38:13 21. Dist Hard - Breakdown\r\n39:40 22. Dyslexia - Haunt\r\n41:20 23. Jade - Man Eating Lizard Dragon (2Whales remix)\r\n43:10 24. Mean Teeth - Erosion\r\n45:00 25. Krot - Rays From You\r\n46:51 26. Teddy Killerz - Get Busy\r\n48:20 27. Gydra - Snake Style\r\n49:47 28. Teddy Killerz - Mutation\r\n52:20 29. Nais - Turn It Up\r\n53:28 30. Focusfire - W.I.S.Y.\r\n55:51 31. T.Mas & G-Cuttah, MJ Free - Dark Prophecies\r\n57:42 32. Curare - Lab`s Robbery\r\n58:59 33. Toyfon - Pranks\r\n1:00:28 34. Mean Teeth - 3 Minutes\r\n1:02:17 35. Ozma - Killah\r\n1:03:46 36. Nais - Dirty Bounce\r\n1:05:50 37. 2Whales - Vitalik\r\n1:07:27 38. Ozma - Unknown Language\r\n1:09:17 39. Lowriderz - Soundbwoy\r\n1:11:07 40. MF & Lelya - Without Me\r\n1:13:20 41. Abstract Elements - Disbelief\r\n1:15:14 42. Cod3x - Rock The Show\r\n1:17:22 43. Ci-Energy - Hey!\r\n1:18:51 44. D_iolax - Wild Rhythm\r\n1:21:04 45. Profane - Cosmic Dub (ChaseR remix)\r\n1:22:54 46. Dyslexia & MJ Free - Sector Priz\r\n1:24:44 47. Ozma - Jazz Time\r\n1:26:34 49. Focusfire - Catacombs\r\n1:28:24 49. KASHIN - Чувствую Тебя (ft. Lima Osta)\r\n1:30:59 50. Malk - Breaking Ice\r\n1:32:05 51. Non Grata - Yummi\r\n1:33:55 52. Lowriderz & Clawz - Skank\r\n1:35:15 53. Abstract Elements - Ruberoid\r\n1:37:26 54. Psynchro - Octopus\r\n1:38:54 55. E5kipta - Reptile\r\n1:40:33 56. Grinder - Factory\r\n1:42:12 57. Mage - The Firebird\r\n1:44:25 58. Toyfon - Conflict\r\n1:46:15 59. Derrick & Tonika - Kailas\r\n1:48:05 60. Synestika - Discofunk\r\n1:49:34 61. Malk - Move\r\n1:51:46 62. Hybert Phillips - ID\r\n1:53:30 63. NLP - Marauder\r\n1:54:58 64. Nuvertal - Urbanization\r\n1:55:26 65. Kemal & Rob Data - Star Trails (Synergy bootleg)\r\n1:57:54 66. I Wannabe - Your Love\r\n2:00:07 67. Derrick & Tonika - Toti Mavki\r\n2:01:57 68. Zerx & Lockpick - Boom\r\n2:03:47 69. MindHead & Ci-Energy - Submarine\r\n2:05:37 70. Zerx - Hydrolocator\r\n2:07:28 71. Grim Hellhound - Sekiro\r\n2:09:41 72. Zerx & Lockpick - 2 Coming\r\n2:11:09 73. Illarea - Voyager\r\n2:13:21 74. Clovd Cvp - Sattelite\r\n2:14:44 75. Let's Play! & D-Son - Eternity\r\n2:16:25 76. From94 - Confession\r\n2:17:38 77. Nelver - Heatwave",
+      "expected": {
+        "warnings": [
+          {
+            "code": "position-gap",
+            "line": 48,
+            "severity": "warning",
+            "suggestion": null
+          },
+          {
+            "code": "position-duplicate",
+            "line": 49,
+            "severity": "warning",
+            "suggestion": null
+          }
+        ]
+      },
+      "rules": [
+        "R13.7"
+      ],
+      "source": "neuropunk podcast corpus: Neuropunk pt.49",
+      "note": "47, 49, 49."
+    },
+    {
+      "id": "tracklist-warnings-032",
+      "input": "00:00 Noisia - Stigma\n01:00:08 Phace - Psycho\n01:22:21 Mefjus - Sinkhole\n01:03:55 Black Sun Empire - Arrival\n01:06:20 Current Value - Tangent",
+      "expected": {
+        "warnings": [
+          {
+            "code": "time-out-of-order",
+            "line": 4,
+            "severity": "warning",
+            "suggestion": {
+              "line": 3,
+              "raw": "01:02:21",
+              "seconds": 3741
+            }
+          }
+        ]
+      },
+      "rules": [
+        "R13.7"
+      ],
+      "note": "Step two of the suggestion search: line 4 has no candidate, so line 3 (the previous timed line) gets the fix; suggestion.line is 3 while the warning stays on line 4."
+    },
+    {
+      "id": "tracklist-warnings-033",
+      "input": "00:00 Noisia - Stigma\n01:22:21 Phace - Psycho\n01:03:55 Mefjus - Sinkhole\n01:06:20 Black Sun Empire - Arrival",
+      "expected": {
+        "warnings": [
+          {
+            "code": "time-out-of-order",
+            "line": 3,
+            "severity": "warning",
+            "suggestion": null
+          }
+        ]
+      },
+      "rules": [
+        "R13.7"
+      ],
+      "note": "Near miss of step two: line 2 searched between 00:00 and 01:03:55 has two 1-digit fixes (01:02:21 and 00:22:21), so no suggestion."
+    },
+    {
+      "id": "tracklist-warnings-034",
+      "input": "00:30 01. Noisia - Stigma\n00:10 04. Untitled",
+      "options": {
+        "audioSeconds": 5
+      },
+      "expected": {
+        "warnings": [
+          {
+            "code": "no-start-at-zero",
+            "line": 1,
+            "severity": "info",
+            "suggestion": null
+          },
+          {
+            "code": "time-after-audio-end",
+            "line": 1,
+            "severity": "warning",
+            "suggestion": null
+          },
+          {
+            "code": "time-out-of-order",
+            "line": 2,
+            "severity": "warning",
+            "suggestion": null
+          },
+          {
+            "code": "time-after-audio-end",
+            "line": 2,
+            "severity": "warning",
+            "suggestion": null
+          },
+          {
+            "code": "position-gap",
+            "line": 2,
+            "severity": "warning",
+            "suggestion": null
+          },
+          {
+            "code": "line-unparsed",
+            "line": 2,
+            "severity": "warning",
+            "suggestion": null
+          }
+        ]
+      },
+      "rules": [
+        "R13.7"
+      ],
+      "note": "Warnings sort by line, then by the order of the codes in the R13.7 table."
+    },
+    {
+      "id": "tracklist-warnings-035",
+      "input": "00:00 Noisia - Stigma\n03:00\n06:00 Phace - Psycho",
+      "expected": {
+        "entries": [
+          {
+            "kind": "track"
+          },
+          {
+            "kind": "track",
+            "parts": {
+              "lead": "",
+              "time": "03:00",
+              "gap": "",
+              "rest": ""
+            },
+            "track": {
+              "artists": [],
+              "title": ""
+            }
+          },
+          {
+            "kind": "track"
+          }
+        ],
+        "warnings": [
+          {
+            "code": "line-unparsed",
+            "line": 2,
+            "severity": "warning",
+            "suggestion": null
+          }
+        ]
+      },
+      "rules": [
+        "R13.3",
+        "R13.7"
+      ],
+      "note": "A line that is only a time is a track with an empty track part, and warns line-unparsed."
+    }
+  ]
+}

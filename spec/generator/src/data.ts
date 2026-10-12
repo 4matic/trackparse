@@ -58,4 +58,6 @@ export const DATA = {
   unknownCaseInsensitive: load<{ caseInsensitive: string[] }>("unknown-tokens.json").caseInsensitive,
   extensions: load<{ extensions: string[] }>("extensions.json").extensions,
   platformSuffixes: load<{ suffixes: string[] }>("platform-suffixes.json").suffixes,
+  markerWords: load<{ words: string[] }>("marker-words.json").words,
+  headerWords: load<{ words: string[] }>("header-words.json").words,
 };

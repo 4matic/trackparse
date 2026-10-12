@@ -715,3 +715,260 @@ export function byId<T extends Atom>(pool: readonly T[], id: string): T {
 
 /** A pseudo-atom meaning "dimension not used". */
 export const NONE: Atom = { id: "none" };
+
+// ---------------------------------------------------------------- tracklists (SPEC R13)
+
+const pad2 = (n: number): string => String(n).padStart(2, "0");
+/** `M:SS` / `MM:SS` (minutes may exceed 59, R13.2.2). */
+const minSec = (minWidth: number) => (s: number): string =>
+  `${String(Math.floor(s / 60)).padStart(minWidth, "0")}:${pad2(s % 60)}`;
+/** `H:MM:SS` / `HH:MM:SS`. */
+const hourMinSec = (hourWidth: number) => (s: number): string =>
+  `${String(Math.floor(s / 3600)).padStart(hourWidth, "0")}:${pad2(Math.floor(s / 60) % 60)}:${pad2(s % 60)}`;
+
+export interface TimeFraction {
+  text: string;
+  /** Exactly representable in binary floating point, so every port sums to the same number. */
+  value: number;
+}
+
+export interface TimeFormAtom extends Atom {
+  /** Renders whole seconds; null = untimed list (no line has a time). */
+  fmt: ((seconds: number) => string) | null;
+  /** Integer seconds per timed slot: strictly increasing, starting at 0 (R13.7 warnings stay off). */
+  steps: number[];
+  /** Fraction appended to the time of timed slot k (cycled), R13.2.2. */
+  fractions?: TimeFraction[];
+  rules: string[];
+}
+
+const STEPS = [0, 225, 452, 731, 1015, 1342, 1690];
+const FRAC_3: TimeFraction[] = [
+  { text: ".000", value: 0 }, { text: ".500", value: 0.5 }, { text: ".250", value: 0.25 },
+  { text: ".125", value: 0.125 }, { text: ".750", value: 0.75 }, { text: ".375", value: 0.375 },
+  { text: ".625", value: 0.625 },
+];
+const FRAC_COMMA: TimeFraction[] = [
+  { text: ",0", value: 0 }, { text: ",5", value: 0.5 }, { text: ",25", value: 0.25 }, { text: ",75", value: 0.75 },
+];
+const FRAC_1: TimeFraction[] = [{ text: ".0", value: 0 }, { text: ".5", value: 0.5 }];
+
+const T2 = ["R13.2.2"];
+export const TIME_FORMS: TimeFormAtom[] = [
+  { id: "untimed", fmt: null, steps: [], rules: [] },
+  { id: "m-ss", fmt: minSec(1), steps: STEPS, rules: T2 },
+  { id: "mm-ss", fmt: minSec(2), steps: STEPS, rules: T2 },
+  // two parts, minutes above 59 (`125:30` = 7530 s)
+  { id: "long-min", fmt: minSec(2), steps: [0, 1805, 3605, 4530, 7530, 9015, 12000], rules: T2 },
+  { id: "h-mm-ss", fmt: hourMinSec(1), steps: [0, 905, 1834, 2745, 3610, 4512, 5433], rules: T2 },
+  { id: "hh-mm-ss", fmt: hourMinSec(2), steps: [0, 1234, 2468, 3702, 4936, 6170, 37230], rules: T2 },
+  { id: "frac-dot", fmt: minSec(2), steps: STEPS, fractions: FRAC_3, rules: T2 },
+  { id: "frac-comma", fmt: minSec(1), steps: STEPS, fractions: FRAC_COMMA, rules: T2 },
+  { id: "hms-frac", fmt: hourMinSec(1), steps: [0, 905, 1834, 2745, 3610, 4512, 5433], fractions: FRAC_1, rules: T2 },
+];
+
+export interface LeadAtom extends Atom {
+  /** `parts.lead` (R13.2.1). */
+  text: string;
+  /** Closing bracket that starts `parts.gap` when `text` opened one (R13.2.3). */
+  close: string;
+}
+
+export const LEADS: LeadAtom[] = [
+  { id: "plain", text: "", close: "" },
+  { id: "square", text: "[", close: "]" },
+  { id: "paren", text: "(", close: ")" },
+  { id: "spaces", text: "  ", close: "" },
+  { id: "tab", text: "\t", close: "" },
+  { id: "spaces-square", text: "  [", close: "]" },
+];
+
+export interface GapAtom extends Atom {
+  /** `parts.gap` after the closing bracket (R13.2.3). Never empty: the time must be followed by whitespace or a separator. */
+  text: string;
+}
+
+export const GAPS: GapAtom[] = [
+  { id: "space", text: " " },
+  { id: "two-spaces", text: "  " },
+  { id: "dash", text: " - " },
+  { id: "en-dash", text: " – " },
+  { id: "pipe", text: " | " },
+  { id: "dot", text: ". " },
+  { id: "arrow", text: " => " },
+  { id: "long-arrow", text: " ==> " },
+];
+
+export interface PositionStyleAtom extends Atom {
+  /** `track.position.raw` for number n; null = no positions. */
+  raw: ((n: number) => string) | null;
+  /** Text after the raw digits. */
+  after: string;
+  first: number;
+  /** R13.5 bare position (recognised only with a sequence neighbour) rather than R4.2. */
+  bare: boolean;
+  rules: string[];
+}
+
+export const POSITION_STYLES: PositionStyleAtom[] = [
+  { id: "none", raw: null, after: "", first: 1, bare: false, rules: [] },
+  { id: "dotted-pad", raw: pad2, after: ". ", first: 1, bare: false, rules: ["R4.2"] },
+  { id: "dotted", raw: String, after: ". ", first: 1, bare: false, rules: ["R4.2"] },
+  { id: "paren", raw: String, after: ") ", first: 1, bare: false, rules: ["R4.2"] },
+  { id: "padded", raw: pad2, after: " ", first: 1, bare: false, rules: ["R4.2"] },
+  { id: "bare", raw: String, after: " ", first: 1, bare: true, rules: ["R13.5"] },
+  { id: "bare-9", raw: String, after: " ", first: 9, bare: true, rules: ["R13.5"] },
+];
+
+export type Eol = "\n" | "\r\n" | "\r" | "";
+
+export interface EolAtom extends Atom {
+  /** Terminators, cycled over the lines. */
+  cycle: Exclude<Eol, "">[];
+  /** The last line keeps a terminator too. */
+  final: boolean;
+}
+
+export const EOLS: EolAtom[] = [
+  { id: "lf", cycle: ["\n"], final: false },
+  { id: "lf-end", cycle: ["\n"], final: true },
+  { id: "crlf", cycle: ["\r\n"], final: false },
+  { id: "crlf-end", cycle: ["\r\n"], final: true },
+  { id: "cr", cycle: ["\r"], final: false },
+  { id: "cr-end", cycle: ["\r"], final: true },
+  { id: "mixed", cycle: ["\r\n", "\n", "\r"], final: false },
+  { id: "mixed-end", cycle: ["\n", "\r", "\r\n"], final: true },
+];
+
+export type FrameLine =
+  | { kind: "track"; index: number }
+  /** `timed`: carries a time when the list is timed. */
+  | { kind: "marker"; text: string; timed: boolean }
+  | { kind: "header" | "blank" | "note" | "link"; text: string };
+
+export interface FrameAtom extends Atom {
+  /** Line layout for n track lines. */
+  lines: (n: number) => FrameLine[];
+  minTracks: number;
+  rules: string[];
+}
+
+const trackLines = (from: number, to: number): FrameLine[] =>
+  Array.from({ length: Math.max(0, to - from) }, (_, k) => ({ kind: "track" as const, index: from + k }));
+const fl = {
+  header: (text: string): FrameLine => ({ kind: "header", text }),
+  blank: (text: string): FrameLine => ({ kind: "blank", text }),
+  note: (text: string): FrameLine => ({ kind: "note", text }),
+  link: (text: string): FrameLine => ({ kind: "link", text }),
+  marker: (text: string, timed = true): FrameLine => ({ kind: "marker", text, timed }),
+};
+export const NOTE_TEXT = "Recorded live at Fabric, London";
+export const LINK_TEXT = "https://example.com/sets/42";
+
+export const FRAMES: FrameAtom[] = [
+  { id: "none", lines: (n) => trackLines(0, n), minTracks: 1, rules: [] },
+  { id: "header", lines: (n) => [fl.header("Tracklist:"), ...trackLines(0, n)], minTracks: 1, rules: ["R13.3"] },
+  { id: "header-word", lines: (n) => [fl.header("Part 1"), ...trackLines(0, n)], minTracks: 1, rules: ["R13.3"] },
+  {
+    id: "header-blank",
+    lines: (n) => [fl.header("Tracklist:"), fl.blank(""), ...trackLines(0, n)],
+    minTracks: 1,
+    rules: ["R13.3"],
+  },
+  { id: "intro", lines: (n) => [fl.marker("Intro"), ...trackLines(0, n)], minTracks: 1, rules: ["R13.3"] },
+  { id: "intro-untimed", lines: (n) => [fl.marker("Intro", false), ...trackLines(0, n)], minTracks: 1, rules: ["R13.3"] },
+  { id: "outro", lines: (n) => [...trackLines(0, n), fl.marker("Outro")], minTracks: 1, rules: ["R13.3"] },
+  {
+    id: "break-mid",
+    lines: (n) => [...trackLines(0, 1), fl.marker("Break"), ...trackLines(1, n)],
+    minTracks: 2,
+    rules: ["R13.3"],
+  },
+  { id: "blank-mid", lines: (n) => [...trackLines(0, 1), fl.blank(""), ...trackLines(1, n)], minTracks: 2, rules: ["R13.3"] },
+  {
+    id: "ws-blank-mid",
+    lines: (n) => [...trackLines(0, 1), fl.blank(" \t"), ...trackLines(1, n)],
+    minTracks: 2,
+    rules: ["R13.3"],
+  },
+  { id: "note", lines: (n) => [...trackLines(0, n), fl.note(NOTE_TEXT)], minTracks: 1, rules: ["R13.3"] },
+  { id: "link", lines: (n) => [...trackLines(0, n), fl.link(LINK_TEXT)], minTracks: 1, rules: ["R13.3"] },
+  {
+    id: "full",
+    lines: (n) => [fl.header("Tracklist:"), fl.blank(""), fl.marker("Intro"), ...trackLines(0, n), fl.note(NOTE_TEXT)],
+    minTracks: 1,
+    rules: ["R13.3"],
+  },
+];
+
+export type TimeOrder = "zero" | "late" | "dup" | "missing";
+
+/** How the times of a timed list behave (R13.7). */
+export const TIME_ORDERS: (Atom & { order: TimeOrder })[] = [
+  { id: "zero", order: "zero" }, // increasing from 0: no warnings
+  { id: "late", order: "late" }, // increasing from a non-zero start: no-start-at-zero
+  { id: "dup", order: "dup" }, // last timed line repeats the previous time: time-duplicate
+  { id: "missing", order: "missing" }, // last track line has no time: time-missing
+];
+
+export const TRACK_COUNTS: (Atom & { n: number })[] = [1, 2, 3, 4].map((n) => ({ id: `n${n}`, n }));
+
+export interface TrackAtom extends Atom {
+  artist: ArtistAtom;
+  title: TitleAtom;
+  /** A bracketed version with at most one remixer (no dash suffixes: R6.10/R8.2 stay out of play). */
+  version: { atom: VersionAtom; delim: "(" | "["; remixer: ArtistAtom | null } | null;
+}
+
+function track(id: string, a: string, t: string, ver?: [string, "(" | "[", string?]): TrackAtom {
+  return {
+    id,
+    artist: artistById(a),
+    title: titleById(t),
+    version: ver ? { atom: versionById(ver[0]), delim: ver[1], remixer: ver[2] ? artistById(ver[2]) : null } : null,
+  };
+}
+
+/** Track parts whose tracklist-mode ParsedTrack the atoms fully determine ("Artist - Title [(Version)]"). */
+export const TRACKS: TrackAtom[] = [
+  track("noisia-diplodocus", "noisia", "diplodocus"),
+  track("mefjus-stigma", "mefjus", "stigma"),
+  track("phace-hologram", "phace", "hologram", ["remix", "(", "enei"]),
+  track("kino-gruppa-krovi", "kino", "gruppa-krovi"),
+  track("sigur-ros-hoppipolla", "sigur-ros", "hoppipolla"),
+  track("utada-hanataba", "utada", "hanataba"),
+  track("asap-rocky-dont-stop", "asap-rocky", "dont-stop-me-now"),
+  track("camo-levitate", "camo", "levitate", ["vip-mix-bare", "("]),
+  track("gydra-firestarter", "gydra", "firestarter", ["radio-edit", "("]),
+  track("bts-bomnal", "bts", "bomnal"),
+  track("tiesto-cafe-del-mar", "tiesto", "cafe-del-mar", ["extended-mix", "["]),
+  track("fox-stevenson-bruises", "fox-stevenson", "bruises", ["remix", "(", "magnetude"]),
+  track("zveri-kukla-kolduna", "zveri", "kukla-kolduna"),
+  track("mr-oizo-numb", "mr-oizo", "numb"),
+  track("andy-c-strobe", "andy-c", "strobe", ["dnb-remix", "[", "netsky"]),
+  track("jay-z-up-tempo", "jay-z", "up-tempo"),
+  track("deadmau5-midnight-city", "deadmau5", "midnight-city", ["bootleg", "(", "sub-focus"]),
+  track("pink-whats-up", "pink", "whats-up"),
+  track("the-xx-one-more-time", "the-xx", "one-more-time", ["remix-by", "[", "krooked"]),
+  track("beyonce-deja-vu", "beyonce", "deja-vu", ["remastered", "("]),
+];
+
+export const trackById = (id: string): TrackAtom => byId(TRACKS, id);
+
+export interface TrackSetAtom extends Atom {
+  tracks: TrackAtom[];
+}
+
+const set = (id: string, ids: string[]): TrackSetAtom => ({ id, tracks: ids.map(trackById) });
+
+/** Four track parts each; a case uses the first n. */
+export const TRACK_SETS: TrackSetAtom[] = [
+  set("set-a", ["noisia-diplodocus", "phace-hologram", "mefjus-stigma", "camo-levitate"]),
+  set("set-b", ["kino-gruppa-krovi", "zveri-kukla-kolduna", "utada-hanataba", "bts-bomnal"]),
+  set("set-c", ["fox-stevenson-bruises", "gydra-firestarter", "andy-c-strobe", "deadmau5-midnight-city"]),
+  set("set-d", ["sigur-ros-hoppipolla", "tiesto-cafe-del-mar", "beyonce-deja-vu", "mr-oizo-numb"]),
+  set("set-e", ["asap-rocky-dont-stop", "pink-whats-up", "jay-z-up-tempo", "the-xx-one-more-time"]),
+  set("set-f", ["camo-levitate", "noisia-diplodocus", "bts-bomnal", "fox-stevenson-bruises"]),
+  set("set-g", ["the-xx-one-more-time", "kino-gruppa-krovi", "tiesto-cafe-del-mar", "jay-z-up-tempo"]),
+  set("set-h", ["mr-oizo-numb", "andy-c-strobe", "sigur-ros-hoppipolla", "phace-hologram"]),
+];
