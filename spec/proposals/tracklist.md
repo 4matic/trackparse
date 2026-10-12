@@ -33,7 +33,7 @@
 >   (trailing times), time ranges and `time.end`, `time-gap` / `time-overlap` and `gapThreshold`,
 >   `time-meaning-guessed`, cross-line `knownArtists` (draft R13.10), and a label/catalog junk kind.
 
-**Status:** draft requirements, written 2026-10-12 from the Neuropunk platform side. Not yet part of
+**Original status (superseded by the header above):** draft requirements, written 2026-10-12 from the Neuropunk platform side. Not yet part of
 `SPEC.md`. Follows the repo's rule: spec first, then fixtures, then ports (`AGENTS.md`). The rule
 numbers below (R13.x) are placeholders; assign real ones when the text moves into `SPEC.md`.
 

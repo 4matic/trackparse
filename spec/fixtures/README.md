@@ -45,7 +45,7 @@ Each file validates against [`../schema/fixture-file.schema.json`](../schema/fix
 | `fn` | `parse` (default), `parseArtists`, `format`, `normalize`, `parseTracklist`, `applyEdits` (SPEC R13). Can be set in `defaults` or on the case. |
 | `input` | Input string. For `fn: "format"` the input is **parsed first** (with `options`), then formatted with `formatOptions`. For `parseTracklist` / `applyEdits` it is the whole (multi-line) text. |
 | `edits` | `fn: "applyEdits"` only: the edit list (SPEC R13.9). |
-| `options` | Parse options. Merged over `defaults.options` (shallow). |
+| `options` | Parse options (tracklist options, SPEC R13.10, for `parseTracklist` / `applyEdits`). Merged over `defaults.options` (shallow). |
 | `formatOptions` | Format options (fn `format` only). |
 | `expected` | Partial expectation, see below. For `parse` an object, for `parseArtists` an array, for `format` / `normalize` a string, for `parseTracklist` a Tracklist, for `applyEdits` `{ text, changed, warnings }`. |
 | `match` | `partial` (default) or `exact`. |

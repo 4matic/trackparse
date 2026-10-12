@@ -206,8 +206,8 @@ Version types, junk kinds and warnings are listed in the
 Every result class has `to_dict()`, which returns plain dicts and lists matching
 [`parsed-track.schema.json`](https://github.com/4matic/trackparse/blob/main/spec/schema/parsed-track.schema.json)
 (`fullTitle`, `unknownArtist`, ...). With `json.dumps(track.to_dict(), separators=(",", ":"),
-ensure_ascii=False)` the bytes are the same as `JSON.stringify(parse(s))` in JS. The `from_dict()`
-classmethod goes the other way:
+ensure_ascii=False)` the bytes are the same as `JSON.stringify(parse(s))` in JS. The single-track classes
+(`ParsedTrack`, `Artist`, ...) also have a `from_dict()` classmethod that goes the other way:
 
 ```python
 ParsedTrack.from_dict(track.to_dict()) == track  # True
@@ -405,13 +405,16 @@ apply_edits(text, edits, *, <same options>) -> EditResult
 | `TracklistEntry` | `line` (1-based), `kind` (`track`, `marker`, `header`, `link`, `note`, `blank`), `eol`, `raw`, `parts`, `time`, `track` (`ParsedTrack` or `None`) |
 | `Parts` | `lead`, `time`, `gap`, `rest`, joined they give `raw` |
 | `TracklistWarning` | `code`, `line`, `severity` (`info` or `warning`), `suggestion` |
+| `TimeValue` | `raw`, `seconds` (`entry.time`, or `None` on untimed lines) |
+| `Suggestion` | `line`, `raw`, `seconds` (`warning.suggestion`, or `None`) |
 | `Stats` | `lines`, `tracks`, `markers`, `timed`, `first_time`, `last_time` |
 | `EditResult` | `text`, `changed`, `warnings` (`EditWarning(code, edit, line)`) |
 
 Warning codes: `time-missing`, `time-out-of-order`, `time-duplicate`, `no-start-at-zero`,
 `time-after-audio-end` (needs `audio_seconds`), `invalid-time`, `position-gap`,
-`position-duplicate`, `line-unparsed`. Edits: `set-time`, `shift`, `sort-by-time`, `set-rest`,
-`insert`, `delete`. The
+`position-duplicate`, `line-unparsed`. Edits: `set-time {line, seconds}`, `shift {seconds, lines? | from?}`
+(all timed lines when neither is given), `sort-by-time {}`, `set-rest {line, rest}`,
+`insert {after, text}` (`after: 0` inserts at the top), `delete {line}`. The
 [main README](https://github.com/4matic/trackparse#tracklist-api) explains each one.
 `to_dict()` gives the camelCase JSON from
 [`tracklist.schema.json`](https://github.com/4matic/trackparse/blob/main/spec/schema/tracklist.schema.json),
@@ -433,7 +436,9 @@ The package ships `py.typed` and passes `mypy --strict`. `ParsedTrack`, `Artist`
 `Junk`, `Flags`, `Position` and `Timestamp` are frozen dataclasses with snake_case attributes, and
 so are the tracklist results in `trackparse.tracklist`.
 Sequences are tuples, so results are immutable and hashable and can go in sets or be used as dict
-keys. Option dicts have `TypedDict` types (`ParseOptions`, `KeywordOptions`, `FormatOptions`).
+keys. Option dicts have `TypedDict` types (`ParseOptions`, `KeywordOptions`, `FormatOptions`);
+tracklist edits are plain dicts. `trackparse.tracklist` also exports the `Literal` aliases
+`EntryKind`, `Eol`, `Severity`, `TracklistWarningCode` and `EditWarningCode`.
 
 ## Development
 
