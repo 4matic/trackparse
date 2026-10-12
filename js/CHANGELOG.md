@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.1](https://github.com/4matic/trackparse/compare/js-v0.3.0...js-v0.3.1) (2026-10-12)
+
+
+### Bug Fixes
+
+* **fixtures:** stop pinning specVersion in tracklist fixtures ([6998e00](https://github.com/4matic/trackparse/commit/6998e00b2d1789f9daa1e5bdbee3a06ae7fb1236))
+
 ## [0.3.0](https://github.com/4matic/trackparse/compare/js-v0.2.1...js-v0.3.0) (2026-10-12)
 
 
