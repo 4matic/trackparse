@@ -65,6 +65,8 @@ Implement this matcher in every port (≈40 lines). It is the same everywhere:
    `artists` and `versions[].artists`, and to `parseArtists` results.
 5. `match: "exact"`: deep equality of the complete value (shorthand still allowed? **no**: exact cases
    spell every field out). Use a few exact cases per file to pin the whole schema.
+6. A top-level `specVersion` (on a Tracklist) is never compared, in either mode: it changes with
+   every release. Fixtures omit it; schema validation still requires it in the output.
 
 Example: `"artists": ["Noisia", { "name": "Foreign Beggars", "role": "featured" }]` asserts exactly
 two artists, the first named Noisia (any role), the second with name and role checked.

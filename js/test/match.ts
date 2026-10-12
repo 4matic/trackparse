@@ -75,6 +75,15 @@ export function matchExact(expected: Json, actual: Json, path = "$"): string | n
   return expected === actual ? null : `${path}: expected ${show(expected)}, got ${show(actual)}`;
 }
 
+/** README rule 6: a top-level `specVersion` is never compared (it changes every release). */
+function withoutSpecVersion(v: Json): Json {
+  if (!isObject(v) || !("specVersion" in v)) return v;
+  const { specVersion: _, ...rest } = v;
+  return rest;
+}
+
 export function match(expected: Json, actual: Json, mode: "partial" | "exact" = "partial") {
-  return mode === "exact" ? matchExact(expected, actual) : matchPartial(expected, actual);
+  const e = withoutSpecVersion(expected);
+  const a = withoutSpecVersion(actual);
+  return mode === "exact" ? matchExact(e, a) : matchPartial(e, a);
 }

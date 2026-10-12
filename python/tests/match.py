@@ -92,5 +92,14 @@ def match_exact(expected: Any, actual: Any, path: str = "$") -> Optional[str]:
     return f"{path}: expected {_show(expected)}, got {_show(actual)}"
 
 
+def _without_spec_version(v: Any) -> Any:
+    """README rule 6: a top-level ``specVersion`` is never compared (it changes every release)."""
+    if not isinstance(v, dict) or "specVersion" not in v:
+        return v
+    return {k: x for k, x in v.items() if k != "specVersion"}
+
+
 def match(expected: Any, actual: Any, mode: str = "partial") -> Optional[str]:
-    return match_exact(expected, actual) if mode == "exact" else match_partial(expected, actual)
+    e = _without_spec_version(expected)
+    a = _without_spec_version(actual)
+    return match_exact(e, a) if mode == "exact" else match_partial(e, a)

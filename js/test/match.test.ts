@@ -70,4 +70,10 @@ describe("matchExact", () => {
     expect(match({ a: 1 }, { a: 1, b: 1 }, "partial")).toBeNull();
     expect(match({ a: 1 }, { a: 1, b: 1 }, "exact")).not.toBeNull();
   });
+  it("ignores a top-level specVersion", () => {
+    const actual = { specVersion: "9.9.9", entries: [] };
+    expect(match({ entries: [] }, actual, "exact")).toBeNull();
+    expect(match({ specVersion: "0.0.1", entries: [] }, actual)).toBeNull();
+    expect(match({ x: { specVersion: "0" } }, { x: { specVersion: "1" } })).not.toBeNull();
+  });
 });
