@@ -35,8 +35,26 @@ function skipWhitespace(s: string, from: number): number {
   return i;
 }
 
+/** R13.2.1 bullets of a line without a time. */
+function isBullet(ch: string | undefined): boolean {
+  return ch === "-" || ch === "–" || ch === "—" || ch === "*" || ch === "•";
+}
+
+/**
+ * R13.1.3 / R13.2.1: a line without a time. `lead` holds an optional bullet: R0.2 whitespace, one
+ * of `-` `–` `—` `*` `•`, then at least one R0.2 whitespace (all of it); `rest` is the remainder.
+ */
 function untimed(raw: string, invalid: boolean): TimeScan {
-  return { parts: { lead: "", time: "", gap: "", rest: raw }, time: null, style: null, invalid };
+  const at = skipWhitespace(raw, 0);
+  let lead = "";
+  if (isBullet(raw[at]) && isWhitespace(raw[at + 1]))
+    lead = raw.slice(0, skipWhitespace(raw, at + 1));
+  return {
+    parts: { lead, time: "", gap: "", rest: raw.slice(lead.length) },
+    time: null,
+    style: null,
+    invalid,
+  };
 }
 
 /** `int.frac` parsed as one decimal literal, so every port gets the same double. */

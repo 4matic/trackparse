@@ -1480,6 +1480,37 @@
         "R13.2.3"
       ],
       "note": "The time separator is part of gap, so the bare number starts the track part."
+    },
+    {
+      "id": "tracklist-positions-013",
+      "input": "1\tNoisia - Stigma\n2\tPhace - Psycho",
+      "expected": {
+        "entries": [
+          {
+            "track": {
+              "position": null,
+              "artists": [
+                "1 Noisia"
+              ],
+              "title": "Stigma"
+            }
+          },
+          {
+            "track": {
+              "position": null,
+              "artists": [
+                "2 Phace"
+              ],
+              "title": "Psycho"
+            }
+          }
+        ],
+        "warnings": []
+      },
+      "rules": [
+        "R13.5"
+      ],
+      "note": "A bare position needs U+0020 after the digits; a tab is not enough, even with N ± 1 neighbours."
     }
   ]
 }

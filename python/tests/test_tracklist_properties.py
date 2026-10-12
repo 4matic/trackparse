@@ -145,7 +145,9 @@ def test_lossless_and_parts(text: str) -> None:
         p = e.parts
         assert p.lead + p.time + p.gap + p.rest == e.raw
         if e.time is None:
-            assert p.rest == e.raw
+            # R13.1.3: without a time, `lead` holds at most a bullet and `time`/`gap` are empty.
+            assert p.lead + p.rest == e.raw
+            assert p.time + p.gap == ""
     assert tl.stats.lines == len(tl.entries)
 
 
@@ -244,7 +246,7 @@ def test_ten_thousand_lines_are_fast() -> None:
     small = "\r\n".join(lines[:1000])
     parse_tracklist(small)  # warm-up
     assert len(parse_tracklist(text).entries) == 10_000
-    # R13.11.2: the JS reference does this well under one second. CPython runs the full
+    # R13.11.2: the JS reference has a 3 s ceiling (usually ~1 s). CPython runs the full
     # single-line parser per line (~0.4 ms), so assert linear scaling plus a generous ceiling:
     # a super-linear blowup still fails.
     big = _best(lambda: parse_tracklist(text), runs=2)
@@ -365,3 +367,24 @@ def test_one_line_equals_parse(text: str) -> None:
         return
     e = entries[0]
     assert e.track == parse(e.parts.rest, mode="tracklist")
+
+
+def test_many_edits_are_linear() -> None:
+    # R13.11.2: apply_edits costs lines plus edits, not their product. Each line's time is
+    # scanned once per write and the one-digit-hours test is kept up to date, so 2,000
+    # single-line edits on 5,000 lines take about as long as one pass (JS: tens of ms).
+    lines = []
+    for i in range(5_000):
+        s = i * 30
+        lines.append(f"{_pad2(s // 3600)}:{_pad2((s % 3600) // 60)}:{_pad2(s % 60)} A {i} - T {i}")
+    text = "\n".join(lines)
+    set_times = [
+        {"op": "set-time", "line": (k * 7) % 5_000 + 1, "seconds": k * 10} for k in range(2_000)
+    ]
+    inserts = [
+        {"op": "insert", "after": (k * 7) % 5_000, "text": "00:00 X - Y"} for k in range(2_000)
+    ]
+    assert len(apply_edits(text, set_times).changed) == 2_000
+    assert len(apply_edits(text, inserts).changed) == 2_000
+    assert _best(lambda: apply_edits(text, set_times), runs=2) < 5.0
+    assert _best(lambda: apply_edits(text, inserts), runs=2) < 5.0

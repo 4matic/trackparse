@@ -9,9 +9,9 @@ from typing import Any, NamedTuple, Optional, cast
 from ._artists import parse_artist_side
 from ._assemble import by_pos, dedup_artists, full_title_of, to_version
 from ._context import Ctx, warn
-from ._mode import Piece, prelude
+from ._mode import Piece, Prelude, prelude
 from ._normalize import normalize
-from ._prefix import strip_prefixes
+from ._prefix import PrefixResult, strip_prefixes
 from ._scanner import Skel, scan, split_at_spaced_dashes, trim_skel
 from ._separator import find_separator
 from ._tables import Tables, js_entries, tables_for
@@ -74,9 +74,20 @@ def _empty_track(inp: str, mode: str) -> ParsedTrack:
     )
 
 
-def _run(
-    inp: str, options: Mapping[str, Any], t: Tables, list_context: bool = False
-) -> ParsedTrack:
+class _Staged(NamedTuple):
+    """The R1, R2 and R4 stage of ``_run``, kept so the tracklist probe's work is not redone."""
+
+    inp: str
+    options: Mapping[str, Any]
+    ctx: Ctx
+    pre: Prelude
+    #: None when the input is empty after R1 (R9.5).
+    prefix: Optional[PrefixResult]
+    #: The skeleton after R4; None when the input is empty after R1.
+    working: Optional[Skel]
+
+
+def _stage(inp: str, options: Mapping[str, Any], t: Tables) -> _Staged:
     ctx = Ctx(t, options)
     norm = normalize(inp)
     requested = options.get("mode")
@@ -84,11 +95,25 @@ def _run(
         requested = "auto"
     pre = prelude(norm, requested, ctx)
     if len(norm) == 0:
-        return _empty_track(inp, pre.mode)  # R9.5
+        return _Staged(inp, options, ctx, pre, None, None)  # R9.5
 
     # R4
     prefix = strip_prefixes(pre.working.text, pre.working.base, pre.mode, ctx)
     working = _skel_of(Piece(prefix.rest, prefix.base), ctx)
+    return _Staged(inp, options, ctx, pre, prefix, working)
+
+
+def _run(
+    inp: str, options: Mapping[str, Any], t: Tables, list_context: bool = False
+) -> ParsedTrack:
+    return _finish(_stage(inp, options, t), list_context)
+
+
+def _finish(st: _Staged, list_context: bool) -> ParsedTrack:
+    """R6–R9 on a staged input. Each staged value is finished at most once."""
+    inp, options, ctx, pre, prefix, working = st
+    if prefix is None or working is None:
+        return _empty_track(inp, pre.mode)  # R9.5
 
     out = Extracted()
     artist_skel: Optional[Skel]
@@ -145,29 +170,36 @@ def _run(
     )
 
 
-class LineProbe(NamedTuple):
+class LineProbe:
     """Facts about a line's prefix and separator search, for the tracklist module (R13.4.2,
-    R13.5)."""
+    R13.5). :meth:`finish` completes the parse from the same stage, so a probed line is not
+    normalized twice."""
 
-    #: R4.2 took a position.
-    position: bool
-    #: The skeleton R6 searches (after R2 and R4) has a spaced dash (R6.1).
-    spaced_dash: bool
+    __slots__ = ("_staged", "empty", "position", "spaced_dash")
+
+    def __init__(self, staged: _Staged) -> None:
+        self._staged = staged
+        prefix = staged.prefix
+        working = staged.working
+        #: R4.2 took a position.
+        self.position = prefix is not None and prefix.position is not None
+        #: The skeleton R6 searches (after R2 and R4) has a spaced dash (R6.1).
+        self.spaced_dash = (
+            working is not None
+            and staged.pre.pipe_title is None
+            and len(split_at_spaced_dashes(working, True)) >= 2
+        )
+        #: The input is empty after R1.
+        self.empty = working is None
+
+    def finish(self, list_context: bool) -> ParsedTrack:
+        """The parse of the probed input (R6–R9 only; call at most once)."""
+        return _finish(self._staged, list_context)
 
 
 def _probe(inp: str, options: Mapping[str, Any], t: Tables) -> LineProbe:
-    """R1, R2 and R4 only, as ``_run`` does them: cheap, no artist/title parsing."""
-    ctx = Ctx(t, options)
-    norm = normalize(inp)
-    if len(norm) == 0:
-        return LineProbe(False, False)
-    requested = options.get("mode")
-    pre = prelude(norm, "auto" if requested is None else requested, ctx)
-    prefix = strip_prefixes(pre.working.text, pre.working.base, pre.mode, ctx)
-    if pre.pipe_title is not None:
-        return LineProbe(prefix.position is not None, False)
-    working = _skel_of(Piece(prefix.rest, prefix.base), ctx)
-    return LineProbe(prefix.position is not None, len(split_at_spaced_dashes(working, True)) >= 2)
+    """R1, R2 and R4 only, as ``_run`` does them: no artist/title parsing."""
+    return LineProbe(_stage(inp, options, t))
 
 
 class ListParser:

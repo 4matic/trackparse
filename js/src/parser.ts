@@ -52,19 +52,42 @@ function uploaderSkel(uploader: string | undefined): Skel | null {
   return scan(u, UPLOADER_BASE).skel;
 }
 
-function run(input: string, options: ParseOptions, t: Tables, listContext = false): ParsedTrack {
+/** The R1, R2 and R4 stage of `run`, kept so the tracklist probe's work is not redone. */
+interface Staged {
+  ctx: Ctx;
+  options: ParseOptions;
+  pre: ReturnType<typeof prelude>;
+  track: ParsedTrack;
+  /** The skeleton after R4; null when the input is empty after R1 (R9.5: `track` is final). */
+  working: Skel | null;
+}
+
+function stage(input: string, options: ParseOptions, t: Tables): Staged {
   const ctx = makeCtx(t, options);
   const norm = normalize(input);
   const requested = options.mode ?? "auto";
   const pre = prelude(norm, requested, ctx);
   const track = emptyTrack(typeof input === "string" ? input : "", pre.mode);
-  if (norm.length === 0) return track; // R9.5
+  if (norm.length === 0) {
+    return { ctx, options, pre, track, working: null }; // R9.5
+  }
 
   // R4
   const prefix = stripPrefixes(pre.working.text, pre.working.base, pre.mode, ctx);
   track.timestamp = prefix.timestamp;
   track.position = prefix.position;
   const working = skelOf({ text: prefix.rest, base: prefix.base }, ctx);
+  return { ctx, options, pre, track, working };
+}
+
+function run(input: string, options: ParseOptions, t: Tables, listContext = false): ParsedTrack {
+  return finish(stage(input, options, t), listContext);
+}
+
+/** R6–R9 on a staged input. Each Staged value is finished at most once. */
+function finish(st: Staged, listContext: boolean): ParsedTrack {
+  const { ctx, options, pre, track, working } = st;
+  if (working === null) return track;
 
   const out = emptyExtracted();
   let artistSkel: Skel | null;
@@ -160,20 +183,24 @@ export interface LineProbe {
   position: boolean;
   /** The skeleton R6 searches (after R2 and R4) has a spaced dash (R6.1). */
   spacedDash: boolean;
+  /** The input is empty after R1. */
+  empty: boolean;
+  /** The parse of the probed input (R6–R9 only; call at most once). */
+  finish(listContext: boolean): ParsedTrack;
 }
 
-/** R1, R2 and R4 only, as `run` does them: cheap, no artist/title parsing. */
+/**
+ * R1, R2 and R4 only, as `run` does them: no artist/title parsing. `finish` completes the parse
+ * from the same stage, so a probed line is not normalized twice.
+ */
 function probe(input: string, options: ParseOptions, t: Tables): LineProbe {
-  const ctx = makeCtx(t, options);
-  const norm = normalize(input);
-  if (norm.length === 0) return { position: false, spacedDash: false };
-  const pre = prelude(norm, options.mode ?? "auto", ctx);
-  const prefix = stripPrefixes(pre.working.text, pre.working.base, pre.mode, ctx);
-  if (pre.pipeTitle) return { position: prefix.position !== null, spacedDash: false };
-  const working = skelOf({ text: prefix.rest, base: prefix.base }, ctx);
+  const st = stage(input, options, t);
   return {
-    position: prefix.position !== null,
-    spacedDash: splitAtSpacedDashes(working, true).length >= 2,
+    position: st.track.position !== null,
+    spacedDash:
+      st.working !== null && !st.pre.pipeTitle && splitAtSpacedDashes(st.working, true).length >= 2,
+    empty: st.working === null,
+    finish: (listContext) => finish(st, listContext),
   };
 }
 

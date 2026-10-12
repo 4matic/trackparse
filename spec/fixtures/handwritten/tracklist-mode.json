@@ -1513,6 +1513,126 @@
         "R6.10"
       ],
       "note": "R4.2 in tracklist mode works like clean: (d) never takes a bare number."
+    },
+    {
+      "id": "tracklist-mode-051",
+      "input": "00:00 Noisia - Stigma\nMastered by Jean-Pierre\n03:00 Phace - Psycho",
+      "expected": {
+        "entries": [
+          {
+            "kind": "track"
+          },
+          {
+            "kind": "note",
+            "parts": {
+              "lead": "",
+              "time": "",
+              "gap": "",
+              "rest": "Mastered by Jean-Pierre"
+            },
+            "track": null
+          },
+          {
+            "kind": "track"
+          }
+        ],
+        "warnings": []
+      },
+      "rules": [
+        "R13.4.2",
+        "R6.10",
+        "R13.3"
+      ],
+      "note": "List context is on, but a line without a time never uses the tight dash: a note, not 'Mastered by Jean' / 'Pierre'."
+    },
+    {
+      "id": "tracklist-mode-052",
+      "input": "00:00 Noisia - Stigma\nHip-Hop Classics\n03:00 Phace - Psycho",
+      "expected": {
+        "entries": [
+          {
+            "kind": "track"
+          },
+          {
+            "kind": "note",
+            "track": null
+          },
+          {
+            "kind": "track"
+          }
+        ],
+        "warnings": []
+      },
+      "rules": [
+        "R13.4.2",
+        "R6.10",
+        "R13.3"
+      ],
+      "note": "Untimed lines never use the tight dash, so 'Hip-Hop' is not split."
+    },
+    {
+      "id": "tracklist-mode-053",
+      "input": "00:00 Noisia - Stigma\n03:00 Intro-Outro\n06:00 Phace - Psycho",
+      "expected": {
+        "entries": [
+          {
+            "kind": "track"
+          },
+          {
+            "kind": "marker",
+            "track": {
+              "artists": [],
+              "title": "Intro-Outro",
+              "warnings": [
+                "noSeparator"
+              ]
+            }
+          },
+          {
+            "kind": "track"
+          }
+        ],
+        "warnings": []
+      },
+      "rules": [
+        "R13.4.2",
+        "R13.3.5",
+        "R6.10",
+        "R13.3"
+      ],
+      "note": "A timed line in list context, but its track part has marker words (split on '-'), so the tight dash is not tried: a marker."
+    },
+    {
+      "id": "tracklist-mode-054",
+      "input": "00:00 Noisia - Stigma\n03:00 Mefjus-Stigma\n06:00 Phace - Psycho",
+      "expected": {
+        "entries": [
+          {
+            "kind": "track"
+          },
+          {
+            "kind": "track",
+            "track": {
+              "artists": [
+                "Mefjus"
+              ],
+              "title": "Stigma",
+              "warnings": [
+                "unspacedDashSplit"
+              ]
+            }
+          },
+          {
+            "kind": "track"
+          }
+        ],
+        "warnings": []
+      },
+      "rules": [
+        "R13.4.2",
+        "R6.10"
+      ],
+      "note": "Control for tracklist-mode-053: a timed line without a marker word still uses the tight dash."
     }
   ]
 }

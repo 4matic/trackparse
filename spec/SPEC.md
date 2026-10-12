@@ -113,7 +113,8 @@ Rules that keep JS, Python and Rust byte-identical.
 
 - **R0.1** No regex lookaround, backreferences or `\p{…}` classes. Recognition is done with
   hand-written scanners over code points. Small anchored regexes are allowed only for fixed shapes
-  (digits, timestamps).
+  (digits, timestamps). The only exceptions are the two general-category tests of R0.6 (*letter*,
+  L, and *uppercase letter*, Lu).
 - **R0.2** *Whitespace* means exactly this code-point set: U+0009–U+000D, U+0020, U+0085, U+00A0,
   U+1680, U+2000–U+200A, U+2028, U+2029, U+202F, U+205F, U+3000. Never use a language's `\s`.
 - **R0.3** *Keyword comparison* (feat markers, version words, junk, joiners, stopwords…) uses the
@@ -126,8 +127,10 @@ Rules that keep JS, Python and Rust byte-identical.
 - **R0.5** Iterate by code point. No index/offset is exposed in the output.
 - **R0.6** *Letter* means Unicode general category **L** (Lu, Ll, Lt, Lm, Lo): JS `/\p{L}/u`,
   Python `str.isalpha()` on one code point, Rust via a general-category table. Letter numbers (Nl,
-  `Ⅰ`) and combining marks (Mn/Mc) are **not** letters. Only R6.7 uses this test. *Digit* means
-  ASCII `0`–`9` only.
+  `Ⅰ`) and combining marks (Mn/Mc) are **not** letters. Only R6.7 and R6.10 use this test.
+  *Uppercase letter* means general category **Lu** only: JS `/\p{Lu}/u`, Python
+  `unicodedata.category(c) == "Lu"`, Rust via a general-category table. Only R6.10 uses this test.
+  *Digit* means ASCII `0`–`9` only.
 - **R0.7** A *word* is a maximal run of non-whitespace code points in a (sub)string.
 - **R0.8** Parsing is total: any string input returns a ParsedTrack; never throw/panic. Runtime is
   linear-ish in input length (no backtracking blowups).
@@ -342,11 +345,10 @@ Operates on the skeleton of the working string (after R2, R4).
   in this order:
   - R6.4 applies;
   - else the first `_-_` (underscore, dash, underscore) is the separator (warn `unspacedDashSplit`);
-  - else, only when the caller enables it (R13.4.2 list context), the **last** `-` with a letter
-    (R0.6) on its left and an uppercase letter on its right is the separator (warn
-    `unspacedDashSplit`). As in R6.7, the last candidate wins: `Jay-Z-Numb` → `Jay-Z` / `Numb`.
-    *Uppercase* is Unicode general category Lu (JS `/\p{Lu}/u`, Python
-    `unicodedata.category(c) == "Lu"`).
+  - else, only when the caller enables it (R13.4.2 list context: timed lines without a marker
+    word), the **last** `-` with a letter (R0.6) on its left and an uppercase letter (R0.6, Lu)
+    on its right is the separator (warn `unspacedDashSplit`). As in R6.7, the last candidate
+    wins: `Jay-Z-Numb` → `Jay-Z` / `Numb`.
 
   R6.5–R6.7 (youtube/filename rules) do not apply.
 
@@ -533,18 +535,25 @@ section and `mode: "tracklist"`.
 - **R13.1.2 Lossless.** For every input: concatenating `raw + eol` over all entries gives the input
   exactly. `raw` is never normalized (R1 runs only inside the per-line `parse`).
 - **R13.1.3 Parts.** Each entry has `parts = { lead, time, gap, rest }` (strings, no offsets, R0.5)
-  with `lead + time + gap + rest === raw`. Without a time (R13.2), `lead`, `time` and `gap` are `""`
-  and `rest === raw`.
+  with `lead + time + gap + rest === raw`. Without a time (R13.2), `time` and `gap` are `""`,
+  `lead` is the optional bullet of R13.2.1 (usually `""`) and `rest` is the remainder.
 
 ### R13.2 Times
 
 Read at the start of `raw` (this scanner is separate from R4.1, which is unchanged):
 
 - **R13.2.1 lead:** R0.2 whitespace, then an optional `[` or `(`.
+  - On a line **without** a time, `lead` instead holds an optional bullet: R0.2 whitespace, one of
+    `-` `–` `—` `*` `•`, then at least one R0.2 whitespace (the whole run). Without that shape
+    `lead` is `""`. `- Noisia - Stigma` → lead `- `, rest `Noisia - Stigma`; `-Intro` has no
+    bullet.
 - **R13.2.2 time:** `A:B` or `A:B:C` in ASCII digits, then an optional fraction (`.` or `,` and 1–3
   digits). With three parts: `A` is 1–2 digits (hours), `B` and `C` are 2 digits each and at most 59.
   With two parts: `A` is 1–3 digits (minutes, **any value**, so `125:30` is 7530 s), `B` is 2 digits and
-  at most 59. With 4+ fraction digits there is no fraction: the `.`/`,` is a gap separator (R13.2.3).
+  at most 59. With 4+ fraction digits there is no fraction. A `.` is then a gap separator
+  (R13.2.3); a `,` is not one, so the time is followed by a character R13.2.3 does not allow:
+  no time and no warning (R13.2.4). `1:02.1234 A - B` has the time `1:02`; `1:02,1234 A - B` has
+  none.
   - `seconds`: let `W` = hours·3600 + minutes·60 + seconds (an integer). Without a fraction,
     `seconds = W`; with one, `seconds` is the double nearest the decimal string `"<W>.<fraction
     digits>"` (correctly rounded: JS `Number()`, Python `float()`), so ports agree bit for bit
@@ -567,10 +576,9 @@ Read at the start of `raw` (this scanner is separate from R4.1, which is unchang
 `kind` is decided in this order (word keys per R0.3):
 
 1. `blank`: `raw` is empty or only R0.2 whitespace.
-2. Lines **with** a time: `marker` when the track part (R13.4) has no separator and any of its words is
-   in [`data/marker-words.json`](data/marker-words.json) (plus `options.markerWords`); else `track`.
-   A line that is only a time (its track part is empty after R1) is a `track` and warns
-   `line-unparsed` (R13.7).
+2. Lines **with** a time: `marker` when the track part (R13.4) has no separator and has a marker
+   word; else `track`. A line that is only a time (its track part is empty after R1) is a `track`
+   and warns `line-unparsed` (R13.7).
 3. Lines **without** a time: `link` when `rest` (trimmed) starts with `http://`, `https://` or `www.`
    (ASCII case-insensitive); `header` when it (trimmed of R0.2 whitespace) ends with `:` or its
    first word is in
@@ -580,19 +588,35 @@ Read at the start of `raw` (this scanner is separate from R4.1, which is unchang
 Only `track` and `marker` entries have a `track` (a ParsedTrack); the others have `track: null`.
 Nothing is ever dropped.
 
+- **R13.3.4 Separator.** The track part *has a separator* when it is not empty after R1, its
+  ParsedTrack does not warn `noSeparator`, and the artist side is not empty: the ParsedTrack has at
+  least one artist with role `primary`, or `flags.unknownArtist`. A split with an empty artist
+  side (`_-_Intro`, `-Intro`) counts as no separator.
+- **R13.3.5 Marker words.** The track part's words for this test are the pieces left after
+  splitting it on R0.2 whitespace, `/` and `-`, each stripped of leading and trailing `(` `)` `[`
+  `]` `{` `}`; empty pieces are dropped. It *has a marker word* when a word (word key, R0.3) or a
+  sequence of consecutive words matches an entry of
+  [`data/marker-words.json`](data/marker-words.json) or `options.markerWords`, whose entries are
+  split the same way (`shout-out` is the words `shout`, `out`). `[Intro]`, `(Outro)`,
+  `Intro/Outro` and `Intro-Outro` have one; `Introduction` does not.
+
 ### R13.4 The track part
 
 - **R13.4.1** The track part is `rest`, minus a bare position (R13.5). It is parsed with `parse(rest,
   { mode, knownArtists, keywords, splitAnd })`, `mode` defaulting to `"tracklist"`.
-- **R13.4.2** *Candidate lines* are non-blank lines with a time or a spaced dash. List context for
-  R6.10's tight dash is enabled when at least half of the candidate lines contain a spaced dash.
+- **R13.4.2** *Candidate lines* are non-blank lines with a time or a spaced dash. The list is in
+  *list context* when at least half of the candidate lines contain a spaced dash. R6.10's tight
+  dash is enabled only on lines **with a time** whose track part has no marker word (R13.3.5), and
+  only in list context: lines without a time never use it (`Mastered by Jean-Pierre` stays a
+  note), and `00:00 Intro-Outro` is a marker, not `Intro` / `Outro`.
   "Contains a spaced dash" is tested on the skeleton R6 searches for the track part, i.e. after
   R1, R2 and R4 (R6.1), not on `raw`: the ` - ` in a gap (`00:00 - Intro`) or one consumed by a
   position (`01 - Title`) does not count.
 
 ### R13.5 Bare positions
 
-A track part that starts with 1–3 ASCII digits and a space, where R4.2 does not take a position, has a
+A track part that starts with 1–3 ASCII digits and a space (U+0020 only, not other R0.2
+whitespace), where R4.2 does not take a position, has a
 **bare position** candidate `N`. It is a position when the nearest preceding or the nearest following
 candidate line (a line with a time or a spaced dash, R13.4.2) also has a bare candidate equal to
 `N - 1` or `N + 1`. The digits and the space are
@@ -620,7 +644,7 @@ repeated.
 | `invalid-time` | warning | R13.2.4 |
 | `position-gap` | warning | a positioned track entry's number is not the previous positioned entry's number + 1 (or equal) |
 | `position-duplicate` | warning | equal to the previous positioned entry's number |
-| `line-unparsed` | warning | a `track` entry whose track part is empty after R1, or whose ParsedTrack warns `noSeparator` |
+| `line-unparsed` | warning | a `track` entry whose track part has no separator (R13.3.4): empty after R1, `noSeparator`, or an empty artist side |
 
 **Suggestion for `time-out-of-order`.** A *search* of a raw time between bounds `lo` and `hi` (each
 optional) makes the strings that change 1 digit, then 2 digits, of the raw time (fraction digits
@@ -655,7 +679,7 @@ result of the previous one; line numbers are 1-based in the text the edit sees.
 | `{ op: "set-time", line, seconds }` | rewrite that line's `parts.time` |
 | `{ op: "shift", seconds, lines?, from? }` | add `seconds` to the timed lines listed, or to every timed line from `from` on, or to all timed lines |
 | `{ op: "sort-by-time" }` | reorder blocks by time (below) |
-| `{ op: "set-rest", line, rest }` | replace `parts.rest` |
+| `{ op: "set-rest", line, rest }` | replace `parts.rest`; on a timed line whose `gap` does not end with R0.2 whitespace (`""`, `]`, `)`), a non-empty `rest` also appends one space to `gap` (`12:34` → `12:34 Title`, `[12:34]` → `[12:34] Title`; `12:34 - ` keeps its gap) |
 | `{ op: "insert", after, text }` | insert a line after line `after` (`0` = at the top) |
 | `{ op: "delete", line }` | remove a line |
 
@@ -719,8 +743,11 @@ marker words). Bad values are ignored (R0.8).
 
 1. Lossless (R13.1.2) and `lead + time + gap + rest === raw` for every string.
 2. Totality: any string and any edit list return without throwing, in time linear in the input
-   (no super-linear blowups). Each port's test suite sets its own ceiling for 10 000 lines (JS: 1 s;
-   Python, whose single-line parser is slower: 15 s).
+   (no super-linear blowups). Each port's test suite sets its own ceiling for 10 000 lines (JS: 3 s;
+   Python, whose single-line parser is slower: 15 s). `applyEdits` is linear-ish in lines plus
+   edits, not their product: each edit costs time in the lines it touches (plus the lines a
+   `shift`/`sort-by-time` covers, and the shifting of an insert or delete), so 2 000 `set-time` or
+   `insert` edits on 5 000 lines stay under the same ceilings.
 3. Locality and identity (R13.9.1).
 4. Round trip (R13.9.7).
 5. A one-line text's track equals `parse(rest, { mode: "tracklist" })` for a line without a bare

@@ -1,5 +1,6 @@
 /** R13.5 bare positions. */
-import { isDigit, isWhitespace } from "../words.js";
+import { digitRun } from "../digits.js";
+import { isWhitespace } from "../words.js";
 
 export interface BareCandidate {
   raw: string;
@@ -9,14 +10,13 @@ export interface BareCandidate {
 }
 
 /**
- * R13.5: a track part starting with 1–3 ASCII digits and a space, where R4.2 took no position
- * (`positionTaken`), is a bare candidate. The remainder must be non-empty.
+ * R13.5: a track part starting with 1–3 ASCII digits and a space (U+0020 only), where R4.2 took
+ * no position (`positionTaken`), is a bare candidate. The remainder must be non-empty.
  */
 export function bareCandidate(rest: string, positionTaken: boolean): BareCandidate | null {
   if (positionTaken) return null;
-  let n = 0;
-  while (n < rest.length && isDigit(rest[n])) n++;
-  if (n < 1 || n > 3 || !isWhitespace(rest[n])) return null;
+  const n = digitRun(rest, 0);
+  if (n < 1 || n > 3 || rest[n] !== " ") return null;
   const stripped = rest.slice(n + 1);
   for (let i = 0; i < stripped.length; i++) {
     if (!isWhitespace(stripped[i])) {
