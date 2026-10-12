@@ -121,7 +121,12 @@ export function prelude(normalized: string, requested: ModeOption, ctx: Ctx): Pr
   const hadPlatform = junk.length > 0;
 
   let mode: Mode;
-  if (requested === "clean" || requested === "youtube" || requested === "filename") {
+  if (
+    requested === "clean" ||
+    requested === "youtube" ||
+    requested === "filename" ||
+    requested === "tracklist" // R13.6: explicit only; R2.3/R2.4 do not run.
+  ) {
     mode = requested;
   } else if (extensionOf(str, ctx)) {
     mode = "filename";

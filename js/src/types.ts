@@ -1,6 +1,7 @@
 /** Public types. They mirror spec/schema/parsed-track.schema.json and options.schema.json. */
 
-export type Mode = "clean" | "youtube" | "filename";
+/** R2 / R13.6: `tracklist` is only used when asked for (never resolved from `auto`). */
+export type Mode = "clean" | "youtube" | "filename" | "tracklist";
 export type ModeOption = Mode | "auto";
 
 export type ArtistRole = "primary" | "featured" | "remixer" | "producer";

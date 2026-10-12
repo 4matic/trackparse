@@ -26,6 +26,12 @@ const loadSchema = (name: string) =>
   JSON.parse(readFileSync(join(specDir, "schema", name), "utf8")) as object;
 const validateFixtureFile = ajv.compile(loadSchema("fixture-file.schema.json"));
 const validateTrack = ajv.compile(loadSchema("parsed-track.schema.json"));
+const tracklistSchema = loadSchema("tracklist.schema.json") as { $id: string };
+ajv.addSchema(tracklistSchema);
+const validateTracklist = ajv.getSchema(tracklistSchema.$id) as ReturnType<typeof ajv.compile>;
+const validateEditResult = ajv.getSchema(`${tracklistSchema.$id}#/$defs/editResult`) as ReturnType<
+  typeof ajv.compile
+>;
 
 const files = loadFixtureFiles();
 const skip = loadSkipList();
@@ -36,9 +42,15 @@ function problemOf(c: FixtureCase, run: CaseRun): string | null {
   for (const track of run.parsed) {
     if (!validateTrack(track)) schemaErrors.push(ajv.errorsText(validateTrack.errors));
   }
+  if (run.tracklist !== null && !validateTracklist(run.tracklist)) {
+    schemaErrors.push(`tracklist: ${ajv.errorsText(validateTracklist.errors)}`);
+  }
+  if (run.editResult !== null && !validateEditResult(run.editResult)) {
+    schemaErrors.push(`editResult: ${ajv.errorsText(validateEditResult.errors)}`);
+  }
   const problem =
     schemaErrors.length > 0
-      ? `output violates parsed-track schema: ${schemaErrors.join("; ")}`
+      ? `output violates the schema: ${schemaErrors.join("; ")}`
       : run.failure;
   const reason = skip[c.id];
   if (reason !== undefined) {

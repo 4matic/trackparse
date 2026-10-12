@@ -3,6 +3,12 @@ import { readdirSync, readFileSync, statSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { format, normalize, type ParsedTrack, parse, parseArtists } from "../src/index.js";
+import {
+  applyEdits,
+  type Edit,
+  parseTracklist,
+  type TracklistOptions,
+} from "../src/tracklist/index.js";
 import type { FormatOptions, ParseOptions } from "../src/types.js";
 import { match } from "./match.js";
 
@@ -10,7 +16,13 @@ const here = dirname(fileURLToPath(import.meta.url));
 export const specDir = resolve(here, "../../spec");
 export const fixturesDir = join(specDir, "fixtures");
 
-export type Fn = "parse" | "parseArtists" | "format" | "normalize";
+export type Fn =
+  | "parse"
+  | "parseArtists"
+  | "format"
+  | "normalize"
+  | "parseTracklist"
+  | "applyEdits";
 
 export interface FixtureCase {
   id: string;
@@ -18,6 +30,8 @@ export interface FixtureCase {
   input: string;
   options?: ParseOptions;
   formatOptions?: FormatOptions;
+  /** fn=applyEdits */
+  edits?: Edit[];
   expected?: unknown;
   expectedAny?: unknown[];
   match?: "partial" | "exact";
@@ -77,6 +91,10 @@ export interface CaseRun {
   fn: Fn;
   /** Every ParsedTrack produced while running the case (for schema validation). */
   parsed: ParsedTrack[];
+  /** parseTracklist output (validated against tracklist.schema.json). */
+  tracklist: unknown;
+  /** applyEdits output (validated against tracklist.schema.json#/$defs/editResult). */
+  editResult: unknown;
   actual: unknown;
   /** null when the case behaves as its status demands, else a failure description. */
   failure: string | null;
@@ -89,6 +107,8 @@ export function runCase(file: FixtureFile, c: FixtureCase): CaseRun {
   const options: ParseOptions = { ...file.defaults?.options, ...c.options };
   const formatOptions: FormatOptions = { ...file.defaults?.formatOptions, ...c.formatOptions };
   const parsed: ParsedTrack[] = [];
+  let tracklist: unknown = null;
+  let editResult: unknown = null;
   let actual: unknown;
   try {
     switch (fn) {
@@ -110,10 +130,18 @@ export function runCase(file: FixtureFile, c: FixtureCase): CaseRun {
       case "normalize":
         actual = normalize(c.input);
         break;
+      case "parseTracklist":
+        tracklist = parseTracklist(c.input, options as TracklistOptions);
+        actual = tracklist;
+        break;
+      case "applyEdits":
+        editResult = applyEdits(c.input, c.edits ?? [], options as TracklistOptions);
+        actual = editResult;
+        break;
     }
   } catch (err) {
     const msg = `threw: ${err instanceof Error ? (err.stack ?? err.message) : String(err)}`;
-    return { fn, parsed, actual: undefined, failure: msg, mismatch: msg };
+    return { fn, parsed, tracklist, editResult, actual: undefined, failure: msg, mismatch: msg };
   }
 
   const status = c.status ?? "pass";
@@ -130,5 +158,5 @@ export function runCase(file: FixtureFile, c: FixtureCase): CaseRun {
   }
   let failure = mismatch;
   if (status === "xfail") failure = mismatch === null ? "xfail case unexpectedly passes" : null;
-  return { fn, parsed, actual, failure, mismatch };
+  return { fn, parsed, tracklist, editResult, actual, failure, mismatch };
 }

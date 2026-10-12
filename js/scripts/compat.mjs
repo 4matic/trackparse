@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Runtime compatibility check: runs every shared fixture against the BUILT package (dist/, both
- * the ESM and the CJS entry) with plain Node and no dev dependencies, so it works on Node
+ * the ESM and the CJS builds of the root and the `./tracklist` entries) with plain Node and no dev dependencies, so it works on Node
  * versions older than the tooling supports (the package targets Node >= 18).
  *
  * Usage: node scripts/compat.mjs   (after `pnpm build`)
@@ -95,6 +95,8 @@ function run(api, file, c) {
     if (fn === "parse") actual = api.parse(c.input, options);
     else if (fn === "parseArtists") actual = api.parseArtists(c.input, options);
     else if (fn === "format") actual = api.format(api.parse(c.input, options), formatOptions);
+    else if (fn === "parseTracklist") actual = api.parseTracklist(c.input, options);
+    else if (fn === "applyEdits") actual = api.applyEdits(c.input, c.edits ?? [], options);
     else actual = api.normalize(c.input);
   } catch (err) {
     return `threw: ${err instanceof Error ? err.message : String(err)}`;
@@ -118,9 +120,13 @@ const files = walk(fixturesDir)
   }))
   .filter((f) => Array.isArray(f.data.cases));
 
+const require = createRequire(import.meta.url);
 const builds = {
-  esm: await import(new URL("../dist/index.js", import.meta.url).href),
-  cjs: createRequire(import.meta.url)("../dist/index.cjs"),
+  esm: {
+    ...(await import(new URL("../dist/index.js", import.meta.url).href)),
+    ...(await import(new URL("../dist/tracklist.js", import.meta.url).href)),
+  },
+  cjs: { ...require("../dist/index.cjs"), ...require("../dist/tracklist.cjs") },
 };
 
 let failed = 0;

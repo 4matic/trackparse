@@ -44,6 +44,24 @@ export function isLetterAt(s: string, index: number): boolean {
   return LETTER.test(String.fromCodePoint(cp));
 }
 
+/** R0.6 letter test on the code point that ends just before `index` (handles surrogate pairs). */
+export function isLetterBefore(s: string, index: number): boolean {
+  const low = s.charCodeAt(index - 1);
+  const high = s.charCodeAt(index - 2);
+  const pair = low >= 0xdc00 && low <= 0xdfff && high >= 0xd800 && high <= 0xdbff;
+  const start = pair ? index - 2 : index - 1;
+  return start >= 0 && isLetterAt(s, start);
+}
+
+const UPPER = /^\p{Lu}$/u;
+
+/** R6.10 uppercase letter: Unicode general category Lu, on the code point starting at `index`. */
+export function isUpperAt(s: string, index: number): boolean {
+  const cp = s.codePointAt(index);
+  if (cp === undefined) return false;
+  return UPPER.test(String.fromCodePoint(cp));
+}
+
 /** ASCII-only lowercase (A–Z → a–z). */
 export function asciiLower(s: string): string {
   let out = "";
