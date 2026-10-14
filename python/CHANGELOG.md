@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.2](https://github.com/4matic/trackparse/compare/python-v0.3.1...python-v0.3.2) (2026-10-14)
+
+
+### Documentation
+
+* link the documentation site and playground ([37d5823](https://github.com/4matic/trackparse/commit/37d5823efeeea37db59f73150e25baa2a9bb4ca6))
+* point npm and PyPI at the documentation site ([db6b201](https://github.com/4matic/trackparse/commit/db6b2014249bc24cc15e6931effc7aa523d94a32))
+
 ## [0.3.1](https://github.com/4matic/trackparse/compare/python-v0.3.0...python-v0.3.1) (2026-10-12)
 
 

@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "trackparse"
-version = "0.3.1"
+version = "0.3.2"
 description = "Spec-driven parser for music track titles and tracklists: artists, feat, remixes, versions, junk, positions, times."
 readme = "README.md"
 requires-python = ">=3.9"

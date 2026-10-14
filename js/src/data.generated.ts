@@ -1,7 +1,7 @@
 // GENERATED from spec/data — do not edit. Run `pnpm gen:data` to regenerate.
 /* eslint-disable */
 
-export const SPEC_VERSION = "0.3.1"; // x-release-please-version
+export const SPEC_VERSION = "0.3.2"; // x-release-please-version
 
 /** spec/data/descriptors.json */
 export const descriptorsData = {
