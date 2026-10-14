@@ -95,6 +95,8 @@ Every key is always present. When a guess was involved, `warnings` says which on
 
 ## At a glance
 
+**Docs:** [What it understands](https://4matic.github.io/trackparse/guides/what-it-understands/)
+
 | Number | What it means |
 |---|---|
 | **12,965** shared fixtures | 1,148 written by hand, 11,817 generated from combinations. 100% pass in JS and Python, nothing skipped. |
@@ -122,6 +124,8 @@ pip install trackparse   # or: uv add trackparse
 Python 3.9+, no dependencies. A Rust port is [on the way](#ports).
 
 ## Quick start
+
+**Docs:** [Getting started](https://4matic.github.io/trackparse/start/getting-started/)
 
 ```js
 import { parse, parseArtists, format } from "trackparse";
@@ -178,6 +182,8 @@ full Python API is in [`python/README.md`](python/README.md).
 
 ## What it understands
 
+**Docs:** [What it understands](https://4matic.github.io/trackparse/guides/what-it-understands/) · [Artists and credits](https://4matic.github.io/trackparse/guides/artists/) · [Versions and remixes](https://4matic.github.io/trackparse/guides/versions/) · [Junk, flags and prefixes](https://4matic.github.io/trackparse/guides/junk-and-flags/)
+
 These are real outputs of `parse(input)` with default options, unless noted.
 
 | Input | Artists | Title | Versions / other |
@@ -212,6 +218,8 @@ These are real outputs of `parse(input)` with default options, unless noted.
 | `The Rolling Stones - (I Can't Get No) Satisfaction` | The Rolling Stones | `(I Can't Get No) Satisfaction` | kept as is |
 
 ## Tracklists
+
+**Docs:** [Tracklists](https://4matic.github.io/trackparse/guides/tracklists/) · [Editing tracklists](https://4matic.github.io/trackparse/guides/editing-tracklists/) · [Tracklist API](https://4matic.github.io/trackparse/reference/tracklist/)
 
 Mixes and podcasts come with a tracklist: a block of text, one track per line, usually with a start
 time in front. `trackparse/tracklist` reads the whole block. Each line gets its kind, its time and a
@@ -307,6 +315,8 @@ apply_edits(text, [{"op": "set-time", "line": 8, "seconds": 4262}]).changed
 
 ### Tracklist mode
 
+**Docs:** [Tracklist mode](https://4matic.github.io/trackparse/guides/tracklists/#tracklist-mode)
+
 Inside a tracklist the first ` - ` is the artist/title separator on practically every line. A single
 track string doesn't get that benefit of the doubt, so `parse()` sometimes reads the part after the
 dash as a version or a genre. `parseTracklist` parses each line with `mode: "tracklist"`, which
@@ -329,6 +339,8 @@ neighbours, so `2 Unlimited - No Limit` between `01.` and `03.` stays an artist.
 of the list uses spaced dashes.
 
 ## How it's tested
+
+**Docs:** [How it's tested](https://4matic.github.io/trackparse/project/testing/)
 
 The fixtures in [`spec/fixtures`](spec/fixtures) are the source of truth. The spec says what should
 happen, the fixtures pin it down, and every port has to pass all of them. The JS and Python
@@ -430,6 +442,8 @@ cd python && uv run pytest   # the same fixtures and invariants in Python
 
 ## API
 
+**Docs:** [parse and ParsedTrack](https://4matic.github.io/trackparse/reference/parse/) · [Other functions](https://4matic.github.io/trackparse/reference/functions/)
+
 ### `parse(input, options?)` → `ParsedTrack`
 
 | Field | Type | |
@@ -479,6 +493,8 @@ The vocabulary is in [`spec/data`](spec/data).
 
 ### Options
 
+**Docs:** [Options](https://4matic.github.io/trackparse/reference/options/)
+
 | Option | Default | |
 |---|---|---|
 | `mode` | `"auto"` | `"clean"`, `"youtube"`, `"filename"`, `"tracklist"`, or detect from the string |
@@ -488,6 +504,8 @@ The vocabulary is in [`spec/data`](spec/data).
 | `keywords` | – | Extra vocabulary: `versionHeads`, `descriptors`, `genres`, `junk`, `featMarkers` |
 
 ### Other functions
+
+**Docs:** [Other functions](https://4matic.github.io/trackparse/reference/functions/) · [Formatting](https://4matic.github.io/trackparse/guides/formatting/)
 
 | Function | |
 |---|---|
@@ -511,6 +529,8 @@ parser.parse("Chase & Status x Camo & Krooked - Track (Alix Perez Rerub)").versi
 
 ### Modes
 
+**Docs:** [Modes](https://4matic.github.io/trackparse/guides/modes/)
+
 | Mode | For | Adds |
 |---|---|---|
 | `clean` | Store metadata, tags | Only a spaced dash separates artist and title |
@@ -520,6 +540,8 @@ parser.parse("Chase & Status x Camo & Krooked - Track (Alix Perez Rerub)").versi
 | `tracklist` | One line of a tracklist | The first spaced dash always separates, and the words right after it are never read as a version or genre suffix. `_-_` splits too. `auto` never picks it |
 
 ### Tracklist API
+
+**Docs:** [Tracklist API](https://4matic.github.io/trackparse/reference/tracklist/) · [Warnings](https://4matic.github.io/trackparse/reference/warnings/)
 
 Import from `trackparse/tracklist` (Python: `trackparse.tracklist`). It's a separate entry, so code
 that only parses single tracks never loads it.
@@ -606,6 +628,8 @@ the same keys as JS: `{"op": "shift", "seconds": 45, "from": 5}`.
 
 ## How it works
 
+**Docs:** [How it works](https://4matic.github.io/trackparse/project/how-it-works/)
+
 A fixed pipeline of hand-written scanners. There are no regexes with lookaround and no
 backtracking, so it runs in linear time and ports to Python and Rust with the same output.
 
@@ -634,6 +658,8 @@ spaced dashes. The checks run last, over the finished entries.
 
 ## Ports
 
+**Docs:** [Ports](https://4matic.github.io/trackparse/project/ports/)
+
 | Language | Package | Status |
 |---|---|---|
 | JavaScript / TypeScript | [`trackparse`](https://www.npmjs.com/package/trackparse) on npm | reference implementation, 12,965 / 12,965 fixtures, tracklists as `trackparse/tracklist` |
@@ -643,6 +669,8 @@ spaced dashes. The checks run last, over the finished entries.
 Want another language? The porting checklist is in [AGENTS.md](AGENTS.md).
 
 ## Compared to other libraries
+
+**Docs:** [Compared to others](https://4matic.github.io/trackparse/project/comparison/)
 
 | | trackparse | [get-artist-title](https://github.com/goto-bus-stop/get-artist-title) | [metadata-filter](https://github.com/web-scrobbler/metadata-filter) | [track_parser](https://rubygems.org/gems/track_parser) |
 |---|---|---|---|---|
@@ -658,6 +686,8 @@ metadata-filter is great. get-artist-title's YouTube test cases helped shape sev
 trackparse is for when you need to know who did what.
 
 ## Limitations
+
+**Docs:** [Limitations and roadmap](https://4matic.github.io/trackparse/project/roadmap/)
 
 Not there yet:
 
@@ -677,6 +707,8 @@ Planned next: the Rust port. The browser playground is already live at
 [4matic.github.io/trackparse/playground](https://4matic.github.io/trackparse/playground/).
 
 ## Contributing
+
+**Docs:** [Contributing](https://4matic.github.io/trackparse/project/contributing/)
 
 The documentation site lives in [`site/`](site) (Astro + Starlight, `pnpm docs` to run it
 locally) and deploys to GitHub Pages on every push to `main`.

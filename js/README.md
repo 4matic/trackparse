@@ -29,6 +29,8 @@ Node 18 or later. No Node-specific APIs are used, so it also runs in browsers an
 
 ## Quick start
 
+**Docs:** [Getting started](https://4matic.github.io/trackparse/start/getting-started/)
+
 ```js
 import { parse } from "trackparse";
 // const { parse } = require("trackparse");
@@ -51,11 +53,15 @@ track.mode;                        // 'youtube' (auto-detected from the junk gro
 
 ## API
 
+**Docs:** [parse and ParsedTrack](https://4matic.github.io/trackparse/reference/parse/) · [Other functions](https://4matic.github.io/trackparse/reference/functions/)
+
 ### `parse(input, options?) → ParsedTrack`
 
 Parses one track string. Every key of the result is always present.
 
 ### `parseArtists(input, options?) → Artist[]`
+
+**Docs:** [parseArtists](https://4matic.github.io/trackparse/reference/functions/#parseartistsinput-options)
 
 Splits an artist string (no title) into credits.
 
@@ -70,6 +76,8 @@ parseArtists("Sub Focus, Wilkinson & Dimension feat. Kojo");
 ```
 
 ### `format(track, options?) → string`
+
+**Docs:** [format](https://4matic.github.io/trackparse/reference/functions/#formattrack-options) · [Formatting](https://4matic.github.io/trackparse/guides/formatting/)
 
 Renders a `ParsedTrack` back to `Artists - Title (versions) (prod. ...)`.
 
@@ -92,6 +100,8 @@ format(t, { feat: "omit", versions: "none" });      // 'Wilkinson - Afterglow'
 
 ### `normalize(input) → string`
 
+**Docs:** [normalize](https://4matic.github.io/trackparse/reference/functions/#normalizeinput)
+
 The Unicode cleanup applied before parsing: NFC, zero-width spaces, BOM and soft hyphens removed, fullwidth
 brackets, smart quotes and dash variants mapped to ASCII, whitespace collapsed. Idempotent.
 
@@ -102,6 +112,8 @@ normalize("  Artist​ — Title （Remix）  “Quoted”  ");
 
 ### `allArtists(track) → Artist[]`
 
+**Docs:** [allArtists](https://4matic.github.io/trackparse/reference/functions/#allartiststrack)
+
 Track credits plus every version's remixers, deduplicated.
 
 ```js
@@ -111,6 +123,8 @@ allArtists(parse("Camo & Krooked - Kallisto (Noisia Remix)", { knownArtists: ["C
 ```
 
 ### `createParser(options) → { parse, parseArtists }`
+
+**Docs:** [createParser](https://4matic.github.io/trackparse/reference/functions/#createparseroptions)
 
 Compiles options, including extra vocabulary, once. Per-call options are merged over the base.
 
@@ -132,6 +146,8 @@ r.junk;                       // [ { raw: 'Full Album', kind: 'other' } ]
 The spec version this build implements, e.g. `"0.3.0"`. Always equal to the package version.
 
 ## Options
+
+**Docs:** [Options](https://4matic.github.io/trackparse/reference/options/)
 
 | Option | Default | Effect |
 |---|---|---|
@@ -206,6 +222,8 @@ The full field reference, a gallery of examples and the comparison with other li
 [fixtures](https://github.com/4matic/trackparse/tree/main/spec/fixtures).
 
 ## Tracklists
+
+**Docs:** [Tracklists](https://4matic.github.io/trackparse/guides/tracklists/) · [Editing tracklists](https://4matic.github.io/trackparse/guides/editing-tracklists/)
 
 `trackparse/tracklist` parses a whole tracklist: one entry per line with its kind, start time and
 a full `ParsedTrack`, plus checks with line numbers. Joining `raw + eol` over the entries gives the
@@ -287,6 +305,8 @@ Field tables and the full list of rules: the [tracklists guide](https://4matic.g
 [Tracklist API](https://4matic.github.io/trackparse/reference/tracklist/) and [SPEC R13](https://github.com/4matic/trackparse/blob/main/spec/SPEC.md#r13-tracklists).
 
 ## Limitations
+
+**Docs:** [Limitations and roadmap](https://4matic.github.io/trackparse/project/roadmap/)
 
 One track string per `parse()` call; tracklists go through `trackparse/tracklist`, which reads
 start times only (no durations, trailing times or ranges). No label/catalog, key or BPM fields, and
