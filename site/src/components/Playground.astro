@@ -1,0 +1,634 @@
+---
+import ArrowDownWideNarrow from "@lucide/astro/icons/arrow-down-wide-narrow";
+import Braces from "@lucide/astro/icons/braces";
+import CodeXml from "@lucide/astro/icons/code-xml";
+import Copy from "@lucide/astro/icons/copy";
+import FileText from "@lucide/astro/icons/file-text";
+import ListMusic from "@lucide/astro/icons/list-music";
+import Music from "@lucide/astro/icons/music";
+import Timer from "@lucide/astro/icons/timer";
+import Undo2 from "@lucide/astro/icons/undo-2";
+import "../styles/playground.css";
+
+const trackExamples = [
+  "01. Wilkinson ft. Becky Hill & Tom Cane - Afterglow (Sub Focus VIP Remix) [Official Video]",
+  "Dimension - Offshore (Mefjus Remix / Noisia Remix)",
+  "Pendulum - Watercolour (Extended VIP Mix)",
+  "Taylor Swift - Love Story (Taylor's Version)",
+  "Daft Punk - One More Time (Official Music Video) [HD]",
+  "[12:34] Noisia - Stigma",
+  '"Numb" by Linkin Park',
+  "Chase & Status x Camo & Krooked - Track (Alix Perez Rerub)",
+  "Mumford & Sons - Little Lion Man",
+  "2 Unlimited - No Limit",
+];
+
+const sample = [
+  "Hour 2",
+  "48:20 Noisia - Stigma",
+  "52:47 Mefjus & Kasra - Bandwagon (Phace Remix)",
+  "56:05 Black Sun Empire - ID",
+  "59:31 Alix Perez - Fade Away",
+  "01:03:10 Interview with Hybris",
+  "01:07:44 Imanu - Sacrifice",
+  "00:11:02 Current Value feat. Teddy Killerz - Payload",
+  "01:15:36 Hybris - Spinning Top",
+].join("\n");
+---
+
+<div class="pg not-content">
+  <div class="pg-tabs" role="tablist" aria-label="Playground">
+    <button type="button" role="tab" id="tab-track" aria-controls="panel-track" aria-selected="true">
+      <Music size={16} aria-hidden="true" /> One track
+    </button>
+    <button type="button" role="tab" id="tab-list" aria-controls="panel-list" aria-selected="false">
+      <ListMusic size={16} aria-hidden="true" /> Tracklist
+    </button>
+  </div>
+
+  <!-- Single track -->
+  <section class="pg-panel" id="panel-track" role="tabpanel" aria-labelledby="tab-track">
+    <div class="tp-card pg-box">
+      <label class="tp-label" for="pg-input">Track string</label>
+      <input id="pg-input" class="tp-input" type="text" spellcheck="false" autocomplete="off" />
+      <ul class="tp-examples" aria-label="Examples">
+        {
+          trackExamples.map((e) => (
+            <li>
+              <button type="button" data-example={e}>
+                {e}
+              </button>
+            </li>
+          ))
+        }
+      </ul>
+      <div class="tp-row pg-options">
+        <div>
+          <label class="tp-label" for="pg-mode">Mode</label>
+          <select id="pg-mode" class="tp-input">
+            <option value="auto">auto</option>
+            <option value="clean">clean</option>
+            <option value="youtube">youtube</option>
+            <option value="filename">filename</option>
+            <option value="tracklist">tracklist</option>
+          </select>
+        </div>
+        <div>
+          <label class="tp-label" for="pg-split">splitAnd</label>
+          <select id="pg-split" class="tp-input">
+            <option value="auto">auto</option>
+            <option value="always">always</option>
+            <option value="never">never</option>
+          </select>
+        </div>
+        <div class="tp-grow">
+          <label class="tp-label" for="pg-known">knownArtists (comma-separated)</label>
+          <input id="pg-known" class="tp-input" type="text" placeholder="Chase & Status, Camo & Krooked" />
+        </div>
+        <div class="tp-grow">
+          <label class="tp-label" for="pg-uploader">uploader (youtube mode)</label>
+          <input id="pg-uploader" class="tp-input" type="text" placeholder="Daft Punk - Topic" />
+        </div>
+      </div>
+    </div>
+
+    <div class="tp-card pg-box">
+      <p class="tp-line" id="pg-line" aria-live="polite"></p>
+      <div class="tp-legend" id="pg-legend"></div>
+      <div id="pg-fields"></div>
+    </div>
+
+    <div class="pg-split">
+      <div class="tp-card pg-box">
+        <div class="pg-head">
+          <span class="tp-label pg-icon-label"><Braces size={14} aria-hidden="true" /> Output (ParsedTrack)</span>
+          <button type="button" class="tp-btn small" data-copy="pg-json"><Copy size={14} aria-hidden="true" /><span>Copy JSON</span></button>
+        </div>
+        <pre class="tp-json" id="pg-json"></pre>
+      </div>
+      <div class="tp-card pg-box">
+        <span class="tp-label pg-icon-label"><CodeXml size={14} aria-hidden="true" /> format(track, options)</span>
+        <div class="tp-row">
+          <div>
+            <label class="tp-label" for="pg-feat">feat</label>
+            <select id="pg-feat" class="tp-input">
+              <option value="source">source</option>
+              <option value="artist">artist</option>
+              <option value="title">title</option>
+              <option value="omit">omit</option>
+            </select>
+          </div>
+          <div>
+            <label class="tp-label" for="pg-joiners">joiners</label>
+            <select id="pg-joiners" class="tp-input">
+              <option value="original">original</option>
+              <option value="canonical">canonical</option>
+            </select>
+          </div>
+          <div>
+            <label class="tp-label" for="pg-versions">versions</label>
+            <select id="pg-versions" class="tp-input">
+              <option value="all">all</option>
+              <option value="none">none</option>
+            </select>
+          </div>
+        </div>
+        <p class="pg-formatted" id="pg-formatted"></p>
+        <div class="pg-head">
+          <span class="tp-label">The same call in code</span>
+          <span class="pg-lang" role="group" aria-label="Language">
+            <button type="button" class="tp-btn small" data-lang="js" aria-pressed="true">JS</button>
+            <button type="button" class="tp-btn small" data-lang="py" aria-pressed="false">Python</button>
+          </span>
+        </div>
+        <pre class="tp-json" id="pg-code"></pre>
+        <button type="button" class="tp-btn small" data-copy="pg-code"><Copy size={14} aria-hidden="true" /><span>Copy code</span></button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Tracklist -->
+  <section class="pg-panel" id="panel-list" role="tabpanel" aria-labelledby="tab-list" hidden>
+    <div class="pg-split pg-list">
+      <div class="tp-card pg-box">
+        <div class="pg-head">
+          <label class="tp-label" for="tl-input">Tracklist text</label>
+          <span class="tp-muted" id="tl-meta"></span>
+        </div>
+        <textarea id="tl-input" class="tp-input" spellcheck="false" data-sample={sample}></textarea>
+        <div class="tp-row">
+          <div>
+            <label class="tp-label" for="tl-audio">audioSeconds</label>
+            <input id="tl-audio" class="tp-input pg-num" type="number" min="0" placeholder="–" />
+          </div>
+          <div>
+            <label class="tp-label" for="tl-shift">Shift by (s)</label>
+            <input id="tl-shift" class="tp-input pg-num" type="number" value="45" />
+          </div>
+          <div>
+            <label class="tp-label" for="tl-from">from line</label>
+            <input id="tl-from" class="tp-input pg-num" type="number" min="1" value="5" />
+          </div>
+          <button type="button" class="tp-btn" id="tl-do-shift"><Timer size={15} aria-hidden="true" /> Shift</button>
+          <button type="button" class="tp-btn" id="tl-do-sort"><ArrowDownWideNarrow size={15} aria-hidden="true" /> Sort by time</button>
+        </div>
+        <div class="tp-row">
+          <button type="button" class="tp-btn small" id="tl-undo" disabled><Undo2 size={14} aria-hidden="true" /> Undo edit</button>
+          <button type="button" class="tp-btn small" id="tl-sample"><FileText size={14} aria-hidden="true" /> Load the sample</button>
+          <button type="button" class="tp-btn small" data-copy="tl-input"><Copy size={14} aria-hidden="true" /><span>Copy text</span></button>
+        </div>
+        <p class="tp-muted" id="tl-editlog" aria-live="polite"></p>
+      </div>
+
+      <div class="pg-col">
+        <div class="tp-card pg-box">
+          <div class="tl-stats" id="tl-stats"></div>
+          <div id="tl-warnings"></div>
+        </div>
+        <div class="tp-card pg-box pg-tablebox">
+          <table class="tl-table">
+            <thead>
+              <tr><th>#</th><th>kind</th><th>time</th><th>artists</th><th>title</th><th>versions</th></tr>
+            </thead>
+            <tbody id="tl-rows"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<style>
+  .pg,
+  .pg-panel,
+  .pg-box {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .pg {
+    display: grid;
+    gap: 1rem;
+  }
+  .pg-tabs {
+    display: inline-flex;
+    gap: 0.25rem;
+    padding: 0.25rem;
+    background: var(--tp-surface-2);
+    border: 1px solid var(--tp-border);
+    border-radius: 999px;
+    justify-self: start;
+  }
+  .pg-icon-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+  .pg-tabs button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    font: 600 0.9rem/1 var(--sl-font);
+    color: var(--sl-color-gray-3);
+    background: transparent;
+    border: 0;
+    border-radius: 999px;
+    padding: 0.6rem 1.1rem;
+    cursor: pointer;
+  }
+  .pg-tabs button[aria-selected="true"] {
+    color: var(--sl-color-black);
+    background: var(--sl-color-accent);
+  }
+  .pg-panel {
+    display: grid;
+    gap: 1rem;
+  }
+  .pg-panel[hidden] {
+    display: none;
+  }
+  .pg-box {
+    padding: clamp(0.9rem, 2.5vw, 1.3rem);
+    display: grid;
+    gap: 0.8rem;
+    min-width: 0;
+  }
+  .pg-split {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 24rem), 1fr));
+    gap: 1rem;
+    align-items: start;
+  }
+  .pg-list {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 26rem), 1fr));
+  }
+  .pg-col {
+    display: grid;
+    gap: 1rem;
+    min-width: 0;
+  }
+  .pg-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+  }
+  .pg-head .tp-label {
+    margin: 0;
+  }
+  .pg-options select.tp-input {
+    min-width: 8rem;
+  }
+  .tp-input.pg-num {
+    width: 7rem;
+  }
+  .pg-box > .tp-btn {
+    justify-self: start;
+  }
+  .pg-formatted {
+    margin: 0;
+    font: 600 1rem/1.5 var(--sl-font-mono);
+    color: var(--sl-color-white);
+    overflow-wrap: anywhere;
+  }
+  .pg-lang {
+    display: inline-flex;
+    gap: 0.3rem;
+  }
+  .pg-lang [aria-pressed="true"] {
+    border-color: var(--sl-color-accent);
+    color: var(--sl-color-accent-high);
+  }
+  .pg-tablebox {
+    overflow-x: auto;
+  }
+  .tl-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+  }
+  .tl-table th {
+    text-align: left;
+    font-size: 0.7rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--sl-color-gray-3);
+    padding: 0.3rem 0.5rem;
+    border-bottom: 1px solid var(--tp-border);
+  }
+  .tl-table :global(td) {
+    padding: 0.4rem 0.5rem;
+    border-bottom: 1px solid var(--tp-border);
+    vertical-align: top;
+  }
+  .tl-table :global(tr.is-warn td:first-child) {
+    box-shadow: inset 3px 0 0 var(--tp-version);
+  }
+  .tl-table :global(tr.is-changed) {
+    animation: tl-flash 1.6s ease-out;
+  }
+  @keyframes tl-flash {
+    from {
+      background: color-mix(in srgb, var(--sl-color-accent) 30%, transparent);
+    }
+    to {
+      background: transparent;
+    }
+  }
+  .tl-table :global(.tl-num),
+  .tl-table :global(.tl-time) {
+    font-family: var(--sl-font-mono);
+    white-space: nowrap;
+    color: var(--sl-color-gray-3);
+  }
+  .tl-table :global(.tl-time) {
+    color: var(--tp-position);
+  }
+  .tl-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+  :global(.tl-warning) {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.55rem 0.7rem;
+    border-radius: 0.6rem;
+    background: color-mix(in srgb, var(--tp-version) 10%, transparent);
+    border: 1px solid color-mix(in srgb, var(--tp-version) 30%, transparent);
+    font-size: 0.88rem;
+    margin-top: 0.5rem;
+  }
+  :global(.tl-warning.info) {
+    background: color-mix(in srgb, var(--tp-primary) 8%, transparent);
+    border-color: color-mix(in srgb, var(--tp-primary) 25%, transparent);
+  }
+  :global(.tl-warning > .lucide) {
+    color: var(--tp-version);
+    flex: none;
+  }
+  :global(.tl-warning.info > .lucide) {
+    color: var(--tp-primary);
+  }
+  :global(.tl-warning code) {
+    font-size: 0.8rem;
+  }
+  :global(.tl-ok) {
+    margin: 0.5rem 0 0;
+    color: var(--tp-year);
+    font-weight: 600;
+  }
+</style>
+
+<script>
+  import { format, parse, type ParseOptions } from "trackparse";
+  import { applyEdits, parseTracklist, type Edit, type TracklistEntry } from "trackparse/tracklist";
+  import { icon } from "../lib/icons";
+  import { chip, escapeHtml, fieldsHtml, highlight, jsonHtml, KIND_LABEL, roleKind, segmentsHtml, type Kind } from "../lib/trackview";
+
+  const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
+
+  // ---- tabs and URL state ------------------------------------------------------------------
+  const tabs = { track: $("tab-track"), list: $("tab-list") };
+  const panels = { track: $("panel-track"), list: $("panel-list") };
+  type Tab = keyof typeof tabs;
+  let current: Tab = "track";
+
+  function select(tab: Tab, focus = false) {
+    current = tab;
+    for (const k of Object.keys(tabs) as Tab[]) {
+      tabs[k].setAttribute("aria-selected", String(k === tab));
+      tabs[k].tabIndex = k === tab ? 0 : -1;
+      panels[k].hidden = k !== tab;
+    }
+    if (focus) tabs[tab].focus();
+    saveHash();
+  }
+  tabs.track.addEventListener("click", () => select("track"));
+  tabs.list.addEventListener("click", () => select("list"));
+  for (const t of Object.values(tabs)) {
+    t.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowRight" || e.key === "ArrowLeft") select(current === "track" ? "list" : "track", true);
+    });
+  }
+
+  let hashTimer = 0;
+  function saveHash() {
+    clearTimeout(hashTimer);
+    hashTimer = window.setTimeout(() => {
+      const value = current === "track" ? input.value : tl.value;
+      const key = current === "track" ? "track" : "list";
+      history.replaceState(null, "", `#${key}=${encodeURIComponent(value)}`);
+    }, 250);
+  }
+
+  // ---- copy buttons ------------------------------------------------------------------------
+  for (const b of document.querySelectorAll<HTMLButtonElement>("[data-copy]")) {
+    b.addEventListener("click", async () => {
+      const el = $(b.dataset.copy!);
+      const text = el instanceof HTMLTextAreaElement ? el.value : (el.textContent ?? "");
+      const span = b.querySelector("span") ?? b;
+      const label = span.textContent;
+      try {
+        await navigator.clipboard.writeText(text);
+        span.textContent = "Copied";
+      } catch {
+        span.textContent = "Copy failed";
+      }
+      setTimeout(() => (span.textContent = label), 1200);
+    });
+  }
+
+  // ---- single track ------------------------------------------------------------------------
+  const input = $<HTMLInputElement>("pg-input");
+  const mode = $<HTMLSelectElement>("pg-mode");
+  const split = $<HTMLSelectElement>("pg-split");
+  const known = $<HTMLInputElement>("pg-known");
+  const uploader = $<HTMLInputElement>("pg-uploader");
+  const feat = $<HTMLSelectElement>("pg-feat");
+  const joiners = $<HTMLSelectElement>("pg-joiners");
+  const versions = $<HTMLSelectElement>("pg-versions");
+  let lang: "js" | "py" = "js";
+
+  function options(): ParseOptions {
+    const o: ParseOptions = {};
+    if (mode.value !== "auto") o.mode = mode.value as ParseOptions["mode"];
+    if (split.value !== "auto") o.splitAnd = split.value as ParseOptions["splitAnd"];
+    const names = known.value.split(",").map((s) => s.trim()).filter(Boolean);
+    if (names.length) o.knownArtists = names;
+    if (uploader.value.trim()) o.uploader = uploader.value.trim();
+    return o;
+  }
+
+  function code(s: string, o: ParseOptions, f: Record<string, unknown>): string {
+    const q = (v: string) => JSON.stringify(v);
+    if (lang === "js") {
+      const opts = Object.keys(o).length ? `, ${JSON.stringify(o)}` : "";
+      const fopts = Object.keys(f).length ? `, ${JSON.stringify(f)}` : "";
+      return `import { parse, format } from "trackparse";\n\nconst track = parse(${q(s)}${opts});\nformat(track${fopts});`;
+    }
+    const snake = (k: string) => k.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`);
+    const py = (v: unknown): string =>
+      Array.isArray(v) ? `[${v.map(py).join(", ")}]` : typeof v === "boolean" ? (v ? "True" : "False") : JSON.stringify(v);
+    const kw = (obj: Record<string, unknown>) =>
+      Object.entries(obj).map(([k, v]) => `, ${snake(k)}=${py(v)}`).join("");
+    return `from trackparse import format_track, parse\n\ntrack = parse(${q(s)}${kw(o as Record<string, unknown>)})\nformat_track(track${kw(f)})`;
+  }
+
+  function renderTrack() {
+    const s = input.value;
+    const o = options();
+    const track = parse(s, o);
+    const segs = highlight(s, track);
+    $("pg-line").innerHTML = segmentsHtml(segs) || '<span class="tp-gap">type a track name</span>';
+    const kinds = [...new Set(segs.map((x) => x.kind).filter(Boolean))] as Kind[];
+    $("pg-legend").innerHTML = kinds.map((k) => chip(KIND_LABEL[k], k)).join("");
+    $("pg-fields").innerHTML = fieldsHtml(track);
+    $("pg-json").innerHTML = jsonHtml(track);
+    const f: Record<string, unknown> = {};
+    if (feat.value !== "source") f.feat = feat.value;
+    if (joiners.value !== "original") f.joiners = joiners.value;
+    if (versions.value !== "all") f.versions = versions.value;
+    $("pg-formatted").textContent = format(track, f) || "–";
+    $("pg-code").textContent = code(s, o, f);
+    for (const b of document.querySelectorAll<HTMLButtonElement>("#panel-track [data-example]")) {
+      b.setAttribute("aria-pressed", String(b.dataset.example === s));
+    }
+    saveHash();
+  }
+
+  for (const el of [input, known, uploader]) el.addEventListener("input", renderTrack);
+  for (const el of [mode, split, feat, joiners, versions]) el.addEventListener("change", renderTrack);
+  for (const b of document.querySelectorAll<HTMLButtonElement>("#panel-track [data-example]")) {
+    b.addEventListener("click", () => {
+      input.value = b.dataset.example ?? "";
+      if (input.value.startsWith('"')) mode.value = "youtube";
+      renderTrack();
+    });
+  }
+  for (const b of document.querySelectorAll<HTMLButtonElement>("[data-lang]")) {
+    b.addEventListener("click", () => {
+      lang = b.dataset.lang as "js" | "py";
+      for (const x of document.querySelectorAll("[data-lang]")) x.setAttribute("aria-pressed", String(x === b));
+      renderTrack();
+    });
+  }
+
+  // ---- tracklist ---------------------------------------------------------------------------
+  const tl = $<HTMLTextAreaElement>("tl-input");
+  const audio = $<HTMLInputElement>("tl-audio");
+  const undoBtn = $<HTMLButtonElement>("tl-undo");
+  const history_: string[] = [];
+  let changed = new Set<number>();
+
+  const kindChip: Record<string, string> = {
+    track: "primary",
+    marker: "featured",
+    header: "title",
+    link: "producer",
+    note: "junk",
+    blank: "junk",
+  };
+
+  function listOptions() {
+    const n = Number(audio.value);
+    return audio.value !== "" && Number.isFinite(n) ? { audioSeconds: n } : {};
+  }
+
+  function row(e: TracklistEntry, warn: boolean): string {
+    const t = e.track;
+    const artists = t ? t.artists.map((a) => (a.role !== "primary" ? `${escapeHtml(a.name)} ${chip(a.role, roleKind(a))}` : escapeHtml(a.name))).join(", ") : "";
+    const title = t ? escapeHtml(t.title) : `<span class="tp-none">${escapeHtml(e.raw.trim())}</span>`;
+    const vers = t ? t.versions.map((v) => chip(v.artists[0] ? `${v.type} · ${v.artists[0].name}` : v.type, "version")).join(" ") : "";
+    const pos = t?.position ? `${chip(`#${t.position.number}`, "position")} ` : "";
+    const cls = [warn ? "is-warn" : "", changed.has(e.line) ? "is-changed" : ""].join(" ").trim();
+    return `<tr class="${cls}" id="tl-line-${e.line}"><td class="tl-num">${e.line}</td><td>${chip(e.kind, kindChip[e.kind])}</td><td class="tl-time">${e.time ? escapeHtml(e.time.raw) : ""}</td><td>${pos}${artists}</td><td>${title}</td><td>${vers}</td></tr>`;
+  }
+
+  function fmtTime(s: number | null): string {
+    if (s === null) return "–";
+    const h = Math.floor(s / 3600);
+    const m = Math.floor((s % 3600) / 60);
+    const sec = Math.floor(s % 60);
+    return `${h ? `${h}:` : ""}${String(m).padStart(h ? 2 : 1, "0")}:${String(sec).padStart(2, "0")}`;
+  }
+
+  function renderList() {
+    const text = tl.value;
+    const t0 = performance.now();
+    const list = parseTracklist(text, listOptions());
+    const ms = performance.now() - t0;
+    const warned = new Set(list.warnings.map((w) => w.line));
+    $("tl-rows").innerHTML = list.entries.map((e) => row(e, warned.has(e.line))).join("");
+    const st = list.stats;
+    $("tl-stats").innerHTML = [
+      chip(`${st.lines} lines`, "title"),
+      chip(`${st.tracks} tracks`, "primary"),
+      chip(`${st.markers} markers`, "featured"),
+      chip(`${st.timed} timed`, "position"),
+      chip(`${fmtTime(st.firstTime)} → ${fmtTime(st.lastTime)}`, "position"),
+    ].join("");
+    $("tl-meta").textContent = `parsed in ${ms < 1 ? "<1" : ms.toFixed(1)} ms`;
+    $("tl-warnings").innerHTML = list.warnings.length
+      ? list.warnings
+          .map((w, i) => {
+            const fix = w.suggestion
+              ? ` <button type="button" class="tp-btn small primary" data-fix="${i}">${icon.fix} Set line ${w.suggestion.line} to ${escapeHtml(w.suggestion.raw)}</button>`
+              : "";
+            return `<div class="tl-warning ${w.severity}">${w.severity === "info" ? icon.info : icon.warning}<a href="#tl-line-${w.line}">line ${w.line}</a> <code>${w.code}</code>${fix}</div>`;
+          })
+          .join("")
+      : '<p class="tl-ok">No warnings. Times are in order.</p>';
+    for (const b of document.querySelectorAll<HTMLButtonElement>("[data-fix]")) {
+      b.addEventListener("click", () => {
+        const s = list.warnings[Number(b.dataset.fix)].suggestion;
+        if (s) edit([{ op: "set-time", line: s.line, seconds: s.seconds }], `Set line ${s.line} to ${s.raw}`);
+      });
+    }
+    saveHash();
+  }
+
+  function edit(edits: Edit[], label: string) {
+    const r = applyEdits(tl.value, edits);
+    history_.push(tl.value);
+    undoBtn.disabled = false;
+    tl.value = r.text;
+    changed = new Set(r.changed);
+    const notes = r.warnings.map((w) => w.code).join(", ");
+    $("tl-editlog").textContent = `${label}: ${r.changed.length ? `changed line${r.changed.length > 1 ? "s" : ""} ${r.changed.join(", ")}` : "nothing changed"}${notes ? ` (${notes})` : ""}.`;
+    renderList();
+    changed = new Set();
+  }
+
+  tl.addEventListener("input", () => {
+    $("tl-editlog").textContent = "";
+    renderList();
+  });
+  audio.addEventListener("input", renderList);
+  $("tl-do-shift").addEventListener("click", () => {
+    const seconds = Number(($("tl-shift") as HTMLInputElement).value);
+    const from = Number(($("tl-from") as HTMLInputElement).value);
+    edit([{ op: "shift", seconds, from: from || 1 }], `Shift ${seconds >= 0 ? "+" : ""}${seconds} s from line ${from || 1}`);
+  });
+  $("tl-do-sort").addEventListener("click", () => edit([{ op: "sort-by-time" }], "Sort by time"));
+  undoBtn.addEventListener("click", () => {
+    const prev = history_.pop();
+    if (prev !== undefined) tl.value = prev;
+    undoBtn.disabled = history_.length === 0;
+    $("tl-editlog").textContent = "Undone.";
+    renderList();
+  });
+  $("tl-sample").addEventListener("click", () => {
+    tl.value = tl.dataset.sample ?? "";
+    renderList();
+  });
+
+  // ---- start -------------------------------------------------------------------------------
+  const params = new URLSearchParams(location.hash.slice(1));
+  input.value = params.get("track") ?? document.querySelector<HTMLButtonElement>("[data-example]")?.dataset.example ?? "";
+  tl.value = params.get("list") ?? tl.dataset.sample ?? "";
+  renderTrack();
+  renderList();
+  select(params.has("list") ? "list" : "track");
+</script>

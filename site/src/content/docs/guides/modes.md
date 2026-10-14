@@ -1,0 +1,91 @@
+---
+title: Modes
+description: clean, youtube, filename and tracklist modes, what each one adds, and how auto picks between them.
+---
+
+The same string can mean different things depending on where it came from.
+`Blink-182-All The Small Things` is clearly artist and title on YouTube. In a music library, a
+tight dash like that is more likely part of a name. Modes tell trackparse how much guessing the
+source can take.
+
+| Mode | For | What it adds |
+|---|---|---|
+| `clean` | store metadata, ID3 tags | Only a spaced dash separates artist and title |
+| `youtube` | video titles, scrobbles | Pipe segments, `"Title" by Artist`, `Artist: "Title"`, unspaced dashes, trailing junk, the uploader fallback |
+| `filename` | files on disk | Strips the extension, reads `_` as a space, accepts `01-Track` numbering |
+| `tracklist` | one line of a tracklist | The first spaced dash always separates, and the words after it are never read as a version or genre suffix |
+| `auto` | anything (the default) | Picks `filename`, `youtube` or `clean` from the string. It never picks `tracklist` |
+
+The resolved mode is in `track.mode`, so you can always see which one ran.
+
+## How auto decides
+
+1. A known audio or video extension at the end (`.mp3`, `.flac`, `.wav`, `.mp4`…) means
+   `filename`.
+2. Junk, a `|`, or a platform suffix like `- YouTube` means `youtube`.
+3. Anything else is `clean`.
+
+```js
+parse("07_Burial_-_Archangel.mp3");
+// mode 'filename', position 7, artist 'Burial', title 'Archangel'
+
+parse("Noisia - Stigma | Official Video");
+// mode 'youtube', title 'Stigma', junk [ { raw: 'Official Video', kind: 'video' } ]
+```
+
+## youtube mode
+
+Turn it on explicitly when you know the strings are video titles. It takes guesses that `clean`
+won't, and every guess shows up in `warnings`:
+
+```js
+parse('"Numb" by Linkin Park', { mode: "youtube" });
+// artists [ 'Linkin Park' ], title 'Numb', warnings [ 'bySplit' ]
+
+parse('Linkin Park: "Numb"', { mode: "youtube" });
+// artists [ 'Linkin Park' ], title 'Numb', warnings [ 'quotedTitleSplit' ]
+
+parse("Blink-182-All The Small Things", { mode: "youtube" });
+// artists [ 'Blink-182' ], title 'All The Small Things', warnings [ 'unspacedDashSplit' ]
+```
+
+In `clean` mode the last one comes back with no artist, the whole string as the title and a
+`noSeparator` warning. That's the safe answer when you can't be sure.
+
+### The uploader fallback
+
+Many music videos are titled with just the song name, and the artist is the channel. Pass the
+channel as `uploader` and youtube mode uses it when there's no separator. Auto-generated suffixes
+like `- Topic` and `VEVO` are dropped:
+
+```js
+parse("Around the World", { mode: "youtube", uploader: "Daft Punk - Topic" });
+// artists [ 'Daft Punk' ], title 'Around the World'
+```
+
+## filename mode
+
+```js
+parse("07_Burial_-_Archangel.mp3");                    // position 7, Burial / Archangel
+parse("311 - Amber.mp3").position;                     // { raw: '311', number: 311 }
+parse("311 - Amber").artists[0].name;                  // '311'
+```
+
+The last two show why the mode matters. In a file name a leading number with a dash is a track
+number. Anywhere else, `311` could be a band.
+
+## tracklist mode
+
+Inside a tracklist almost every line is `Artist - Title`, so the first spaced dash can be trusted.
+A single string doesn't get that benefit of the doubt:
+
+```js
+parse("Electrosoul System - Liquid Metal");
+// title 'Electrosoul System', junk [ { raw: 'Liquid Metal', kind: 'genre' } ]
+
+parse("Electrosoul System - Liquid Metal", { mode: "tracklist" });
+// artists [ 'Electrosoul System' ], title 'Liquid Metal'
+```
+
+[`parseTracklist`](/trackparse/guides/tracklists/) uses this mode for every line. You only need to
+set it yourself when you parse tracklist lines one at a time.

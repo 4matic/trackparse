@@ -1,0 +1,245 @@
+/* Shared styles for the landing demo and the playground. Colours come from custom.css tokens. */
+
+.tp-card {
+  background: var(--tp-surface);
+  border: 1px solid var(--tp-border);
+  border-radius: 1rem;
+  box-shadow: var(--tp-shadow);
+}
+
+.tp-input {
+  width: 100%;
+  font: 500 0.95rem/1.5 var(--sl-font-mono);
+  color: var(--sl-color-white);
+  background: var(--tp-surface-2);
+  border: 1px solid var(--tp-border);
+  border-radius: 0.7rem;
+  padding: 0.75rem 0.9rem;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.tp-input:focus {
+  outline: none;
+  border-color: var(--sl-color-accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--sl-color-accent) 25%, transparent);
+}
+textarea.tp-input {
+  resize: vertical;
+  min-height: 16rem;
+  white-space: pre;
+  overflow-wrap: normal;
+  overflow-x: auto;
+  tab-size: 4;
+}
+
+.tp-label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--sl-color-gray-3);
+  margin-bottom: 0.35rem;
+}
+
+select.tp-input {
+  font-family: var(--sl-font);
+  padding-block: 0.55rem;
+}
+
+.tp-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  font: 600 0.85rem/1 var(--sl-font);
+  color: var(--sl-color-white);
+  background: var(--tp-surface-2);
+  border: 1px solid var(--tp-border);
+  border-radius: 999px;
+  padding: 0.5rem 0.9rem;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, transform 0.05s;
+  text-decoration: none;
+}
+.tp-btn:hover {
+  border-color: var(--sl-color-accent);
+  color: var(--sl-color-white);
+}
+.tp-btn:active {
+  transform: translateY(1px);
+}
+.tp-btn.primary {
+  background: var(--sl-color-accent);
+  border-color: var(--sl-color-accent);
+  color: var(--sl-color-black);
+}
+.tp-btn.primary:hover {
+  filter: brightness(1.08);
+  color: var(--sl-color-black);
+}
+.tp-btn.small {
+  font-size: 0.78rem;
+  padding: 0.35rem 0.7rem;
+}
+
+.tp-examples {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.tp-examples li {
+  min-width: 0;
+  max-width: 100%;
+}
+.tp-examples button {
+  font: 500 0.78rem/1.2 var(--sl-font-mono);
+  color: var(--sl-color-gray-2);
+  background: transparent;
+  border: 1px dashed var(--tp-border);
+  border-radius: 999px;
+  padding: 0.3rem 0.65rem;
+  cursor: pointer;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tp-examples button:hover,
+.tp-examples button[aria-pressed="true"] {
+  color: var(--sl-color-white);
+  border-style: solid;
+  border-color: var(--sl-color-accent);
+  background: color-mix(in srgb, var(--sl-color-accent) 10%, transparent);
+}
+
+/* The coloured input line */
+.tp-line {
+  font: 500 clamp(0.9rem, 1.8vw, 1.15rem) / 2.1 var(--sl-font-mono);
+  overflow-wrap: anywhere;
+  margin: 0;
+}
+.tp-seg {
+  color: var(--tp-c);
+  background: color-mix(in srgb, var(--tp-c) 14%, transparent);
+  border-bottom: 2px solid var(--tp-c);
+  border-radius: 0.3rem 0.3rem 0 0;
+  padding: 0.1em 0.05em;
+}
+.tp-seg.tp-title {
+  --tp-c: var(--sl-color-white);
+  font-weight: 700;
+}
+.tp-seg.tp-junk {
+  text-decoration: line-through;
+  text-decoration-thickness: 1px;
+}
+.tp-gap {
+  color: var(--sl-color-gray-4);
+}
+
+.tp-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.5rem;
+  margin-top: 0.4rem;
+}
+
+/* Field list */
+.tp-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr));
+  gap: 0.6rem;
+  margin: 0;
+}
+.tp-field {
+  background: var(--tp-surface-2);
+  border: 1px solid var(--tp-border);
+  border-radius: 0.7rem;
+  padding: 0.6rem 0.8rem;
+  min-width: 0;
+}
+.tp-field dt {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--sl-color-gray-3);
+  margin: 0 0 0.25rem;
+}
+.tp-field dd {
+  margin: 0;
+  font-size: 0.92rem;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+.tp-artist {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35em;
+  margin-right: 0.6em;
+}
+.tp-joiner {
+  font-family: var(--sl-font-mono);
+  font-size: 0.8em;
+  color: var(--sl-color-gray-3);
+}
+.tp-none {
+  color: var(--sl-color-gray-4);
+  font-style: italic;
+}
+.tp-warn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3em;
+  font-family: var(--sl-font-mono);
+  font-size: 0.8rem;
+  color: var(--tp-version);
+}
+.tp-field s {
+  color: var(--sl-color-gray-3);
+}
+
+/* JSON panel */
+.tp-json {
+  margin: 0;
+  max-height: 32rem;
+  overflow: auto;
+  font: 0.8rem/1.55 var(--sl-font-mono);
+  background: var(--tp-surface-2);
+  border: 1px solid var(--tp-border);
+  border-radius: 0.7rem;
+  padding: 0.9rem 1rem;
+  color: var(--sl-color-gray-2);
+}
+.j-key { color: var(--tp-primary); }
+.j-str { color: var(--tp-year); }
+.j-num { color: var(--tp-version); }
+.j-lit { color: var(--tp-featured); }
+
+.tp-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  align-items: end;
+}
+.tp-row > * {
+  margin: 0 !important;
+}
+.tp-grow {
+  flex: 1 1 14rem;
+  min-width: 0;
+}
+
+.tp-muted {
+  color: var(--sl-color-gray-3);
+  font-size: 0.85rem;
+}
+
+details.tp-details > summary {
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--sl-color-gray-2);
+}

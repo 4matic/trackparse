@@ -1,0 +1,131 @@
+@import "@fontsource-variable/inter";
+@import "@fontsource-variable/space-grotesk";
+@import "@fontsource-variable/jetbrains-mono";
+
+/* Field colours used by the playground and the docs (one per kind of output). */
+:root[data-theme="light"] {
+  --tp-position: #0f9f7f;
+  --tp-primary: #1f7ad6;
+  --tp-featured: #7c4ddb;
+  --tp-producer: #c03f8f;
+  --tp-version: #c27100;
+  --tp-junk: #8a8599;
+  --tp-year: #3b8f2f;
+  --tp-title: var(--sl-color-white);
+  --tp-surface: #ffffff;
+  --tp-surface-2: #f6f4fb;
+  --tp-border: #e3dff0;
+  --tp-shadow: 0 1px 2px rgb(20 17 31 / 0.06), 0 8px 24px -12px rgb(20 17 31 / 0.18);
+}
+
+:root {
+  --tp-position: #3ddbb5;
+  --tp-primary: #5eb8ff;
+  --tp-featured: #b18cff;
+  --tp-producer: #ff7ac6;
+  --tp-version: #ffb547;
+  --tp-junk: #8f8aa3;
+  --tp-year: #8ee07a;
+  --tp-surface: #1a1727;
+  --tp-surface-2: #211d31;
+  --tp-border: #2f2a44;
+  --tp-shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 12px 32px -16px rgb(0 0 0 / 0.6);
+}
+
+/* Starlight theme: violet accent, inky greys. Starlight treats :root as dark. */
+:root {
+  --sl-font: "Inter Variable", system-ui, sans-serif;
+  --sl-font-mono: "JetBrains Mono Variable", ui-monospace, monospace;
+}
+
+:root[data-theme="light"] {
+  --sl-font: "Inter Variable", system-ui, sans-serif;
+  --sl-font-mono: "JetBrains Mono Variable", ui-monospace, monospace;
+  --sl-color-accent-low: #e6dcff;
+  --sl-color-accent: #6a3fd6;
+  --sl-color-accent-high: #2d1670;
+  --sl-color-white: #14111f;
+  --sl-color-gray-1: #24202f;
+  --sl-color-gray-2: #3b364a;
+  --sl-color-gray-3: #5f5970;
+  --sl-color-gray-4: #8f8aa3;
+  --sl-color-gray-5: #cfcadc;
+  --sl-color-gray-6: #ece9f4;
+  --sl-color-gray-7: #f7f6fb;
+  --sl-color-black: #ffffff;
+}
+
+:root {
+  --sl-color-accent-low: #241a47;
+  --sl-color-accent: #9a78ff;
+  --sl-color-accent-high: #d9ccff;
+  --sl-color-white: #ffffff;
+  --sl-color-gray-1: #ece9f4;
+  --sl-color-gray-2: #c9c4d8;
+  --sl-color-gray-3: #9b95ae;
+  --sl-color-gray-4: #6b6680;
+  --sl-color-gray-5: #3d3852;
+  --sl-color-gray-6: #241f35;
+  --sl-color-black: #12101b;
+}
+
+h1,
+h2,
+h3,
+h4,
+.site-title,
+.hero h1 {
+  font-family: "Space Grotesk Variable", var(--sl-font);
+  letter-spacing: -0.02em;
+}
+
+.sl-markdown-content h2 {
+  margin-top: 2.5rem;
+}
+
+/* Tables read better with a little air and tabular numbers. */
+.sl-markdown-content table {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Splash hero */
+.hero {
+  padding-block: clamp(2.5rem, 6vw, 5rem) 1.5rem;
+}
+.hero h1 {
+  font-size: clamp(2.6rem, 6vw, 4.2rem);
+  line-height: 1.02;
+  background: linear-gradient(100deg, var(--sl-color-white) 30%, var(--sl-color-accent) 70%, var(--tp-version));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.hero .tagline {
+  max-width: 38rem;
+  color: var(--sl-color-gray-2);
+}
+
+/* Small field-colour chips used inline in docs: <span class="tp-chip tp-primary">primary</span> */
+.tp-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35em;
+  padding: 0.05em 0.55em;
+  border-radius: 999px;
+  font-size: 0.82em;
+  font-weight: 600;
+  white-space: nowrap;
+  color: var(--tp-c);
+  background: color-mix(in srgb, var(--tp-c) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--tp-c) 35%, transparent);
+}
+.tp-position { --tp-c: var(--tp-position); }
+.tp-primary { --tp-c: var(--tp-primary); }
+.tp-featured { --tp-c: var(--tp-featured); }
+.tp-producer { --tp-c: var(--tp-producer); }
+.tp-remixer,
+.tp-version { --tp-c: var(--tp-version); }
+.tp-junk { --tp-c: var(--tp-junk); }
+.tp-year,
+.tp-flag { --tp-c: var(--tp-year); }
+.tp-title { --tp-c: var(--sl-color-gray-1); }

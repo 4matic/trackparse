@@ -1,0 +1,120 @@
+---
+title: Getting started
+description: Install trackparse for JavaScript or Python and parse your first track.
+---
+
+import { Aside, Steps, Tabs, TabItem } from "@astrojs/starlight/components";
+
+<Steps>
+
+1. Install the package.
+
+    <Tabs syncKey="lang">
+      <TabItem label="JavaScript">
+        ```sh
+        npm install trackparse   # or: pnpm add / yarn add / bun add trackparse
+        ```
+
+        Node 18 or newer, or any runtime with ES2020. ESM and CommonJS both work, and the types
+        are included.
+      </TabItem>
+      <TabItem label="Python">
+        ```sh
+        pip install trackparse   # or: uv add trackparse
+        ```
+
+        Python 3.9 or newer, no dependencies. The package ships `py.typed` and passes
+        `mypy --strict`.
+      </TabItem>
+    </Tabs>
+
+2. Parse a track.
+
+    <Tabs syncKey="lang">
+      <TabItem label="JavaScript">
+        ```js
+        import { parse } from "trackparse";
+        // CommonJS: const { parse } = require("trackparse");
+
+        const track = parse("Noisia feat. Foreign Beggars - Shellshock");
+
+        track.title;                          // 'Shellshock'
+        track.artists.map((a) => a.name);     // [ 'Noisia', 'Foreign Beggars' ]
+        track.artists[1].role;                // 'featured'
+        ```
+      </TabItem>
+      <TabItem label="Python">
+        ```python
+        from trackparse import parse
+
+        track = parse("Noisia feat. Foreign Beggars - Shellshock")
+
+        track.title                           # 'Shellshock'
+        [a.name for a in track.artists]       # ['Noisia', 'Foreign Beggars']
+        track.artists[1].role                 # 'featured'
+        ```
+      </TabItem>
+    </Tabs>
+
+3. Look at the versions and the noise.
+
+    <Tabs syncKey="lang">
+      <TabItem label="JavaScript">
+        ```js
+        const t = parse("Daft Punk - One More Time (Official Music Video) [HD]");
+        t.title;   // 'One More Time'
+        t.junk;    // [ { raw: 'Official Music Video', kind: 'video' }, { raw: 'HD', kind: 'quality' } ]
+
+        const r = parse("Dimension - Offshore (Mefjus Remix / Noisia Remix)");
+        r.versions.map((v) => `${v.type} by ${v.artists[0].name}`);
+        // [ 'remix by Mefjus', 'remix by Noisia' ]
+        ```
+      </TabItem>
+      <TabItem label="Python">
+        ```python
+        t = parse("Daft Punk - One More Time (Official Music Video) [HD]")
+        t.title   # 'One More Time'
+        t.junk    # (Junk(raw='Official Music Video', kind='video'), Junk(raw='HD', kind='quality'))
+
+        r = parse("Dimension - Offshore (Mefjus Remix / Noisia Remix)")
+        [f"{v.type} by {v.artists[0].name}" for v in r.versions]
+        # ['remix by Mefjus', 'remix by Noisia']
+        ```
+      </TabItem>
+    </Tabs>
+
+4. Tell it about names that contain a joiner.
+
+    <Tabs syncKey="lang">
+      <TabItem label="JavaScript">
+        ```js
+        parse("Chase & Status - Baddadan").artists.map((a) => a.name);
+        // [ 'Chase', 'Status' ]
+
+        parse("Chase & Status - Baddadan", { knownArtists: ["Chase & Status"] }).artists.map((a) => a.name);
+        // [ 'Chase & Status' ]
+        ```
+      </TabItem>
+      <TabItem label="Python">
+        ```python
+        [a.name for a in parse("Chase & Status - Baddadan").artists]
+        # ['Chase', 'Status']
+
+        [a.name for a in parse("Chase & Status - Baddadan", known_artists=["Chase & Status"]).artists]
+        # ['Chase & Status']
+        ```
+      </TabItem>
+    </Tabs>
+
+</Steps>
+
+<Aside type="tip" title="Parsing a lot of strings?">
+`createParser(options)` compiles your options and keywords once. Its `parse` method is the same
+function with those options already applied. See [Other functions](/trackparse/reference/functions/#createparseroptions).
+</Aside>
+
+## Next
+
+- Try your own strings in the [playground](/trackparse/playground/).
+- [What it understands](/trackparse/guides/what-it-understands/) is a tour of real inputs.
+- Working with mixes? Read [Tracklists](/trackparse/guides/tracklists/).

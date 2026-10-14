@@ -1,0 +1,3 @@
+dist/
+.astro/
+src/content/docs/reference/spec.md

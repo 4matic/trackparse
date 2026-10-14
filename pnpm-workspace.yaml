@@ -1,5 +1,6 @@
 packages:
   - js
   - spec/generator
+  - site
 allowBuilds:
   esbuild: true
