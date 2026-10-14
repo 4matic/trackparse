@@ -1,0 +1,26 @@
+---
+import StarlightPage from "@astrojs/starlight/components/StarlightPage.astro";
+
+const base = import.meta.env.BASE_URL;
+---
+
+<StarlightPage
+  frontmatter={{
+    title: "Page not found",
+    description: "This page doesn't exist.",
+    template: "splash",
+    editUrl: false,
+    pagefind: false,
+    hero: {
+      title: "404",
+      tagline: "There's no page at this address. It may have moved when the docs were reorganised.",
+      actions: [
+        { text: "Home", link: base, icon: "right-arrow", variant: "primary" },
+        { text: "Getting started", link: `${base}start/getting-started/`, variant: "minimal" },
+        { text: "Playground", link: `${base}playground/`, variant: "minimal" },
+      ],
+    },
+  }}
+>
+  <p>Try the search at the top of the page, or <a href="https://github.com/4matic/trackparse/issues">open an issue</a> if a link on this site sent you here.</p>
+</StarlightPage>
