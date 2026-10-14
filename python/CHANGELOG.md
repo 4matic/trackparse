@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.3](https://github.com/4matic/trackparse/compare/python-v0.3.2...python-v0.3.3) (2026-10-14)
+
+
+### Documentation
+
+* keep the site and READMEs in sync with the code, link README sections to the docs ([20b9d3d](https://github.com/4matic/trackparse/commit/20b9d3db5a22705bfe91e805564b295fc67c0641))
+* **python:** link getting started instead of the removed Python guide ([ccd76ec](https://github.com/4matic/trackparse/commit/ccd76ec93b5b19d5367a63a970b0ce79077fc308))
+
 ## [0.3.2](https://github.com/4matic/trackparse/compare/python-v0.3.1...python-v0.3.2) (2026-10-14)
 
 
