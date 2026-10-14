@@ -1,0 +1,66 @@
+---
+// What the library does, as a plain two-column list. No icons: the words carry it.
+interface Item {
+  title: string;
+  body: string;
+}
+const { items } = Astro.props as { items: Item[] };
+---
+
+<ol class="features not-content">
+  {
+    items.map((it, i) => (
+      <li>
+        <span class="n" aria-hidden="true">{String(i + 1).padStart(2, "0")}</span>
+        <h3>{it.title}</h3>
+        <p set:html={it.body} />
+      </li>
+    ))
+  }
+</ol>
+
+<style>
+  .features {
+    list-style: none;
+    margin: 1.5rem 0 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 3rem;
+  }
+  .features li {
+    display: grid;
+    grid-template-columns: 2.2rem minmax(0, 1fr);
+    column-gap: 0.4rem;
+    padding: 1.25rem 0 1.35rem;
+    border-top: 1px solid var(--tp-border);
+    margin: 0;
+  }
+  .n {
+    grid-row: span 2;
+    font: 500 0.78rem/1.9 var(--sl-font-mono);
+    color: var(--sl-color-gray-4);
+  }
+  h3 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    color: var(--sl-color-white);
+  }
+  p {
+    margin: 0.35rem 0 0;
+    font-size: 0.92rem;
+    line-height: 1.6;
+    color: var(--sl-color-gray-3);
+  }
+  p :global(code) {
+    font: 0.86em var(--sl-font-mono);
+    color: var(--sl-color-gray-2);
+  }
+  @media (max-width: 50rem) {
+    .features {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+</style>

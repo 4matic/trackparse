@@ -1,9 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="trackparse">
-  <rect x="2" y="2" width="60" height="60" rx="16" fill="#14111f"/>
-  <rect x="12" y="17" width="16" height="7" rx="3.5" fill="#5eb8ff"/>
-  <rect x="31" y="17" width="21" height="7" rx="3.5" fill="#b18cff"/>
-  <rect x="12" y="28.5" width="28" height="7" rx="3.5" fill="#f4f1ff"/>
-  <rect x="43" y="28.5" width="9" height="7" rx="3.5" fill="#ffb547"/>
-  <rect x="12" y="40" width="10" height="7" rx="3.5" fill="#3ddbb5"/>
-  <rect x="25" y="40" width="27" height="7" rx="3.5" fill="#6b6680" opacity=".55"/>
-</svg>

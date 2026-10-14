@@ -3,90 +3,54 @@ title: trackparse
 description: Turn messy track names into structured data. Artists with roles, remixes and versions, and the noise around them, for JavaScript and Python.
 template: splash
 hero:
-  title: Messy track names in, structured data out
-  tagline: Give it "01. Wilkinson ft. Becky Hill - Afterglow (Sub Focus VIP Remix) [Official Video]" and it tells you who made the track, who's featured, who did the remix and which part is just noise. Works the same in JavaScript and Python. No dependencies.
+  title: Messy track names in.<br />Structured data out.
+  tagline: trackparse reads track titles the way people actually write them, from store metadata to YouTube uploads to the tracklist under a mix. You get the artists with their roles, the remixes and versions, and the noise, each in its own field.
   actions:
     - text: Get started
       link: /trackparse/start/getting-started/
-      icon: right-arrow
     - text: Open the playground
       link: /trackparse/playground/
       variant: secondary
-    - text: View on GitHub
-      link: https://github.com/4matic/trackparse
-      icon: external
-      variant: minimal
 ---
 
-import { CardGrid, LinkCard, Tabs, TabItem } from "@astrojs/starlight/components";
-import Disc3 from "@lucide/astro/icons/disc-3";
-import Eraser from "@lucide/astro/icons/eraser";
-import Languages from "@lucide/astro/icons/languages";
-import ListMusic from "@lucide/astro/icons/list-music";
-import ShieldCheck from "@lucide/astro/icons/shield-check";
-import Users from "@lucide/astro/icons/users";
-import Feature from "../../components/Feature.astro";
-import FeatureGrid from "../../components/FeatureGrid.astro";
+import { LinkCard, Tabs, TabItem } from "@astrojs/starlight/components";
+import Compare from "../../components/Compare.astro";
+import Features from "../../components/Features.astro";
 import HeroDemo from "../../components/HeroDemo.astro";
+import Install from "../../components/Install.astro";
 import Stats from "../../components/Stats.astro";
+
+<Install />
 
 <HeroDemo />
 
-<Tabs syncKey="pkg">
-  <TabItem label="npm">
-    ```sh
-    npm install trackparse
-    ```
-  </TabItem>
-  <TabItem label="pnpm">
-    ```sh
-    pnpm add trackparse
-    ```
-  </TabItem>
-  <TabItem label="pip">
-    ```sh
-    pip install trackparse
-    ```
-  </TabItem>
-  <TabItem label="uv">
-    ```sh
-    uv add trackparse
-    ```
-  </TabItem>
-</Tabs>
+<div class="home-split">
+<div>
 
 ## Extract, don't delete
 
-Most title parsers split on the dash, hand you `["Wilkinson ft. Becky Hill", "Afterglow (Sub Focus VIP Remix)"]` and call it a day. Others "clean" the string and throw the feat and the remix away. You lose exactly the parts you probably wanted.
+Most title parsers split on the dash and hand you two strings. Others "clean" the title and throw the
+feature and the remix away with the brackets.
 
-trackparse keeps everything. Each piece it recognises goes into a field with a label on it, and anything it doesn't recognise stays in the title, word for word. If you only want a clean title, it's there. If you want to know that Sub Focus did a VIP remix, that's there too.
+trackparse keeps everything. What it recognises goes into a labelled field, and what it doesn't stays
+in the title, word for word.
 
-<FeatureGrid>
-  <Feature title="Credits with roles" icon={Users} tone="primary">
-    Primary artists, features, producers and remixers, each with the joiner it was written with.
-    `Skrillex & Diplo x Justin Bieber` is three artists. `Mumford & Sons` is one.
-  </Feature>
-  <Feature title="27 version types" icon={Disc3} tone="version">
-    Remix, VIP, bootleg, extended, radio edit, live, remaster, sped up, slowed and the rest. Each
-    one comes with its remixers, modifiers and year.
-  </Feature>
-  <Feature title="Noise, labelled" icon={Eraser} tone="junk">
-    `[Official Video]`, `[HD]`, `- YouTube` and `[NCS Release]` come out of the title, but they go
-    into `junk` with a kind attached instead of disappearing.
-  </Feature>
-  <Feature title="Whole tracklists" icon={ListMusic} tone="position">
-    Paste the tracklist of a mix and get every line parsed, plus warnings when a time is out of
-    order, often with the fix. Edits rewrite only the lines you name.
-  </Feature>
-  <Feature title="One spec, two languages" icon={Languages} tone="featured">
-    The JavaScript and Python packages pass the same 12,965 fixtures and return byte-identical
-    JSON. A Rust port is next.
-  </Feature>
-  <Feature title="Small and total" icon={ShieldCheck} tone="year">
-    No dependencies, about 17 kB gzipped, linear time. It never throws on any input string. Bad
-    options fall back to defaults.
-  </Feature>
-</FeatureGrid>
+</div>
+<Compare />
+</div>
+
+## What you get
+
+<Features
+  items={[
+    { title: "Credits with roles", body: "Primary artists, features, producers and remixers, each with the joiner it was written with. <code>Skrillex &amp; Diplo x Justin Bieber</code> is three artists; with <code>knownArtists</code>, <code>Chase &amp; Status</code> stays one." },
+    { title: "27 version types", body: "Remix, VIP, bootleg, extended, radio edit, live, remaster, sped up, slowed and the rest, each with its remixers, modifiers and year." },
+    { title: "Noise, labelled", body: "<code>[Official Video]</code>, <code>[HD]</code>, <code>- YouTube</code> and <code>[NCS Release]</code> leave the title but land in <code>junk</code> with a kind, instead of disappearing." },
+    { title: "Whole tracklists", body: "Paste the tracklist of a mix: every line is parsed, times are checked, and an out-of-order time often comes with the fix. Edits rewrite only the lines you name." },
+    { title: "One spec, two languages", body: "The JavaScript and Python packages pass the same 12,965 fixtures and return byte-identical JSON. A Rust port is next." },
+    { title: "Small and total", body: "No dependencies, about 17 kB gzipped, linear time. It never throws on a string, and bad options fall back to defaults." },
+  ]}
+/>
 
 <Stats />
 
@@ -121,9 +85,9 @@ trackparse keeps everything. Each piece it recognises goes into a field with a l
 
 ## Where to next
 
-<CardGrid>
+<div class="home-next">
   <LinkCard title="Getting started" description="Install it and parse your first track in two minutes." href="/trackparse/start/getting-started/" />
   <LinkCard title="What it understands" description="A tour of real inputs and what comes out." href="/trackparse/guides/what-it-understands/" />
   <LinkCard title="Tracklists" description="Parse, check and edit the tracklist of a mix." href="/trackparse/guides/tracklists/" />
   <LinkCard title="The spec" description="Rules R0 to R13, the contract every port follows." href="/trackparse/reference/spec/" />
-</CardGrid>
+</div>

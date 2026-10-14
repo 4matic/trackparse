@@ -20,7 +20,7 @@ export default defineConfig({
       disable404Route: true,
       description:
         "Turn messy track names into structured data: artists, features, remixes, versions and the noise around them. JavaScript and Python, one spec.",
-      logo: { src: "./src/assets/logo.svg", replacesTitle: false },
+      logo: { light: "./src/assets/logo-light.svg", dark: "./src/assets/logo-dark.svg", replacesTitle: false },
       favicon: "/favicon.svg",
       social: [
         { icon: "github", label: "GitHub", href: repo },
@@ -36,8 +36,19 @@ export default defineConfig({
         { tag: "meta", attrs: { name: "twitter:card", content: "summary_large_image" } },
       ],
       expressiveCode: {
-        themes: ["github-dark-default", "github-light-default"],
-        styleOverrides: { borderRadius: "0.6rem" },
+        themes: ["vitesse-dark", "vitesse-light"],
+        // Plain frames: no terminal window dots, no shadow, hairline border like the rest of the site.
+        defaultProps: { overridesByLang: { "sh,bash,shell,zsh": { frame: "code" } } },
+        styleOverrides: {
+          borderRadius: "8px",
+          borderColor: "var(--tp-border)",
+          codeBackground: ({ theme }) => (theme.type === "dark" ? "#0f0f0f" : "#fafafa"),
+          codeFontFamily: "var(--sl-font-mono)",
+          codeFontSize: "0.85rem",
+          codeLineHeight: "1.65",
+          uiFontFamily: "var(--sl-font)",
+          frames: { shadowColor: "transparent", frameBoxShadowCssValue: "none" },
+        },
       },
       sidebar: [
         {
@@ -45,7 +56,7 @@ export default defineConfig({
           items: [
             { label: "Introduction", slug: "start/introduction" },
             { label: "Getting started", slug: "start/getting-started" },
-            { label: "Playground", link: "/playground/", badge: { text: "live", variant: "success" } },
+            { label: "Playground", link: "/playground/", badge: { text: "live", variant: "note" } },
           ],
         },
         {
