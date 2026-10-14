@@ -3,8 +3,14 @@ title: Formatting
 description: Turn a ParsedTrack back into a string, in the style you want.
 ---
 
-`format(track, options?)` renders a parsed track back to a string. Use it to normalise a messy
+import { Tabs, TabItem } from "@astrojs/starlight/components";
+
+`format(track, options?)` (`format_track(track, **options)` in Python) renders a parsed track back
+to a string. Use it to normalise a messy
 library to one style, or to build a display title without the junk.
+
+<Tabs syncKey="lang">
+<TabItem label="JavaScript">
 
 ```js
 import { format, parse } from "trackparse";
@@ -16,6 +22,23 @@ const t = parse(
 format(t);
 // 'Wilkinson ft. Becky Hill & Tom Cane - Afterglow (Sub Focus VIP Remix)'
 ```
+
+</TabItem>
+<TabItem label="Python">
+
+```python
+from trackparse import format_track, parse
+
+t = parse(
+    "01. Wilkinson ft. Becky Hill & Tom Cane - Afterglow (Sub Focus VIP Remix) [Official Video]"
+)
+
+format_track(t)
+# 'Wilkinson ft. Becky Hill & Tom Cane - Afterglow (Sub Focus VIP Remix)'
+```
+
+</TabItem>
+</Tabs>
 
 Junk is never written back. Everything else is, by default, the way it was written.
 
@@ -29,6 +52,9 @@ Junk is never written back. Everything else is, by default, the way it was writt
 | `versions` | `"all"` or `"none"` | `"all"` |
 | `producers` | write `(prod. by …)` credits | `true` |
 | `position` | write the track number back | `false` |
+
+<Tabs syncKey="lang">
+<TabItem label="JavaScript">
 
 ```js
 format(t, { feat: "title" });
@@ -48,8 +74,31 @@ format(parse("Future - Mask Off (prod. by Metro Boomin)"), { producers: false })
 // 'Future - Mask Off'
 ```
 
-In Python the function is `format_track`, with keyword arguments:
-`format_track(t, feat="title", joiners="canonical")`.
+</TabItem>
+<TabItem label="Python">
+
+```python
+format_track(t, feat="title")
+# 'Wilkinson - Afterglow (ft. Becky Hill & Tom Cane) (Sub Focus VIP Remix)'
+
+format_track(t, feat="title", joiners="canonical")
+# 'Wilkinson - Afterglow (feat. Becky Hill & Tom Cane) (Sub Focus VIP Remix)'
+
+format_track(t, feat="artist", feat_marker="featuring")
+# 'Wilkinson featuring Becky Hill & Tom Cane - Afterglow (Sub Focus VIP Remix)'
+
+format_track(t, feat="omit")       # 'Wilkinson - Afterglow (Sub Focus VIP Remix)'
+format_track(t, versions="none")   # 'Wilkinson ft. Becky Hill & Tom Cane - Afterglow'
+format_track(t, position=True)     # '01. Wilkinson ft. Becky Hill & Tom Cane - Afterglow (Sub Focus VIP Remix)'
+
+format_track(parse("Future - Mask Off (prod. by Metro Boomin)"), producers=False)
+# 'Future - Mask Off'
+```
+
+</TabItem>
+</Tabs>
+
+Python takes the options as keyword arguments, so `featMarker` is `feat_marker`.
 
 ## Round trip
 
@@ -57,9 +106,22 @@ Parsing the formatted string gives back the same artist names and roles, the sam
 same version types and remixers, as long as the first parse raised no warnings. The spec makes this
 an invariant (R11.6), and the property tests check it on generated input:
 
+<Tabs syncKey="lang">
+<TabItem label="JavaScript">
+
 ```js
 parse(format(parse(s)))  // same artists, title and versions as parse(s)
 ```
+
+</TabItem>
+<TabItem label="Python">
+
+```python
+parse(format_track(parse(s)))  # same artists, title and versions as parse(s)
+```
+
+</TabItem>
+</Tabs>
 
 The [playground](/trackparse/playground/) has a `format()` panel if you want to try the options on
 your own strings.

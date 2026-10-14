@@ -3,21 +3,37 @@ title: Tracklist API
 description: parseTracklist, applyEdits and every field they return.
 ---
 
+import { Tabs, TabItem } from "@astrojs/starlight/components";
+
+<Tabs syncKey="lang">
+<TabItem label="JavaScript">
+
 ```js
 import { applyEdits, parseTracklist } from "trackparse/tracklist";
 // CommonJS: const { applyEdits, parseTracklist } = require("trackparse/tracklist");
 ```
 
+</TabItem>
+<TabItem label="Python">
+
 ```python
 from trackparse.tracklist import apply_edits, parse_tracklist
 ```
 
-Neither function throws on string input. The guides [Tracklists](/trackparse/guides/tracklists/)
+</TabItem>
+</Tabs>
+
+Neither function throws on string input. In Python the results are frozen dataclasses with
+snake_case attributes (`spec_version`, `first_time`) and a `to_dict()` that returns the spec's JSON;
+edits are plain dicts with the same keys as in JavaScript, `"from"` included. The guides [Tracklists](/trackparse/guides/tracklists/)
 and [Editing tracklists](/trackparse/guides/editing-tracklists/) walk through examples.
 
 ## parseTracklist(text, options?)
 
 Returns a `Tracklist`. Every key is always present.
+
+<Tabs syncKey="lang">
+<TabItem label="JavaScript">
 
 ```ts
 {
@@ -27,6 +43,21 @@ Returns a `Tracklist`. Every key is always present.
   stats: { lines, tracks, markers, timed, firstTime, lastTime };
 }
 ```
+
+</TabItem>
+<TabItem label="Python">
+
+```python
+Tracklist(
+    spec_version: str,
+    entries: tuple[TracklistEntry, ...],
+    warnings: tuple[TracklistWarning, ...],
+    stats: Stats,   # lines, tracks, markers, timed, first_time, last_time
+)
+```
+
+</TabItem>
+</Tabs>
 
 ### TracklistEntry
 
@@ -44,9 +75,23 @@ One per line, in order.
 
 ### TracklistWarning
 
+<Tabs syncKey="lang">
+<TabItem label="JavaScript">
+
 ```ts
 { code: TracklistWarningCode; line: number; severity: "info" | "warning"; suggestion: { line, raw, seconds } | null }
 ```
+
+</TabItem>
+<TabItem label="Python">
+
+```python
+TracklistWarning(code: TracklistWarningCode, line: int, severity: Severity, suggestion: Optional[Suggestion])
+# Suggestion(line: int, raw: str, seconds: float)
+```
+
+</TabItem>
+</Tabs>
 
 Sorted by line. The codes are listed under [Warnings](/trackparse/reference/warnings/#tracklist-warnings).
 Warnings from each line's own `ParsedTrack` stay on `entries[i].track.warnings` and aren't repeated
@@ -63,7 +108,7 @@ here.
 
 ## applyEdits(text, edits, options?)
 
-Returns `{ text, changed, warnings }`.
+Returns `{ text, changed, warnings }` (Python: an `EditResult`).
 
 | Field | |
 |---|---|
@@ -105,12 +150,28 @@ them.
 | `audioSeconds` | – | Length of the audio. Enables `time-after-audio-end` |
 | `markerWords` | `[]` | Extra marker words |
 
-Python uses keyword arguments (`audio_seconds=`, `marker_words=`).
+Python uses keyword arguments: `mode`, `known_artists`, `split_and`, `keywords`, `audio_seconds`,
+`marker_words`.
 
 ## Types
+
+<Tabs syncKey="lang">
+<TabItem label="JavaScript">
 
 Exported from `trackparse/tracklist`: `Tracklist`, `TracklistEntry`, `EntryKind`, `EntryParts`,
 `Eol`, `TracklistTime`, `TimeSuggestion`, `TracklistStats`, `TracklistWarning`,
 `TracklistWarningCode`, `TracklistOptions`, `Edit`, `EditResult`, `EditWarning`,
-`EditWarningCode`. The JSON Schema is
+`EditWarningCode`.
+
+</TabItem>
+<TabItem label="Python">
+
+Exported from `trackparse.tracklist`: the dataclasses `Tracklist`, `TracklistEntry`, `Parts`,
+`TimeValue`, `Suggestion`, `Stats`, `TracklistWarning`, `EditResult`, `EditWarning`, and the
+`Literal` aliases `EntryKind`, `Eol`, `Severity`, `TracklistWarningCode`, `EditWarningCode`.
+
+</TabItem>
+</Tabs>
+
+The JSON Schema is
 [`tracklist.schema.json`](https://github.com/4matic/trackparse/blob/main/spec/schema/tracklist.schema.json).

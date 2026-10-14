@@ -3,6 +3,8 @@ title: Modes
 description: clean, youtube, filename and tracklist modes, what each one adds, and how auto picks between them.
 ---
 
+import { Tabs, TabItem } from "@astrojs/starlight/components";
+
 The same string can mean different things depending on where it came from.
 `Blink-182-All The Small Things` is clearly artist and title on YouTube. In a music library, a
 tight dash like that is more likely part of a name. Modes tell trackparse how much guessing the
@@ -25,6 +27,9 @@ The resolved mode is in `track.mode`, so you can always see which one ran.
 2. Junk, a `|`, or a platform suffix like `- YouTube` means `youtube`.
 3. Anything else is `clean`.
 
+<Tabs syncKey="lang">
+<TabItem label="JavaScript">
+
 ```js
 parse("07_Burial_-_Archangel.mp3");
 // mode 'filename', position 7, artist 'Burial', title 'Archangel'
@@ -33,10 +38,27 @@ parse("Noisia - Stigma | Official Video");
 // mode 'youtube', title 'Stigma', junk [ { raw: 'Official Video', kind: 'video' } ]
 ```
 
+</TabItem>
+<TabItem label="Python">
+
+```python
+parse("07_Burial_-_Archangel.mp3")
+# mode 'filename', position 7, artist 'Burial', title 'Archangel'
+
+parse("Noisia - Stigma | Official Video")
+# mode 'youtube', title 'Stigma', junk (Junk(raw='Official Video', kind='video'),)
+```
+
+</TabItem>
+</Tabs>
+
 ## youtube mode
 
 Turn it on explicitly when you know the strings are video titles. It takes guesses that `clean`
 won't, and every guess shows up in `warnings`:
+
+<Tabs syncKey="lang">
+<TabItem label="JavaScript">
 
 ```js
 parse('"Numb" by Linkin Park', { mode: "youtube" });
@@ -49,6 +71,23 @@ parse("Blink-182-All The Small Things", { mode: "youtube" });
 // artists [ 'Blink-182' ], title 'All The Small Things', warnings [ 'unspacedDashSplit' ]
 ```
 
+</TabItem>
+<TabItem label="Python">
+
+```python
+parse('"Numb" by Linkin Park', mode="youtube")
+# artists ['Linkin Park'], title 'Numb', warnings ('bySplit',)
+
+parse('Linkin Park: "Numb"', mode="youtube")
+# artists ['Linkin Park'], title 'Numb', warnings ('quotedTitleSplit',)
+
+parse("Blink-182-All The Small Things", mode="youtube")
+# artists ['Blink-182'], title 'All The Small Things', warnings ('unspacedDashSplit',)
+```
+
+</TabItem>
+</Tabs>
+
 In `clean` mode the last one comes back with no artist, the whole string as the title and a
 `noSeparator` warning. That's the safe answer when you can't be sure.
 
@@ -58,18 +97,47 @@ Many music videos are titled with just the song name, and the artist is the chan
 channel as `uploader` and youtube mode uses it when there's no separator. Auto-generated suffixes
 like `- Topic` and `VEVO` are dropped:
 
+<Tabs syncKey="lang">
+<TabItem label="JavaScript">
+
 ```js
 parse("Around the World", { mode: "youtube", uploader: "Daft Punk - Topic" });
 // artists [ 'Daft Punk' ], title 'Around the World'
 ```
 
+</TabItem>
+<TabItem label="Python">
+
+```python
+parse("Around the World", mode="youtube", uploader="Daft Punk - Topic")
+# artists ['Daft Punk'], title 'Around the World'
+```
+
+</TabItem>
+</Tabs>
+
 ## filename mode
+
+<Tabs syncKey="lang">
+<TabItem label="JavaScript">
 
 ```js
 parse("07_Burial_-_Archangel.mp3");                    // position 7, Burial / Archangel
 parse("311 - Amber.mp3").position;                     // { raw: '311', number: 311 }
 parse("311 - Amber").artists[0].name;                  // '311'
 ```
+
+</TabItem>
+<TabItem label="Python">
+
+```python
+parse("07_Burial_-_Archangel.mp3")                     # position 7, Burial / Archangel
+parse("311 - Amber.mp3").position                      # Position(raw='311', number=311)
+parse("311 - Amber").artists[0].name                   # '311'
+```
+
+</TabItem>
+</Tabs>
 
 The last two show why the mode matters. In a file name a leading number with a dash is a track
 number. Anywhere else, `311` could be a band.
@@ -79,6 +147,9 @@ number. Anywhere else, `311` could be a band.
 Inside a tracklist almost every line is `Artist - Title`, so the first spaced dash can be trusted.
 A single string doesn't get that benefit of the doubt:
 
+<Tabs syncKey="lang">
+<TabItem label="JavaScript">
+
 ```js
 parse("Electrosoul System - Liquid Metal");
 // title 'Electrosoul System', junk [ { raw: 'Liquid Metal', kind: 'genre' } ]
@@ -87,5 +158,19 @@ parse("Electrosoul System - Liquid Metal", { mode: "tracklist" });
 // artists [ 'Electrosoul System' ], title 'Liquid Metal'
 ```
 
-[`parseTracklist`](/trackparse/guides/tracklists/) uses this mode for every line. You only need to
+</TabItem>
+<TabItem label="Python">
+
+```python
+parse("Electrosoul System - Liquid Metal")
+# title 'Electrosoul System', junk (Junk(raw='Liquid Metal', kind='genre'),)
+
+parse("Electrosoul System - Liquid Metal", mode="tracklist")
+# artists ['Electrosoul System'], title 'Liquid Metal'
+```
+
+</TabItem>
+</Tabs>
+
+[`parseTracklist`](/trackparse/guides/tracklists/) (`parse_tracklist`) uses this mode for every line. You only need to
 set it yourself when you parse tracklist lines one at a time.

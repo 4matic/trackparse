@@ -8,6 +8,8 @@ export default defineConfig({
   site: "https://4matic.github.io",
   base: "/trackparse",
   trailingSlash: "always",
+  // The Python guide was folded into the other pages (every example has a Python tab). PyPI links here.
+  redirects: { "/guides/python/": "/trackparse/start/getting-started/" },
   markdown: { smartypants: false },
   // Starlight is a multi-page site. Prefetching every link as it scrolls into view, plus the
   // cross-document view transitions in custom.css, makes page changes instant without a JS router.
@@ -57,7 +59,6 @@ export default defineConfig({
             { label: "Formatting", slug: "guides/formatting" },
             { label: "Tracklists", slug: "guides/tracklists" },
             { label: "Editing tracklists", slug: "guides/editing-tracklists" },
-            { label: "Python", slug: "guides/python" },
           ],
         },
         {

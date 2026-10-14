@@ -3,6 +3,8 @@ title: Introduction
 description: What trackparse is, what it gives you back, and the one rule behind it.
 ---
 
+import { Tabs, TabItem } from "@astrojs/starlight/components";
+
 trackparse reads the names of music tracks the way people actually write them: store metadata,
 YouTube titles, file names, scrobbles, the tracklist under a mix. It gives you back an object with
 the artists and their roles, the clean title, every remix or version with its credits, and the noise
@@ -36,11 +38,26 @@ The same rule shows up in smaller ways:
 
 ## What you get back
 
+<Tabs syncKey="lang">
+<TabItem label="JavaScript">
+
 ```js
 import { parse } from "trackparse";
 
 parse("Queen - Bohemian Rhapsody (Live at Wembley 1986)");
 ```
+
+</TabItem>
+<TabItem label="Python">
+
+```python
+from trackparse import parse
+
+parse("Queen - Bohemian Rhapsody (Live at Wembley 1986)").to_dict()
+```
+
+</TabItem>
+</Tabs>
 
 ```json
 {
@@ -70,7 +87,9 @@ parse("Queen - Bohemian Rhapsody (Live at Wembley 1986)");
 }
 ```
 
-The [`parse` reference](/trackparse/reference/parse/) explains every field.
+Both give the same JSON. In Python the result is a frozen dataclass with snake_case attributes, and
+`to_dict()` turns it into the JSON above. The [`parse` reference](/trackparse/reference/parse/)
+explains every field.
 
 ## Spec first
 

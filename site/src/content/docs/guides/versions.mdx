@@ -3,9 +3,14 @@ title: Versions and remixes
 description: The 27 version types, how generic words like "Mix" and "Edit" get their meaning, and what each Version field holds.
 ---
 
+import { Tabs, TabItem } from "@astrojs/starlight/components";
+
 A version is anything that says which take of a song this is: a remix, a VIP, a radio edit, a live
 recording, a remaster, a sped-up TikTok cut. trackparse reads them from brackets and from dash
 suffixes, and puts each one in `versions`, left to right.
+
+<Tabs syncKey="lang">
+<TabItem label="JavaScript">
 
 ```ts
 {
@@ -20,7 +25,26 @@ suffixes, and puts each one in `versions`, left to right.
 }
 ```
 
-`title` never includes versions. `fullTitle` is the title with them put back, in their original
+</TabItem>
+<TabItem label="Python">
+
+```python
+Version(
+    type: VersionType,               # 'remix', 'vip', 'radio', …
+    raw: str,                        # the text as written, without brackets: 'Sub Focus VIP Remix'
+    artists: tuple[Artist, ...],     # remixers, role 'remixer'
+    modifiers: tuple[str, ...],      # other type words that didn't win: ('extended',)
+    descriptor: Optional[str],       # leftover words: "Taylor's", 'at Wembley'
+    year: Optional[int],
+    unknown_artist: bool,            # 'ID Remix'
+    delimiter: VersionDelimiter,     # "(" | "[" | "{" | "-"
+)
+```
+
+</TabItem>
+</Tabs>
+
+`title` never includes versions. `fullTitle` (`full_title` in Python) is the title with them put back, in their original
 brackets.
 
 ## The 27 types
@@ -47,15 +71,33 @@ The keywords behind them are in
 | `(Extended VIP Mix)` | `vip`, modifiers `[extended]` | the strongest word wins, the rest become modifiers |
 | `(Taylor's Version)` | `version`, descriptor `"Taylor's"` | nothing to borrow, so the words are kept as a descriptor |
 
+<Tabs syncKey="lang">
+<TabItem label="JavaScript">
+
 ```js
 parse("Pendulum - Watercolour (Extended VIP Mix)").versions[0];
 // { type: 'vip', raw: 'Extended VIP Mix', artists: [], modifiers: [ 'extended' ],
 //   descriptor: null, year: null, unknownArtist: false, delimiter: '(' }
 ```
 
+</TabItem>
+<TabItem label="Python">
+
+```python
+parse("Pendulum - Watercolour (Extended VIP Mix)").versions[0]
+# Version(type='vip', raw='Extended VIP Mix', artists=(), modifiers=('extended',),
+#         descriptor=None, year=None, unknown_artist=False, delimiter='(')
+```
+
+</TabItem>
+</Tabs>
+
 ## Several versions
 
 Two groups give two versions. So does a slash inside one group:
+
+<Tabs syncKey="lang">
+<TabItem label="JavaScript">
 
 ```js
 parse("Avicii - Levels (Skrillex Remix) [Radio Edit]").versions.map((v) => v.type);
@@ -65,10 +107,27 @@ parse("Dimension - Offshore (Mefjus Remix / Noisia Remix)").versions.map((v) => 
 // [ 'Mefjus', 'Noisia' ]
 ```
 
+</TabItem>
+<TabItem label="Python">
+
+```python
+[v.type for v in parse("Avicii - Levels (Skrillex Remix) [Radio Edit]").versions]
+# ['remix', 'radio']
+
+[v.artists[0].name for v in parse("Dimension - Offshore (Mefjus Remix / Noisia Remix)").versions]
+# ['Mefjus', 'Noisia']
+```
+
+</TabItem>
+</Tabs>
+
 ## Dash suffixes
 
 Streaming services love writing versions after a second dash. Those are read too, and the
 delimiter is `-`:
+
+<Tabs syncKey="lang">
+<TabItem label="JavaScript">
 
 ```js
 const t = parse("The Beatles - Hey Jude - Remastered 2015");
@@ -76,17 +135,32 @@ t.title;        // 'Hey Jude'
 t.versions[0];  // { type: 'remaster', raw: 'Remastered 2015', year: 2015, delimiter: '-', … }
 ```
 
+</TabItem>
+<TabItem label="Python">
+
+```python
+t = parse("The Beatles - Hey Jude - Remastered 2015")
+t.title        # 'Hey Jude'
+t.versions[0]  # Version(type='remaster', raw='Remastered 2015', ..., year=2015, ..., delimiter='-')
+```
+
+</TabItem>
+</Tabs>
+
 A dash suffix that isn't a version stays in the title. In a [tracklist](/trackparse/guides/tracklists/#tracklist-mode)
 the rule is stricter, because there the first dash is almost always the separator.
 
 ## Unknown remixers
 
 `(ID Remix)` is a remix by someone not yet announced. You get the version with
-`unknownArtist: true` and no artists, rather than an artist called "ID".
+`unknownArtist: true` (`unknown_artist`) and no artists, rather than an artist called "ID".
 
 ## Your own words
 
-If your catalogue uses a word trackparse doesn't know, add it with `keywords.versionHeads`:
+If your catalogue uses a word trackparse doesn't know, add it with `keywords.versionHeads` (`version_heads` in Python):
+
+<Tabs syncKey="lang">
+<TabItem label="JavaScript">
 
 ```js
 import { createParser } from "trackparse";
@@ -95,5 +169,19 @@ const parser = createParser({ keywords: { versionHeads: { rerub: "rework" } } })
 parser.parse("Chase & Status x Camo & Krooked - Track (Alix Perez Rerub)").versions[0].type;
 // 'rework'
 ```
+
+</TabItem>
+<TabItem label="Python">
+
+```python
+from trackparse import create_parser
+
+parser = create_parser(keywords={"version_heads": {"rerub": "rework"}})
+parser.parse("Chase & Status x Camo & Krooked - Track (Alix Perez Rerub)").versions[0].type
+# 'rework'
+```
+
+</TabItem>
+</Tabs>
 
 Keywords only add to the built-in vocabulary. They can't remove words. See [Options](/trackparse/reference/options/#keywords).
