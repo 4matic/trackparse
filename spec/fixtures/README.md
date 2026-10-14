@@ -3,6 +3,8 @@
 The shared test corpus. **Every port runs every case here**. The fixtures, not any one
 implementation, define correct behaviour.
 
+**Docs:** [How it's tested](https://4matic.github.io/trackparse/project/testing/) · [Contributing](https://4matic.github.io/trackparse/project/contributing/)
+
 ```
 fixtures/
   handwritten/*.json   curated cases, grouped by topic; edit by hand

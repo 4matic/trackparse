@@ -5,6 +5,8 @@ Combinatorial fixture generator for the trackparse spec. It writes
 size at 7.8 MB). Every port runs these files next to
 the handwritten fixtures.
 
+**Docs:** [How it's tested: generated cases](https://4matic.github.io/trackparse/project/testing/#generated-11817-cases)
+
 ## Oracle principle
 
 The generator is **not a parser**. Each case is a *composition* of hand-written **atoms** (an

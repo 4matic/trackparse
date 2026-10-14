@@ -39,6 +39,8 @@ uv add trackparse
 
 ## Quick start
 
+**Docs:** [Getting started](https://4matic.github.io/trackparse/start/getting-started/)
+
 ```python
 from trackparse import format_track, parse
 
@@ -110,6 +112,8 @@ print(json.dumps(track.to_dict(), indent=2))
 
 ## API
 
+**Docs:** [Other functions](https://4matic.github.io/trackparse/reference/functions/)
+
 ```python
 parse(input, *, mode="auto", uploader=None, known_artists=(), split_and="auto", keywords=None) -> ParsedTrack
 parse_artists(input, *, <same options>) -> list[Artist]
@@ -122,6 +126,8 @@ SPEC_VERSION, __version__
 ```
 
 ### `parse(input, **options)`
+
+**Docs:** [parse and ParsedTrack](https://4matic.github.io/trackparse/reference/parse/) · [Options](https://4matic.github.io/trackparse/reference/options/)
 
 | Option | Default | |
 |---|---|---|
@@ -162,6 +168,8 @@ Parsing is total: any `str` gives a `ParsedTrack`, including `""`. Bad option va
 the defaults. Passing something that isn't a `str` raises `TypeError`.
 
 ### `ParsedTrack`
+
+**Docs:** [ParsedTrack fields](https://4matic.github.io/trackparse/reference/parse/#parsedtrack)
 
 | Attribute | Type | |
 |---|---|---|
@@ -205,6 +213,8 @@ Version types, junk kinds and warnings are listed in the
 
 ### `to_dict()` and `from_dict()`
 
+**Docs:** [JSON and Python objects](https://4matic.github.io/trackparse/reference/parse/#json-and-python-objects)
+
 Every result class has `to_dict()`, which returns plain dicts and lists matching
 [`parsed-track.schema.json`](https://github.com/4matic/trackparse/blob/main/spec/schema/parsed-track.schema.json)
 (`fullTitle`, `unknownArtist`, ...). With `json.dumps(track.to_dict(), separators=(",", ":"),
@@ -217,6 +227,8 @@ ParsedTrack.from_dict(track.to_dict()) == track  # True
 
 ### `parse_artists(input, **options)`
 
+**Docs:** [parseArtists](https://4matic.github.io/trackparse/reference/functions/#parseartistsinput-options)
+
 Splits a bare artist string. Takes the same options as `parse`.
 
 ```python
@@ -227,6 +239,8 @@ from trackparse import parse_artists
 ```
 
 ### `format_track(track, **options)`
+
+**Docs:** [format](https://4matic.github.io/trackparse/reference/functions/#formattrack-options) · [Formatting](https://4matic.github.io/trackparse/guides/formatting/)
 
 Renders a track back to a string.
 
@@ -257,6 +271,8 @@ format_track(track, position=True)
 
 ### `normalize(s)`
 
+**Docs:** [normalize](https://4matic.github.io/trackparse/reference/functions/#normalizeinput)
+
 The Unicode cleanup every function runs first: NFC, invisible characters, and dash, bracket and
 quote variants.
 
@@ -269,6 +285,8 @@ normalize("Noisia​ – Stigma （VIP）")
 
 ### `all_artists(track)`
 
+**Docs:** [allArtists](https://4matic.github.io/trackparse/reference/functions/#allartiststrack)
+
 Credits plus every remixer, deduplicated.
 
 ```python
@@ -279,6 +297,8 @@ from trackparse import all_artists
 ```
 
 ### `create_parser(**options)`
+
+**Docs:** [createParser](https://4matic.github.io/trackparse/reference/functions/#createparseroptions)
 
 Compiles the options once, for many calls. Per-call options are merged over the parser's: a value
 passed per call replaces the base one (`known_artists` included), `None` leaves it alone, and
@@ -302,6 +322,8 @@ released together and always share one version number.
 
 ## Modes
 
+**Docs:** [Modes](https://4matic.github.io/trackparse/guides/modes/)
+
 | Mode | For | Adds |
 |---|---|---|
 | `clean` | Store metadata, tags | Only a spaced dash separates artist and title |
@@ -324,6 +346,8 @@ parse("Shelter", mode="youtube", uploader="Porter Robinson").artists
 ```
 
 ## Tracklists
+
+**Docs:** [Tracklists](https://4matic.github.io/trackparse/guides/tracklists/) · [Editing tracklists](https://4matic.github.io/trackparse/guides/editing-tracklists/)
 
 `trackparse.tracklist` parses a whole tracklist, one entry per line, and checks it. Each entry
 keeps its line exactly as written plus its own line ending, so `"".join(e.raw + e.eol for e in
@@ -433,6 +457,8 @@ parse("Electrosoul System - Liquid Metal", mode="tracklist").title
 ```
 
 ## Typing
+
+**Docs:** [Types](https://4matic.github.io/trackparse/reference/parse/#types)
 
 The package ships `py.typed` and passes `mypy --strict`. `ParsedTrack`, `Artist`, `Version`,
 `Junk`, `Flags`, `Position` and `Timestamp` are frozen dataclasses with snake_case attributes, and
