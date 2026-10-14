@@ -1,0 +1,60 @@
+---
+// A feature card with a Lucide icon. Pass the icon component, e.g.
+// import Users from "@lucide/astro/icons/users"; <Feature icon={Users} title="…">…</Feature>
+interface Props {
+  title: string;
+  icon: (props: Record<string, unknown>) => unknown;
+  tone?: "primary" | "featured" | "version" | "junk" | "position" | "producer" | "year";
+}
+const { title, icon: Icon, tone = "primary" } = Astro.props;
+---
+
+<article class={`feature tp-${tone}`}>
+  <span class="icon" aria-hidden="true"><Icon size={22} strokeWidth={1.8} /></span>
+  <h3>{title}</h3>
+  <div class="body"><slot /></div>
+</article>
+
+<style>
+  .feature {
+    position: relative;
+    display: grid;
+    gap: 0.55rem;
+    align-content: start;
+    padding: 1.3rem 1.3rem 1.2rem;
+    background: var(--tp-surface);
+    border: 1px solid var(--tp-border);
+    border-radius: 1rem;
+    box-shadow: var(--tp-shadow);
+    transition: transform 0.2s ease, border-color 0.2s ease;
+  }
+  .feature:hover {
+    transform: translateY(-2px);
+    border-color: color-mix(in srgb, var(--tp-c) 45%, var(--tp-border));
+  }
+  .icon {
+    display: inline-grid;
+    place-items: center;
+    width: 2.6rem;
+    height: 2.6rem;
+    border-radius: 0.75rem;
+    color: var(--tp-c);
+    background: color-mix(in srgb, var(--tp-c) 14%, transparent);
+  }
+  h3 {
+    margin: 0.2rem 0 0;
+    font-size: 1.1rem;
+    color: var(--sl-color-white);
+  }
+  .body {
+    color: var(--sl-color-gray-2);
+    font-size: 0.93rem;
+    line-height: 1.6;
+  }
+  .body :global(p) {
+    margin: 0;
+  }
+  .body :global(code) {
+    font-size: 0.85em;
+  }
+</style>

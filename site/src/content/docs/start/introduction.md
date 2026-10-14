@@ -1,0 +1,92 @@
+---
+title: Introduction
+description: What trackparse is, what it gives you back, and the one rule behind it.
+---
+
+trackparse reads the names of music tracks the way people actually write them: store metadata,
+YouTube titles, file names, scrobbles, the tracklist under a mix. It gives you back an object with
+the artists and their roles, the clean title, every remix or version with its credits, and the noise
+that was around it.
+
+```text
+01. Wilkinson ft. Becky Hill & Tom Cane - Afterglow (Sub Focus VIP Remix) [Official Video]
+└┬┘ └───┬───┘ └───────────┬───────────┘   └───┬───┘ └─────────┬─────────┘ └───────┬──────┘
+ │      │                 │                   │               │                   │
+ position 1               featured ×2         title           remix · Sub Focus · vip
+        │                                                                         │
+        primary                                                                   junk: video
+```
+
+## The one rule
+
+**Extract, don't delete.** Everything trackparse recognises goes into a field. Everything it doesn't
+recognise stays in the title, verbatim.
+
+That sounds obvious until you look at what other parsers do. Some return two strings and leave the
+rest to you. Others strip anything in brackets, which turns `(I Can't Get No) Satisfaction` into
+`Satisfaction` and quietly loses every remix credit. trackparse would rather leave an odd bracket in
+the title than throw away something you needed.
+
+The same rule shows up in smaller ways:
+
+- `[Official Video]` leaves the title, but it lands in `junk` as `{ raw: "Official Video", kind: "video" }`.
+- When the parser had to guess (an unspaced dash, a `"Title" by Artist` pattern), `warnings` says
+  which guess it made.
+- Every key of the output is always present, so you never have to check whether a field exists.
+
+## What you get back
+
+```js
+import { parse } from "trackparse";
+
+parse("Queen - Bohemian Rhapsody (Live at Wembley 1986)");
+```
+
+```json
+{
+  "input": "Queen - Bohemian Rhapsody (Live at Wembley 1986)",
+  "mode": "clean",
+  "position": null,
+  "timestamp": null,
+  "artists": [{ "name": "Queen", "role": "primary", "joiner": null, "source": "artist" }],
+  "title": "Bohemian Rhapsody",
+  "fullTitle": "Bohemian Rhapsody (Live at Wembley 1986)",
+  "versions": [
+    {
+      "type": "live",
+      "raw": "Live at Wembley 1986",
+      "artists": [],
+      "modifiers": [],
+      "descriptor": "at Wembley",
+      "year": 1986,
+      "unknownArtist": false,
+      "delimiter": "("
+    }
+  ],
+  "year": null,
+  "flags": { "explicit": false, "clean": false, "unknownArtist": false, "unknownTitle": false },
+  "junk": [],
+  "warnings": []
+}
+```
+
+The [`parse` reference](/trackparse/reference/parse/) explains every field.
+
+## Spec first
+
+Behaviour isn't defined by the JavaScript code. It's defined by a written
+[spec](/trackparse/reference/spec/) with numbered rules, and by 12,965 fixtures that pin those rules
+down. The JavaScript package is the reference implementation. The Python package passes the same
+fixtures and produces the same JSON, byte for byte. A Rust port will do the same.
+
+So if you ever wonder why something parses the way it does, there's a rule ID for it, and a fixture
+that cites that rule.
+
+## When not to use it
+
+If all you need is a cleaned-up string to send to a scrobbler,
+[metadata-filter](https://github.com/web-scrobbler/metadata-filter) is a fine choice and smaller in
+scope. trackparse is for when you need to know who did what.
+
+It also has no artist database. `&` is a joiner, so `Chase & Status` comes out as two artists unless
+you pass it in `knownArtists`. More on that in [Artists and credits](/trackparse/guides/artists/).

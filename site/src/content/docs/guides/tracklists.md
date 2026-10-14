@@ -1,0 +1,143 @@
+---
+title: Tracklists
+description: Parse the tracklist of a mix or podcast line by line, with start times, line kinds and checks that point at the exact line.
+---
+
+Mixes and podcasts come with a tracklist: a block of text, one track per line, usually with a start
+time in front. `trackparse/tracklist` reads the whole block. Every line gets its kind, its time and
+a full [`ParsedTrack`](/trackparse/reference/parse/). The list as a whole gets checks with line
+numbers.
+
+```js
+import { parseTracklist } from "trackparse/tracklist";
+```
+
+```python
+from trackparse.tracklist import parse_tracklist
+```
+
+It's a separate entry point, about 7.6 KiB gzipped, so code that only parses single tracks never
+loads it.
+
+## A first list
+
+```js
+const text = [
+  "Hour 2",
+  "48:20 Noisia - Stigma",
+  "52:47 Mefjus & Kasra - Bandwagon (Phace Remix)",
+  "56:05 Black Sun Empire - ID",
+  "59:31 Alix Perez - Fade Away",
+  "01:03:10 Interview with Hybris",
+  "01:07:44 Imanu - Sacrifice",
+  "00:11:02 Current Value feat. Teddy Killerz - Payload", // typo: should be 01:11:02
+  "01:15:36 Hybris - Spinning Top",
+].join("\r\n");
+
+const list = parseTracklist(text);
+
+list.entries.map((e) => e.kind);
+// [ 'header', 'track', 'track', 'track', 'track', 'marker', 'track', 'track', 'track' ]
+
+const bandwagon = list.entries[2];
+bandwagon.time;   // { raw: '52:47', seconds: 3167 }
+bandwagon.parts;  // { lead: '', time: '52:47', gap: ' ', rest: 'Mefjus & Kasra - Bandwagon (Phace Remix)' }
+bandwagon.track.artists.map((a) => a.name);                                // [ 'Mefjus', 'Kasra' ]
+bandwagon.track.versions.map((v) => `${v.type} by ${v.artists[0].name}`);  // [ 'remix by Phace' ]
+list.entries[3].track.flags.unknownTitle;                                  // true (the ID)
+
+list.stats;
+// { lines: 9, tracks: 7, markers: 1, timed: 8, firstTime: 2900, lastTime: 4536 }
+```
+
+Paste it into the [playground](/trackparse/playground/#list=Hour%202%0A48%3A20%20Noisia%20-%20Stigma%0A52%3A47%20Mefjus%20%26%20Kasra%20-%20Bandwagon%20(Phace%20Remix)%0A56%3A05%20Black%20Sun%20Empire%20-%20ID%0A59%3A31%20Alix%20Perez%20-%20Fade%20Away%0A01%3A03%3A10%20Interview%20with%20Hybris%0A01%3A07%3A44%20Imanu%20-%20Sacrifice%0A00%3A11%3A02%20Current%20Value%20feat.%20Teddy%20Killerz%20-%20Payload%0A01%3A15%3A36%20Hybris%20-%20Spinning%20Top)
+to see the table, the warnings and the fix button.
+
+## Nothing is lost
+
+Every entry keeps its line exactly as written in `raw`, and its own line ending in `eol`. Joining
+`raw + eol` over the entries gives you back the input, byte for byte. CRLF, LF and CR all work, even
+mixed in one text, and trailing spaces survive. A last line without a newline has `eol: ""`.
+
+`parts` cuts `raw` into four strings that join back into it:
+
+| Part | Holds |
+|---|---|
+| `lead` | spaces or an opening bracket before the time |
+| `time` | the time as written, `52:47` |
+| `gap` | whatever sits between the time and the track: `] `, ` - `, ` \| `, ` => ` |
+| `rest` | the track text, which is what gets parsed |
+
+That split is what lets an editor rewrite a time without touching anything else on the line.
+
+## Times
+
+All of these are read as start times:
+
+| Written | Seconds |
+|---|---|
+| `12:34`, `[12:34]`, `(12:34)` | 754 |
+| `1:02:03`, `01:02:03` | 3723 |
+| `125:30` (a long mix with no hours) | 7530 |
+| `00:00:07.500`, `0:07,5` | 7.5 |
+
+Something that looks like a time but can't be one, like `1:75` or `0:61:00`, stays in `rest` and
+raises an `invalid-time` warning.
+
+## Line kinds
+
+| Kind | When |
+|---|---|
+| `track` | a timed line, or an untimed line with an artist/title separator |
+| `marker` | no separator and a word like `intro`, `outro`, `break` or `interview` |
+| `header` | an untimed line ending in `:`, or something like `Part 2` or `Hour 2` |
+| `link` | starts with `http://`, `https://` or `www.` |
+| `note` | any other untimed line |
+| `blank` | empty or only whitespace |
+
+Only `track` and `marker` entries have a `track`. No line is ever dropped. Extra marker words go in
+the `markerWords` option: with `["drop"]`, `03:00 Drop` becomes a marker instead of a track.
+
+## Checks
+
+```js
+list.warnings;
+// [
+//   { code: 'no-start-at-zero', line: 2, severity: 'info', suggestion: null },
+//   { code: 'time-out-of-order', line: 8, severity: 'warning',
+//     suggestion: { line: 8, raw: '01:11:02', seconds: 4262 } }
+// ]
+```
+
+`00:11:02` sits between `01:07:44` and `01:15:36`. Changing one digit gives exactly one time that
+fits, `01:11:02`, so the warning carries it as a suggestion. When several fixes would fit, or none
+does, `suggestion` is `null` and you only get the warning.
+
+Sometimes the typo is on the line before. In `01:22:21` followed by `01:03:55`, the second line is
+flagged, but the suggestion is to change the first one to `01:02:21`. All the codes are listed in
+[Warnings](/trackparse/reference/warnings/#tracklist-warnings).
+
+## Bare track numbers
+
+Some lists number their lines without a dot: `1 Artist - Title`, `2 Artist - Title`. A single
+`parse()` call would read `1 Artist` as the artist's name, and it should, because `2 Unlimited`
+exists. In a list, trackparse looks at the neighbours: a bare number counts as a position when the
+nearest line before or after it carries the next or previous number.
+
+## Tracklist mode
+
+Inside a tracklist, the first ` - ` is the separator on practically every line, so each line is
+parsed with `mode: "tracklist"`. These lines all go wrong with a plain `parse()` and right in a list:
+
+| Line | `parse(line)` | In a tracklist |
+|---|---|---|
+| `Electrosoul System - Liquid Metal` | title `Electrosoul System`, `Liquid Metal` as genre junk | Electrosoul System / `Liquid Metal` |
+| `Effector - 2012` | title `Effector`, year 2012 | Effector / `2012` |
+| `Paperclip - Anticipation VIP` | title `Paperclip`, a `vip` version | Paperclip / `Anticipation VIP` |
+| `8 Linkin Park_-_Points Of Authority (Gydra Bootleg)` | no separator | position 8, Linkin Park / `Points Of Authority`, bootleg by Gydra |
+| `10 Optiv & BTK-Inception (Gydra remix)` | no separator | position 10, Optiv, BTK / `Inception`, remix by Gydra |
+
+The last two need neighbours: the position needs a 7 or 9 next to it, and the unspaced
+`BTK-Inception` dash only splits on a timed line when at least half the list uses spaced dashes.
+
+Next: [editing tracklists](/trackparse/guides/editing-tracklists/).

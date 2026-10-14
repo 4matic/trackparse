@@ -14,6 +14,8 @@
     "test": "pnpm -r test",
     "build": "pnpm --filter trackparse build",
     "lint": "pnpm -r lint",
-    "conformance": "pnpm --filter trackparse conformance"
+    "conformance": "pnpm --filter trackparse conformance",
+    "docs": "pnpm --filter trackparse build && pnpm --filter @trackparse/site dev",
+    "docs:build": "pnpm --filter trackparse build && pnpm --filter @trackparse/site build"
   }
 }

@@ -1,0 +1,128 @@
+---
+import ArrowRight from "@lucide/astro/icons/arrow-right";
+import Sparkles from "@lucide/astro/icons/sparkles";
+import "../styles/playground.css";
+
+const examples = [
+  "01. Wilkinson ft. Becky Hill & Tom Cane - Afterglow (Sub Focus VIP Remix) [Official Video]",
+  "Skrillex & Diplo x Justin Bieber - Where Are Ü Now",
+  "Future - Mask Off (prod. by Metro Boomin)",
+  "The Beatles - Hey Jude - Remastered 2015",
+  "07_Burial_-_Archangel.mp3",
+  "Кино - Группа крови (Remastered 2019)",
+  "ID - ID (ID Remix)",
+];
+const playground = `${import.meta.env.BASE_URL}playground/`;
+---
+
+<section class="hero-demo tp-card not-content" data-playground={playground}>
+  <div class="hd-top">
+    <label class="tp-label hd-label" for="hd-input"><Sparkles size={14} aria-hidden="true" /> Try it: this runs the real parser in your browser</label>
+    <input
+      id="hd-input"
+      class="tp-input"
+      type="text"
+      value={examples[0]}
+      spellcheck="false"
+      autocomplete="off"
+    />
+    <ul class="tp-examples" aria-label="Examples">
+      {
+        examples.map((e, i) => (
+          <li>
+            <button type="button" data-example={e} aria-pressed={i === 0 ? "true" : "false"}>
+              {e}
+            </button>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+  <div class="hd-out">
+    <p class="tp-line" id="hd-line" aria-live="polite"></p>
+    <div class="tp-legend" id="hd-legend"></div>
+    <div id="hd-fields"></div>
+    <div class="hd-actions">
+      <a class="tp-btn" id="hd-open" href={playground}>Open in the playground <ArrowRight size={15} aria-hidden="true" /></a>
+      <span class="tp-muted" id="hd-time"></span>
+    </div>
+  </div>
+</section>
+
+<style>
+  .hero-demo,
+  .hd-top,
+  .hd-out {
+    min-width: 0;
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .hero-demo {
+    padding: clamp(1rem, 3vw, 1.6rem);
+    display: grid;
+    gap: 1.2rem;
+    margin-block: 0.5rem 2.5rem;
+  }
+  .hd-top {
+    display: grid;
+    gap: 0.6rem;
+  }
+  .hd-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    color: var(--sl-color-accent);
+  }
+  .hd-out {
+    display: grid;
+    gap: 0.9rem;
+    border-top: 1px dashed var(--tp-border);
+    padding-top: 1.1rem;
+  }
+  .hd-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.8rem;
+  }
+</style>
+
+<script>
+  import { parse } from "trackparse";
+  import { chip, fieldsHtml, highlight, KIND_LABEL, segmentsHtml, type Kind } from "../lib/trackview";
+
+  const root = document.querySelector<HTMLElement>(".hero-demo");
+  if (root) {
+    const input = root.querySelector<HTMLInputElement>("#hd-input")!;
+    const line = root.querySelector<HTMLElement>("#hd-line")!;
+    const legend = root.querySelector<HTMLElement>("#hd-legend")!;
+    const fields = root.querySelector<HTMLElement>("#hd-fields")!;
+    const open = root.querySelector<HTMLAnchorElement>("#hd-open")!;
+    const time = root.querySelector<HTMLElement>("#hd-time")!;
+    const buttons = [...root.querySelectorAll<HTMLButtonElement>("[data-example]")];
+    const base = root.dataset.playground ?? "playground/";
+
+    const render = () => {
+      const s = input.value;
+      const t0 = performance.now();
+      const track = parse(s);
+      const ms = performance.now() - t0;
+      const segs = highlight(s, track);
+      line.innerHTML = segmentsHtml(segs) || '<span class="tp-gap">type a track name</span>';
+      const kinds = [...new Set(segs.map((x) => x.kind).filter(Boolean))] as Kind[];
+      legend.innerHTML = kinds.map((k) => chip(KIND_LABEL[k], k)).join("");
+      fields.innerHTML = fieldsHtml(track);
+      open.href = `${base}#track=${encodeURIComponent(s)}`;
+      time.textContent = `parsed in ${ms < 1 ? "<1" : ms.toFixed(1)} ms`;
+      for (const b of buttons) b.setAttribute("aria-pressed", String(b.dataset.example === s));
+    };
+
+    input.addEventListener("input", render);
+    for (const b of buttons) {
+      b.addEventListener("click", () => {
+        input.value = b.dataset.example ?? "";
+        render();
+      });
+    }
+    render();
+  }
+</script>
