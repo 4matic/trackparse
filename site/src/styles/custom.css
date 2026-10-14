@@ -129,3 +129,30 @@ h4,
 .tp-year,
 .tp-flag { --tp-c: var(--tp-year); }
 .tp-title { --tp-c: var(--sl-color-gray-1); }
+
+/* The playground uses the normal docs layout (sidebar and mobile menu) but needs more width. */
+.main-frame:has(.pg) {
+  --sl-content-width: 76rem;
+}
+
+/* Page changes: cross-document view transitions (Chromium, Safari 18.2+). The header and the
+   sidebar keep their place and only the content crossfades, so navigating doesn't look like a
+   reload. Browsers without support just navigate normally. */
+@view-transition {
+  navigation: auto;
+}
+header.header {
+  view-transition-name: tp-header;
+}
+.sidebar-pane {
+  view-transition-name: tp-sidebar;
+}
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 140ms;
+}
+@media (prefers-reduced-motion: reduce) {
+  @view-transition {
+    navigation: none;
+  }
+}
