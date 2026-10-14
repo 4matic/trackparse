@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.2](https://github.com/4matic/trackparse/compare/spec-v0.3.1...spec-v0.3.2) (2026-10-14)
+
+
+### Miscellaneous
+
+* **spec:** Synchronize trackparse versions
+
 ## [0.3.1](https://github.com/4matic/trackparse/compare/spec-v0.3.0...spec-v0.3.1) (2026-10-12)
 
 
