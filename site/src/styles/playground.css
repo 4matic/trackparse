@@ -35,10 +35,27 @@ textarea.tp-input {
   overflow-x: auto;
   tab-size: 4;
 }
+/* Selects: same box as the text inputs, our own chevron instead of the OS arrow. */
 select.tp-input {
-  font-family: var(--sl-font);
-  font-size: 0.875rem;
-  padding-block: 0.5rem;
+  appearance: none;
+  -webkit-appearance: none;
+  font: 500 0.85rem/1.5 var(--sl-font);
+  padding: 0.55rem 2.1rem 0.55rem 0.75rem;
+  cursor: pointer;
+  background-image: var(--tp-chevron);
+  background-repeat: no-repeat;
+  background-position: right 0.65rem center;
+  background-size: 14px 14px;
+}
+select.tp-input option {
+  background: var(--sl-color-black);
+  color: var(--sl-color-white);
+}
+:root {
+  --tp-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a1a1a1' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+}
+:root[data-theme="light"] {
+  --tp-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235c5c5c' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
 }
 
 .tp-label {
@@ -243,10 +260,26 @@ select.tp-input {
   padding: 0.85rem 1rem;
   color: var(--sl-color-gray-2);
 }
-.j-key { color: var(--sl-color-gray-3); }
-.j-str { color: var(--sl-color-gray-1); }
-.j-num { color: var(--tp-primary); }
-.j-lit { color: var(--tp-version); }
+.tp-json {
+  color: var(--tp-syn-text);
+  scrollbar-width: thin;
+  scrollbar-color: var(--tp-border-strong) transparent;
+}
+/* Generated snippets and JSON wrap instead of scrolling sideways. */
+.tp-json {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.s-kw { color: var(--tp-syn-kw); }
+.s-str { color: var(--tp-syn-str); }
+.s-num { color: var(--tp-syn-num); }
+.s-fn { color: var(--tp-syn-fn); }
+.s-var { color: var(--tp-syn-text); }
+.s-param { color: var(--tp-syn-var); }
+.s-prop { color: var(--tp-syn-prop); }
+.s-const { color: var(--tp-syn-const); }
+.s-com { color: var(--tp-syn-com); font-style: italic; }
+.s-punct { color: var(--tp-syn-punct); }
 
 .tp-row {
   display: flex;

@@ -185,16 +185,56 @@ export function fieldsHtml(t: ParsedTrack): string {
     .join("")}</dl>`;
 }
 
-/** Minimal JSON syntax colouring for the output panel. */
+/** JSON colouring for the output panel, in the site's code colours (custom.css --tp-syn-*). */
 export function jsonHtml(value: unknown): string {
   const json = JSON.stringify(value, null, 2);
   return escapeHtml(json).replace(
-    /(&quot;(?:[^&]|&(?!quot;))*?&quot;)(\s*:)?|\b(true|false|null)\b|(-?\d+(?:\.\d+)?)/g,
-    (m, str, colon, lit, num) => {
-      if (str) return colon ? `<span class="j-key">${str}</span>${colon}` : `<span class="j-str">${str}</span>`;
-      if (lit) return `<span class="j-lit">${lit}</span>`;
-      if (num) return `<span class="j-num">${num}</span>`;
+    /(&quot;(?:[^&]|&(?!quot;))*?&quot;)(\s*:)?|\b(true|false|null)\b|(-?\d+(?:\.\d+)?)|([{}[\],])/g,
+    (m, str, colon, lit, num, punct) => {
+      if (str) return colon ? `<span class="s-prop">${str}</span><span class="s-punct">${colon}</span>` : `<span class="s-str">${str}</span>`;
+      if (lit) return `<span class="s-kw">${lit}</span>`;
+      if (num) return `<span class="s-num">${num}</span>`;
+      if (punct) return `<span class="s-punct">${punct}</span>`;
       return m;
     },
   );
+}
+
+const KEYWORDS: Record<"js" | "py", Set<string>> = {
+  js: new Set(["import", "from", "export", "const", "let", "var", "return", "new", "await", "async", "function"]),
+  py: new Set(["from", "import", "def", "return", "for", "in", "as", "lambda", "not", "and", "or"]),
+};
+const CONSTANTS = new Set(["true", "false", "null", "undefined", "True", "False", "None"]);
+
+/**
+ * A small highlighter for the snippets the playground generates (one import, a call or two).
+ * Strings, comments, keywords, constants, numbers, function calls, keyword arguments, punctuation.
+ */
+export function codeHtml(src: string, lang: "js" | "py"): string {
+  // Groups: comment, string, number, word, punctuation. A fresh RegExp per call (it is stateful).
+  const re =
+    lang === "js"
+      ? /(\/\/[^\n]*)|("(?:\\.|[^"\\\n])*"|'(?:\\.|[^'\\\n])*'|`(?:\\.|[^`\\])*`)|\b(\d+(?:\.\d+)?)\b|([A-Za-z_$][\w$]*)|([{}()[\],.;:=])/g
+      : /(#[^\n]*)|("(?:\\.|[^"\\\n])*"|'(?:\\.|[^'\\\n])*')|\b(\d+(?:\.\d+)?)\b|([A-Za-z_][\w]*)|([{}()[\],.;:=])/g;
+  let out = "";
+  let last = 0;
+  for (let m = re.exec(src); m; m = re.exec(src)) {
+    out += escapeHtml(src.slice(last, m.index));
+    last = re.lastIndex;
+    const [tok, com, str, num, word, punct] = m;
+    const rest = src.slice(re.lastIndex);
+    let cls = "";
+    if (com) cls = "s-com";
+    else if (str) cls = "s-str";
+    else if (num) cls = "s-num";
+    else if (word) {
+      if (KEYWORDS[lang].has(word)) cls = "s-kw";
+      else if (CONSTANTS.has(word)) cls = "s-const";
+      else if (/^\s*\(/.test(rest)) cls = "s-fn";
+      else if (lang === "py" && /^=(?!=)/.test(rest)) cls = "s-param";
+      else cls = "s-var";
+    } else if (punct) cls = "s-punct";
+    out += cls ? `<span class="${cls}">${escapeHtml(tok)}</span>` : escapeHtml(tok);
+  }
+  return out + escapeHtml(src.slice(last));
 }
