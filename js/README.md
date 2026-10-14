@@ -199,7 +199,9 @@ interface Version {
   `bySplit`, `quotedTitleSplit`, `ambiguousMixCredit`, `unbalancedBrackets`.
 
 The full field reference, a gallery of examples and the comparison with other libraries are in the
-[main README](https://github.com/4matic/trackparse#readme). Exact behaviour is defined by the
+[documentation](https://4matic.github.io/trackparse/): [`parse` and ParsedTrack](https://4matic.github.io/trackparse/reference/parse/),
+[options](https://4matic.github.io/trackparse/reference/options/), [warnings](https://4matic.github.io/trackparse/reference/warnings/),
+[what it understands](https://4matic.github.io/trackparse/guides/what-it-understands/). Exact behaviour is defined by the
 [spec](https://github.com/4matic/trackparse/blob/main/spec/SPEC.md) and its
 [fixtures](https://github.com/4matic/trackparse/tree/main/spec/fixtures).
 
@@ -281,8 +283,8 @@ parse("Electrosoul System - Liquid Metal").title;                         // 'El
 parse("Electrosoul System - Liquid Metal", { mode: "tracklist" }).title;  // 'Liquid Metal'
 ```
 
-Field tables and the full list of rules: [main README](https://github.com/4matic/trackparse#tracklists)
-and [SPEC R13](https://github.com/4matic/trackparse/blob/main/spec/SPEC.md#r13-tracklists).
+Field tables and the full list of rules: the [tracklists guide](https://4matic.github.io/trackparse/guides/tracklists/), the
+[Tracklist API](https://4matic.github.io/trackparse/reference/tracklist/) and [SPEC R13](https://github.com/4matic/trackparse/blob/main/spec/SPEC.md#r13-tracklists).
 
 ## Limitations
 
