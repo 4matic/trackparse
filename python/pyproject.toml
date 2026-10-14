@@ -44,7 +44,8 @@ classifiers = [
 dependencies = []
 
 [project.urls]
-Homepage = "https://github.com/4matic/trackparse"
+Homepage = "https://4matic.github.io/trackparse/"
+Documentation = "https://4matic.github.io/trackparse/guides/python/"
 Repository = "https://github.com/4matic/trackparse"
 Issues = "https://github.com/4matic/trackparse/issues"
 Changelog = "https://github.com/4matic/trackparse/blob/main/python/CHANGELOG.md"

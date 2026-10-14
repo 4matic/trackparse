@@ -199,7 +199,7 @@ parse("Queen - Bohemian Rhapsody (Live at Wembley 1986)").versions[0]
 ```
 
 Version types, junk kinds and warnings are listed in the
-[main README](https://github.com/4matic/trackparse#api) and typed as `Literal` aliases
+[API reference](https://4matic.github.io/trackparse/reference/parse/) and typed as `Literal` aliases
 (`VersionType`, `JunkKind`, `Warning`, `ArtistRole`, `ArtistSource`, `Mode`, `ModeOption`,
 `VersionDelimiter`).
 
@@ -417,7 +417,7 @@ Warning codes: `time-missing`, `time-out-of-order`, `time-duplicate`, `no-start-
 `position-duplicate`, `line-unparsed`. Edits: `set-time {line, seconds}`, `shift {seconds, lines? | from?}`
 (all timed lines when neither is given), `sort-by-time {}`, `set-rest {line, rest}`,
 `insert {after, text}` (`after: 0` inserts at the top), `delete {line}`. The
-[main README](https://github.com/4matic/trackparse#tracklist-api) explains each one.
+[Tracklist API reference](https://4matic.github.io/trackparse/reference/tracklist/) explains each one.
 `to_dict()` gives the camelCase JSON from
 [`tracklist.schema.json`](https://github.com/4matic/trackparse/blob/main/spec/schema/tracklist.schema.json),
 byte-identical to the JS package's output.
@@ -462,8 +462,11 @@ same spec rule IDs. Behaviour changes start in the spec, not here: see
 
 ## Links
 
+- [Documentation](https://4matic.github.io/trackparse/), with a [Python guide](https://4matic.github.io/trackparse/guides/python/) and a
+  [playground](https://4matic.github.io/trackparse/playground/) that runs the parser in your browser
 - [Spec](https://github.com/4matic/trackparse/blob/main/spec/SPEC.md)
-- [Project README](https://github.com/4matic/trackparse#readme), with a table of real outputs
+- [Project README](https://github.com/4matic/trackparse#readme)
+- [GitHub repository](https://github.com/4matic/trackparse)
 - [Changelog](https://github.com/4matic/trackparse/blob/main/python/CHANGELOG.md)
 - [npm package](https://www.npmjs.com/package/trackparse)
 
