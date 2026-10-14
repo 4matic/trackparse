@@ -1,62 +1,66 @@
 ---
-import FlaskConical from "@lucide/astro/icons/flask-conical";
-import GitCompare from "@lucide/astro/icons/git-compare";
-import Layers from "@lucide/astro/icons/layers";
-import Package from "@lucide/astro/icons/package";
-
+// Monochrome numbers in one row. Keep them in sync with the fixtures (see AGENTS.md).
 const stats = [
-  { n: "12,965", label: "shared fixtures", note: "100% pass in JS and Python", icon: FlaskConical },
-  { n: "0", label: "dependencies", note: "ESM, CJS and types", icon: Package },
-  { n: "27", label: "version types", note: "remix to nightcore", icon: Layers },
-  { n: "0", label: "differences", note: "between the JS and Python output", icon: GitCompare },
+  { n: "12,965", label: "shared fixtures, 100% passing in both ports" },
+  { n: "0", label: "runtime dependencies" },
+  { n: "27", label: "version types, remix to nightcore" },
+  { n: "0", label: "differences between JS and Python output" },
 ];
 ---
 
-<section class="stats not-content" aria-label="Numbers">
+<dl class="stats not-content">
   {
     stats.map((s) => (
       <div class="stat">
-        <span class="stat-icon" aria-hidden="true"><s.icon size={18} strokeWidth={2} /></span>
-        <span class="n">{s.n}</span>
-        <span class="label">{s.label}</span>
-        <span class="note">{s.note}</span>
+        <dt>{s.label}</dt>
+        <dd>{s.n}</dd>
       </div>
     ))
   }
-</section>
+</dl>
 
 <style>
   .stats {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr));
-    gap: 1px;
-    margin-block: 3rem 1rem;
-    background: var(--tp-border);
-    border: 1px solid var(--tp-border);
-    border-radius: 1rem;
-    overflow: hidden;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    margin: 3rem 0 0;
+    border-top: 1px solid var(--tp-border);
+    border-bottom: 1px solid var(--tp-border);
   }
   .stat {
-    display: grid;
-    gap: 0.15rem;
-    padding: 1.2rem 1.3rem;
-    background: var(--tp-surface);
+    display: flex;
+    flex-direction: column-reverse;
+    justify-content: flex-end;
+    gap: 0.35rem;
+    padding: 1.4rem 1.25rem 1.4rem 0;
+    min-width: 0;
   }
-  .stat-icon {
-    color: var(--sl-color-gray-3);
-    margin-bottom: 0.4rem;
+  .stat + .stat {
+    padding-left: 1.25rem;
+    border-left: 1px solid var(--tp-border);
   }
-  .n {
-    font: 700 2.2rem/1 "Space Grotesk Variable", var(--sl-font);
-    letter-spacing: -0.03em;
-    color: var(--sl-color-accent);
-  }
-  .label {
-    font-weight: 600;
+  .stat dd {
+    margin: 0;
+    font: 500 clamp(1.6rem, 3.2vw, 2.1rem) / 1 var(--sl-font-mono);
+    letter-spacing: -0.04em;
     color: var(--sl-color-white);
+    font-variant-numeric: tabular-nums;
   }
-  .note {
+  .stat dt {
     font-size: 0.82rem;
+    line-height: 1.4;
     color: var(--sl-color-gray-3);
+  }
+  @media (max-width: 50rem) {
+    .stats {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .stat:nth-child(3) {
+      padding-left: 0;
+      border-left: 0;
+    }
+    .stat:nth-child(n + 3) {
+      border-top: 1px solid var(--tp-border);
+    }
   }
 </style>

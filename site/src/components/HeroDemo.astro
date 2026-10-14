@@ -1,6 +1,5 @@
 ---
 import ArrowRight from "@lucide/astro/icons/arrow-right";
-import Sparkles from "@lucide/astro/icons/sparkles";
 import "../styles/playground.css";
 
 const examples = [
@@ -15,9 +14,13 @@ const examples = [
 const playground = `${import.meta.env.BASE_URL}playground/`;
 ---
 
-<section class="hero-demo tp-card not-content" data-playground={playground}>
-  <div class="hd-top">
-    <label class="tp-label hd-label" for="hd-input"><Sparkles size={14} aria-hidden="true" /> Try it: this runs the real parser in your browser</label>
+<section class="hero-demo tp-card not-content" data-playground={playground} aria-label="Live demo">
+  <header class="hd-bar">
+    <span class="hd-title"><span class="tp-mono">parse(input)</span><span class="hd-sub">runs the real package in your browser</span></span>
+    <span class="tp-muted tp-mono hd-time" id="hd-time"></span>
+  </header>
+  <div class="hd-body">
+    <label class="sr-only" for="hd-input">Track name</label>
     <input
       id="hd-input"
       class="tp-input"
@@ -42,47 +45,97 @@ const playground = `${import.meta.env.BASE_URL}playground/`;
     <p class="tp-line" id="hd-line" aria-live="polite"></p>
     <div class="tp-legend" id="hd-legend"></div>
     <div id="hd-fields"></div>
-    <div class="hd-actions">
-      <a class="tp-btn" id="hd-open" href={playground}>Open in the playground <ArrowRight size={15} aria-hidden="true" /></a>
-      <span class="tp-muted" id="hd-time"></span>
-    </div>
   </div>
+  <footer class="hd-foot">
+    <a class="hd-open" id="hd-open" href={playground}>Open in the playground <ArrowRight size={14} aria-hidden="true" /></a>
+  </footer>
 </section>
 
 <style>
   .hero-demo,
-  .hd-top,
+  .hd-body,
   .hd-out {
     min-width: 0;
-    grid-template-columns: minmax(0, 1fr);
   }
   .hero-demo {
-    padding: clamp(1rem, 3vw, 1.6rem);
     display: grid;
-    gap: 1.2rem;
-    margin-block: 0.5rem 2.5rem;
+    grid-template-columns: minmax(0, 1fr);
+    margin-block: 3rem 0;
+    overflow: hidden;
   }
-  .hd-top {
-    display: grid;
-    gap: 0.6rem;
-  }
-  .hd-label {
-    display: inline-flex;
+  .hd-bar,
+  .hd-foot {
+    display: flex;
     align-items: center;
-    gap: 0.4rem;
-    color: var(--sl-color-accent);
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.65rem 1.1rem;
+    font-size: 0.8rem;
+  }
+  .hd-bar {
+    border-bottom: 1px solid var(--tp-border);
+    background: var(--tp-surface-2);
+  }
+  .hd-title {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.25rem 0.75rem;
+    color: var(--sl-color-white);
+  }
+  .hd-sub {
+    color: var(--sl-color-gray-3);
+  }
+  .hd-time {
+    white-space: nowrap;
+  }
+  /* Phones: examples become one scrolling row instead of a tall stack. */
+  @media (max-width: 40rem) {
+    .hd-body .tp-examples {
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      scrollbar-width: none;
+      margin-inline: -1.1rem;
+      padding-inline: 1.1rem;
+      scroll-padding-inline: 1.1rem;
+    }
+    .hd-body .tp-examples::-webkit-scrollbar {
+      display: none;
+    }
+    .hd-body .tp-examples li {
+      flex: none;
+      max-width: 80vw;
+    }
+  }
+  .hd-body {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.75rem;
+    padding: 1.1rem;
   }
   .hd-out {
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
     gap: 0.9rem;
-    border-top: 1px dashed var(--tp-border);
-    padding-top: 1.1rem;
+    padding: 0.4rem 1.1rem 1.1rem;
   }
-  .hd-actions {
-    display: flex;
-    flex-wrap: wrap;
+  .hd-foot {
+    justify-content: flex-end;
+    border-top: 1px solid var(--tp-border);
+  }
+  .hd-open {
+    display: inline-flex;
     align-items: center;
-    gap: 0.8rem;
+    gap: 0.35rem;
+    font-weight: 500;
+    color: var(--sl-color-white);
+    text-decoration: none;
+  }
+  .hd-open:hover {
+    color: var(--sl-color-accent-high);
+  }
+  :global([data-theme="light"]) .hd-open:hover {
+    color: var(--sl-color-accent);
   }
 </style>
 
@@ -112,7 +165,7 @@ const playground = `${import.meta.env.BASE_URL}playground/`;
       legend.innerHTML = kinds.map((k) => chip(KIND_LABEL[k], k)).join("");
       fields.innerHTML = fieldsHtml(track);
       open.href = `${base}#track=${encodeURIComponent(s)}`;
-      time.textContent = `parsed in ${ms < 1 ? "<1" : ms.toFixed(1)} ms`;
+      time.textContent = `${ms < 1 ? "<1" : ms.toFixed(1)} ms`;
       for (const b of buttons) b.setAttribute("aria-pressed", String(b.dataset.example === s));
     };
 

@@ -1,0 +1,116 @@
+---
+// "Extract, don't delete" made concrete: what a dash split gives you, and what trackparse gives you.
+const rows: [string, string, string][] = [
+  ["Artist", "Wilkinson ft. Becky Hill &amp; Tom Cane", "Wilkinson"],
+  ["Featured", "", "Becky Hill, Tom Cane"],
+  ["Title", "Afterglow (Sub Focus VIP Remix) [Official Video]", "Afterglow"],
+  ["Version", "", "remix + vip, by Sub Focus"],
+  ["Noise", "", "<s>Official Video</s> &nbsp;<span class=\"k\">video</span>"],
+  ["Position", "", "1"],
+];
+---
+
+<div class="compare not-content">
+  <p class="input"><span class="k">input</span> 01. Wilkinson ft. Becky Hill &amp; Tom Cane - Afterglow (Sub Focus VIP Remix) [Official Video]</p>
+  <table>
+    <thead>
+      <tr><th scope="col"></th><th scope="col">Split on the dash</th><th scope="col">trackparse</th></tr>
+    </thead>
+    <tbody>
+      {
+        rows.map(([k, a, b]) => (
+          <tr>
+            <th scope="row">{k}</th>
+            <td class="a">{a ? <Fragment set:html={a} /> : <span class="none">lost</span>}</td>
+            <td class="b"><Fragment set:html={b} /></td>
+          </tr>
+        ))
+      }
+    </tbody>
+  </table>
+</div>
+
+<style>
+  .compare {
+    margin-top: 1.5rem;
+    border: 1px solid var(--tp-border);
+    border-radius: var(--tp-radius);
+    overflow: hidden;
+    background: var(--tp-surface);
+  }
+  .input {
+    margin: 0;
+    padding: 0.8rem 1rem;
+    font: 0.8rem/1.6 var(--sl-font-mono);
+    color: var(--sl-color-gray-2);
+    border-bottom: 1px solid var(--tp-border);
+    overflow-wrap: anywhere;
+  }
+  .k {
+    font: 0.72rem var(--sl-font-mono);
+    color: var(--sl-color-gray-4);
+    margin-right: 0.5rem;
+  }
+  table {
+    display: table;
+    width: 100%;
+    margin: 0;
+    border-collapse: collapse;
+    font-size: 0.86rem;
+    table-layout: fixed;
+  }
+  th,
+  td {
+    text-align: left;
+    vertical-align: top;
+    padding: 0.6rem 1rem;
+    border: 0;
+    border-bottom: 1px solid var(--tp-border);
+    overflow-wrap: anywhere;
+  }
+  tbody tr:last-child > * {
+    border-bottom: 0;
+  }
+  thead th {
+    font-weight: 500;
+    font-size: 0.78rem;
+    color: var(--sl-color-gray-3);
+  }
+  thead th:first-child,
+  tbody th {
+    width: 6.5rem;
+  }
+  tbody th {
+    font-weight: 500;
+    color: var(--sl-color-gray-3);
+  }
+  td.a {
+    font-family: var(--sl-font-mono);
+    font-size: 0.8rem;
+    color: var(--sl-color-gray-3);
+  }
+  td.b {
+    color: var(--sl-color-white);
+    font-weight: 500;
+    border-left: 1px solid var(--tp-border);
+  }
+  td.b :global(s) {
+    color: var(--sl-color-gray-4);
+    font-weight: 400;
+  }
+  .none {
+    color: var(--sl-color-gray-4);
+    font-family: var(--sl-font);
+    font-style: italic;
+  }
+  @media (max-width: 34rem) {
+    thead th:first-child,
+    tbody th {
+      width: 4.8rem;
+    }
+    th,
+    td {
+      padding-inline: 0.6rem;
+    }
+  }
+</style>

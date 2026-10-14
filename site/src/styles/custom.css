@@ -1,123 +1,437 @@
-@import "@fontsource-variable/inter";
-@import "@fontsource-variable/space-grotesk";
-@import "@fontsource-variable/jetbrains-mono";
+@import "@fontsource-variable/geist";
+@import "@fontsource-variable/geist-mono";
 
-/* Field colours used by the playground and the docs (one per kind of output). */
-:root[data-theme="light"] {
-  --tp-position: #0f9f7f;
-  --tp-primary: #1f7ad6;
-  --tp-featured: #7c4ddb;
-  --tp-producer: #c03f8f;
-  --tp-version: #c27100;
-  --tp-junk: #8a8599;
-  --tp-year: #3b8f2f;
-  --tp-title: var(--sl-color-white);
-  --tp-surface: #ffffff;
-  --tp-surface-2: #f6f4fb;
-  --tp-border: #e3dff0;
-  --tp-shadow: 0 1px 2px rgb(20 17 31 / 0.06), 0 8px 24px -12px rgb(20 17 31 / 0.18);
-}
+/* ---------------------------------------------------------------------------------------------
+   Design rules (keep to them when adding pages or components)
+   - Neutral greys carry the page. The one accent (signal orange) marks links underlines, focus,
+     the current page and the artist field; it should cover a few percent of any screen at most.
+   - One type family: Geist for text and headings, Geist Mono for code and data. Hierarchy comes
+     from size and weight, never from colour or gradients.
+   - Hairline borders (1px), radii of 6-8px, no drop shadows, no decorative icons.
+   - Field colours (artist, featured, version...) are data colours: use them only for parsed output.
+   Starlight treats :root as dark and [data-theme="light"] as light.
+   --------------------------------------------------------------------------------------------- */
 
 :root {
-  --tp-position: #3ddbb5;
-  --tp-primary: #5eb8ff;
-  --tp-featured: #b18cff;
-  --tp-producer: #ff7ac6;
-  --tp-version: #ffb547;
-  --tp-junk: #8f8aa3;
-  --tp-year: #8ee07a;
-  --tp-surface: #1a1727;
-  --tp-surface-2: #211d31;
-  --tp-border: #2f2a44;
-  --tp-shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 12px 32px -16px rgb(0 0 0 / 0.6);
-}
+  --sl-font: "Geist Variable", ui-sans-serif, system-ui, sans-serif;
+  --sl-font-mono: "Geist Mono Variable", ui-monospace, "SFMono-Regular", monospace;
 
-/* Starlight theme: violet accent, inky greys. Starlight treats :root as dark. */
-:root {
-  --sl-font: "Inter Variable", system-ui, sans-serif;
-  --sl-font-mono: "JetBrains Mono Variable", ui-monospace, monospace;
+  --sl-color-white: #fafafa;
+  --sl-color-gray-1: #ededed;
+  --sl-color-gray-2: #c4c4c4;
+  --sl-color-gray-3: #a1a1a1;
+  --sl-color-gray-4: #868686;
+  --sl-color-gray-5: #333333;
+  --sl-color-gray-6: #1c1c1c;
+  --sl-color-black: #0a0a0a;
+
+  --sl-color-accent-low: #2b1307;
+  --sl-color-accent: #ff6b2c;
+  --sl-color-accent-high: #ffb089;
+
+  --sl-color-bg-nav: color-mix(in srgb, var(--sl-color-black) 82%, transparent);
+  --sl-color-bg-sidebar: var(--sl-color-black);
+  --sl-color-hairline: #222222;
+  --sl-color-hairline-light: #2c2c2c;
+  --sl-color-hairline-shade: #000000;
+
+  --tp-surface: #0f0f0f;
+  --tp-surface-2: #161616;
+  --tp-border: #262626;
+  --tp-border-strong: #383838;
+  --tp-code-bg: #1d1d1d;
+  --tp-radius: 8px;
+  --tp-radius-sm: 6px;
+
+  /* Data colours for parsed output. */
+  --tp-primary: #ff8a4c;
+  --tp-featured: #e3b56b;
+  --tp-producer: #d98fb2;
+  --tp-version: #8cb4ff;
+  --tp-junk: #868686;
+  --tp-position: #a8a8a8;
+  --tp-year: #a8a8a8;
 }
 
 :root[data-theme="light"] {
-  --sl-font: "Inter Variable", system-ui, sans-serif;
-  --sl-font-mono: "JetBrains Mono Variable", ui-monospace, monospace;
-  --sl-color-accent-low: #e6dcff;
-  --sl-color-accent: #6a3fd6;
-  --sl-color-accent-high: #2d1670;
-  --sl-color-white: #14111f;
-  --sl-color-gray-1: #24202f;
-  --sl-color-gray-2: #3b364a;
-  --sl-color-gray-3: #5f5970;
-  --sl-color-gray-4: #8f8aa3;
-  --sl-color-gray-5: #cfcadc;
-  --sl-color-gray-6: #ece9f4;
-  --sl-color-gray-7: #f7f6fb;
+  --sl-color-white: #0a0a0a;
+  --sl-color-gray-1: #171717;
+  --sl-color-gray-2: #3d3d3d;
+  --sl-color-gray-3: #5c5c5c;
+  --sl-color-gray-4: #6b6b6b;
+  --sl-color-gray-5: #d6d6d6;
+  --sl-color-gray-6: #ededed;
+  --sl-color-gray-7: #f6f6f6;
   --sl-color-black: #ffffff;
+
+  --sl-color-accent-low: #ffeadf;
+  --sl-color-accent: #d9480f;
+  --sl-color-accent-high: #8f2e0a;
+
+  --sl-color-bg-nav: color-mix(in srgb, #ffffff 85%, transparent);
+  --sl-color-bg-sidebar: #ffffff;
+  --sl-color-hairline: #eaeaea;
+  --sl-color-hairline-light: #eaeaea;
+  --sl-color-hairline-shade: #dcdcdc;
+
+  --tp-surface: #ffffff;
+  --tp-surface-2: #f7f7f7;
+  --tp-border: #e6e6e6;
+  --tp-border-strong: #cfcfcf;
+  --tp-code-bg: #f1f1f1;
+
+  --tp-primary: #c2410c;
+  --tp-featured: #96620a;
+  --tp-producer: #a3366b;
+  --tp-version: #2456c4;
+  --tp-junk: #6b6b6b;
+  --tp-position: #5c5c5c;
+  --tp-year: #5c5c5c;
 }
 
-:root {
-  --sl-color-accent-low: #241a47;
-  --sl-color-accent: #9a78ff;
-  --sl-color-accent-high: #d9ccff;
-  --sl-color-white: #ffffff;
-  --sl-color-gray-1: #ece9f4;
-  --sl-color-gray-2: #c9c4d8;
-  --sl-color-gray-3: #9b95ae;
-  --sl-color-gray-4: #6b6680;
-  --sl-color-gray-5: #3d3852;
-  --sl-color-gray-6: #241f35;
-  --sl-color-black: #12101b;
+/* ---- type -------------------------------------------------------------------------------- */
+
+body {
+  font-feature-settings: "ss01", "cv11";
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
 h1,
 h2,
 h3,
 h4,
-.site-title,
-.hero h1 {
-  font-family: "Space Grotesk Variable", var(--sl-font);
-  letter-spacing: -0.02em;
+h5 {
+  font-weight: 600;
+  text-wrap: balance;
 }
-
+.content-panel h1,
+.sl-markdown-content h1 {
+  letter-spacing: -0.035em;
+}
 .sl-markdown-content h2 {
-  margin-top: 2.5rem;
+  margin-top: 2.75rem;
+  letter-spacing: -0.025em;
+}
+.sl-markdown-content h3 {
+  letter-spacing: -0.015em;
+}
+.sl-markdown-content p,
+.sl-markdown-content li {
+  text-wrap: pretty;
 }
 
-/* Tables read better with a little air and tabular numbers. */
+/* Header icons: neutral, not accent (Starlight colours them with --sl-color-text-accent). */
+.social-icons {
+  --sl-color-text-accent: var(--sl-color-gray-3);
+}
+
+.site-title {
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  font-size: 1.05rem;
+  color: var(--sl-color-white);
+}
+
+/* Links: foreground text, accent underline. */
+.sl-markdown-content a:not(.not-content *, .sl-link-card *, [class*="sl-link"]) {
+  color: var(--sl-color-white);
+  text-decoration-line: underline;
+  text-decoration-color: color-mix(in srgb, var(--sl-color-accent) 55%, transparent);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.22em;
+  transition: text-decoration-color 0.15s;
+}
+.sl-markdown-content a:not(.not-content *, .sl-link-card *, [class*="sl-link"]):hover {
+  text-decoration-color: var(--sl-color-accent);
+  text-decoration-thickness: 2px;
+}
+
+/* Inline code is one quiet box: a short span moves to the next line whole instead of splitting
+   (`mypy --strict`), and a span longer than the line wraps inside its own box. */
+.sl-markdown-content code:not(pre code, .not-content code) {
+  display: inline-block;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  vertical-align: baseline;
+  font-size: 0.86em;
+  padding: 0.1em 0.35em;
+  border-radius: 4px;
+  background: var(--tp-code-bg);
+  border: 0;
+  color: var(--sl-color-gray-1);
+}
+.sl-markdown-content a > code {
+  color: inherit;
+}
+/* In table cells, code wraps only at spaces: the table scrolls sideways instead of breaking
+   `knownArtists` into pieces. */
+.sl-markdown-content :is(td, th) code:not(pre code, .not-content code) {
+  overflow-wrap: normal;
+}
+
+/* Tables: hairlines, small muted headers, tabular numbers. */
 .sl-markdown-content table {
   font-variant-numeric: tabular-nums;
+  font-size: 0.92em;
+}
+.sl-markdown-content :is(th, td) {
+  border-color: var(--tp-border);
+  padding: 0.55rem 0.8rem;
+}
+.sl-markdown-content th {
+  font-weight: 500;
+  font-size: 0.85em;
+  color: var(--sl-color-gray-3);
+  background: transparent;
+}
+.sl-markdown-content tr:nth-child(2n) {
+  background: transparent;
 }
 
-/* Splash hero */
+/* ---- chrome ------------------------------------------------------------------------------ */
+
+header.header {
+  backdrop-filter: saturate(1.4) blur(10px);
+  -webkit-backdrop-filter: saturate(1.4) blur(10px);
+  border-bottom: 1px solid var(--sl-color-hairline);
+}
+
+/* Sidebar: quiet groups, current page marked by weight, a tint and an accent bar. */
+.sidebar-content .group-label .large {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--sl-color-white);
+}
+.sidebar-content a {
+  font-size: 0.9rem;
+  color: var(--sl-color-gray-3);
+  border-radius: var(--tp-radius-sm);
+  transition: color 0.12s, background 0.12s;
+}
+.sidebar-content a:hover {
+  color: var(--sl-color-white);
+}
+.sidebar-content a[aria-current="page"],
+.sidebar-content a[aria-current="page"]:hover,
+.sidebar-content a[aria-current="page"]:focus {
+  color: var(--sl-color-white);
+  font-weight: 500;
+  background: var(--tp-surface-2);
+  box-shadow: inset 2px 0 0 var(--sl-color-accent);
+}
+.sidebar-content .sl-badge {
+  font: 500 0.66rem/1.5 var(--sl-font-mono);
+  color: var(--sl-color-gray-3);
+  background: transparent;
+  border: 1px solid var(--tp-border-strong);
+}
+
+/* Right-hand "On this page" */
+starlight-toc a {
+  color: var(--sl-color-gray-3);
+}
+starlight-toc a[aria-current="true"] {
+  color: var(--sl-color-white);
+}
+
+/* Starlight tabs: foreground underline instead of the accent. */
+starlight-tabs [role="tab"][aria-selected="true"] {
+  color: var(--sl-color-white);
+  box-shadow: 0 2px 0 var(--sl-color-white);
+  font-weight: 500;
+}
+starlight-tabs [role="tab"] {
+  color: var(--sl-color-gray-3);
+}
+
+/* Cards and pagination: hairline boxes, no shadows. */
+.sl-link-card,
+.pagination-links > a {
+  border: 1px solid var(--tp-border);
+  border-radius: var(--tp-radius);
+  background: transparent;
+  box-shadow: none;
+  transition: border-color 0.15s, background 0.15s;
+}
+.sl-link-card:hover,
+.pagination-links > a:hover {
+  border-color: var(--tp-border-strong);
+  background: var(--tp-surface-2);
+}
+.sl-link-card .title,
+.pagination-links .link-title {
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+.pagination-links .link-title {
+  font-size: 1.05rem;
+}
+
+/* Asides: one neutral style with a coloured rule, not four tinted boxes. */
+.starlight-aside {
+  background: var(--tp-surface-2);
+  border: 1px solid var(--tp-border);
+  border-inline-start: 2px solid var(--sl-color-asides-border);
+  border-radius: var(--tp-radius-sm);
+}
+.starlight-aside--tip,
+.starlight-aside--note {
+  --sl-color-asides-border: var(--sl-color-gray-4);
+  --sl-color-asides-text-accent: var(--sl-color-white);
+}
+
+/* Heading anchor links: neutral. */
+.sl-anchor-link {
+  color: var(--sl-color-gray-4);
+}
+.sl-anchor-link:hover {
+  color: var(--sl-color-white);
+}
+
+/* Focus rings: visible, accent, no glow. */
+:focus-visible {
+  outline: 2px solid var(--sl-color-accent);
+  outline-offset: 2px;
+}
+
+/* ---- buttons (Starlight link buttons: hero actions, 404) ---------------------------------- */
+
+.sl-link-button {
+  border-radius: var(--tp-radius-sm);
+  font-weight: 500;
+  font-size: 0.92rem;
+  padding: 0.7rem 1.15rem;
+  letter-spacing: -0.005em;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.sl-link-button.primary {
+  background: var(--sl-color-white);
+  border-color: var(--sl-color-white);
+  color: var(--sl-color-black);
+}
+.sl-link-button.primary:hover {
+  background: var(--sl-color-gray-2);
+  border-color: var(--sl-color-gray-2);
+  color: var(--sl-color-black);
+}
+.sl-link-button.secondary {
+  background: transparent;
+  border: 1px solid var(--tp-border-strong);
+  color: var(--sl-color-white);
+}
+.sl-link-button.secondary:hover {
+  background: var(--tp-surface-2);
+  color: var(--sl-color-white);
+}
+
+/* ---- home ------------------------------------------------------------------------------- */
+
+[data-has-hero] .main-pane {
+  isolation: isolate;
+}
+/* A faint grid behind the hero, fading out: the only background decoration on the site. */
+[data-has-hero] .main-pane::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 46rem;
+  z-index: -1;
+  pointer-events: none;
+  background-image:
+    linear-gradient(to right, var(--sl-color-hairline) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--sl-color-hairline) 1px, transparent 1px);
+  background-size: 64px 64px;
+  background-position: center top;
+  mask-image: radial-gradient(ellipse 70% 60% at 50% 0%, #000 30%, transparent 75%);
+  -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 0%, #000 30%, transparent 75%);
+  opacity: 0.7;
+}
+[data-has-hero] .main-pane {
+  position: relative;
+}
 .hero {
-  padding-block: clamp(2.5rem, 6vw, 5rem) 1.5rem;
+  padding-block: clamp(3rem, 9vw, 6.5rem) 0;
+  gap: 0;
+  grid-template-columns: minmax(0, 1fr);
+}
+.hero .copy {
+  align-items: flex-start;
+  text-align: start;
+  gap: 1.25rem;
 }
 .hero h1 {
-  font-size: clamp(2.6rem, 6vw, 4.2rem);
+  font-size: clamp(2.5rem, 6.4vw, 4.6rem);
   line-height: 1.02;
-  background: linear-gradient(100deg, var(--sl-color-white) 30%, var(--sl-color-accent) 70%, var(--tp-version));
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  font-weight: 600;
+  letter-spacing: -0.045em;
+  color: var(--sl-color-white);
 }
 .hero .tagline {
-  max-width: 38rem;
-  color: var(--sl-color-gray-2);
+  max-width: 40rem;
+  font-size: clamp(1.02rem, 1.6vw, 1.15rem);
+  line-height: 1.6;
+  color: var(--sl-color-gray-3);
+  text-wrap: pretty;
+}
+.hero .actions {
+  justify-content: flex-start;
+  gap: 0.6rem;
+  margin-top: 0.5rem;
 }
 
-/* Small field-colour chips used inline in docs: <span class="tp-chip tp-primary">primary</span> */
+[data-has-hero] .sl-markdown-content h2 {
+  font-size: clamp(1.5rem, 2.6vw, 1.9rem);
+  margin-top: 5rem;
+}
+.home-split {
+  display: grid;
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+  gap: 1rem 3rem;
+  align-items: start;
+}
+.home-split > div > h2:first-child {
+  margin-top: 0 !important;
+}
+.home-split > div > p {
+  color: var(--sl-color-gray-3);
+}
+.sl-markdown-content .home-split {
+  margin-top: 5rem;
+}
+@media (max-width: 56rem) {
+  .home-split {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.home-next {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+.home-next > * {
+  margin: 0 !important;
+}
+@media (max-width: 40rem) {
+  .home-next {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ---- data chips (parsed output) ---------------------------------------------------------- */
+
 .tp-chip {
   display: inline-flex;
   align-items: center;
   gap: 0.35em;
-  padding: 0.05em 0.55em;
-  border-radius: 999px;
-  font-size: 0.82em;
-  font-weight: 600;
+  padding: 0.02em 0.4em;
+  border-radius: 4px;
+  font: 500 0.74em/1.5 var(--sl-font-mono);
   white-space: nowrap;
   color: var(--tp-c);
-  background: color-mix(in srgb, var(--tp-c) 14%, transparent);
-  border: 1px solid color-mix(in srgb, var(--tp-c) 35%, transparent);
+  background: color-mix(in srgb, var(--tp-c) 9%, transparent);
+  border: 1px solid color-mix(in srgb, var(--tp-c) 22%, transparent);
 }
 .tp-position { --tp-c: var(--tp-position); }
 .tp-primary { --tp-c: var(--tp-primary); }
@@ -128,16 +442,16 @@ h4,
 .tp-junk { --tp-c: var(--tp-junk); }
 .tp-year,
 .tp-flag { --tp-c: var(--tp-year); }
-.tp-title { --tp-c: var(--sl-color-gray-1); }
+.tp-title { --tp-c: var(--sl-color-gray-2); }
 
 /* The playground uses the normal docs layout (sidebar and mobile menu) but needs more width. */
 .main-frame:has(.pg) {
   --sl-content-width: 76rem;
 }
 
-/* Page changes: cross-document view transitions (Chromium, Safari 18.2+). The header and the
-   sidebar keep their place and only the content crossfades, so navigating doesn't look like a
-   reload. Browsers without support just navigate normally. */
+/* ---- page transitions -------------------------------------------------------------------- */
+/* Cross-document view transitions (Chromium, Safari 18.2+): header and sidebar stay put and only
+   the content crossfades. Browsers without support navigate normally. */
 @view-transition {
   navigation: auto;
 }
@@ -155,13 +469,4 @@ header.header {
   @view-transition {
     navigation: none;
   }
-}
-
-/* Inline code is one box: a short span moves to the next line whole instead of splitting
-   (`mypy --strict`), and a span longer than the line wraps inside its own rounded box. */
-.sl-markdown-content :not(pre) > code {
-  display: inline-block;
-  max-width: 100%;
-  overflow-wrap: anywhere;
-  vertical-align: baseline;
 }

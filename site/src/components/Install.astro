@@ -1,0 +1,100 @@
+---
+// One install line under the hero, switchable between npm and pip, with a copy button.
+import Copy from "@lucide/astro/icons/copy";
+
+const cmds = { npm: "npm install trackparse", pip: "pip install trackparse" };
+---
+
+<div class="install not-content" data-cmds={JSON.stringify(cmds)}>
+  <div class="seg" role="group" aria-label="Package manager">
+    <button type="button" data-pm="npm" aria-pressed="true">npm</button>
+    <button type="button" data-pm="pip" aria-pressed="false">pip</button>
+  </div>
+  <code><span class="prompt" aria-hidden="true">$</span> <span class="cmd">{cmds.npm}</span></code>
+  <button type="button" class="copy" aria-label="Copy the install command"><Copy size={15} aria-hidden="true" /></button>
+</div>
+
+<style>
+  .install {
+    display: inline-flex;
+    align-items: center;
+    max-width: 100%;
+    margin-top: 1.75rem;
+    border: 1px solid var(--tp-border);
+    border-radius: var(--tp-radius);
+    background: var(--tp-surface);
+    font: 0.85rem/1 var(--sl-font-mono);
+  }
+  .seg {
+    display: flex;
+    padding: 0.25rem;
+    gap: 0.15rem;
+    border-right: 1px solid var(--tp-border);
+  }
+  .seg button {
+    font: 500 0.75rem/1 var(--sl-font-mono);
+    color: var(--sl-color-gray-3);
+    background: transparent;
+    border: 0;
+    border-radius: 4px;
+    padding: 0.45rem 0.55rem;
+    cursor: pointer;
+  }
+  .seg button[aria-pressed="true"] {
+    color: var(--sl-color-white);
+    background: var(--tp-surface-2);
+  }
+  code {
+    padding: 0 0.9rem;
+    color: var(--sl-color-white);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    background: none;
+    border: 0;
+    font-size: inherit;
+  }
+  .prompt {
+    color: var(--sl-color-gray-4);
+  }
+  .copy {
+    display: grid;
+    place-items: center;
+    align-self: stretch;
+    padding: 0 0.8rem;
+    color: var(--sl-color-gray-3);
+    background: transparent;
+    border: 0;
+    border-left: 1px solid var(--tp-border);
+    cursor: pointer;
+  }
+  .copy:hover,
+  .copy.done {
+    color: var(--sl-color-white);
+  }
+</style>
+
+<script>
+  for (const root of document.querySelectorAll<HTMLElement>(".install")) {
+    const cmds = JSON.parse(root.dataset.cmds ?? "{}") as Record<string, string>;
+    const cmd = root.querySelector<HTMLElement>(".cmd")!;
+    const copy = root.querySelector<HTMLButtonElement>(".copy")!;
+    for (const b of root.querySelectorAll<HTMLButtonElement>("[data-pm]")) {
+      b.addEventListener("click", () => {
+        cmd.textContent = cmds[b.dataset.pm!];
+        for (const x of root.querySelectorAll("[data-pm]")) x.setAttribute("aria-pressed", String(x === b));
+      });
+    }
+    copy.addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(cmd.textContent ?? "");
+        copy.classList.add("done");
+        copy.setAttribute("aria-label", "Copied");
+        setTimeout(() => {
+          copy.classList.remove("done");
+          copy.setAttribute("aria-label", "Copy the install command");
+        }, 1200);
+      } catch {}
+    });
+  }
+</script>

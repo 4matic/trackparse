@@ -318,6 +318,10 @@ at site URLs that can't be changed after a release. When a page moves or disappe
 `redirects` entry in `site/astro.config.mjs` so the old URL keeps working, then update the
 links in the repo. The sidebar is in the same file.
 
+**Design.** The visual rules (neutral greys, one orange accent, Geist type, hairlines, no decorative
+icons or gradients, data colours only for parsed output) are written at the top of
+`site/src/styles/custom.css`. Keep new pages and components to them.
+
 **Check before pushing:** `pnpm docs:build` passes (it fails on broken MDX), and you looked at the
 changed pages with `pnpm docs`. Site-only commits (`docs(site)`, `fix(site)`, `feat(site)`) don't
 trigger a release; changes under `js/`, `python/` or `spec/` do, even `docs:` ones.
