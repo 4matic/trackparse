@@ -51,6 +51,18 @@
   --tp-junk: #868686;
   --tp-position: #a8a8a8;
   --tp-year: #a8a8a8;
+
+  /* Syntax colours for the playground's own code panels (Vitesse Dark, like the code blocks). */
+  --tp-syn-kw: #4d9375;
+  --tp-syn-str: #c98a7d;
+  --tp-syn-num: #4c9a91;
+  --tp-syn-fn: #80a665;
+  --tp-syn-var: #bd976a;
+  --tp-syn-prop: #b8a965;
+  --tp-syn-const: #c99076;
+  --tp-syn-com: #758575;
+  --tp-syn-punct: #8a8a8a;
+  --tp-syn-text: #dbd7ca;
 }
 
 :root[data-theme="light"] {
@@ -87,6 +99,17 @@
   --tp-junk: #6b6b6b;
   --tp-position: #5c5c5c;
   --tp-year: #5c5c5c;
+
+  --tp-syn-kw: #1e754f;
+  --tp-syn-str: #a45a4a;
+  --tp-syn-num: #2f798a;
+  --tp-syn-fn: #4c7a2f;
+  --tp-syn-var: #8c5a2b;
+  --tp-syn-prop: #7a6b0d;
+  --tp-syn-const: #a65e2b;
+  --tp-syn-com: #6b7a6b;
+  --tp-syn-punct: #6b6b6b;
+  --tp-syn-text: #393a34;
 }
 
 /* ---- type -------------------------------------------------------------------------------- */

@@ -137,7 +137,7 @@ const sample = [
             <button type="button" class="tp-btn small" data-lang="py" aria-pressed="false">Python</button>
           </span>
         </div>
-        <pre class="tp-json" id="pg-code"></pre>
+        <pre class="tp-json tp-code" id="pg-code"></pre>
         <button type="button" class="tp-btn small" data-copy="pg-code"><Copy size={14} aria-hidden="true" /><span>Copy code</span></button>
       </div>
     </div>
@@ -412,7 +412,7 @@ const sample = [
   import { format, parse, type ParseOptions } from "trackparse";
   import { applyEdits, parseTracklist, type Edit, type TracklistEntry } from "trackparse/tracklist";
   import { icon } from "../lib/icons";
-  import { chip, escapeHtml, fieldsHtml, highlight, jsonHtml, KIND_LABEL, roleKind, segmentsHtml, type Kind } from "../lib/trackview";
+  import { chip, codeHtml, escapeHtml, fieldsHtml, highlight, jsonHtml, KIND_LABEL, roleKind, segmentsHtml, type Kind } from "../lib/trackview";
 
   const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 
@@ -516,8 +516,15 @@ const sample = [
   function code(s: string, o: ParseOptions, f: Record<string, unknown>): string {
     const q = (v: string) => JSON.stringify(v);
     if (lang === "js") {
-      const opts = Object.keys(o).length ? `, ${JSON.stringify(o)}` : "";
-      const fopts = Object.keys(f).length ? `, ${JSON.stringify(f)}` : "";
+      // JS literal: unquoted keys, spaces after commas and colons.
+      const js = (v: unknown): string =>
+        Array.isArray(v)
+          ? `[${v.map(js).join(", ")}]`
+          : v && typeof v === "object"
+            ? `{ ${Object.entries(v).map(([k, x]) => `${k}: ${js(x)}`).join(", ")} }`
+            : JSON.stringify(v);
+      const opts = Object.keys(o).length ? `, ${js(o)}` : "";
+      const fopts = Object.keys(f).length ? `, ${js(f)}` : "";
       return `import { parse, format } from "trackparse";\n\nconst track = parse(${q(s)}${opts});\nformat(track${fopts});`;
     }
     const snake = (k: string) => k.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`);
@@ -543,7 +550,7 @@ const sample = [
     if (joiners.value !== "original") f.joiners = joiners.value;
     if (versions.value !== "all") f.versions = versions.value;
     $("pg-formatted").textContent = format(track, f) || "–";
-    $("pg-code").textContent = code(s, o, f);
+    $("pg-code").innerHTML = codeHtml(code(s, o, f), lang);
     for (const b of document.querySelectorAll<HTMLButtonElement>("#panel-track [data-example]")) {
       b.setAttribute("aria-pressed", String(b.dataset.example === s));
     }
