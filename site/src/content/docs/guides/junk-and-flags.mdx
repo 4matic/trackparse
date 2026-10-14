@@ -3,16 +3,33 @@ title: Junk, flags and prefixes
 description: Video tags, quality markers, labels and platform suffixes; explicit and clean flags; years, track numbers and cue times.
 ---
 
+import { Tabs, TabItem } from "@astrojs/starlight/components";
+
 ## Junk
 
 Junk is everything that describes the upload rather than the song. It leaves the title, and it goes
 into `junk` with a kind so you can decide what to do with it.
+
+<Tabs syncKey="lang">
+<TabItem label="JavaScript">
 
 ```js
 const t = parse("Daft Punk - One More Time (Official Music Video) [HD]");
 t.title;  // 'One More Time'
 t.junk;   // [ { raw: 'Official Music Video', kind: 'video' }, { raw: 'HD', kind: 'quality' } ]
 ```
+
+</TabItem>
+<TabItem label="Python">
+
+```python
+t = parse("Daft Punk - One More Time (Official Music Video) [HD]")
+t.title  # 'One More Time'
+t.junk   # (Junk(raw='Official Music Video', kind='video'), Junk(raw='HD', kind='quality'))
+```
+
+</TabItem>
+</Tabs>
 
 | Kind | Examples |
 |---|---|
@@ -30,27 +47,58 @@ The phrases are in [`junk.json`](https://github.com/4matic/trackparse/blob/main/
 (plus `genres.json` for the genre kind) and [`platform-suffixes.json`](https://github.com/4matic/trackparse/blob/main/spec/data/platform-suffixes.json).
 Seeing junk is also one of the ways `mode: "auto"` decides a string came from YouTube.
 
+<Tabs syncKey="lang">
+<TabItem label="JavaScript">
+
 ```js
 parse("Porter Robinson - Shelter - YouTube").junk;   // [ { raw: 'YouTube', kind: 'platform' } ]
 parse("Elektronomia - Sky High [NCS Release]").junk; // [ { raw: 'NCS Release', kind: 'label' } ]
 ```
+
+</TabItem>
+<TabItem label="Python">
+
+```python
+parse("Porter Robinson - Shelter - YouTube").junk   # (Junk(raw='YouTube', kind='platform'),)
+parse("Elektronomia - Sky High [NCS Release]").junk # (Junk(raw='NCS Release', kind='label'),)
+```
+
+</TabItem>
+</Tabs>
 
 Catalogue numbers like `[HOSP123]` are not junk yet. They stay in the title. See the
 [roadmap](/trackparse/project/roadmap/).
 
 ## Flags
 
+<Tabs syncKey="lang">
+<TabItem label="JavaScript">
+
 ```js
 parse("Eminem - Without Me (Explicit)").flags;
 // { explicit: true, clean: false, unknownArtist: false, unknownTitle: false }
 ```
 
+</TabItem>
+<TabItem label="Python">
+
+```python
+parse("Eminem - Without Me (Explicit)").flags
+# Flags(explicit=True, clean=False, unknown_artist=False, unknown_title=False)
+```
+
+</TabItem>
+</Tabs>
+
 `explicit` and `clean` come from `(Explicit)`, `[Clean]` and the like. `unknownArtist` and
-`unknownTitle` are set when the artist or title is a placeholder such as `ID`.
+`unknownTitle` (`unknown_artist` and `unknown_title` in Python) are set when the artist or title is a placeholder such as `ID`.
 
 ## Year
 
 A year on its own in brackets, or as a dash suffix, goes into `year`:
+
+<Tabs syncKey="lang">
+<TabItem label="JavaScript">
 
 ```js
 const t = parse("Noisia - Stigma (2015)");
@@ -58,14 +106,40 @@ t.title;  // 'Stigma'
 t.year;   // 2015
 ```
 
+</TabItem>
+<TabItem label="Python">
+
+```python
+t = parse("Noisia - Stigma (2015)")
+t.title  # 'Stigma'
+t.year   # 2015
+```
+
+</TabItem>
+</Tabs>
+
 A year inside a version (`Remastered 2015`) belongs to that version instead, in `versions[i].year`.
 
 ## Track numbers
+
+<Tabs syncKey="lang">
+<TabItem label="JavaScript">
 
 ```js
 parse("01. Aphex Twin - Xtal").position;   // { raw: '01', number: 1 }
 parse("2 Unlimited - No Limit").position;  // null
 ```
+
+</TabItem>
+<TabItem label="Python">
+
+```python
+parse("01. Aphex Twin - Xtal").position   # Position(raw='01', number=1)
+parse("2 Unlimited - No Limit").position  # None
+```
+
+</TabItem>
+</Tabs>
 
 `raw` keeps the digits as written, so you can tell `01` from `1`. These count as track numbers:
 
@@ -80,10 +154,24 @@ A plain number before a word is part of the name: `2 Unlimited`, `50 Cent`, `808
 
 A time at the very start becomes `timestamp`, with seconds worked out for you:
 
+<Tabs syncKey="lang">
+<TabItem label="JavaScript">
+
 ```js
 parse("[12:34] Noisia - Stigma").timestamp;   // { raw: '12:34', seconds: 754 }
 parse("1:02:03 Noisia - Stigma").timestamp;   // { raw: '1:02:03', seconds: 3723 }
 ```
 
+</TabItem>
+<TabItem label="Python">
+
+```python
+parse("[12:34] Noisia - Stigma").timestamp   # Timestamp(raw='12:34', seconds=754)
+parse("1:02:03 Noisia - Stigma").timestamp   # Timestamp(raw='1:02:03', seconds=3723)
+```
+
+</TabItem>
+</Tabs>
+
 For whole tracklists with a time on every line, use [`parseTracklist`](/trackparse/guides/tracklists/)
-instead. It understands many more time formats and checks the order.
+(`parse_tracklist`) instead. It understands many more time formats and checks the order.

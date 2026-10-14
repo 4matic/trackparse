@@ -3,11 +3,27 @@ title: Artists and credits
 description: How trackparse splits artist lists, finds features and producers, and when to pass knownArtists.
 ---
 
+import { Tabs, TabItem } from "@astrojs/starlight/components";
+
 Every credit in the output is an `Artist`:
+
+<Tabs syncKey="lang">
+<TabItem label="JavaScript">
 
 ```ts
 { name: string; role: "primary" | "featured" | "producer" | "remixer"; joiner: string | null; source: "artist" | "title" | "version" }
 ```
+
+</TabItem>
+<TabItem label="Python">
+
+```python
+Artist(name: str, role: ArtistRole, joiner: Optional[str], source: ArtistSource)
+# role: "primary" | "featured" | "producer" | "remixer"; source: "artist" | "title" | "version"
+```
+
+</TabItem>
+</Tabs>
 
 `role` says what the person did. `joiner` is the text that introduced the name, exactly as written
 (`"&"`, `","`, `"ft."`, `"prod. by"`), and `null` for the first name of a list. `source` says where
@@ -15,12 +31,15 @@ the credit was found: left of the dash (`artist`), right of it (`title`), or ins
 (`version`).
 
 Remixers live inside `versions`, not in `artists`. Use [`allArtists(track)`](/trackparse/reference/functions/#allartiststrack)
-when you want everyone in one list.
+(`all_artists` in Python) when you want everyone in one list.
 
 ## Joiners
 
 `&`, `x`, `vs.`, `,`, `;`, `+`, `/` and `and` separate names. They're joiners, not roles: every name
 they produce is still primary.
+
+<Tabs syncKey="lang">
+<TabItem label="JavaScript">
 
 ```js
 parse("Skrillex & Diplo x Justin Bieber - Where Are Ü Now").artists;
@@ -29,6 +48,20 @@ parse("Skrillex & Diplo x Justin Bieber - Where Are Ü Now").artists;
 parse("Kanye West vs. Daft Punk - Stronger").artists.map((a) => a.name);
 // [ 'Kanye West', 'Daft Punk' ]
 ```
+
+</TabItem>
+<TabItem label="Python">
+
+```python
+parse("Skrillex & Diplo x Justin Bieber - Where Are Ü Now").artists
+# Skrillex (joiner None), Diplo (joiner '&'), Justin Bieber (joiner 'x'), all primary
+
+[a.name for a in parse("Kanye West vs. Daft Punk - Stronger").artists]
+# ['Kanye West', 'Daft Punk']
+```
+
+</TabItem>
+</Tabs>
 
 Some things look like joiners and aren't:
 
@@ -43,6 +76,9 @@ Some things look like joiners and aren't:
 `and` is common inside band names, so by default it only splits after a comma has already split the
 same list:
 
+<Tabs syncKey="lang">
+<TabItem label="JavaScript">
+
 ```js
 parse("Simon and Garfunkel - The Boxer").artists.map((a) => a.name);
 // [ 'Simon and Garfunkel' ]
@@ -51,7 +87,21 @@ parseArtists("Crosby, Stills, Nash and Young").map((a) => a.name);
 // [ 'Crosby', 'Stills', 'Nash', 'Young' ]
 ```
 
-Set `splitAnd: "always"` or `"never"` to change that.
+</TabItem>
+<TabItem label="Python">
+
+```python
+[a.name for a in parse("Simon and Garfunkel - The Boxer").artists]
+# ['Simon and Garfunkel']
+
+[a.name for a in parse_artists("Crosby, Stills, Nash and Young")]
+# ['Crosby', 'Stills', 'Nash', 'Young']
+```
+
+</TabItem>
+</Tabs>
+
+Set `splitAnd` (Python: `split_and`) to `"always"` or `"never"` to change that.
 
 ## Features
 
@@ -59,23 +109,55 @@ Set `splitAnd: "always"` or `"never"` to change that.
 only count at the start of a bracket, since "with" turns up in plenty of titles. All of these give
 the second name the role `featured`:
 
+<Tabs syncKey="lang">
+<TabItem label="JavaScript">
+
 ```js
 parse("Noisia feat. Foreign Beggars - Shellshock");     // source 'artist'
 parse("Noisia - Shellshock ft. Foreign Beggars");       // source 'title'
 parse("Silk City - Electricity (with Dua Lipa)");       // source 'title'
 ```
 
+</TabItem>
+<TabItem label="Python">
+
+```python
+parse("Noisia feat. Foreign Beggars - Shellshock")     # source 'artist'
+parse("Noisia - Shellshock ft. Foreign Beggars")       # source 'title'
+parse("Silk City - Electricity (with Dua Lipa)")       # source 'title'
+```
+
+</TabItem>
+</Tabs>
+
 If the same person is credited twice, they appear once:
+
+<Tabs syncKey="lang">
+<TabItem label="JavaScript">
 
 ```js
 parse("Noisia feat. Foreign Beggars - Shellshock (feat. Foreign Beggars)").artists.map((a) => a.name);
 // [ 'Noisia', 'Foreign Beggars' ]
 ```
 
+</TabItem>
+<TabItem label="Python">
+
+```python
+[a.name for a in parse("Noisia feat. Foreign Beggars - Shellshock (feat. Foreign Beggars)").artists]
+# ['Noisia', 'Foreign Beggars']
+```
+
+</TabItem>
+</Tabs>
+
 Names are compared with full Unicode case folding and accents removed, so `Sigur Rós` and
 `SIGUR ROS` count as the same artist.
 
 ## Producers
+
+<Tabs syncKey="lang">
+<TabItem label="JavaScript">
 
 ```js
 const t = parse("Future - Mask Off (prod. by Metro Boomin)");
@@ -83,10 +165,27 @@ t.artists[1];  // { name: 'Metro Boomin', role: 'producer', joiner: 'prod. by', 
 t.title;       // 'Mask Off'
 ```
 
+</TabItem>
+<TabItem label="Python">
+
+```python
+t = parse("Future - Mask Off (prod. by Metro Boomin)")
+t.artists[1]  # Artist(name='Metro Boomin', role='producer', joiner='prod. by', source='title')
+t.title       # 'Mask Off'
+```
+
+</TabItem>
+</Tabs>
+
 ## knownArtists
+
+*(Python: `known_artists`)*
 
 trackparse has no artist database, and that's deliberate. A built-in list would be wrong for half
 its users and impossible to keep current. Instead you tell it the names you care about:
+
+<Tabs syncKey="lang">
+<TabItem label="JavaScript">
 
 ```js
 parse("Chase & Status - Baddadan").artists.map((a) => a.name);
@@ -96,14 +195,31 @@ parse("Chase & Status - Baddadan", { knownArtists: ["Chase & Status"] }).artists
 // [ 'Chase & Status' ]
 ```
 
+</TabItem>
+<TabItem label="Python">
+
+```python
+[a.name for a in parse("Chase & Status - Baddadan").artists]
+# ['Chase', 'Status']
+
+[a.name for a in parse("Chase & Status - Baddadan", known_artists=["Chase & Status"]).artists]
+# ['Chase & Status']
+```
+
+</TabItem>
+</Tabs>
+
 A known name is matched case- and accent-insensitively wherever a credit list starts. It also
 protects names that begin with digits from being read as a track number (`3 Doors Down`). If you
-parse a lot of strings with the same names, put them in [`createParser`](/trackparse/reference/functions/#createparseroptions).
+parse a lot of strings with the same names, put them in [`createParser`](/trackparse/reference/functions/#createparseroptions) (`create_parser`).
 
 ## Unknown artists
 
 `ID` (and `Unknown`, `Untitled`, `?`, `???`) means the track hasn't been announced yet. It doesn't become a name.
-The track gets `flags.unknownArtist: true` instead, and the same goes for titles:
+The track gets `flags.unknownArtist: true` (`flags.unknown_artist` in Python) instead, and the same goes for titles:
+
+<Tabs syncKey="lang">
+<TabItem label="JavaScript">
 
 ```js
 const t = parse("ID - ID (ID Remix)");
@@ -112,3 +228,17 @@ t.flags.unknownArtist;        // true
 t.flags.unknownTitle;         // true
 t.versions[0].unknownArtist;  // true
 ```
+
+</TabItem>
+<TabItem label="Python">
+
+```python
+t = parse("ID - ID (ID Remix)")
+t.artists                     # ()
+t.flags.unknown_artist        # True
+t.flags.unknown_title         # True
+t.versions[0].unknown_artist  # True
+```
+
+</TabItem>
+</Tabs>

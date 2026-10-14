@@ -1,0 +1,158 @@
+---
+title: Other functions
+description: parseArtists, format, normalize, allArtists, createParser and SPEC_VERSION.
+---
+
+import { Tabs, TabItem } from "@astrojs/starlight/components";
+
+All of these are exported from `trackparse`. The Python package has the same functions in
+snake_case:
+
+| JavaScript | Python |
+|---|---|
+| `parse` | `parse` |
+| `parseArtists` | `parse_artists` |
+| `format` | `format_track` |
+| `normalize` | `normalize` |
+| `allArtists` | `all_artists` |
+| `createParser` | `create_parser` |
+| `SPEC_VERSION` | `SPEC_VERSION` |
+| `parseTracklist`, `applyEdits` (from `trackparse/tracklist`) | `parse_tracklist`, `apply_edits` (from `trackparse.tracklist`) |
+
+Options are keyword arguments in Python, and fields are snake_case attributes (`full_title`,
+`unknown_artist`). Every function raises `TypeError` if the input isn't a `str`; anything else,
+including bad options, falls back to defaults.
+
+## parseArtists(input, options?)
+
+*(Python: `parse_artists`)*
+
+Splits a bare artist string, with no title, into credits.
+
+<Tabs syncKey="lang">
+<TabItem label="JavaScript">
+
+```js
+parseArtists("Sub Focus, Wilkinson & Dimension feat. Kojo").map((a) => `${a.name}:${a.role}`);
+// [ 'Sub Focus:primary', 'Wilkinson:primary', 'Dimension:primary', 'Kojo:featured' ]
+```
+
+</TabItem>
+<TabItem label="Python">
+
+```python
+[f"{a.name}:{a.role}" for a in parse_artists("Sub Focus, Wilkinson & Dimension feat. Kojo")]
+# ['Sub Focus:primary', 'Wilkinson:primary', 'Dimension:primary', 'Kojo:featured']
+```
+
+</TabItem>
+</Tabs>
+
+Takes `knownArtists`, `splitAnd` and `keywords` (`known_artists`, `split_and`, `keywords`). Useful for the artist field of ID3 tags or a
+streaming API, where the title is already separate.
+
+## format(track, options?)
+
+*(Python: `format_track`)*
+
+Renders a `ParsedTrack` back to a string. The options are `feat`, `featMarker` (`feat_marker`),
+`joiners`, `versions`, `producers` and `position`. [Formatting](/trackparse/guides/formatting/) has examples
+of each.
+
+## normalize(input)
+
+The Unicode cleanup every function runs first. It applies NFC, removes invisible characters
+(zero-width spaces, BOMs, soft hyphens), turns dash, bracket and quote variants into their plain
+ASCII forms, and collapses whitespace.
+
+<Tabs syncKey="lang">
+<TabItem label="JavaScript">
+
+```js
+normalize("Noisia​ — “Stigma”");   // 'Noisia - "Stigma"'
+```
+
+</TabItem>
+<TabItem label="Python">
+
+```python
+normalize("Noisia\u200b — “Stigma”")   # 'Noisia - "Stigma"'
+```
+
+</TabItem>
+</Tabs>
+
+You don't need to call it before `parse`. It's exported because it's handy for building lookup
+keys.
+
+## allArtists(track)
+
+*(Python: `all_artists`)*
+
+Every credit of a track in one list: the artists, then every remixer, with duplicates removed.
+
+<Tabs syncKey="lang">
+<TabItem label="JavaScript">
+
+```js
+allArtists(parse("Wilkinson ft. Becky Hill - Afterglow (Sub Focus Remix)")).map((a) => `${a.name}:${a.role}`);
+// [ 'Wilkinson:primary', 'Becky Hill:featured', 'Sub Focus:remixer' ]
+```
+
+</TabItem>
+<TabItem label="Python">
+
+```python
+[f"{a.name}:{a.role}" for a in all_artists(parse("Wilkinson ft. Becky Hill - Afterglow (Sub Focus Remix)"))]
+# ['Wilkinson:primary', 'Becky Hill:featured', 'Sub Focus:remixer']
+```
+
+</TabItem>
+</Tabs>
+
+## createParser(options)
+
+*(Python: `create_parser`)*
+
+Compiles options and keywords once and returns an object with `parse` and `parseArtists`
+(`parse_artists`). Per-call
+options are merged over the compiled ones. Use it when you parse many strings with the same
+`knownArtists` or `keywords`.
+
+<Tabs syncKey="lang">
+<TabItem label="JavaScript">
+
+```js
+import { createParser } from "trackparse";
+
+const parser = createParser({
+  knownArtists: ["Chase & Status", "Camo & Krooked"],
+  keywords: { versionHeads: { rerub: "rework" } },
+});
+
+parser.parse("Chase & Status x Camo & Krooked - Track (Alix Perez Rerub)").versions[0].type;
+// 'rework'
+```
+
+</TabItem>
+<TabItem label="Python">
+
+```python
+from trackparse import create_parser
+
+parser = create_parser(
+    known_artists=["Chase & Status", "Camo & Krooked"],
+    keywords={"version_heads": {"rerub": "rework"}},
+)
+
+parser.parse("Chase & Status x Camo & Krooked - Track (Alix Perez Rerub)").versions[0].type
+# 'rework'
+```
+
+</TabItem>
+</Tabs>
+
+## SPEC_VERSION
+
+The version of the [spec](/trackparse/reference/spec/) the package implements, as a string. The
+packages and the spec are released together, so it's the same as the package version.

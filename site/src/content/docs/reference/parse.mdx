@@ -3,16 +3,33 @@ title: parse and ParsedTrack
 description: The parse function and every field of the ParsedTrack it returns.
 ---
 
+import { Tabs, TabItem } from "@astrojs/starlight/components";
+
+<Tabs syncKey="lang">
+<TabItem label="JavaScript">
+
 ```ts
 parse(input: string, options?: ParseOptions): ParsedTrack
 ```
 
-`parse` never throws. Any string gives a `ParsedTrack`, and unknown or malformed options fall back
-to their defaults. The options are on the [Options](/trackparse/reference/options/) page.
+</TabItem>
+<TabItem label="Python">
+
+```python
+parse(input: str, *, mode="auto", known_artists=(), uploader=None, split_and="auto", keywords=None) -> ParsedTrack
+```
+
+</TabItem>
+</Tabs>
+
+`parse` never throws on a string. Any string gives a `ParsedTrack`, and unknown or malformed options
+fall back to their defaults. (Python raises `TypeError` if `input` isn't a `str` at all.) The options are on the [Options](/trackparse/reference/options/) page.
 
 ## ParsedTrack
 
-Every key is always present.
+Every key is always present. Python has the same fields as attributes of a frozen dataclass, in
+snake_case (`full_title`, `flags.unknown_artist`), with tuples instead of arrays and `None` instead
+of `null`.
 
 | Field | Type | |
 |---|---|---|
@@ -31,9 +48,22 @@ Every key is always present.
 
 ## Artist
 
+<Tabs syncKey="lang">
+<TabItem label="JavaScript">
+
 ```ts
 { name: string; role: ArtistRole; joiner: string | null; source: ArtistSource }
 ```
+
+</TabItem>
+<TabItem label="Python">
+
+```python
+Artist(name: str, role: ArtistRole, joiner: Optional[str], source: ArtistSource)
+```
+
+</TabItem>
+</Tabs>
 
 | Field | Values |
 |---|---|
@@ -44,6 +74,9 @@ Every key is always present.
 `&`, `x` and `vs.` are joiners, not roles. Everyone they join is `primary`.
 
 ## Version
+
+<Tabs syncKey="lang">
+<TabItem label="JavaScript">
 
 ```ts
 {
@@ -57,6 +90,25 @@ Every key is always present.
   delimiter: "(" | "[" | "{" | "-";
 }
 ```
+
+</TabItem>
+<TabItem label="Python">
+
+```python
+Version(
+    type: VersionType,
+    raw: str,
+    artists: tuple[Artist, ...],
+    modifiers: tuple[str, ...],
+    descriptor: Optional[str],
+    year: Optional[int],
+    unknown_artist: bool,
+    delimiter: VersionDelimiter,
+)
+```
+
+</TabItem>
+</Tabs>
 
 | Field | |
 |---|---|
@@ -77,13 +129,48 @@ Every key is always present.
 in [Junk, flags and prefixes](/trackparse/guides/junk-and-flags/#junk). The vocabulary is in
 [`spec/data`](https://github.com/4matic/trackparse/tree/main/spec/data).
 
+## JSON and Python objects
+
+In JavaScript the result is a plain object, so `JSON.stringify(track)` is the spec's JSON.
+
+In Python, `ParsedTrack`, `Artist`, `Version`, `Junk`, `Flags`, `Position` and `Timestamp` are
+frozen dataclasses. Sequences are tuples, so results are immutable and hashable: you can put them in
+sets or use them as dict keys. `to_dict()` gives the spec's JSON with its camelCase keys, and
+`from_dict()` goes the other way:
+
+```python
+import json
+
+json.dumps(track.to_dict(), separators=(",", ":"), ensure_ascii=False)
+# the same bytes as JSON.stringify(parse(s)) in JavaScript
+
+ParsedTrack.from_dict(track.to_dict()) == track   # True
+```
+
 ## Types
+
+<Tabs syncKey="lang">
+<TabItem label="JavaScript">
 
 All of these are exported from `trackparse` as TypeScript types:
 
 `ParsedTrack`, `Artist`, `ArtistRole`, `ArtistSource`, `Version`, `VersionType`,
 `VersionDelimiter`, `Junk`, `JunkKind`, `Flags`, `Position`, `Timestamp`, `Warning`, `Mode`,
 `ModeOption`, `ParseOptions`, `KeywordOptions`, `FormatOptions`.
+
+</TabItem>
+<TabItem label="Python">
+
+The package ships `py.typed` and passes `mypy --strict`. These are exported from `trackparse`:
+
+- dataclasses: `ParsedTrack`, `Artist`, `Version`, `Junk`, `Flags`, `Position`, `Timestamp`;
+- `Literal` aliases: `ArtistRole`, `ArtistSource`, `VersionType`, `VersionDelimiter`, `JunkKind`,
+  `Warning`, `Mode`, `ModeOption`;
+- `TypedDict`s for options: `ParseOptions`, `KeywordOptions`, `FormatOptions`;
+- `Parser`, the class `create_parser` returns.
+
+</TabItem>
+</Tabs>
 
 The JSON shape is also published as a JSON Schema,
 [`parsed-track.schema.json`](https://github.com/4matic/trackparse/blob/main/spec/schema/parsed-track.schema.json).
