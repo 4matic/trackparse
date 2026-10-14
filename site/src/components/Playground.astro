@@ -178,6 +178,7 @@ const sample = [
           <button type="button" class="tp-btn small" data-copy="tl-input"><Copy size={14} aria-hidden="true" /><span>Copy text</span></button>
         </div>
         <p class="tp-muted" id="tl-editlog" aria-live="polite"></p>
+        <p class="tp-muted" id="tl-urlnote" hidden>This list is too long to keep in the URL. Use Copy text to share it.</p>
       </div>
 
       <div class="pg-col">
@@ -319,11 +320,13 @@ const sample = [
     padding: 0.4rem 0.5rem;
     border-bottom: 1px solid var(--tp-border);
     vertical-align: top;
+    overflow-wrap: anywhere;
   }
   .tl-table :global(tr.is-warn td:first-child) {
     box-shadow: inset 3px 0 0 var(--tp-version);
   }
-  .tl-table :global(tr.is-changed) {
+  .tl-table :global(tr.is-changed),
+  .tl-table :global(tr.is-target) {
     animation: tl-flash 1.6s ease-out;
   }
   @keyframes tl-flash {
@@ -419,9 +422,34 @@ const sample = [
     hashTimer = window.setTimeout(() => {
       const value = current === "track" ? input.value : tl.value;
       const key = current === "track" ? "track" : "list";
-      history.replaceState(null, "", `#${key}=${encodeURIComponent(value)}`);
+      const hash = `#${key}=${encodeURIComponent(value)}`;
+      // Browsers accept huge URLs, but nobody can share one: past this size, keep the URL clean.
+      tooLong = hash.length > MAX_HASH;
+      $("tl-urlnote").hidden = !(tooLong && current === "list");
+      const next = tooLong ? location.pathname : hash;
+      const now = tooLong ? location.pathname + location.hash : location.hash;
+      if (now !== next) history.replaceState(null, "", next);
     }, 250);
   }
+  const MAX_HASH = 8000;
+  let tooLong = false;
+
+  // A link to another input while the playground is open (pasted URL, back/forward).
+  function loadHash() {
+    const params = new URLSearchParams(location.hash.slice(1));
+    const t = params.get("track");
+    const l = params.get("list");
+    // An empty value (a cleared box) keeps the current text but still picks the tab.
+    if (t) input.value = t;
+    if (l) tl.value = l;
+    if (t !== null || l !== null) {
+      renderTrack();
+      renderList();
+      select(l !== null ? "list" : "track");
+    }
+    return params;
+  }
+  window.addEventListener("hashchange", loadHash);
 
   // ---- copy buttons ------------------------------------------------------------------------
   for (const b of document.querySelectorAll<HTMLButtonElement>("[data-copy]")) {
@@ -503,7 +531,7 @@ const sample = [
   for (const b of document.querySelectorAll<HTMLButtonElement>("#panel-track [data-example]")) {
     b.addEventListener("click", () => {
       input.value = b.dataset.example ?? "";
-      if (input.value.startsWith('"')) mode.value = "youtube";
+      mode.value = input.value.startsWith('"') ? "youtube" : "auto";
       renderTrack();
     });
   }
@@ -546,6 +574,22 @@ const sample = [
     return `<tr class="${cls}" id="tl-line-${e.line}"><td class="tl-num">${e.line}</td><td>${chip(e.kind, kindChip[e.kind])}</td><td class="tl-time">${e.time ? escapeHtml(e.time.raw) : ""}</td><td>${pos}${artists}</td><td>${title}</td><td>${vers}</td></tr>`;
   }
 
+  function plural(n: number, word: string): string {
+    return `${n} ${word}${n === 1 ? "" : "s"}`;
+  }
+
+  /** 1, 2, 3, 5, 7, 8 → "1–3, 5, 7–8" */
+  function ranges(lines: number[]): string {
+    const out: string[] = [];
+    for (let i = 0; i < lines.length; ) {
+      let j = i;
+      while (j + 1 < lines.length && lines[j + 1] === lines[j] + 1) j++;
+      out.push(j === i ? String(lines[i]) : `${lines[i]}–${lines[j]}`);
+      i = j + 1;
+    }
+    return out.length > 12 ? `${out.slice(0, 12).join(", ")} and ${out.length - 12} more` : out.join(", ");
+  }
+
   function fmtTime(s: number | null): string {
     if (s === null) return "–";
     const h = Math.floor(s / 3600);
@@ -563,9 +607,9 @@ const sample = [
     $("tl-rows").innerHTML = list.entries.map((e) => row(e, warned.has(e.line))).join("");
     const st = list.stats;
     $("tl-stats").innerHTML = [
-      chip(`${st.lines} lines`, "title"),
-      chip(`${st.tracks} tracks`, "primary"),
-      chip(`${st.markers} markers`, "featured"),
+      chip(plural(st.lines, "line"), "title"),
+      chip(plural(st.tracks, "track"), "primary"),
+      chip(plural(st.markers, "marker"), "featured"),
       chip(`${st.timed} timed`, "position"),
       chip(`${fmtTime(st.firstTime)} → ${fmtTime(st.lastTime)}`, "position"),
     ].join("");
@@ -576,10 +620,21 @@ const sample = [
             const fix = w.suggestion
               ? ` <button type="button" class="tp-btn small primary" data-fix="${i}">${icon.fix} Set line ${w.suggestion.line} to ${escapeHtml(w.suggestion.raw)}</button>`
               : "";
-            return `<div class="tl-warning ${w.severity}">${w.severity === "info" ? icon.info : icon.warning}<a href="#tl-line-${w.line}">line ${w.line}</a> <code>${w.code}</code>${fix}</div>`;
+            return `<div class="tl-warning ${w.severity}">${w.severity === "info" ? icon.info : icon.warning}<a href="#tl-line-${w.line}" data-line="${w.line}">line ${w.line}</a> <code>${w.code}</code>${fix}</div>`;
           })
           .join("")
       : '<p class="tl-ok">No warnings. Times are in order.</p>';
+    for (const a of $("tl-warnings").querySelectorAll<HTMLAnchorElement>("a[data-line]")) {
+      a.addEventListener("click", (e) => {
+        e.preventDefault();
+        const tr = $(`tl-line-${a.dataset.line}`);
+        if (!tr) return;
+        tr.classList.remove("is-target");
+        void tr.offsetWidth;
+        tr.classList.add("is-target");
+        tr.scrollIntoView({ block: "center", behavior: "smooth" });
+      });
+    }
     for (const b of document.querySelectorAll<HTMLButtonElement>("[data-fix]")) {
       b.addEventListener("click", () => {
         const s = list.warnings[Number(b.dataset.fix)].suggestion;
@@ -591,12 +646,16 @@ const sample = [
 
   function edit(edits: Edit[], label: string) {
     const r = applyEdits(tl.value, edits);
-    history_.push(tl.value);
-    undoBtn.disabled = false;
-    tl.value = r.text;
-    changed = new Set(r.changed);
-    const notes = r.warnings.map((w) => w.code).join(", ");
-    $("tl-editlog").textContent = `${label}: ${r.changed.length ? `changed line${r.changed.length > 1 ? "s" : ""} ${r.changed.join(", ")}` : "nothing changed"}${notes ? ` (${notes})` : ""}.`;
+    const same = r.text === tl.value;
+    if (!same) {
+      history_.push(tl.value);
+      undoBtn.disabled = false;
+      tl.value = r.text;
+      changed = new Set(r.changed);
+    }
+    const notes = [...new Set(r.warnings.map((w) => w.code))].join(", ");
+    const what = same ? "nothing changed" : `changed ${r.changed.length > 1 ? "lines" : "line"} ${ranges(r.changed)}`;
+    $("tl-editlog").textContent = `${label}: ${what}${notes ? ` (${notes})` : ""}.`;
     renderList();
     changed = new Set();
   }
@@ -625,10 +684,12 @@ const sample = [
   });
 
   // ---- start -------------------------------------------------------------------------------
-  const params = new URLSearchParams(location.hash.slice(1));
-  input.value = params.get("track") ?? document.querySelector<HTMLButtonElement>("[data-example]")?.dataset.example ?? "";
-  tl.value = params.get("list") ?? tl.dataset.sample ?? "";
-  renderTrack();
-  renderList();
-  select(params.has("list") ? "list" : "track");
+  input.value = document.querySelector<HTMLButtonElement>("[data-example]")?.dataset.example ?? "";
+  tl.value = tl.dataset.sample ?? "";
+  const params = loadHash();
+  if (!params.has("track") && !params.has("list")) {
+    renderTrack();
+    renderList();
+    select("track");
+  }
 </script>

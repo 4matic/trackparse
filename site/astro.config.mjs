@@ -15,6 +15,7 @@ export default defineConfig({
   integrations: [
     starlight({
       title: "trackparse",
+      disable404Route: true,
       description:
         "Turn messy track names into structured data: artists, features, remixes, versions and the noise around them. JavaScript and Python, one spec.",
       logo: { src: "./src/assets/logo.svg", replacesTitle: false },

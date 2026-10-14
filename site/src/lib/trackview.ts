@@ -42,30 +42,48 @@ export function escapeHtml(s: string): string {
 /** Cut `input` into segments coloured by the field each piece of text ended up in. */
 export function highlight(input: string, track: ParsedTrack): Segment[] {
   const owner: (Kind | null)[] = new Array(input.length).fill(null);
-  const lower = input.toLowerCase();
+
+  // parse() drops zero-width characters and NFC-normalises (R1), so search a folded copy of the
+  // input and map each hit back to the original UTF-16 positions.
+  const at: number[] = [];
+  let plain = "";
+  let lower = "";
+  for (let i = 0; i < input.length; i++) {
+    const c = input[i];
+    if (IGNORABLE.has(c)) continue;
+    const l = c.toLowerCase();
+    at.push(i);
+    plain += c;
+    lower += l.length === 1 ? l : c; // keep positions aligned (İ lowercases to two units)
+  }
 
   const mark = (needle: string | null | undefined, kind: Kind) => {
     if (!needle) return;
-    const hay = [input, lower];
-    const keys = [needle, needle.toLowerCase()];
-    for (let pass = 0; pass < 2; pass++) {
-      let from = 0;
-      for (;;) {
-        const at = hay[pass].indexOf(keys[pass], from);
-        if (at < 0) break;
-        const end = at + needle.length;
-        let free = true;
-        for (let i = at; i < end; i++) {
-          if (owner[i] !== null) {
-            free = false;
-            break;
+    const forms = [...new Set([needle, needle.normalize("NFD"), needle.normalize("NFC")])];
+    for (const [hay, lowerCase] of [
+      [plain, false],
+      [lower, true],
+    ] as const) {
+      for (const form of forms) {
+        const key = lowerCase ? [...form].map((c) => (c.toLowerCase().length === c.length ? c.toLowerCase() : c)).join("") : form;
+        for (let from = 0; ; ) {
+          const hit = hay.indexOf(key, from);
+          if (hit < 0) break;
+          const start = at[hit];
+          const end = at[hit + key.length - 1] + 1;
+          let free = true;
+          for (let i = start; i < end; i++) {
+            if (owner[i] !== null) {
+              free = false;
+              break;
+            }
           }
+          if (free) {
+            for (let i = start; i < end; i++) owner[i] = kind;
+            return;
+          }
+          from = hit + 1;
         }
-        if (free) {
-          for (let i = at; i < end; i++) owner[i] = kind;
-          return;
-        }
-        from = at + 1;
       }
     }
   };
@@ -87,6 +105,9 @@ export function highlight(input: string, track: ParsedTrack): Segment[] {
   }
   return out;
 }
+
+// The characters R1.2 removes.
+const IGNORABLE = new Set(["\u00AD", "\u200B", "\u2060", "\uFEFF", "\uE000"]);
 
 export function roleKind(a: Artist): Kind {
   if (a.role === "featured") return "featured";
