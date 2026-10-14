@@ -15,8 +15,9 @@
 [![gzip](https://img.shields.io/badge/gzip-17%20kB-informational)](https://www.npmjs.com/package/trackparse)
 [![types](https://img.shields.io/npm/types/trackparse)](js/src/types.ts)
 [![license](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+[![docs](https://img.shields.io/badge/docs-4matic.github.io%2Ftrackparse-6a3fd6)](https://4matic.github.io/trackparse/)
 
-[Install](#install) · [Quick start](#quick-start) · [What it understands](#what-it-understands) · [Tracklists](#tracklists) · [How it's tested](#how-its-tested) · [API](#api) · [Spec](spec/SPEC.md)
+**[Documentation](https://4matic.github.io/trackparse/)** · **[Playground](https://4matic.github.io/trackparse/playground/)** · [Install](#install) · [Quick start](#quick-start) · [What it understands](#what-it-understands) · [Tracklists](#tracklists) · [How it's tested](#how-its-tested) · [API](#api) · [Spec](spec/SPEC.md)
 
 </div>
 
@@ -672,9 +673,13 @@ Not there yet:
   doesn't yet learn names from its other lines.
 - Warnings for gaps or overlaps between consecutive tracklist times.
 
-Planned next: the Rust port, then a browser playground.
+Planned next: the Rust port. The browser playground is already live at
+[4matic.github.io/trackparse/playground](https://4matic.github.io/trackparse/playground/).
 
 ## Contributing
+
+The documentation site lives in [`site/`](site) (Astro + Starlight, `pnpm docs` to run it
+locally) and deploys to GitHub Pages on every push to `main`.
 
 Behaviour changes start in the spec: a rule in [SPEC.md](spec/SPEC.md), a fixture that pins it,
 then the code. [AGENTS.md](AGENTS.md) has the repo map, the workflow and every command. The most

@@ -7,6 +7,8 @@ Parse music track names into structured metadata: artists, featured artists, rem
 [![js](https://img.shields.io/github/actions/workflow/status/4matic/trackparse/js.yml?branch=main&label=js)](https://github.com/4matic/trackparse/actions/workflows/js.yml)
 [![license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/4matic/trackparse/blob/main/LICENSE)
 
+**[Documentation](https://4matic.github.io/trackparse/)** · **[Playground](https://4matic.github.io/trackparse/playground/)**
+
 This is the JavaScript/TypeScript reference implementation of the
 [trackparse spec](https://github.com/4matic/trackparse/blob/main/spec/SPEC.md). It passes all
 12,965 shared fixtures. Zero dependencies, ESM and CommonJS, TypeScript types included, never

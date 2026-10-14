@@ -5,6 +5,8 @@
 [![python](https://img.shields.io/github/actions/workflow/status/4matic/trackparse/python.yml?branch=main&label=tests&logo=github)](https://github.com/4matic/trackparse/actions/workflows/python.yml)
 [![license](https://img.shields.io/badge/license-MIT-blue)](https://github.com/4matic/trackparse/blob/main/LICENSE)
 
+**[Documentation](https://4matic.github.io/trackparse/)** · **[Python guide](https://4matic.github.io/trackparse/guides/python/)** · **[Playground](https://4matic.github.io/trackparse/playground/)**
+
 **Turn messy track names into structured data: who made it, who's featured, who remixed it, and
 what's just noise.**
 
