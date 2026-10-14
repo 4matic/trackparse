@@ -9,6 +9,9 @@ export default defineConfig({
   base: "/trackparse",
   trailingSlash: "always",
   markdown: { smartypants: false },
+  // Starlight is a multi-page site. Prefetching every link as it scrolls into view, plus the
+  // cross-document view transitions in custom.css, makes page changes instant without a JS router.
+  prefetch: { prefetchAll: true, defaultStrategy: "viewport" },
   integrations: [
     starlight({
       title: "trackparse",
@@ -22,6 +25,7 @@ export default defineConfig({
       ],
       editLink: { baseUrl: `${repo}/edit/main/site/` },
       customCss: ["./src/styles/custom.css"],
+      components: { SocialIcons: "./src/components/SocialIcons.astro" },
       head: [
         { tag: "meta", attrs: { property: "og:image", content: "https://4matic.github.io/trackparse/og.png" } },
         { tag: "meta", attrs: { property: "og:image:width", content: "1200" } },
