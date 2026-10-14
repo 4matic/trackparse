@@ -156,3 +156,12 @@ header.header {
     navigation: none;
   }
 }
+
+/* Inline code is one box: a short span moves to the next line whole instead of splitting
+   (`mypy --strict`), and a span longer than the line wraps inside its own rounded box. */
+.sl-markdown-content :not(pre) > code {
+  display: inline-block;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  vertical-align: baseline;
+}
