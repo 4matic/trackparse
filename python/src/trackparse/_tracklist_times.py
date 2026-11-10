@@ -49,7 +49,7 @@ def _skip_whitespace(s: str, frm: int) -> int:
 
 
 def _is_bullet(ch: Optional[str]) -> bool:
-    """R13.2.1 bullets of a line without a time."""
+    """R13.2.1 bullets (before a time, or alone on a line without one)."""
     return ch == "-" or ch == "–" or ch == "—" or ch == "*" or ch == "•"
 
 
@@ -113,8 +113,10 @@ def shape_seconds(parts: list[str]) -> Optional[int]:
 
 def scan_time(raw: str) -> TimeScan:
     """R13.2: lead, time and gap at the start of ``raw``; the rest is everything after."""
-    # R13.2.1 lead: whitespace, then an optional `[` / `(`.
+    # R13.2.1 lead: whitespace, an optional bullet, then an optional `[` / `(`.
     i = _skip_whitespace(raw, 0)
+    if _is_bullet(char_at(raw, i)) and is_whitespace(char_at(raw, i + 1)):
+        i = _skip_whitespace(raw, i + 1)
     first_ch = char_at(raw, i)
     closer = "]" if first_ch == "[" else ")" if first_ch == "(" else None
     if closer is not None:

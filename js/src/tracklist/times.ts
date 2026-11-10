@@ -35,7 +35,7 @@ function skipWhitespace(s: string, from: number): number {
   return i;
 }
 
-/** R13.2.1 bullets of a line without a time. */
+/** R13.2.1 bullets (before a time, or alone on a line without one). */
 function isBullet(ch: string | undefined): boolean {
   return ch === "-" || ch === "–" || ch === "—" || ch === "*" || ch === "•";
 }
@@ -101,8 +101,9 @@ export function shapeSeconds(parts: readonly string[]): number | null {
 
 /** R13.2: lead, time and gap at the start of `raw`; the rest is everything after. */
 export function scanTime(raw: string): TimeScan {
-  // R13.2.1 lead: whitespace, then an optional `[` / `(`.
+  // R13.2.1 lead: whitespace, an optional bullet, then an optional `[` / `(`.
   let i = skipWhitespace(raw, 0);
+  if (isBullet(raw[i]) && isWhitespace(raw[i + 1])) i = skipWhitespace(raw, i + 1);
   const closer = raw[i] === "[" ? "]" : raw[i] === "(" ? ")" : null;
   if (closer) i++;
   const leadEnd = i;

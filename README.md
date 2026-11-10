@@ -556,7 +556,7 @@ that only parses single tracks never loads it.
 | `kind` | `"track" \| "marker" \| "header" \| "link" \| "note" \| "blank"` | See below |
 | `eol` | `"\n" \| "\r\n" \| "\r" \| ""` | The line's own terminator; `""` on a last line without one |
 | `raw` | `string` | The line exactly as written, never normalized |
-| `parts` | `{ lead, time, gap, rest }` | `raw` cut into four strings that join back into it. `lead` is spaces or an opening bracket, `gap` is what sits between the time and the track (`] `, ` - `, ` \| `, ` => `) |
+| `parts` | `{ lead, time, gap, rest }` | `raw` cut into four strings that join back into it. `lead` is spaces, a list bullet or an opening bracket, `gap` is what sits between the time and the track (`] `, ` - `, ` \| `, ` => `) |
 | `time` | `{ raw, seconds } \| null` | `12:34`, `1:02:03`, `125:30` (long mixes), `00:00:07.500` (7.5 s) |
 | `track` | `ParsedTrack \| null` | Parsed from `rest` in tracklist mode. Only `track` and `marker` lines have one |
 

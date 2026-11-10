@@ -902,6 +902,205 @@
         "R13.2.4"
       ],
       "note": "With four fraction digits there is no fraction, and ',' is not a gap separator: no time and no invalid-time warning (compare tracklist-times-028)."
+    },
+    {
+      "id": "tracklist-times-030",
+      "input": "* 14:21 Noisia - Stigma",
+      "expected": {
+        "entries": [
+          {
+            "parts": {
+              "lead": "* ",
+              "time": "14:21",
+              "gap": " ",
+              "rest": "Noisia - Stigma"
+            },
+            "time": {
+              "raw": "14:21",
+              "seconds": 861
+            },
+            "track": {
+              "artists": [
+                "Noisia"
+              ],
+              "title": "Stigma"
+            }
+          }
+        ]
+      },
+      "rules": [
+        "R13.2.1"
+      ],
+      "note": "A Markdown bullet before the time: the time is still read."
+    },
+    {
+      "id": "tracklist-times-031",
+      "input": "- [01:02] Noisia - Stigma",
+      "expected": {
+        "entries": [
+          {
+            "parts": {
+              "lead": "- [",
+              "time": "01:02",
+              "gap": "] ",
+              "rest": "Noisia - Stigma"
+            },
+            "time": {
+              "raw": "01:02",
+              "seconds": 62
+            },
+            "track": {
+              "artists": [
+                "Noisia"
+              ],
+              "title": "Stigma"
+            }
+          }
+        ]
+      },
+      "rules": [
+        "R13.2.1",
+        "R13.2.3"
+      ]
+    },
+    {
+      "id": "tracklist-times-032",
+      "input": "  •  1:02:03 - Noisia - Stigma",
+      "expected": {
+        "entries": [
+          {
+            "parts": {
+              "lead": "  •  ",
+              "time": "1:02:03",
+              "gap": " - ",
+              "rest": "Noisia - Stigma"
+            },
+            "time": {
+              "raw": "1:02:03",
+              "seconds": 3723
+            },
+            "track": {
+              "artists": [
+                "Noisia"
+              ],
+              "title": "Stigma"
+            }
+          }
+        ]
+      },
+      "rules": [
+        "R13.2.1",
+        "R13.2.3"
+      ]
+    },
+    {
+      "id": "tracklist-times-033",
+      "input": "-14:21 Noisia - Stigma",
+      "expected": {
+        "entries": [
+          {
+            "parts": {
+              "lead": "",
+              "time": "",
+              "gap": "",
+              "rest": "-14:21 Noisia - Stigma"
+            },
+            "time": null
+          }
+        ]
+      },
+      "rules": [
+        "R13.2.1"
+      ],
+      "note": "Near miss: a bullet needs whitespace after it, so there is no bullet and no time."
+    },
+    {
+      "id": "tracklist-times-034",
+      "input": "* 1:75 Noisia - Stigma",
+      "expected": {
+        "entries": [
+          {
+            "parts": {
+              "lead": "* ",
+              "time": "",
+              "gap": "",
+              "rest": "1:75 Noisia - Stigma"
+            },
+            "time": null
+          }
+        ],
+        "warnings": [
+          {
+            "code": "invalid-time",
+            "line": 1,
+            "severity": "warning",
+            "suggestion": null
+          }
+        ]
+      },
+      "rules": [
+        "R13.2.1",
+        "R13.2.4"
+      ]
+    },
+    {
+      "id": "tracklist-times-035",
+      "input": "* 00:00 Noisia - Stigma\n* 03:30 Phace - Psycho\n* 07:10 Mefjus - Sleepless",
+      "expected": {
+        "entries": [
+          {
+            "parts": {
+              "lead": "* ",
+              "time": "00:00",
+              "gap": " ",
+              "rest": "Noisia - Stigma"
+            },
+            "time": {
+              "raw": "00:00",
+              "seconds": 0
+            }
+          },
+          {
+            "parts": {
+              "lead": "* ",
+              "time": "03:30",
+              "gap": " ",
+              "rest": "Phace - Psycho"
+            },
+            "time": {
+              "raw": "03:30",
+              "seconds": 210
+            }
+          },
+          {
+            "parts": {
+              "lead": "* ",
+              "time": "07:10",
+              "gap": " ",
+              "rest": "Mefjus - Sleepless"
+            },
+            "time": {
+              "raw": "07:10",
+              "seconds": 430
+            }
+          }
+        ],
+        "warnings": [],
+        "stats": {
+          "lines": 3,
+          "tracks": 3,
+          "markers": 0,
+          "timed": 3,
+          "firstTime": 0,
+          "lastTime": 430
+        }
+      },
+      "rules": [
+        "R13.2.1",
+        "R13.7",
+        "R13.8"
+      ],
+      "note": "A bulleted list pasted from Discord or Reddit."
     }
   ]
 }
