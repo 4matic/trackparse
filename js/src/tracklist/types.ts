@@ -27,6 +27,8 @@ export interface TracklistEntry {
   parts: EntryParts;
   time: TracklistTime | null;
   track: ParsedTrack | null;
+  /** R13.13: the line starts with `w/`: played over the previous track. */
+  layered: boolean;
 }
 
 export type TracklistWarningCode =

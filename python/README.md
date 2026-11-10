@@ -428,13 +428,19 @@ apply_edits(text, edits, *, <same options>) -> EditResult
 | Result | Fields |
 |---|---|
 | `Tracklist` | `spec_version`, `entries`, `warnings`, `stats` |
-| `TracklistEntry` | `line` (1-based), `kind` (`track`, `marker`, `header`, `link`, `note`, `blank`), `eol`, `raw`, `parts`, `time`, `track` (`ParsedTrack` or `None`) |
+| `TracklistEntry` | `line` (1-based), `kind` (`track`, `marker`, `header`, `link`, `note`, `blank`), `eol`, `raw`, `parts`, `time`, `track` (`ParsedTrack` or `None`), `layered` (the line starts with `w/`) |
 | `Parts` | `lead`, `time`, `gap`, `rest`, joined they give `raw` |
 | `TracklistWarning` | `code`, `line`, `severity` (`info` or `warning`), `suggestion` |
 | `TimeValue` | `raw`, `seconds` (`entry.time`, or `None` on untimed lines) |
 | `Suggestion` | `line`, `raw`, `seconds` (`warning.suggestion`, or `None`) |
 | `Stats` | `lines`, `tracks`, `markers`, `timed`, `first_time`, `last_time` |
 | `EditResult` | `text`, `changed`, `warnings` (`EditWarning(code, edit, line)`) |
+
+Lists pasted with list bullets or Markdown emphasis (`* 14:21 Artist - Title`,
+`**[**14:21**] Artist - Title**`) read like plain lines; the decoration stays in `raw` and `parts`.
+A line starting with `w/` is `layered`: a track played over the previous one
+([Markdown](https://4matic.github.io/trackparse/guides/tracklists/#markdown),
+[layered tracks](https://4matic.github.io/trackparse/guides/tracklists/#layered-tracks)).
 
 Warning codes: `time-missing`, `time-out-of-order`, `time-duplicate`, `no-start-at-zero`,
 `time-after-audio-end` (needs `audio_seconds`), `invalid-time`, `position-gap`,

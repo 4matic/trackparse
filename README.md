@@ -565,7 +565,8 @@ that only parses single tracks never loads it.
 | `raw` | `string` | The line exactly as written, never normalized |
 | `parts` | `{ lead, time, gap, rest }` | `raw` cut into four strings that join back into it. `lead` is spaces, a list bullet, Markdown emphasis or an opening bracket, `gap` is what sits between the time and the track (`] `, ` - `, ` \| `, ` => `) |
 | `time` | `{ raw, seconds } \| null` | `12:34`, `1:02:03`, `125:30` (long mixes), `00:00:07.500` (7.5 s) |
-| `track` | `ParsedTrack \| null` | Parsed from `rest` in tracklist mode. Only `track` and `marker` lines have one |
+| `track` | `ParsedTrack \| null` | Parsed from `rest` in tracklist mode, without Markdown emphasis, a leading `w/` and a bare track number. Only `track` and `marker` lines have one |
+| `layered` | `boolean` | The line starts with `w/`: a track played over the previous one |
 
 Kinds: a line with a time is a `marker` when it has no separator and a word like `intro`, `break`
 or `interview` ([`spec/data/marker-words.json`](spec/data/marker-words.json)), otherwise a
@@ -580,7 +581,7 @@ warnings stay on `entries[i].track.warnings` and are not repeated here.
 
 | Code | Severity | When |
 |---|---|---|
-| `time-missing` | warning | A track line has no time while other lines do |
+| `time-missing` | warning | A track line has no time while other lines do (not raised on a `w/` line) |
 | `time-out-of-order` | warning | Earlier than the previous timed line. May carry a `suggestion` |
 | `time-duplicate` | warning | Same time as the previous timed line |
 | `no-start-at-zero` | info | The first time isn't `0:00` |

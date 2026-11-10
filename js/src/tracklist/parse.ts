@@ -2,7 +2,15 @@
 import { SPEC_VERSION } from "../data.generated.js";
 import { createListParser, type LineProbe } from "../parser.js";
 import type { ParsedTrack } from "../types.js";
-import { hasMarkerWord, hasSeparator, isBlank, isHeader, isLink, markerTable } from "./kinds.js";
+import {
+  hasMarkerWord,
+  hasSeparator,
+  isBlank,
+  isHeader,
+  isLink,
+  layeredPrefix,
+  markerTable,
+} from "./kinds.js";
 import { resolveOptions } from "./options.js";
 import { type BareCandidate, bareCandidate, confirmPositions } from "./positions.js";
 import { type Line, splitLines } from "./split.js";
@@ -13,6 +21,10 @@ import { tracklistWarnings } from "./warnings.js";
 interface Row {
   line: Line;
   scan: TimeScan;
+  /** R13.4.1 line text: rest without emphasis markers (R13.12) and a layered prefix (R13.13). */
+  text: string;
+  /** R13.13 */
+  layered: boolean;
   blank: boolean;
   /** R13.4.2 */
   candidate: boolean;
@@ -38,9 +50,12 @@ export function parseTracklist(text: string, options?: TracklistOptions): Trackl
   const rows: Row[] = lines.map((line) => {
     const scan = scanTime(line.raw);
     const blank = isBlank(line.raw);
+    const layered = blank ? 0 : layeredPrefix(scan.text);
     const row: Row = {
       line,
       scan,
+      text: scan.text.slice(layered),
+      layered: layered > 0,
       blank,
       candidate: false,
       dash: false,
@@ -51,11 +66,12 @@ export function parseTracklist(text: string, options?: TracklistOptions): Trackl
       marker: false,
     };
     if (blank) return row;
-    const probe = lp.probe(scan.text); // R13.4.1: the line text, without emphasis (R13.12)
+    const probe = lp.probe(row.text); // R13.4.1
     row.probe = probe;
     row.dash = probe.spacedDash;
     row.candidate = scan.time !== null || row.dash;
-    row.bare = bareCandidate(scan.text, probe.position); // R13.5
+    // R13.5 / R13.13.3: a layered line never has a bare position.
+    row.bare = row.layered ? null : bareCandidate(row.text, probe.position);
     return row;
   });
   let candidates = 0;
@@ -68,15 +84,16 @@ export function parseTracklist(text: string, options?: TracklistOptions): Trackl
   const listContext = candidates > 0 && 2 * dashes >= candidates;
 
   // R13.5: confirmed bare positions are removed before parsing. R13.4.1: one parse per line.
+  // R13.13.3: layered lines are not neighbours for the R13.5 search.
   const confirmed = confirmPositions(
     rows.map((r) => r.bare),
-    rows.map((r) => r.candidate),
+    rows.map((r) => r.candidate && !r.layered),
   );
   rows.forEach((r, i) => {
     if (r.blank || !r.probe) return;
     const bare = confirmed[i] ? r.bare : null;
     const probe = bare ? lp.probe(bare.stripped) : r.probe;
-    r.marker = hasMarkerWord(bare ? bare.stripped : r.scan.text, markers);
+    r.marker = hasMarkerWord(bare ? bare.stripped : r.text, markers);
     // R13.4.2: the R6.10 tight dash only on timed lines without a marker word.
     const track = probe.finish(listContext && r.scan.time !== null && !r.marker);
     if (bare) track.position = { raw: bare.raw, number: bare.number };
@@ -96,6 +113,7 @@ export function parseTracklist(text: string, options?: TracklistOptions): Trackl
       parts: r.scan.parts,
       time: r.scan.time,
       track: keep ? r.track : null,
+      layered: r.layered,
     };
   });
 
@@ -113,9 +131,8 @@ function kindOf(r: Row): EntryKind {
   if (r.blank || !r.track) return "blank";
   const marker = !r.separated && r.marker;
   if (r.scan.time) return marker ? "marker" : "track";
-  const text = r.scan.text;
-  if (isLink(text)) return "link";
-  if (isHeader(text)) return "header";
+  if (isLink(r.text)) return "link";
+  if (isHeader(r.text)) return "header";
   if (marker) return "marker";
   return r.separated ? "track" : "note";
 }

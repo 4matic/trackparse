@@ -218,7 +218,8 @@
               "rest": ""
             },
             "time": null,
-            "track": null
+            "track": null,
+            "layered": false
           }
         ],
         "warnings": [],
@@ -801,7 +802,8 @@
               "warnings": [
                 "noSeparator"
               ]
-            }
+            },
+            "layered": false
           },
           {
             "line": 2,
@@ -846,7 +848,8 @@
               },
               "junk": [],
               "warnings": []
-            }
+            },
+            "layered": false
           }
         ],
         "warnings": [],
@@ -959,7 +962,8 @@
               "rest": "Tracklist:"
             },
             "time": null,
-            "track": null
+            "track": null,
+            "layered": false
           },
           {
             "line": 2,
@@ -973,7 +977,8 @@
               "rest": "https://neuropunk.ru"
             },
             "time": null,
-            "track": null
+            "track": null,
+            "layered": false
           },
           {
             "line": 3,
@@ -987,7 +992,8 @@
               "rest": ""
             },
             "time": null,
-            "track": null
+            "track": null,
+            "layered": false
           },
           {
             "line": 4,
@@ -1001,7 +1007,8 @@
               "rest": "Recorded live at Fabric, 2024"
             },
             "time": null,
-            "track": null
+            "track": null,
+            "layered": false
           }
         ],
         "warnings": [],
@@ -1728,6 +1735,193 @@
         "R13.3",
         "R13.12"
       ]
+    },
+    {
+      "id": "tracklist-lines-047",
+      "input": "w/ Nitepunk & Habstrakt - Point",
+      "expected": {
+        "entries": [
+          {
+            "kind": "track",
+            "layered": true,
+            "time": null,
+            "parts": {
+              "lead": "",
+              "time": "",
+              "gap": "",
+              "rest": "w/ Nitepunk & Habstrakt - Point"
+            },
+            "track": {
+              "artists": [
+                "Nitepunk",
+                "Habstrakt"
+              ],
+              "title": "Point"
+            }
+          }
+        ]
+      },
+      "rules": [
+        "R13.13",
+        "R13.4.1"
+      ],
+      "note": "A layered track, played over the previous one. w/ stays in rest and is left out of the track part.",
+      "source": "real DJ set tracklist (Nitepunk)"
+    },
+    {
+      "id": "tracklist-lines-048",
+      "input": "[14:21] w/ Nitepunk - Flow (Acapella)",
+      "expected": {
+        "entries": [
+          {
+            "kind": "track",
+            "layered": true,
+            "time": {
+              "raw": "14:21",
+              "seconds": 861
+            },
+            "track": {
+              "artists": [
+                "Nitepunk"
+              ],
+              "title": "Flow",
+              "versions": [
+                {
+                  "type": "acapella"
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "rules": [
+        "R13.13"
+      ],
+      "note": "A layered line can have its own time.",
+      "source": "real DJ set tracklist (Nitepunk)"
+    },
+    {
+      "id": "tracklist-lines-049",
+      "input": "W/ Noisia - Stigma",
+      "expected": {
+        "entries": [
+          {
+            "layered": true,
+            "track": {
+              "artists": [
+                "Noisia"
+              ],
+              "title": "Stigma"
+            }
+          }
+        ]
+      },
+      "rules": [
+        "R13.13",
+        "R0.3"
+      ],
+      "note": "Word key: W/ counts too."
+    },
+    {
+      "id": "tracklist-lines-050",
+      "input": "**w/ Noisia - Stigma**",
+      "expected": {
+        "entries": [
+          {
+            "layered": true,
+            "track": {
+              "artists": [
+                "Noisia"
+              ],
+              "title": "Stigma"
+            }
+          }
+        ]
+      },
+      "rules": [
+        "R13.13",
+        "R13.12"
+      ]
+    },
+    {
+      "id": "tracklist-lines-051",
+      "input": "Noisia w/ Phace - Stigma",
+      "expected": {
+        "entries": [
+          {
+            "layered": false,
+            "track": {
+              "artists": [
+                "Noisia w/ Phace"
+              ],
+              "title": "Stigma"
+            }
+          }
+        ]
+      },
+      "rules": [
+        "R13.13"
+      ],
+      "note": "Near miss: w/ in the middle is not layered (and outside brackets it is not a feat marker either, R5.2)."
+    },
+    {
+      "id": "tracklist-lines-052",
+      "input": "w/Noisia - Stigma",
+      "expected": {
+        "entries": [
+          {
+            "layered": false,
+            "track": {
+              "artists": [
+                "w/Noisia"
+              ],
+              "title": "Stigma"
+            }
+          }
+        ]
+      },
+      "rules": [
+        "R13.13"
+      ],
+      "note": "Near miss: w/ needs whitespace after it."
+    },
+    {
+      "id": "tracklist-lines-053",
+      "input": "With You - Stigma",
+      "expected": {
+        "entries": [
+          {
+            "layered": false,
+            "track": {
+              "artists": [
+                "With You"
+              ],
+              "title": "Stigma"
+            }
+          }
+        ]
+      },
+      "rules": [
+        "R13.13"
+      ],
+      "note": "Near miss: with is not a layered word."
+    },
+    {
+      "id": "tracklist-lines-054",
+      "input": "w/",
+      "expected": {
+        "entries": [
+          {
+            "kind": "note",
+            "layered": false,
+            "track": null
+          }
+        ]
+      },
+      "rules": [
+        "R13.13"
+      ],
+      "note": "Near miss: nothing after w/."
     }
   ]
 }

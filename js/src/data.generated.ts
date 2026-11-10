@@ -346,6 +346,13 @@ export const junkData = {
   ]
 } as const;
 
+/** spec/data/layered-words.json */
+export const layeredWordsData = {
+  "words": [
+    "w/"
+  ]
+} as const;
+
 /** spec/data/marker-words.json */
 export const markerWordsData = {
   "words": [

@@ -40,7 +40,16 @@ def test_parse_tracklist_returns_every_key() -> None:
     d = tl.to_dict()
     assert list(d) == ["specVersion", "entries", "warnings", "stats"]
     assert d["specVersion"] == SPEC_VERSION
-    assert list(d["entries"][0]) == ["line", "kind", "eol", "raw", "parts", "time", "track"]
+    assert list(d["entries"][0]) == [
+        "line",
+        "kind",
+        "eol",
+        "raw",
+        "parts",
+        "time",
+        "track",
+        "layered",
+    ]
     assert list(d["stats"]) == ["lines", "tracks", "markers", "timed", "firstTime", "lastTime"]
     entry = tl.entries[0]
     assert isinstance(entry, TracklistEntry)

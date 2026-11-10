@@ -4,12 +4,13 @@ from __future__ import annotations
 
 from typing import Optional
 
-from ._data import HEADER_WORDS_DATA, MARKER_WORDS_DATA
+from ._data import HEADER_WORDS_DATA, LAYERED_WORDS_DATA, MARKER_WORDS_DATA
 from ._tables import _str_list
 from ._words import PhraseTable, ascii_lower, in_vocab, is_whitespace, split_words
 from .types import ParsedTrack
 
 _HEADER_WORDS: frozenset[str] = frozenset(HEADER_WORDS_DATA["words"])
+_LAYERED_WORDS: frozenset[str] = frozenset(LAYERED_WORDS_DATA["words"])
 _default_markers: Optional[PhraseTable[bool]] = None
 
 
@@ -61,6 +62,24 @@ def marker_words(text: str) -> list[str]:
     if word:
         out.append(word)
     return out
+
+
+def layered_prefix(text: str) -> int:
+    """R13.13: the length of a layered prefix at the start of the line text: R0.2 whitespace, a
+    word of ``data/layered-words.json`` (word key, R0.3), then R0.2 whitespace, with more text
+    after it. 0 when there is none."""
+    n = len(text)
+    i = 0
+    while i < n and is_whitespace(text[i]):
+        i += 1
+    j = i
+    while j < n and not is_whitespace(text[j]):
+        j += 1
+    if j in (i, n) or not in_vocab(text[i:j], _LAYERED_WORDS):
+        return 0
+    while j < n and is_whitespace(text[j]):
+        j += 1
+    return j if j < n else 0
 
 
 def is_blank(raw: str) -> bool:

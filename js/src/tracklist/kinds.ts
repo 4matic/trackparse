@@ -1,10 +1,11 @@
 /** R13.3 line kinds and R13.4.2 candidate lines. */
-import { headerWordsData, markerWordsData } from "../data.generated.js";
+import { headerWordsData, layeredWordsData, markerWordsData } from "../data.generated.js";
 import { stringList } from "../tables.js";
 import type { ParsedTrack } from "../types.js";
 import { asciiLower, inVocab, isWhitespace, PhraseTable, splitWords } from "../words.js";
 
 const headerWords: ReadonlySet<string> = new Set(headerWordsData.words);
+const layeredWords: ReadonlySet<string> = new Set(layeredWordsData.words);
 let defaultMarkers: PhraseTable<true> | null = null;
 
 /**
@@ -46,6 +47,21 @@ export function markerWords(text: string): string[] {
   }
   flush();
   return out;
+}
+
+/**
+ * R13.13: the length of a layered prefix at the start of the line text: R0.2 whitespace, a word
+ * of `data/layered-words.json` (word key, R0.3), then R0.2 whitespace, with more text after it.
+ * 0 when there is none.
+ */
+export function layeredPrefix(text: string): number {
+  let i = 0;
+  while (i < text.length && isWhitespace(text[i])) i++;
+  let j = i;
+  while (j < text.length && !isWhitespace(text[j])) j++;
+  if (j === i || j === text.length || !inVocab(text.slice(i, j), layeredWords)) return 0;
+  while (j < text.length && isWhitespace(text[j])) j++;
+  return j < text.length ? j : 0;
 }
 
 /** R13.3.1 */

@@ -1875,6 +1875,29 @@
         "R13.2.3"
       ],
       "note": "Replacing rest removes the closing ** at the end of the line; the time is still read, because runs next to it are read by position."
+    },
+    {
+      "id": "tracklist-edits-079",
+      "input": "03:00 Mefjus - Sleepless\nw/ Phace - Psycho\n00:00 Noisia - Stigma",
+      "edits": [
+        {
+          "op": "sort-by-time"
+        }
+      ],
+      "expected": {
+        "text": "00:00 Noisia - Stigma\n03:00 Mefjus - Sleepless\nw/ Phace - Psycho",
+        "changed": [
+          1,
+          2,
+          3
+        ],
+        "warnings": []
+      },
+      "rules": [
+        "R13.9.4",
+        "R13.13"
+      ],
+      "note": "An untimed layered line moves with the timed line above it."
     }
   ]
 }

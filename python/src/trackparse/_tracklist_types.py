@@ -77,6 +77,8 @@ class TracklistEntry:
     time: Optional[TimeValue]
     #: The line's ParsedTrack (``track`` and ``marker`` entries only).
     track: Optional[ParsedTrack]
+    #: R13.13: the line starts with ``w/``: played over the previous track.
+    layered: bool
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -87,6 +89,7 @@ class TracklistEntry:
             "parts": self.parts.to_dict(),
             "time": None if self.time is None else self.time.to_dict(),
             "track": None if self.track is None else self.track.to_dict(),
+            "layered": self.layered,
         }
 
 

@@ -796,6 +796,126 @@
         "R6.10"
       ],
       "note": "A split with an empty artist side counts as no separator (R13.3.4): the timed track warns line-unparsed."
+    },
+    {
+      "id": "tracklist-warnings-037",
+      "input": "00:00 Noisia - Stigma\nw/ Phace - Psycho\n03:00 Mefjus - Sleepless",
+      "expected": {
+        "entries": [
+          {
+            "layered": false
+          },
+          {
+            "kind": "track",
+            "layered": true,
+            "time": null
+          },
+          {
+            "layered": false
+          }
+        ],
+        "warnings": []
+      },
+      "rules": [
+        "R13.7",
+        "R13.13"
+      ],
+      "note": "An untimed layered line plays at the previous track's time: no time-missing."
+    },
+    {
+      "id": "tracklist-warnings-038",
+      "input": "12. Nitepunk - No Manners\n**[**14:21**] 10. Nitepunk - ID**\nw/ Nitepunk & Habstrakt - Point",
+      "expected": {
+        "entries": [
+          {
+            "kind": "track",
+            "time": null,
+            "layered": false,
+            "track": {
+              "artists": [
+                "Nitepunk"
+              ],
+              "title": "No Manners",
+              "position": {
+                "number": 12
+              }
+            }
+          },
+          {
+            "kind": "track",
+            "time": {
+              "raw": "14:21",
+              "seconds": 861
+            },
+            "layered": false,
+            "parts": {
+              "lead": "**[**",
+              "time": "14:21",
+              "gap": "**] ",
+              "rest": "10. Nitepunk - ID**"
+            },
+            "track": {
+              "artists": [
+                "Nitepunk"
+              ],
+              "title": "ID",
+              "position": {
+                "number": 10
+              }
+            }
+          },
+          {
+            "kind": "track",
+            "time": null,
+            "layered": true,
+            "track": {
+              "artists": [
+                "Nitepunk",
+                "Habstrakt"
+              ],
+              "title": "Point",
+              "position": null
+            }
+          }
+        ],
+        "warnings": [
+          {
+            "code": "time-missing",
+            "line": 1,
+            "severity": "warning",
+            "suggestion": null
+          },
+          {
+            "code": "no-start-at-zero",
+            "line": 2,
+            "severity": "info",
+            "suggestion": null
+          },
+          {
+            "code": "position-gap",
+            "line": 2,
+            "severity": "warning",
+            "suggestion": null
+          }
+        ],
+        "stats": {
+          "lines": 3,
+          "tracks": 3,
+          "markers": 0,
+          "timed": 1,
+          "firstTime": 861,
+          "lastTime": 861
+        }
+      },
+      "rules": [
+        "R13.2.1",
+        "R13.2.3",
+        "R13.7",
+        "R13.12",
+        "R13.13"
+      ],
+      "source": "real DJ set tracklist (Nitepunk)",
+      "note": "Untimed numbered lines, a bold timed line and a layered line, as pasted."
     }
   ]
 }

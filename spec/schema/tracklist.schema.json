@@ -28,7 +28,7 @@
     "entry": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["line", "kind", "eol", "raw", "parts", "time", "track"],
+      "required": ["line", "kind", "eol", "raw", "parts", "time", "track", "layered"],
       "properties": {
         "line": { "type": "integer", "minimum": 1 },
         "kind": { "enum": ["track", "marker", "header", "link", "note", "blank"] },
@@ -56,7 +56,11 @@
             }
           ]
         },
-        "track": { "oneOf": [{ "type": "null" }, { "$ref": "parsed-track.schema.json" }] }
+        "track": { "oneOf": [{ "type": "null" }, { "$ref": "parsed-track.schema.json" }] },
+        "layered": {
+          "type": "boolean",
+          "description": "R13.13: the line starts with a layered word (`w/`): played over the previous track."
+        }
       }
     },
     "warning": {

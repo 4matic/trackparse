@@ -1,0 +1,4 @@
+{
+  "$comment": "R13.13: a tracklist line whose text starts with one of these words (word key, R0.3) and whitespace is a layered track, played over the previous one (1001tracklists writes `w/` in place of the track number). Not the same as feat-markers.json bracketOnly `w/`, which marks a featured artist inside a bracket.",
+  "words": ["w/"]
+}

@@ -1511,6 +1511,92 @@
         "R13.5"
       ],
       "note": "A bare position needs U+0020 after the digits; a tab is not enough, even with N ± 1 neighbours."
+    },
+    {
+      "id": "tracklist-positions-014",
+      "input": "1 Noisia - Stigma\nw/ Phace - Psycho\n2 Mefjus - Sleepless",
+      "expected": {
+        "entries": [
+          {
+            "layered": false,
+            "track": {
+              "artists": [
+                "Noisia"
+              ],
+              "title": "Stigma",
+              "position": {
+                "raw": "1",
+                "number": 1
+              }
+            }
+          },
+          {
+            "layered": true,
+            "track": {
+              "artists": [
+                "Phace"
+              ],
+              "title": "Psycho",
+              "position": null
+            }
+          },
+          {
+            "layered": false,
+            "track": {
+              "artists": [
+                "Mefjus"
+              ],
+              "title": "Sleepless",
+              "position": {
+                "raw": "2",
+                "number": 2
+              }
+            }
+          }
+        ],
+        "warnings": []
+      },
+      "rules": [
+        "R13.5",
+        "R13.13"
+      ],
+      "note": "A layered line between two bare numbers does not break the neighbour search (R13.13.3)."
+    },
+    {
+      "id": "tracklist-positions-015",
+      "input": "09. Phace - Psycho\n10. w/ Noisia - Stigma",
+      "expected": {
+        "entries": [
+          {
+            "layered": false,
+            "track": {
+              "artists": [
+                "Phace"
+              ],
+              "title": "Psycho",
+              "position": {
+                "number": 9
+              }
+            }
+          },
+          {
+            "layered": false,
+            "track": {
+              "artists": [
+                "w/ Noisia"
+              ],
+              "title": "Stigma",
+              "position": {
+                "number": 10
+              }
+            }
+          }
+        ]
+      },
+      "rules": [
+        "R13.13"
+      ],
+      "note": "Near miss: w/ after a position is not layered (1001tracklists writes w/ instead of the number)."
     }
   ]
 }
