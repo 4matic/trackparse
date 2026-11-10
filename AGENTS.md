@@ -47,7 +47,7 @@ js/                       npm package `trackparse`, reference implementation
   scripts/gen-data.ts     codegen for data.generated.ts
   scripts/conformance.ts  pass-rate report per file and per rule
   scripts/compat.mjs      every fixture against dist/ (ESM + CJS) with plain Node 18+
-  scripts/size-check.mjs  size budget: the tracklist entry may add at most 8 KiB gzip
+  scripts/size-check.mjs  size budget: the tracklist entry may add at most 9 KiB gzip
   test/runner.ts          loads and runs shared fixtures
   test/match.ts           partial/exact matcher (spec/fixtures/README.md)
   test/fixtures.test.ts   every fixture + schema validation + xfail/skip handling
@@ -180,7 +180,7 @@ Run from the repo root (pnpm workspace; Node ≥ 22 for development: pnpm 11 and
 | `pnpm conformance` | JS pass rate per fixture file and per rule ID |
 | `pnpm docs` · `pnpm docs:build` | Run the documentation site locally / build it into `site/dist` |
 | `pnpm --filter trackparse compat` | After `build`: every fixture against `dist/` (ESM + CJS) with plain Node; runs on Node 18+ |
-| `pnpm --filter trackparse size` | After `build`: fail if `trackparse/tracklist` adds more than 8 KiB gzip (ESM and CJS) |
+| `pnpm --filter trackparse size` | After `build`: fail if `trackparse/tracklist` adds more than 9 KiB gzip (ESM and CJS) |
 | `pnpm gen:data` | Regenerate `js/src/data.generated.ts` from `spec/data` + `spec/VERSION` |
 | `pnpm gen:fixtures` | Regenerate `spec/fixtures/generated/*.json` |
 | `pnpm gen:check` | Fail if generated fixtures or JS codegen are stale |

@@ -1,19 +1,19 @@
 #!/usr/bin/env node
 /**
- * Size budget for the `trackparse/tracklist` entry: its own code may add at most 8 KiB gzip on
- * top of the core.
+ * Size budget for the `trackparse/tracklist` entry: its own code may add at most 9 KiB gzip on
+ * top of the core (8 KiB until 0.4.0, which added list bullets and Markdown emphasis).
  *
  * - ESM: tsup code-splits the shared core into a chunk that dist/index.js and dist/tracklist.js
- *   both import, so dist/tracklist.js is the tracklist code alone: gzip(tracklist.js) <= 8 KiB.
+ *   both import, so dist/tracklist.js is the tracklist code alone: gzip(tracklist.js) <= 9 KiB.
  * - CJS: each entry is bundled on its own, so dist/tracklist.cjs contains the core too:
- *   gzip(tracklist.cjs) - gzip(index.cjs) <= 8 KiB.
+ *   gzip(tracklist.cjs) - gzip(index.cjs) <= 9 KiB.
  *
  * Usage: node scripts/size-check.mjs   (after `pnpm build`). Zero dependencies.
  */
 import { readFileSync } from "node:fs";
 import { gzipSync } from "node:zlib";
 
-const BUDGET = 8 * 1024;
+const BUDGET = 9 * 1024;
 const gz = (file) => gzipSync(readFileSync(new URL(`../dist/${file}`, import.meta.url))).length;
 
 const checks = [
