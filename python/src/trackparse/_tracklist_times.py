@@ -177,16 +177,26 @@ def scan_time(raw: str) -> TimeScan:
     def follows_time(at: int) -> bool:
         return at >= len(raw) or is_whitespace(raw[at]) or _is_gap_separator(raw[at])
 
+    # R13.12.4: a lead run the gap leaves open may pair with a run at the end of the line.
+    open_run: Optional[str] = None
     if closer is not None:
-        j = _closing_run(raw, j, inner_open)
+        k = _closing_run(raw, j, inner_open)
+        if k == j:
+            open_run = inner_open
+        j = k
         if char_at(raw, j) != closer:
             return _untimed(raw, False)
         j += 1
         k = _closing_run(raw, j, outer_open)
         if k > j and follows_time(k):
             j = k
+        elif outer_open is not None:
+            open_run = outer_open
     else:
-        j = _closing_run(raw, j, outer_open)
+        k = _closing_run(raw, j, outer_open)
+        if k == j:
+            open_run = outer_open
+        j = k
         if not follows_time(j):
             return _untimed(raw, False)
     j = _skip_whitespace(raw, j)
@@ -222,7 +232,7 @@ def scan_time(raw: str) -> TimeScan:
             frac_digits=len(frac),
         ),
         False,
-        without_markers(raw, j),
+        without_markers(raw, j, open_run),
     )
 
 

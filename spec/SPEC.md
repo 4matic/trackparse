@@ -581,8 +581,8 @@ Read at the start of `raw` (this scanner is separate from R4.1, which is unchang
     replaces `rest` (R13.9) never changes whether a line has a time.
 - **R13.2.4 invalid times:** the time candidate (after lead) is the **maximal** run
   `digits(:digits)+`, plus an optional fraction. When that run fails R13.2.2 (`1:75`, `0:61:00`,
-  `1:02:75`, `1:02:03:04`), it is not a time: the entry has no time, `rest === raw`, and the
-  tracklist warns `invalid-time` for the line.
+  `1:02:75`, `1:02:03:04`), it is not a time: the entry has no time, `rest` is `raw` after the bullet `lead`
+  (R13.1.3), and the tracklist warns `invalid-time` for the line.
   - There is no fallback to a shorter shape (`1:02:75` is not read as `1:02`).
   - A well-formed time followed by a character R13.2.3 does not allow (`12:34x`), or an opened
     bracket that is not closed after the time, means there is no time and **no** warning.
@@ -776,13 +776,15 @@ marker words). Bad values are ignored (R0.8).
    `marker` line (R13.4.1; one line has no bare position, other kinds have `track: null`).
 6. Emphasis changes nothing: wrapping a line's time as `**T**`, `__T__`, `*T*`, `_T_`, `**[T]**`,
    `[**T**]`, `**[**T**]` or `_[T]_`, or its track part as `**…**`, `__…__`, `*…*` or `_…_`, keeps
-   its `time.seconds`, `kind` and `track`, as long as the track part does not itself start or end
-   with `*`, `_` or whitespace.
+   its `time.seconds`, `kind` and `track`, as long as the track part contains no `*` or `_` and
+   does not start or end with whitespace.
 
 ### R13.12 Emphasis markers
 
 Markdown emphasis (`**bold**`, `__bold__`, `*italic*`, `_italic_`, from Discord, Reddit, Telegram or
-YouTube comments) is found once per line, on `raw`, by pairing runs:
+YouTube comments) is found once per line, in `rest`, by pairing runs. Runs in `lead` and `gap` are
+read by position instead (R13.2.1, R13.2.3) and take no part in the pairing, except as R13.12.4
+says:
 
 - **R13.12.1 Runs.** A run is a maximal run of `*` or of `_`. Only runs of 1 or 2 characters can be
   markers; `***` and longer are always text.
@@ -795,12 +797,19 @@ YouTube comments) is found once per line, on `raw`, by pairing runs:
   pairs with the nearest opener on the stack with the same character and length; that opener and
   every opener above it leave the stack. A run that did not close and can open is pushed. Paired
   runs are *emphasis markers*; every other run is text.
+- **R13.12.4 Open lead run.** When the lead took an emphasis run that the gap did not close (the
+  first run if both are open), the last run of the line, followed only by R0.2 whitespace, is also
+  a marker when it is unpaired, is 1 or 2 characters of that run's character, and the character
+  before it is an inner side. `**[**14:21**] 10. Nitepunk - ID**` and `**14:21 - Nitepunk - ID**`
+  end that way. No other run pairs with an open lead run: in `**00:00 Artist - F** You` the `**`
+  of the title is text.
 
 So markers never touch a letter, digit or other punctuation on their outer side: `P*nk`,
 `A**hole`, `DJ_Name`, `Noisia_-_Stigma` and `_-_Intro` have none, and neither do unpaired runs
 (`*NSYNC - Bye Bye Bye`, `Artist - Holy Sh**`). Backticks, `~~` and `||` are never markers.
-`**[**14:21**] 10. Nitepunk - ID**` has four (two pairs), `00:00 Nitepunk - No Manners (**VIP**)`
-two. Markers are left out of the line text (R13.4.1); `raw` and `parts` keep them.
+In `**[**14:21**] 10. Nitepunk - ID**` three runs sit in `lead` and `gap` and the last one closes
+the lead's open `**` (R13.12.4); `00:00 Nitepunk - No Manners (**VIP**)` has two markers. Markers
+are left out of the line text (R13.4.1); `raw` and `parts` keep them.
 
 ### R13.13 Layered tracks
 
