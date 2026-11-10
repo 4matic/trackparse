@@ -291,7 +291,8 @@ exactly one fix fits), `time-duplicate`, `no-start-at-zero`, `time-after-audio-e
 
 Lists pasted with list bullets or Markdown emphasis (`* 14:21 Artist - Title`,
 `**[**14:21**] Artist - Title**`) read like plain lines; the decoration stays in `raw` and `parts`.
-A line starting with `w/` is `layered`: a track played over the previous one
+A line whose track text (after any time) starts with `w/` is `layered`: a track played over the
+previous one
 ([Markdown](https://4matic.github.io/trackparse/guides/tracklists/#markdown),
 [layered tracks](https://4matic.github.io/trackparse/guides/tracklists/#layered-tracks)).
 
