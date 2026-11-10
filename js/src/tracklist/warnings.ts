@@ -171,7 +171,9 @@ export function tracklistWarnings(input: WarningInput): TracklistWarning[] {
   });
 
   entries.forEach((e, i) => {
-    if (e.kind === "track" && e.time === null && timed.length > 0) add(i, "time-missing");
+    // R13.13.3: an untimed layered line plays over the previous track, at its time.
+    if (e.kind === "track" && e.time === null && !e.layered && timed.length > 0)
+      add(i, "time-missing");
     if (invalid[i]) add(i, "invalid-time");
     if (unparsed[i]) add(i, "line-unparsed");
   });

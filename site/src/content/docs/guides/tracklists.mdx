@@ -180,6 +180,48 @@ space, a bracket or the end of the line on its outer side. So names keep their s
 underscores: `P*nk`, `*NSYNC`, `DJ_Name`, `Noisia_-_Stigma` and a censored `F**k` come out as
 written. Runs of three or more, `~~`, `||` and backticks are never treated as Markdown.
 
+## Layered tracks
+
+DJ tracklists mark a track played over the previous one, like an acapella on the second deck, with
+`w/` where the track number would go. Such a line gets `layered: true`. The `w/` stays in `rest` and
+is left out of the parsed track. An untimed layered line plays at the previous track's time, so it
+doesn't warn `time-missing`, and it doesn't count as a neighbour for bare track numbers.
+
+<Tabs syncKey="lang">
+<TabItem label="JavaScript">
+
+```js
+const list = parseTracklist("00:00 Noisia - Stigma\nw/ Phace - Psycho (Acapella)\n03:10 Mefjus - Sleepless");
+const e = list.entries[1];
+
+e.layered;                          // true
+e.time;                             // null
+e.track.artists.map((a) => a.name); // [ 'Phace' ]
+e.track.title;                      // 'Psycho'
+list.warnings;                      // []
+```
+
+</TabItem>
+<TabItem label="Python">
+
+```python
+tl = parse_tracklist("00:00 Noisia - Stigma\nw/ Phace - Psycho (Acapella)\n03:10 Mefjus - Sleepless")
+e = tl.entries[1]
+
+e.layered                          # True
+e.time                             # None
+[a.name for a in e.track.artists]  # ['Phace']
+e.track.title                      # 'Psycho'
+tl.warnings                        # ()
+```
+
+</TabItem>
+</Tabs>
+
+Only a leading `w/` (or `W/`) followed by a space counts. `w/` inside a line
+(`Noisia w/ Phace - Stigma`), right after a track number (`10. w/ …`) or glued to the name
+(`w/Noisia`) is left alone, and so are `with`, `+` and `x`.
+
 ## Line kinds
 
 | Kind | When |

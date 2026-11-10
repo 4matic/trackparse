@@ -15,6 +15,7 @@ from referencing import Registry, Resource
 from runner import SPEC_DIR
 from trackparse import parse
 from trackparse._tracklist_emphasis import without_markers
+from trackparse._tracklist_kinds import layered_prefix
 from trackparse.tracklist import apply_edits, parse_tracklist
 
 
@@ -43,7 +44,7 @@ FRAGMENTS = [
     "0:61:00 ", "1:2", "[", "]", "(", ")", "[00:10] ", "(1:00)", " - ", " – ", "-", "|", ".",
     ":", "=> ", "==>", "1 ", "2 ", "01. ", "3) ", "Artist", "Title", "Noisia - Stigma", "Intro",
     "interview", "Tracklist:", "Part 2", "https://x.y", "www.", "_-_", "Ab-Cd", "ID", "(VIP)",
-    "**", "*", "__", "_", "***", "* ", "- ", "**[", "]**",
+    "**", "*", "__", "_", "***", "* ", "- ", "**[", "]**", "w/ ", "W/",
     "​", "𝄞", "\ud800",
 ]  # fmt: skip
 
@@ -358,11 +359,13 @@ def test_sort_keeps_eol_slots_and_is_idempotent(text: str) -> None:
 
 
 # 5. One line equals parse(track part, mode="tracklist"). R13.4.1: the track part of a one-line
-# text (no neighbours, so no bare position) is `rest` without its paired emphasis markers (R13.12).
+# text (no neighbours, so no bare position) is `rest` without its emphasis markers (R13.12) and a
+# layered prefix (R13.13).
 
 
 def track_part(raw: str, rest: str) -> str:
-    return without_markers(raw, len(raw) - len(rest))
+    text = without_markers(raw, len(raw) - len(rest))
+    return text[layered_prefix(text) :]
 
 
 @fast(1500)

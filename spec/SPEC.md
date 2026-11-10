@@ -620,8 +620,8 @@ Nothing is ever dropped.
 
 ### R13.4 The track part
 
-- **R13.4.1** The *line text* is `rest` without its emphasis markers (R13.12). The *track part* is
-  the line text minus a bare position (R13.5). The kind tests (R13.3), the probe (R13.4.2) and the
+- **R13.4.1** The *line text* is `rest` without its emphasis markers (R13.12) and without a layered
+  prefix (R13.13). The *track part* is the line text minus a bare position (R13.5). The kind tests (R13.3), the probe (R13.4.2) and the
   bare-position test (R13.5) read the line text; the track part is parsed with
   `parse(trackPart, { mode, knownArtists, keywords, splitAnd })`, `mode` defaulting to
   `"tracklist"`. `rest` itself is never changed. `**[**14:21**] 10. Nitepunk - ID**` → rest
@@ -658,7 +658,7 @@ repeated.
 
 | Code | Severity | When |
 |---|---|---|
-| `time-missing` | warning | a `track` entry has no time while at least one other entry has one |
+| `time-missing` | warning | a `track` entry that is not layered (R13.13) has no time while at least one other entry has one |
 | `time-out-of-order` | warning | a timed entry's seconds are below the previous timed entry's |
 | `time-duplicate` | warning | equal to the previous timed entry's seconds |
 | `no-start-at-zero` | info | the first timed entry is not at 0 |
@@ -687,7 +687,7 @@ out-of-order line. (`00:06:29` between `01:04:39` and `01:08:10` → line itself
 ### R13.8 Output
 
 `{ specVersion, entries, warnings, stats }`. Each entry is `{ line, kind, eol, raw, parts, time,
-track }`. `stats` = `{ lines, tracks, markers, timed, firstTime, lastTime }`: entry count, `track`
+track, layered }`. `stats` = `{ lines, tracks, markers, timed, firstTime, lastTime }`: entry count, `track`
 count, `marker` count, entries with a time, the first and the last timed entry's seconds in line
 order (`null` when none). Every key is always present.
 
@@ -802,6 +802,26 @@ So markers never touch a letter, digit or other punctuation on their outer side:
 `**[**14:21**] 10. Nitepunk - ID**` has four (two pairs), `00:00 Nitepunk - No Manners (**VIP**)`
 two. Markers are left out of the line text (R13.4.1); `raw` and `parts` keep them.
 
+### R13.13 Layered tracks
+
+DJ tracklists mark a track played over the previous one (an acapella, a second deck) with `w/` in
+place of the track number: `w/ Nitepunk & Habstrakt - Point`.
+
+- **R13.13.1** After its emphasis markers are left out (R13.12), a line whose text starts with R0.2
+  whitespace, a word of [`data/layered-words.json`](data/layered-words.json) (word key, R0.3, so
+  `W/` counts), at least one R0.2 whitespace and then more text is *layered*. That prefix is left
+  out of the line text (R13.4.1); `rest` keeps it.
+- **R13.13.2** Each entry has `layered` (boolean): `true` for a layered line, else `false`.
+- **R13.13.3** A layered line:
+  - never has a bare position, and is not a neighbour in the R13.5 search, so `1 A - B` /
+    `w/ C - D` / `2 E - F` still confirms 1 and 2;
+  - does not warn `time-missing` (R13.7): without a time it plays at the previous track's time;
+  - is otherwise an ordinary line: its kind follows R13.3, it can have its own time, it counts in
+    `stats.tracks`, and `sort-by-time` moves an untimed one with the timed line above it (R13.9.4).
+- Not layered: `w/` without whitespace after it (`w/Noisia - Stigma`), `w/` alone, `w/` after a
+  position (`10. w/ A - B`), and `w/` inside the line (`Noisia w/ Phace - Stigma`, which R5.2
+  leaves alone outside brackets). `with`, `+` and `x` are not layered words.
+
 ---
 
 ## Invariants
@@ -835,9 +855,11 @@ Tracklists (R13) have their own invariants: R13.11.
 - **Credit list** — a substring that R7.3 splits into names.
 - **Word key** — R0.3.
 - **Dedup key** — R0.4.
-- **Line text** — a tracklist line's `rest` without its emphasis markers (R13.4.1, R13.12).
+- **Line text** — a tracklist line's `rest` without its emphasis markers and a layered prefix
+  (R13.4.1, R13.12, R13.13).
 - **Track part** — the line text minus a bare position, parsed as a track (R13.4.1).
 - **Emphasis marker** — a paired run of 1 or 2 `*` or `_` (R13.12).
+- **Layered** — a tracklist line starting with `w/`, played over the previous track (R13.13).
 - **Candidate line** — a non-blank tracklist line with a time or a spaced dash (R13.4.2).
 - **List context** — at least half of the candidate lines have a spaced dash; enables R6.10's
   tight dash (R13.4.2).

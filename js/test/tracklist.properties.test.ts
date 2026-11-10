@@ -7,6 +7,7 @@ import { describe, expect, it } from "vitest";
 import { parse } from "../src/index.js";
 import { withoutMarkers } from "../src/tracklist/emphasis.js";
 import { applyEdits, type Edit, parseTracklist } from "../src/tracklist/index.js";
+import { layeredPrefix } from "../src/tracklist/kinds.js";
 import { specDir } from "./runner.js";
 
 const ajv = new Ajv2020({ allErrors: true, strict: false });
@@ -83,6 +84,8 @@ const fragment = fc.constantFrom(
   "- ",
   "**[",
   "]**",
+  "w/ ",
+  "W/",
   "​",
   "𝄞",
   "\ud800",
@@ -390,8 +393,11 @@ describe("R13.11 tracklist invariants", () => {
   });
 
   // R13.4.1: the track part of a one-line text (no neighbours, so no bare position) is `rest`
-  // without its paired emphasis markers (R13.12).
-  const trackPart = (raw: string, rest: string) => withoutMarkers(raw, raw.length - rest.length);
+  // without its emphasis markers (R13.12) and a layered prefix (R13.13).
+  const trackPart = (raw: string, rest: string) => {
+    const text = withoutMarkers(raw, raw.length - rest.length);
+    return text.slice(layeredPrefix(text));
+  };
 
   it("5. a one-line text's track equals parse(trackPart, { mode: 'tracklist' })", () => {
     const oneLine = fc

@@ -289,6 +289,12 @@ Warning codes: `time-missing`, `time-out-of-order` (with a one- or two-digit `su
 exactly one fix fits), `time-duplicate`, `no-start-at-zero`, `time-after-audio-end` (pass
 `audioSeconds`), `invalid-time`, `position-gap`, `position-duplicate`, `line-unparsed`.
 
+Lists pasted with list bullets or Markdown emphasis (`* 14:21 Artist - Title`,
+`**[**14:21**] Artist - Title**`) read like plain lines; the decoration stays in `raw` and `parts`.
+A line starting with `w/` is `layered`: a track played over the previous one
+([Markdown](https://4matic.github.io/trackparse/guides/tracklists/#markdown),
+[layered tracks](https://4matic.github.io/trackparse/guides/tracklists/#layered-tracks)).
+
 Options: `mode` (default `"tracklist"`), `knownArtists`, `splitAnd`, `keywords`, `audioSeconds`,
 `markerWords`. Every type is exported (`import type { Tracklist, Edit } from
 "trackparse/tracklist"`).

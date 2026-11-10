@@ -40,7 +40,7 @@ describe("subpath export trackparse/tracklist", () => {
     expect(Object.keys(tl).sort()).toEqual(["entries", "specVersion", "stats", "warnings"]);
     expect(tl.specVersion).toBe(SPEC_VERSION);
     expect(Object.keys(tl.entries[0] ?? {}).sort()).toEqual(
-      ["eol", "kind", "line", "parts", "raw", "time", "track"].sort(),
+      ["eol", "kind", "layered", "line", "parts", "raw", "time", "track"].sort(),
     );
     expect(tl.entries[0]?.track?.mode).toBe("tracklist");
   });

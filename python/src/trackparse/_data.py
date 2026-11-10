@@ -350,6 +350,13 @@ JUNK_DATA: dict[str, Any] = {
     ],
 }
 
+# spec/data/layered-words.json
+LAYERED_WORDS_DATA: dict[str, Any] = {
+    "words": [
+        "w/",
+    ],
+}
+
 # spec/data/marker-words.json
 MARKER_WORDS_DATA: dict[str, Any] = {
     "words": [

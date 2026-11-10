@@ -13,6 +13,7 @@ from ._tracklist_kinds import (
     is_blank,
     is_header,
     is_link,
+    layered_prefix,
     marker_table,
 )
 from ._tracklist_options import ResolvedOptions
@@ -30,11 +31,13 @@ class _Row:
         "blank",
         "candidate",
         "dash",
+        "layered",
         "line",
         "marker",
         "probe",
         "scan",
         "separated",
+        "text",
         "track",
     )
 
@@ -42,6 +45,11 @@ class _Row:
         self.line = line
         self.scan = scan
         self.blank = blank
+        layered = 0 if blank else layered_prefix(scan.text)
+        #: R13.4.1 line text: rest without emphasis markers (R13.12) and a layered prefix (R13.13).
+        self.text = scan.text[layered:]
+        #: R13.13
+        self.layered = layered > 0
         #: R13.4.2
         self.candidate = False
         self.dash = False
@@ -68,11 +76,12 @@ def parse_tracklist_resolved(text: str, opts: ResolvedOptions) -> Tracklist:
         rows.append(row)
         if row.blank:
             continue
-        probe = lp.probe(scan.text)  # R13.4.1: the line text, without emphasis (R13.12)
+        probe = lp.probe(row.text)  # R13.4.1
         row.probe = probe
         row.dash = probe.spaced_dash
         row.candidate = scan.time is not None or row.dash
-        row.bare = bare_candidate(scan.text, probe.position)  # R13.5
+        # R13.5 / R13.13.3: a layered line never has a bare position.
+        row.bare = None if row.layered else bare_candidate(row.text, probe.position)
     candidates = 0
     dashes = 0
     for r in rows:
@@ -84,13 +93,16 @@ def parse_tracklist_resolved(text: str, opts: ResolvedOptions) -> Tracklist:
     list_context = candidates > 0 and 2 * dashes >= candidates
 
     # R13.5: confirmed bare positions are removed before parsing. R13.4.1: one parse per line.
-    confirmed = confirm_positions([r.bare for r in rows], [r.candidate for r in rows])
+    # R13.13.3: layered lines are not neighbours for the R13.5 search.
+    confirmed = confirm_positions(
+        [r.bare for r in rows], [r.candidate and not r.layered for r in rows]
+    )
     for i, r in enumerate(rows):
         if r.blank or r.probe is None:
             continue
         bare = r.bare if confirmed[i] else None
         probe = lp.probe(bare.stripped) if bare is not None else r.probe
-        r.marker = has_marker_word(bare.stripped if bare is not None else r.scan.text, markers)
+        r.marker = has_marker_word(bare.stripped if bare is not None else r.text, markers)
         # R13.4.2: the R6.10 tight dash only on timed lines without a marker word.
         track = probe.finish(list_context and r.scan.time is not None and not r.marker)
         if bare is not None:
@@ -112,6 +124,7 @@ def parse_tracklist_resolved(text: str, opts: ResolvedOptions) -> Tracklist:
                 parts=r.scan.parts,
                 time=r.scan.time,
                 track=r.track if keep else None,
+                layered=r.layered,
             )
         )
 
@@ -136,10 +149,9 @@ def _kind_of(r: _Row) -> EntryKind:
     marker = not r.separated and r.marker
     if r.scan.time is not None:
         return "marker" if marker else "track"
-    text = r.scan.text
-    if is_link(text):
+    if is_link(r.text):
         return "link"
-    if is_header(text):
+    if is_header(r.text):
         return "header"
     if marker:
         return "marker"

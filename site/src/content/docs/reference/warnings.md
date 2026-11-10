@@ -29,7 +29,7 @@ candidate for a human to look at. For scrobbling, most of them are fine to accep
 
 | Code | Severity | When |
 |---|---|---|
-| `time-missing` | warning | A track line has no time while other lines do |
+| `time-missing` | warning | A track line has no time while other lines do (not raised on a `w/` line, which plays at the previous track's time) |
 | `time-out-of-order` | warning | Earlier than the previous timed line. May carry a `suggestion` |
 | `time-duplicate` | warning | Same time as the previous timed line |
 | `no-start-at-zero` | info | The first time isn't `0:00` |
