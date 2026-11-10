@@ -1799,6 +1799,82 @@
         "R13.9"
       ],
       "note": "A gap that already ends with whitespace is kept as is."
+    },
+    {
+      "id": "tracklist-edits-076",
+      "input": "**[**14:21**] Nitepunk - ID**",
+      "edits": [
+        {
+          "op": "set-time",
+          "line": 1,
+          "seconds": 900
+        }
+      ],
+      "expected": {
+        "text": "**[**15:00**] Nitepunk - ID**",
+        "changed": [
+          1
+        ],
+        "warnings": []
+      },
+      "rules": [
+        "R13.9",
+        "R13.2.1",
+        "R13.2.3"
+      ],
+      "note": "The emphasis sits in lead and gap, so a rewritten time keeps it."
+    },
+    {
+      "id": "tracklist-edits-077",
+      "input": "**14:21** Nitepunk - ID\r\n__[15:00]__ Noisia - Stigma",
+      "edits": [
+        {
+          "op": "shift",
+          "seconds": 60
+        }
+      ],
+      "expected": {
+        "text": "**15:21** Nitepunk - ID\r\n__[16:00]__ Noisia - Stigma",
+        "changed": [
+          1,
+          2
+        ],
+        "warnings": []
+      },
+      "rules": [
+        "R13.9",
+        "R13.2.1",
+        "R13.2.3"
+      ]
+    },
+    {
+      "id": "tracklist-edits-078",
+      "input": "**[**14:21**] Nitepunk - ID**",
+      "edits": [
+        {
+          "op": "set-rest",
+          "line": 1,
+          "rest": "Noisia - Stigma"
+        },
+        {
+          "op": "set-time",
+          "line": 1,
+          "seconds": 0
+        }
+      ],
+      "expected": {
+        "text": "**[**00:00**] Noisia - Stigma",
+        "changed": [
+          1
+        ],
+        "warnings": []
+      },
+      "rules": [
+        "R13.9",
+        "R13.2.1",
+        "R13.2.3"
+      ],
+      "note": "Replacing rest removes the closing ** at the end of the line; the time is still read, because runs next to it are read by position."
     }
   ]
 }

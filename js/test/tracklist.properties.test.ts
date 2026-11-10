@@ -5,6 +5,7 @@ import Ajv2020 from "ajv/dist/2020.js";
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 import { parse } from "../src/index.js";
+import { withoutMarkers } from "../src/tracklist/emphasis.js";
 import { applyEdits, type Edit, parseTracklist } from "../src/tracklist/index.js";
 import { specDir } from "./runner.js";
 
@@ -73,6 +74,15 @@ const fragment = fc.constantFrom(
   "Ab-Cd",
   "ID",
   "(VIP)",
+  "**",
+  "*",
+  "__",
+  "_",
+  "***",
+  "* ",
+  "- ",
+  "**[",
+  "]**",
   "​",
   "𝄞",
   "\ud800",
@@ -379,7 +389,11 @@ describe("R13.11 tracklist invariants", () => {
     );
   });
 
-  it("5. a one-line text's track equals parse(rest, { mode: 'tracklist' })", () => {
+  // R13.4.1: the track part of a one-line text (no neighbours, so no bare position) is `rest`
+  // without its paired emphasis markers (R13.12).
+  const trackPart = (raw: string, rest: string) => withoutMarkers(raw, raw.length - rest.length);
+
+  it("5. a one-line text's track equals parse(trackPart, { mode: 'tracklist' })", () => {
     const oneLine = fc
       .oneof(
         noisyText,
@@ -390,9 +404,50 @@ describe("R13.11 tracklist invariants", () => {
       fc.property(oneLine, (text) => {
         const e = parseTracklist(text).entries[0];
         if (!e?.track) return;
-        expect(e.track).toEqual(parse(e.parts.rest, { mode: "tracklist" }));
+        expect(e.track).toEqual(parse(trackPart(e.raw, e.parts.rest), { mode: "tracklist" }));
       }),
       { numRuns: 1500 },
+    );
+  });
+
+  it("6. emphasis around the time or the track part changes nothing", () => {
+    const line = fc.record({
+      style: timeStyle,
+      seconds: fc.integer({ min: 0, max: 3599 }),
+      frac: fc.integer({ min: 0, max: 999 }),
+      rest: fc.constantFrom(
+        "Noisia - Stigma",
+        "01. Phace - Plastic Acid",
+        "Intro",
+        "Paperclip interview",
+        "Mefjus - Suicide Bassline (VIP)",
+        "ID - ID",
+        "Noisia feat. Foreign Beggars - Shellshock",
+      ),
+      time: fc.constantFrom(
+        ["", ""],
+        ["**", "**"],
+        ["__", "__"],
+        ["*", "*"],
+        ["_", "_"],
+        ["**[", "]**"],
+        ["[**", "**]"],
+        ["**[**", "**]"],
+        ["_[", "]_"],
+      ),
+      wrap: fc.constantFrom("", "**", "__", "*", "_"),
+    });
+    fc.assert(
+      fc.property(line, (l) => {
+        const t = writeTime(l.style, l.seconds, l.frac);
+        const bare = parseTracklist(`${t} ${l.rest}`).entries[0];
+        const decorated = `${l.time[0]}${t}${l.time[1]} ${l.wrap}${l.rest}${l.wrap}`;
+        const e = parseTracklist(decorated).entries[0];
+        expect(e?.time?.seconds).toBe(bare?.time?.seconds);
+        expect(e?.kind).toBe(bare?.kind);
+        expect(e?.track).toEqual(bare?.track);
+      }),
+      { numRuns: 500 },
     );
   });
 });

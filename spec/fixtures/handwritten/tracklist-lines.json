@@ -1623,6 +1623,111 @@
         "R13.7"
       ],
       "note": "Near miss: 'Introduction' is not a marker word, so a timed track that warns line-unparsed."
+    },
+    {
+      "id": "tracklist-lines-042",
+      "input": "**Intro**",
+      "expected": {
+        "entries": [
+          {
+            "kind": "marker",
+            "parts": {
+              "lead": "",
+              "time": "",
+              "gap": "",
+              "rest": "**Intro**"
+            },
+            "track": {
+              "artists": [],
+              "title": "Intro"
+            }
+          }
+        ]
+      },
+      "rules": [
+        "R13.3",
+        "R13.12"
+      ],
+      "note": "Kinds are decided on the text without emphasis."
+    },
+    {
+      "id": "tracklist-lines-043",
+      "input": "**Part 2:**",
+      "expected": {
+        "entries": [
+          {
+            "kind": "header",
+            "track": null
+          }
+        ]
+      },
+      "rules": [
+        "R13.3",
+        "R13.12"
+      ]
+    },
+    {
+      "id": "tracklist-lines-044",
+      "input": "**https://example.com/set**",
+      "expected": {
+        "entries": [
+          {
+            "kind": "link",
+            "track": null
+          }
+        ]
+      },
+      "rules": [
+        "R13.3",
+        "R13.12"
+      ]
+    },
+    {
+      "id": "tracklist-lines-045",
+      "input": "**Nitepunk - No Manners**",
+      "expected": {
+        "entries": [
+          {
+            "kind": "track",
+            "parts": {
+              "lead": "",
+              "time": "",
+              "gap": "",
+              "rest": "**Nitepunk - No Manners**"
+            },
+            "track": {
+              "artists": [
+                "Nitepunk"
+              ],
+              "title": "No Manners"
+            }
+          }
+        ]
+      },
+      "rules": [
+        "R13.3",
+        "R13.12",
+        "R13.4.1"
+      ]
+    },
+    {
+      "id": "tracklist-lines-046",
+      "input": "00:00 **Intro**",
+      "expected": {
+        "entries": [
+          {
+            "kind": "marker",
+            "track": {
+              "artists": [],
+              "title": "Intro"
+            }
+          }
+        ]
+      },
+      "rules": [
+        "R13.3",
+        "R13.12"
+      ]
     }
   ]
 }

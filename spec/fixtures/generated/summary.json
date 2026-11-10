@@ -1,7 +1,7 @@
 {
   "generator": "@trackparse/fixture-gen",
   "seed": 20260929,
-  "total": 11817,
+  "total": 11927,
   "scenarios": {
     "artists-joiners": {
       "file": "artists-joiners.json",
@@ -1510,6 +1510,93 @@
           "set-f": 89,
           "set-g": 117,
           "set-h": 97
+        }
+      }
+    },
+    "tracklist-emphasis": {
+      "file": "tracklist-emphasis.json",
+      "fn": "parseTracklist",
+      "cases": 110,
+      "strategy": "pairwise+sample",
+      "productSize": 3440640,
+      "pairwiseCases": 110,
+      "sampledCases": 0,
+      "infeasiblePairs": 2,
+      "duplicateInputsDropped": 0,
+      "dims": {
+        "time": {
+          "m-ss": 13,
+          "mm-ss": 14,
+          "long-min": 13,
+          "h-mm-ss": 15,
+          "hh-mm-ss": 14,
+          "frac-dot": 14,
+          "frac-comma": 13,
+          "hms-frac": 14
+        },
+        "lead": {
+          "bold": 8,
+          "bold-square": 9,
+          "square-bold": 9,
+          "bold-square-bold": 9,
+          "underline": 10,
+          "star": 8,
+          "under-square": 9,
+          "bold-open-only": 10,
+          "bullet-star": 10,
+          "bullet-dash": 10,
+          "bullet-dot-square": 9,
+          "bullet-bold": 9
+        },
+        "wrap": {
+          "none": 23,
+          "bold": 20,
+          "underline": 25,
+          "star": 21,
+          "under": 21
+        },
+        "gap": {
+          "space": 15,
+          "two-spaces": 12,
+          "dash": 14,
+          "en-dash": 14,
+          "pipe": 13,
+          "dot": 15,
+          "arrow": 13,
+          "long-arrow": 14
+        },
+        "pos": {
+          "none": 19,
+          "dotted-pad": 16,
+          "dotted": 17,
+          "paren": 15,
+          "padded": 17,
+          "bare": 13,
+          "bare-9": 13
+        },
+        "eol": {
+          "lf": 14,
+          "lf-end": 13,
+          "crlf": 14,
+          "crlf-end": 13,
+          "cr": 13,
+          "cr-end": 14,
+          "mixed": 14,
+          "mixed-end": 15
+        },
+        "count": {
+          "n1": 42,
+          "n2": 68
+        },
+        "set": {
+          "set-a": 13,
+          "set-b": 14,
+          "set-c": 13,
+          "set-d": 12,
+          "set-e": 15,
+          "set-f": 14,
+          "set-g": 15,
+          "set-h": 14
         }
       }
     }

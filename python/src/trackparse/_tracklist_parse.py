@@ -68,11 +68,11 @@ def parse_tracklist_resolved(text: str, opts: ResolvedOptions) -> Tracklist:
         rows.append(row)
         if row.blank:
             continue
-        probe = lp.probe(scan.parts.rest)
+        probe = lp.probe(scan.text)  # R13.4.1: the line text, without emphasis (R13.12)
         row.probe = probe
         row.dash = probe.spaced_dash
         row.candidate = scan.time is not None or row.dash
-        row.bare = bare_candidate(scan.parts.rest, probe.position)  # R13.5
+        row.bare = bare_candidate(scan.text, probe.position)  # R13.5
     candidates = 0
     dashes = 0
     for r in rows:
@@ -90,9 +90,7 @@ def parse_tracklist_resolved(text: str, opts: ResolvedOptions) -> Tracklist:
             continue
         bare = r.bare if confirmed[i] else None
         probe = lp.probe(bare.stripped) if bare is not None else r.probe
-        r.marker = has_marker_word(
-            bare.stripped if bare is not None else r.scan.parts.rest, markers
-        )
+        r.marker = has_marker_word(bare.stripped if bare is not None else r.scan.text, markers)
         # R13.4.2: the R6.10 tight dash only on timed lines without a marker word.
         track = probe.finish(list_context and r.scan.time is not None and not r.marker)
         if bare is not None:
@@ -138,10 +136,10 @@ def _kind_of(r: _Row) -> EntryKind:
     marker = not r.separated and r.marker
     if r.scan.time is not None:
         return "marker" if marker else "track"
-    rest = r.scan.parts.rest
-    if is_link(rest):
+    text = r.scan.text
+    if is_link(text):
         return "link"
-    if is_header(rest):
+    if is_header(text):
         return "header"
     if marker:
         return "marker"

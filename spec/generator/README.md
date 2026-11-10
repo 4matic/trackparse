@@ -41,6 +41,7 @@ When the SPEC changes, update the atom expectations and `problem()` in the same 
 | `dedup` | repeated credits in every placement (R0.4, R7.6, R9.2), exhaustive |
 | `kitchen-sink` | all dimensions at once |
 | `tracklist` | `fn: "parseTracklist"` over 1–6 line texts: time forms × lead/brackets × gaps × dotted/padded/bare positions × line endings × extra line kinds × time orders (R13, R6.10) |
+| `tracklist-emphasis` | `fn: "parseTracklist"` with Markdown: list bullets and emphasis runs around the time (`**T**`, `**[T]**`, `[**T**]`, `_[T]_`…) × emphasis around each track line (`**`, `__`, `*`, `_`) × time forms × gaps × positions × line endings (R13.2, R13.12) |
 
 Scenarios whose product is at most `exhaustiveLimit` are exhaustive. The others use a greedy
 pairwise covering array (every pair of atom values from two dimensions appears in at least one
@@ -60,8 +61,8 @@ valid case) plus a seeded random sample (`sample` per scenario, `kitchenSinkSamp
 - `expected.fullTitle` is present only when there are versions (otherwise it equals `title`).
 - The `versions` and `dash-suffix` scenarios spell every version field out. The others assert
   `type`, `raw`, `artists`, `delimiter` and the non-default fields.
-- `tracklist` cases (`defaults.fn: "parseTracklist"`) assert every entry (arrays match in length)
-  with partial objects, plus `warnings` and `stats`.
+- `tracklist` and `tracklist-emphasis` cases (`defaults.fn: "parseTracklist"`) assert every entry
+  (arrays match in length) with partial objects, plus `warnings` and `stats`.
 - No per-case `tags`: the id already names the atoms. `summary.json` has per-dimension counts.
 
 ## Commands

@@ -76,7 +76,7 @@ describe("generated fixtures", () => {
     for (const [name, content] of first.files) {
       if (name === "summary.json") continue;
       const file = JSON.parse(content) as FixtureFile;
-      expect(file.defaults.fn, name).toBe(name === "tracklist.json" ? "parseTracklist" : "parse");
+      expect(file.defaults.fn, name).toBe(name.startsWith("tracklist") ? "parseTracklist" : "parse");
     }
     expect(allCases(first, "parseTracklist").length).toBeGreaterThanOrEqual(800);
     for (const c of allCases(first, "parseTracklist")) expect(c.options, c.id).toEqual({});

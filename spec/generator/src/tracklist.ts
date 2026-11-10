@@ -16,6 +16,7 @@ import {
   type TimeFormAtom,
   type TimeOrder,
   type TrackAtom,
+  type WrapAtom,
   modeById,
   sepById,
 } from "./atoms.js";
@@ -33,6 +34,13 @@ export interface TracklistComposition {
   order: TimeOrder;
   /** The track parts, in line order. */
   tracks: TrackAtom[];
+  /** Markdown emphasis around each track line's text (R13.12); absent = none. */
+  wrap?: WrapAtom;
+}
+
+/** R13.12: the composition writes `*` or `_` (emphasis or a `*` bullet). */
+function hasEmphasis(c: TracklistComposition): boolean {
+  return /[*_]/.test(c.lead.text + c.lead.close) || (c.wrap?.text ?? "") !== "";
 }
 
 export type LineKind = "track" | "marker" | "header" | "link" | "note" | "blank";
@@ -160,7 +168,9 @@ function plan(c: TracklistComposition): Planned[] {
       const n = c.pos.first + fl.index;
       const posText = c.pos.raw ? `${c.pos.raw(n)}${c.pos.after}` : "";
       const part = render(trackComposition(t), "tracklist").input;
-      out.push({ frame: fl, rest: posText + part, bare: c.pos.bare ? n : null, timed: isTimed(c, fl, fl.index) });
+      const w = c.wrap?.text ?? "";
+      // R13.12: the wrap is left out of the line text, so the track expectation does not change.
+      out.push({ frame: fl, rest: w + posText + part + w, bare: c.pos.bare ? n : null, timed: isTimed(c, fl, fl.index) });
     } else {
       out.push({ frame: fl, rest: fl.text, bare: null, timed: isTimed(c, fl, -1) });
     }
@@ -187,6 +197,8 @@ export function tracklistProblem(c: TracklistComposition): string | null {
   for (const t of c.tracks) {
     const p = trackProblem(t);
     if (p) return `track ${t.id}: ${p}`;
+    // R13.12: a `*` or `_` of the track's own would take part in the pairing.
+    if (hasEmphasis(c) && /[*_]/.test(render(trackComposition(t), "tracklist").input)) return `track ${t.id}: contains * or _ (R13.12)`;
   }
   const lines = plan(c);
   if (lines.length > 6) return "more than 6 lines";
@@ -310,6 +322,7 @@ function rulesOf(c: TracklistComposition, r: RenderedTracklist): string[] {
   }
   c.pos.rules.forEach((x) => s.add(x));
   c.frame.rules.forEach((x) => s.add(x));
+  if (hasEmphasis(c)) s.add("R13.12");
   for (const t of c.tracks) trackRules(t).forEach((x) => s.add(x));
   if (r.warnings.length) s.add("R13.7");
   return [...s].sort(ruleCmp);
@@ -332,6 +345,12 @@ export function renderTracklist(c: TracklistComposition): Rendered {
     options: {},
     expected: { entries: r.entries, warnings: r.warnings, stats: r.stats },
     rules: rulesOf(c, r),
-    tags: ["tracklist", `time-${c.time.id}`, `frame-${c.frame.id}`, `order-${c.order}`],
+    tags: [
+      "tracklist",
+      `time-${c.time.id}`,
+      `frame-${c.frame.id}`,
+      `order-${c.order}`,
+      ...(hasEmphasis(c) ? ["emphasis"] : []),
+    ],
   };
 }
