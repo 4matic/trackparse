@@ -14,8 +14,8 @@ from referencing import Registry, Resource
 
 from runner import SPEC_DIR
 from trackparse import parse
-from trackparse._tracklist_emphasis import without_markers
 from trackparse._tracklist_kinds import layered_prefix
+from trackparse._tracklist_times import scan_time
 from trackparse.tracklist import apply_edits, parse_tracklist
 
 
@@ -363,8 +363,8 @@ def test_sort_keeps_eol_slots_and_is_idempotent(text: str) -> None:
 # layered prefix (R13.13).
 
 
-def track_part(raw: str, rest: str) -> str:
-    text = without_markers(raw, len(raw) - len(rest))
+def track_part(raw: str) -> str:
+    text = scan_time(raw).text
     return text[layered_prefix(text) :]
 
 
@@ -376,7 +376,7 @@ def test_one_line_equals_parse(text: str) -> None:
     if not entries or entries[0].track is None:
         return
     e = entries[0]
-    assert e.track == parse(track_part(e.raw, e.parts.rest), mode="tracklist")
+    assert e.track == parse(track_part(e.raw), mode="tracklist")
 
 
 # 6. Emphasis around the time or the track part changes nothing.

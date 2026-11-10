@@ -153,14 +153,21 @@ export function scanTime(raw: string): TimeScan {
   // R13.2.3 gap: closing runs for the lead's runs (same character), around the closing bracket.
   const followsTime = (at: number) =>
     at >= raw.length || isWhitespace(raw[at]) || isGapSeparator(raw[at]);
+  // R13.12.4: a lead run the gap leaves open may pair with a run at the end of the line.
+  let open: string | undefined;
   if (closer) {
-    j = closingRun(raw, j, innerOpen);
+    let k = closingRun(raw, j, innerOpen);
+    if (k === j) open = innerOpen;
+    j = k;
     if (raw[j] !== closer) return untimed(raw, false);
     j++;
-    const k = closingRun(raw, j, outerOpen);
+    k = closingRun(raw, j, outerOpen);
     if (k > j && followsTime(k)) j = k;
+    else open = outerOpen ?? open;
   } else {
-    j = closingRun(raw, j, outerOpen);
+    const k = closingRun(raw, j, outerOpen);
+    if (k === j) open = outerOpen;
+    j = k;
     if (!followsTime(j)) return untimed(raw, false);
   }
   j = skipWhitespace(raw, j);
@@ -196,7 +203,7 @@ export function scanTime(raw: string): TimeScan {
       fracDigits: frac.length,
     },
     invalid: false,
-    text: withoutMarkers(raw, j),
+    text: withoutMarkers(raw, j, open),
   };
 }
 

@@ -1897,6 +1897,167 @@
         "R13.4.1"
       ],
       "note": "Near misses: stars and underscores inside words, unpaired ones, backticks and the _-_ separator are text, never emphasis."
+    },
+    {
+      "id": "tracklist-mode-062",
+      "input": "00:00 Artist - Holy Sh** (VIP)",
+      "expected": {
+        "entries": [
+          {
+            "track": {
+              "artists": [
+                "Artist"
+              ],
+              "title": "Holy Sh**",
+              "versions": [
+                {
+                  "type": "vip"
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "rules": [
+        "R13.12"
+      ],
+      "note": "Near miss: an unpaired closing run inside a word is text."
+    },
+    {
+      "id": "tracklist-mode-063",
+      "input": "**[**00:00**] Artist - Holy Sh** (VIP)",
+      "expected": {
+        "entries": [
+          {
+            "parts": {
+              "lead": "**[**",
+              "time": "00:00",
+              "gap": "**] ",
+              "rest": "Artist - Holy Sh** (VIP)"
+            },
+            "time": {
+              "raw": "00:00",
+              "seconds": 0
+            },
+            "track": {
+              "artists": [
+                "Artist"
+              ],
+              "title": "Holy Sh**",
+              "versions": [
+                {
+                  "type": "vip"
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "rules": [
+        "R13.12",
+        "R13.12.4",
+        "R13.2.3"
+      ],
+      "note": "The lead's open ** may only pair with a run at the end of the line, so the ** in the title stays."
+    },
+    {
+      "id": "tracklist-mode-064",
+      "input": "**00:00 Artist - F** You",
+      "expected": {
+        "entries": [
+          {
+            "parts": {
+              "lead": "**",
+              "time": "00:00",
+              "gap": " ",
+              "rest": "Artist - F** You"
+            },
+            "time": {
+              "raw": "00:00",
+              "seconds": 0
+            },
+            "track": {
+              "artists": [
+                "Artist"
+              ],
+              "title": "F** You"
+            }
+          }
+        ]
+      },
+      "rules": [
+        "R13.12",
+        "R13.12.4"
+      ],
+      "note": "A bold time without its closer does not eat a censored word."
+    },
+    {
+      "id": "tracklist-mode-065",
+      "input": "**00:00 Artist - F** You**",
+      "expected": {
+        "entries": [
+          {
+            "track": {
+              "artists": [
+                "Artist"
+              ],
+              "title": "F** You"
+            }
+          }
+        ]
+      },
+      "rules": [
+        "R13.12",
+        "R13.12.4"
+      ],
+      "note": "The run at the end of the line closes the lead's open **; the one inside the title stays."
+    },
+    {
+      "id": "tracklist-mode-066",
+      "input": "[**00:00] Artist - ID**",
+      "expected": {
+        "entries": [
+          {
+            "parts": {
+              "lead": "[**",
+              "time": "00:00",
+              "gap": "] ",
+              "rest": "Artist - ID**"
+            },
+            "track": {
+              "artists": [
+                "Artist"
+              ],
+              "title": "ID"
+            }
+          }
+        ]
+      },
+      "rules": [
+        "R13.12",
+        "R13.12.4"
+      ]
+    },
+    {
+      "id": "tracklist-mode-067",
+      "input": "**00:00 Artist - ID ***",
+      "expected": {
+        "entries": [
+          {
+            "track": {
+              "artists": [
+                "Artist"
+              ],
+              "title": "ID ***"
+            }
+          }
+        ]
+      },
+      "rules": [
+        "R13.12",
+        "R13.12.4"
+      ],
+      "note": "Near miss: a run of three at the end is never a marker."
     }
   ]
 }

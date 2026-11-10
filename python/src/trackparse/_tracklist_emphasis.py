@@ -35,15 +35,18 @@ def _is_inner(ch: Optional[str]) -> bool:
     return ch is not None and not is_whitespace(ch)
 
 
-def without_markers(raw: str, frm: int) -> str:
-    """R13.12: ``raw[frm:]`` without its emphasis markers. A run of 1 or 2 ``*`` or ``_`` closes
-    when the character before it is an inner side and the one after it an outer side, and opens
-    the other way round. A closer pairs with the nearest opener of the same characters; that
-    opener and every opener after it leave the stack. One stack per run keeps this linear."""
+def without_markers(raw: str, frm: int, open_run: Optional[str] = None) -> str:
+    """R13.12: ``raw[frm:]`` (the line's ``rest``) without its emphasis markers. A run of 1 or 2
+    ``*`` or ``_`` closes when the character before it is an inner side and the one after it an
+    outer side, and opens the other way round. A closer pairs with the nearest opener of the same
+    characters; that opener and every opener after it leave the stack. One stack per run keeps
+    this linear. Runs before ``frm`` (lead and gap) never pair, except that ``open_run``, a lead
+    run the gap left open (R13.12.4), pairs with a closing run of the same character at the end
+    of the line."""
     n = len(raw)
     marked = [False] * n
     stacks: dict[str, list[int]] = {"*": [], "**": [], "_": [], "__": []}
-    i = 0
+    i = frm
     while i < n:
         length = _run_length(raw, i) or 1
         own = stacks.get(raw[i : i + length])
@@ -62,4 +65,22 @@ def without_markers(raw: str, frm: int) -> str:
         elif own is not None and _is_outer(before) and _is_inner(after):
             own.append(i)
         i += length
+    # R13.12.4: the last run of the line, after which there is only R0.2 whitespace.
+    end = n
+    while end > frm and is_whitespace(raw[end - 1]):
+        end -= 1
+    start = end
+    while start > frm and raw[start - 1] == open_run:
+        start -= 1
+    if (
+        open_run is not None
+        and end - start <= 2
+        and start > frm
+        and raw[start - 1] != open_run
+        and _is_inner(raw[start - 1])
+    ):
+        m = start
+        while m < end and not marked[m]:
+            marked[m] = True
+            m += 1
     return "".join(raw[k] for k in range(frm, n) if not marked[k])

@@ -5,9 +5,9 @@ import Ajv2020 from "ajv/dist/2020.js";
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 import { parse } from "../src/index.js";
-import { withoutMarkers } from "../src/tracklist/emphasis.js";
 import { applyEdits, type Edit, parseTracklist } from "../src/tracklist/index.js";
 import { layeredPrefix } from "../src/tracklist/kinds.js";
+import { scanTime } from "../src/tracklist/times.js";
 import { specDir } from "./runner.js";
 
 const ajv = new Ajv2020({ allErrors: true, strict: false });
@@ -394,8 +394,8 @@ describe("R13.11 tracklist invariants", () => {
 
   // R13.4.1: the track part of a one-line text (no neighbours, so no bare position) is `rest`
   // without its emphasis markers (R13.12) and a layered prefix (R13.13).
-  const trackPart = (raw: string, rest: string) => {
-    const text = withoutMarkers(raw, raw.length - rest.length);
+  const trackPart = (raw: string) => {
+    const text = scanTime(raw).text;
     return text.slice(layeredPrefix(text));
   };
 
@@ -410,7 +410,7 @@ describe("R13.11 tracklist invariants", () => {
       fc.property(oneLine, (text) => {
         const e = parseTracklist(text).entries[0];
         if (!e?.track) return;
-        expect(e.track).toEqual(parse(trackPart(e.raw, e.parts.rest), { mode: "tracklist" }));
+        expect(e.track).toEqual(parse(trackPart(e.raw), { mode: "tracklist" }));
       }),
       { numRuns: 1500 },
     );
