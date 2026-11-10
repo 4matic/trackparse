@@ -428,7 +428,7 @@ apply_edits(text, edits, *, <same options>) -> EditResult
 | Result | Fields |
 |---|---|
 | `Tracklist` | `spec_version`, `entries`, `warnings`, `stats` |
-| `TracklistEntry` | `line` (1-based), `kind` (`track`, `marker`, `header`, `link`, `note`, `blank`), `eol`, `raw`, `parts`, `time`, `track` (`ParsedTrack` or `None`), `layered` (the line starts with `w/`) |
+| `TracklistEntry` | `line` (1-based), `kind` (`track`, `marker`, `header`, `link`, `note`, `blank`), `eol`, `raw`, `parts`, `time`, `track` (`ParsedTrack` or `None`), `layered` (the track text after any time starts with `w/`) |
 | `Parts` | `lead`, `time`, `gap`, `rest`, joined they give `raw` |
 | `TracklistWarning` | `code`, `line`, `severity` (`info` or `warning`), `suggestion` |
 | `TimeValue` | `raw`, `seconds` (`entry.time`, or `None` on untimed lines) |
@@ -438,7 +438,8 @@ apply_edits(text, edits, *, <same options>) -> EditResult
 
 Lists pasted with list bullets or Markdown emphasis (`* 14:21 Artist - Title`,
 `**[**14:21**] Artist - Title**`) read like plain lines; the decoration stays in `raw` and `parts`.
-A line starting with `w/` is `layered`: a track played over the previous one
+A line whose track text (after any time) starts with `w/` is `layered`: a track played over the
+previous one
 ([Markdown](https://4matic.github.io/trackparse/guides/tracklists/#markdown),
 [layered tracks](https://4matic.github.io/trackparse/guides/tracklists/#layered-tracks)).
 

@@ -103,7 +103,7 @@ Every key is always present. When a guess was involved, `warnings` says which on
 | **1,233** of them on tracklists | 297 handwritten, 936 generated. Line splitting, times, bullets and Markdown, warnings, edits |
 | **1,346** JS tests | every fixture, a schema check on every output, property-based tests of the spec invariants, API tests |
 | **27** version types | remix, VIP, bootleg, extended, radio, original, live, remaster, sped up, … |
-| **0** dependencies | ESM + CJS + TypeScript types, about 17 kB gzipped. `trackparse/tracklist` adds about 8.3 kB, only if you import it |
+| **0** dependencies | ESM + CJS + TypeScript types, about 17 kB gzipped. `trackparse/tracklist` adds about 8.3 KiB, only if you import it |
 | **Node 18+** | CI runs the full suite on 22 and 24, and every fixture against the built package on 18 and 20 |
 | **Python 3.9+** | 1,336 pytest tests on 3.9 to 3.14, plus every fixture against the built wheel. Output is byte-identical to JS |
 | **5,031** real tracklist lines | 117 podcast tracklists the tracklist rules were checked against. Every line round-trips byte for byte |
@@ -313,12 +313,14 @@ apply_edits(text, [{"op": "set-time", "line": 8, "seconds": 4262}]).changed
 # (8,)
 ```
 
-Lists pasted from Discord, Reddit or YouTube comments often keep their list bullets and Markdown.
-`* 14:21 Artist - Title`, `**[**14:21**] 10. Artist - Title**` and `[14:21] **Artist** - _Title_`
-all read like the plain line; the decoration stays in `raw` and `parts`. A `*` or `_` only counts as
-emphasis when it has a partner on the line and sits against a space, a bracket or the line's end, so
-`P*nk`, `DJ_Name` and a censored `F**k` keep their stars and underscores
-([details](https://4matic.github.io/trackparse/guides/tracklists/#markdown)).
+Lists pasted from Discord, Reddit, Telegram or YouTube comments often keep their list bullets and
+Markdown. `* 14:21 Artist - Title`, `**[**14:21**] 10. Artist - Title**` and
+`[14:21] **Artist** - _Title_` all read like the plain line; the decoration stays in `raw` and
+`parts`. Away from the time, a `*` or `_` only counts as emphasis when it has a partner on the line,
+so `P*nk`, `DJ_Name` and a censored `F**k` keep their stars and underscores
+([details](https://4matic.github.io/trackparse/guides/tracklists/#markdown)). A line whose track
+text starts with `w/` is `layered`: a track played over the previous one
+([layered tracks](https://4matic.github.io/trackparse/guides/tracklists/#layered-tracks)).
 
 ### Tracklist mode
 
@@ -422,7 +424,8 @@ For tracklists, on random multi-line text and random edit lists:
 - 10,000 lines parse in linear time (the JS suite allows 3 s; it takes about 0.6 s);
 - a one-line list gives the same track as `parse()` in tracklist mode on its text without Markdown
   emphasis or a leading `w/`;
-- Markdown emphasis around a time or a track line changes nothing.
+- Markdown emphasis around a time or a track line gives the same kind, time and track as the plain
+  line.
 
 ### Real tracklists
 
@@ -570,7 +573,7 @@ that only parses single tracks never loads it.
 | `parts` | `{ lead, time, gap, rest }` | `raw` cut into four strings that join back into it. `lead` is spaces, a list bullet, Markdown emphasis or an opening bracket, `gap` is what sits between the time and the track (`] `, ` - `, ` \| `, ` => `) |
 | `time` | `{ raw, seconds } \| null` | `12:34`, `1:02:03`, `125:30` (long mixes), `00:00:07.500` (7.5 s) |
 | `track` | `ParsedTrack \| null` | Parsed from `rest` in tracklist mode, without Markdown emphasis, a leading `w/` and a bare track number. Only `track` and `marker` lines have one |
-| `layered` | `boolean` | The line starts with `w/`: a track played over the previous one |
+| `layered` | `boolean` | The track text (after any time) starts with `w/` and a space: a track played over the previous one |
 
 Kinds: a line with a time is a `marker` when it has no separator and a word like `intro`, `break`
 or `interview` ([`spec/data/marker-words.json`](spec/data/marker-words.json)), otherwise a
