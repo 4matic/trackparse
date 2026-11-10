@@ -5,8 +5,8 @@ description: The JavaScript, Python and upcoming Rust implementations, and what 
 
 | Language | Package | Status |
 |---|---|---|
-| JavaScript / TypeScript | [`trackparse`](https://www.npmjs.com/package/trackparse) on npm | Reference implementation. 12,965 / 12,965 fixtures. Tracklists in `trackparse/tracklist` |
-| Python | [`trackparse`](https://pypi.org/project/trackparse/) on PyPI | 12,965 / 12,965 fixtures, output identical to JS. Tracklists in `trackparse.tracklist` |
+| JavaScript / TypeScript | [`trackparse`](https://www.npmjs.com/package/trackparse) on npm | Reference implementation. 13,124 / 13,124 fixtures. Tracklists in `trackparse/tracklist` |
+| Python | [`trackparse`](https://pypi.org/project/trackparse/) on PyPI | 13,124 / 13,124 fixtures, output identical to JS. Tracklists in `trackparse.tracklist` |
 | Rust | `trackparse` on crates.io | Planned, same fixtures |
 
 All three share one version number. The spec, the JavaScript package and the Python package are
