@@ -1,14 +1,14 @@
 ---
 title: How it's tested
-description: 12,965 shared fixtures, a generator that can't agree with the code by accident, property tests, and a byte-level diff between the ports.
+description: 13,124 shared fixtures, a generator that can't agree with the code by accident, property tests, and a byte-level diff between the ports.
 ---
 
 The fixtures in [`spec/fixtures`](https://github.com/4matic/trackparse/tree/main/spec/fixtures) are
 the source of truth. The spec says what should happen, the fixtures pin it down, and every port has
-to pass all of them. Both packages do: **12,965 of 12,965**, with empty skip lists, in CI on every
+to pass all of them. Both packages do: **13,124 of 13,124**, with empty skip lists, in CI on every
 push.
 
-## Handwritten: 1,148 cases
+## Handwritten: 1,197 cases
 
 Each case cites the spec rules it exercises, and 62 of them spell out the complete output, field by
 field, so nothing drifts unnoticed.
@@ -24,13 +24,13 @@ field, so nothing drifts unnoticed.
 | Modes | 65 | YouTube pipes, `"Title" by Artist`, uploader fallback, file names |
 | Unicode and normalisation | 71 | NFC, zero-width characters, fullwidth brackets, Cyrillic, CJK, Turkish İ |
 | `format`, `parseArtists`, unknown IDs | 94 | Round trips, canonical joiners, `ID - ID` |
-| Tracklist mode | 54 | Real lines that single-line `parse()` gets wrong, and real lines with no separator at all |
-| Tracklist lines and times | 70 | LF/CRLF/CR, trailing spaces, line kinds, every time form, brackets, gap separators, invalid times |
-| Tracklist positions | 13 | A real 81-line list numbered without dots, and the `2 Unlimited` guard |
-| Tracklist warnings | 36 | Each code with its near-miss, and real out-of-order lists with their suggestions |
-| Tracklist edits | 75 | Style keeping, shift, clamp, sort, insert/delete line endings, invalid edits, locality |
+| Tracklist mode | 61 | Real lines that single-line `parse()` gets wrong, real lines with no separator at all, Markdown around names, and names that keep their `*` and `_` |
+| Tracklist lines and times | 104 | LF/CRLF/CR, trailing spaces, line kinds, every time form, brackets, gap separators, invalid times, list bullets, Markdown around times, `w/` lines |
+| Tracklist positions | 15 | A real 81-line list numbered without dots, and the `2 Unlimited` guard |
+| Tracklist warnings | 38 | Each code with its near-miss, and real out-of-order lists with their suggestions |
+| Tracklist edits | 79 | Style keeping, shift, clamp, sort, insert/delete line endings, invalid edits, locality |
 
-## Generated: 11,817 cases
+## Generated: 11,927 cases
 
 A deterministic generator builds inputs from small "atoms": an artist, a joiner, a feat placement,
 a version group, a junk suffix. Each atom carries its own expected contribution, and the expected
@@ -45,7 +45,7 @@ don't model are rejected instead of guessed.
 | dash suffixes | 1,174 | file names | 780 |
 | dedup | 1,008 | unicode | 674 |
 | feat placement | 922 | prefixes | 577 |
-| tracklists | 826 | | |
+| tracklists | 826 | tracklists with Markdown | 110 |
 
 ## Properties
 
@@ -64,7 +64,8 @@ For tracklists, on random multi-line text and random edit lists:
 - `raw + eol` over all entries gives back the input, and `lead + time + gap + rest` gives `raw`;
 - `applyEdits(t, [])` returns `t`, and an edit never touches a line it doesn't name;
 - shifting forward and back restores the text, unless something was clamped or upgraded;
-- 10,000 lines parse in linear time (the JS suite allows 3 s; it takes about 0.6 s).
+- 10,000 lines parse in linear time (the JS suite allows 3 s; it takes about 0.6 s);
+- Markdown emphasis around a time or a track line changes nothing.
 
 ## Port against port
 

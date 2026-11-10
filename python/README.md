@@ -21,7 +21,7 @@ doesn't recognise stays in the title, word for word.
 
 This is the Python port of [trackparse](https://github.com/4matic/trackparse). Its behaviour is
 defined by a [shared spec](https://github.com/4matic/trackparse/blob/main/spec/SPEC.md) and pinned
-by 12,965 fixtures. It passes all of them, and for every fixture input its output is byte-identical
+by 13,124 fixtures. It passes all of them, and for every fixture input its output is byte-identical
 to the JavaScript package.
 
 - Python 3.9 to 3.14

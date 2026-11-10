@@ -11,7 +11,7 @@ Parse music track names into structured metadata: artists, featured artists, rem
 
 This is the JavaScript/TypeScript reference implementation of the
 [trackparse spec](https://github.com/4matic/trackparse/blob/main/spec/SPEC.md). It passes all
-12,965 shared fixtures. Zero dependencies, ESM and CommonJS, TypeScript types included, never
+13,124 shared fixtures. Zero dependencies, ESM and CommonJS, TypeScript types included, never
 throws.
 
 The principle is **extract, don't delete**: everything recognised lands in a field (artists with
@@ -227,7 +227,7 @@ The full field reference, a gallery of examples and the comparison with other li
 
 `trackparse/tracklist` parses a whole tracklist: one entry per line with its kind, start time and
 a full `ParsedTrack`, plus checks with line numbers. Joining `raw + eol` over the entries gives the
-input back byte for byte, whatever the line endings. It's a separate entry point (about 7.6 KiB
+input back byte for byte, whatever the line endings. It's a separate entry point (about 8.3 KiB
 gzipped), so you only pay for it if you import it.
 
 ```js

@@ -99,13 +99,13 @@ Every key is always present. When a guess was involved, `warnings` says which on
 
 | Number | What it means |
 |---|---|
-| **12,965** shared fixtures | 1,148 written by hand, 11,817 generated from combinations. 100% pass in JS and Python, nothing skipped. |
-| **1,074** of them on tracklists | 248 handwritten, 826 generated. Line splitting, times, warnings, edits |
-| **1,293** JS tests | every fixture, a schema check on every output, property-based tests of the spec invariants, API tests |
+| **13,124** shared fixtures | 1,197 written by hand, 11,927 generated from combinations. 100% pass in JS and Python, nothing skipped. |
+| **1,233** of them on tracklists | 297 handwritten, 936 generated. Line splitting, times, bullets and Markdown, warnings, edits |
+| **1,346** JS tests | every fixture, a schema check on every output, property-based tests of the spec invariants, API tests |
 | **27** version types | remix, VIP, bootleg, extended, radio, original, live, remaster, sped up, … |
-| **0** dependencies | ESM + CJS + TypeScript types, about 17 kB gzipped. `trackparse/tracklist` adds about 7.6 kB, only if you import it |
+| **0** dependencies | ESM + CJS + TypeScript types, about 17 kB gzipped. `trackparse/tracklist` adds about 8.3 kB, only if you import it |
 | **Node 18+** | CI runs the full suite on 22 and 24, and every fixture against the built package on 18 and 20 |
-| **Python 3.9+** | 1,283 pytest tests on 3.9 to 3.14, plus every fixture against the built wheel. Output is byte-identical to JS |
+| **Python 3.9+** | 1,336 pytest tests on 3.9 to 3.14, plus every fixture against the built wheel. Output is byte-identical to JS |
 | **5,031** real tracklist lines | 117 podcast tracklists the tracklist rules were checked against. Every line round-trips byte for byte |
 | **1 spec** | [`spec/SPEC.md`](spec/SPEC.md) defines the behaviour; the Python port passes the same fixtures, and so will Rust |
 
@@ -351,14 +351,14 @@ of the list uses spaced dashes.
 
 The fixtures in [`spec/fixtures`](spec/fixtures) are the source of truth. The spec says what should
 happen, the fixtures pin it down, and every port has to pass all of them. The JS and Python
-packages both do: **12,965 of 12,965**, with empty skip lists, in CI on every push.
+packages both do: **13,124 of 13,124**, with empty skip lists, in CI on every push.
 
 Passing a fixture only checks the fields the case asserts, so
 [`scripts/compare-ports.mjs`](scripts/compare-ports.mjs) also runs every fixture input through both
 ports and diffs the complete outputs, tracklists and edits included. Result: 0 differences, byte
 for byte.
 
-### Handwritten: 1,148 cases in 27 files
+### Handwritten: 1,197 cases in 27 files
 
 Each case cites the spec rules it exercises. 62 of them spell out the complete output field by
 field, so nothing can drift unnoticed.
@@ -374,13 +374,13 @@ field, so nothing can drift unnoticed.
 | Modes | 65 | YouTube pipes, `"Title" by Artist`, uploader fallback, filenames |
 | Unicode and normalization | 71 | NFC, zero-width characters, fullwidth brackets, Cyrillic, CJK, Turkish İ |
 | `format`, `parseArtists`, unknown IDs | 94 | Round-trips, canonical joiners, `ID - ID` |
-| Tracklist mode | 54 | All 17 real podcast lines that single-line `parse()` gets wrong, the 6 real lines with no separator at all, `parse(s, { mode: "tracklist" })` |
-| Tracklist lines and times | 70 | LF/CRLF/CR, trailing spaces, line kinds, every time form, brackets, gap separators, `=>` arrows, invalid times |
-| Tracklist positions | 13 | The real 81-line list numbered `1 ` to `81 ` without dots, and the `2 Unlimited` guard |
-| Tracklist warnings | 36 | Each code with its near-miss, and the 10 real out-of-order lists with their suggestions |
-| Tracklist edits | 75 | `set-time` style keeping, shift, clamp, `sort-by-time`, insert/delete line endings, invalid edits, locality |
+| Tracklist mode | 61 | All 17 real podcast lines that single-line `parse()` gets wrong, the 6 real lines with no separator at all, `parse(s, { mode: "tracklist" })`, Markdown emphasis around names, and names that keep their `*` and `_` |
+| Tracklist lines and times | 104 | LF/CRLF/CR, trailing spaces, line kinds, every time form, brackets, gap separators, `=>` arrows, invalid times, list bullets, Markdown around times, `w/` lines |
+| Tracklist positions | 15 | The real 81-line list numbered `1 ` to `81 ` without dots, and the `2 Unlimited` guard, with a `w/` line in between |
+| Tracklist warnings | 38 | Each code with its near-miss, and the 10 real out-of-order lists with their suggestions |
+| Tracklist edits | 79 | `set-time` style keeping, shift, clamp, `sort-by-time`, insert/delete line endings, invalid edits, locality |
 
-### Generated: 11,817 cases
+### Generated: 11,927 cases
 
 A deterministic generator in [`spec/generator`](spec/generator) builds inputs from small "atoms": an
 artist, a joiner, a feat placement, a version group, a junk suffix. Each atom carries its own
@@ -394,11 +394,13 @@ running a parser, so the generator can't just agree with the code it is testing.
 | dash suffixes | 1,174 | | filenames | 780 |
 | dedup | 1,008 | | unicode | 674 |
 | feat placement | 922 | | prefixes | 577 |
-| tracklists | 826 | | | |
+| tracklists | 826 | | tracklists with Markdown | 110 |
 
 The tracklist scenario crosses time forms (`MM:SS`, `H:MM:SS`, fractions, long minutes) with
 brackets, gap separators, position styles, line endings, an extra blank, header or note line, and
-the warning each combination should raise.
+the warning each combination should raise. A second scenario crosses list bullets and Markdown
+emphasis around the time (`**T**`, `**[T]**`, `[**T**]`, `_[T]_`…) with emphasis around each track
+line; the expected tracks are the plain lines' tracks.
 
 ### Properties
 
@@ -418,7 +420,9 @@ For tracklists, on random multi-line text and random edit lists:
 - `applyEdits(t, [])` returns `t`, and an edit never touches a line it doesn't name;
 - `shift(+s)` then `shift(-s)` restores the text when nothing was clamped or upgraded;
 - 10,000 lines parse in linear time (the JS suite allows 3 s; it takes about 0.6 s);
-- a one-line list gives the same track as `parse(rest, { mode: "tracklist" })`.
+- a one-line list gives the same track as `parse()` in tracklist mode on its text without Markdown
+  emphasis or a leading `w/`;
+- Markdown emphasis around a time or a track line changes nothing.
 
 ### Real tracklists
 
@@ -670,8 +674,8 @@ spaced dashes. The checks run last, over the finished entries.
 
 | Language | Package | Status |
 |---|---|---|
-| JavaScript / TypeScript | [`trackparse`](https://www.npmjs.com/package/trackparse) on npm | reference implementation, 12,965 / 12,965 fixtures, tracklists as `trackparse/tracklist` |
-| Python | [`trackparse`](https://pypi.org/project/trackparse/) on PyPI | 12,965 / 12,965 fixtures, output identical to JS, tracklists as `trackparse.tracklist` |
+| JavaScript / TypeScript | [`trackparse`](https://www.npmjs.com/package/trackparse) on npm | reference implementation, 13,124 / 13,124 fixtures, tracklists as `trackparse/tracklist` |
+| Python | [`trackparse`](https://pypi.org/project/trackparse/) on PyPI | 13,124 / 13,124 fixtures, output identical to JS, tracklists as `trackparse.tracklist` |
 | Rust | `trackparse` on crates.io | planned, same fixtures |
 
 Want another language? The porting checklist is in [AGENTS.md](AGENTS.md).
