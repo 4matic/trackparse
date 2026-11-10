@@ -100,6 +100,42 @@ When a time without hours crosses the hour, it gains hours in the style the rest
 (`59:31` → `01:00:16`, or `1:00:16` if the list writes one-digit hours). The edit reports
 `style-upgraded` so you know the line got longer.
 
+## Bullets and Markdown stay
+
+A list bullet or Markdown emphasis around a time sits in `lead` and `gap`, so a rewritten time keeps
+it. Only the digits change:
+
+<Tabs syncKey="lang">
+<TabItem label="JavaScript">
+
+```js
+const text = "**[**52:47**] Mefjus - Bandwagon**\n**[**59:31**] Alix Perez - Fade Away**";
+const result = applyEdits(text, [{ op: "shift", seconds: 45 }]);
+
+result.text;
+// '**[**53:32**] Mefjus - Bandwagon**\n**[**01:00:16**] Alix Perez - Fade Away**'
+result.warnings;  // [ { code: 'style-upgraded', edit: 0, line: 2 } ]
+```
+
+</TabItem>
+<TabItem label="Python">
+
+```python
+text = "**[**52:47**] Mefjus - Bandwagon**\n**[**59:31**] Alix Perez - Fade Away**"
+result = apply_edits(text, [{"op": "shift", "seconds": 45}])
+
+result.text
+# '**[**53:32**] Mefjus - Bandwagon**\n**[**01:00:16**] Alix Perez - Fade Away**'
+result.warnings  # (EditWarning(code='style-upgraded', edit=0, line=2),)
+```
+
+</TabItem>
+</Tabs>
+
+`set-rest` replaces everything after the gap, including a closing `**` at the end of the line. The
+time is still read afterwards, because emphasis next to a time doesn't need a partner. A layered
+`w/` line without a time moves with the timed line above it when you sort.
+
 ## When an edit can't apply
 
 Edits never throw. A bad one changes nothing and reports why:

@@ -30,6 +30,17 @@ const sample = [
   "00:11:02 Current Value feat. Teddy Killerz - Payload",
   "01:15:36 Hybris - Spinning Top",
 ].join("\n");
+
+// Pasted from a chat or a comment: list bullets, Markdown emphasis and a layered `w/` line.
+const markdownSample = [
+  "**Tracklist**",
+  "* 00:00 Noisia - Stigma",
+  "* 03:30 **Phace** - Psycho",
+  "**[**07:10**] 3. Mefjus - Sleepless**",
+  "w/ Hybris - Spinning Top (Acapella)",
+  "[10:45] Imanu - _Sacrifice_",
+  "* 14:20 Black Sun Empire - ID",
+].join("\n");
 ---
 
 <div class="pg not-content">
@@ -151,7 +162,13 @@ const sample = [
           <label class="tp-label" for="tl-input">Tracklist text</label>
           <span class="tp-muted" id="tl-meta"></span>
         </div>
-        <textarea id="tl-input" class="tp-input" spellcheck="false" data-sample={sample}></textarea>
+        <textarea
+          id="tl-input"
+          class="tp-input"
+          spellcheck="false"
+          data-sample={sample}
+          data-sample-markdown={markdownSample}
+        ></textarea>
         <div class="tp-row">
           <div>
             <label class="tp-label" for="tl-audio">audioSeconds</label>
@@ -171,6 +188,7 @@ const sample = [
         <div class="tp-row">
           <button type="button" class="tp-btn small" id="tl-undo" disabled><Undo2 size={14} aria-hidden="true" /> Undo edit</button>
           <button type="button" class="tp-btn small" id="tl-sample"><FileText size={14} aria-hidden="true" /> Load the sample</button>
+          <button type="button" class="tp-btn small" id="tl-sample-markdown"><FileText size={14} aria-hidden="true" /> Pasted with Markdown</button>
           <button type="button" class="tp-btn small" data-copy="tl-input"><Copy size={14} aria-hidden="true" /><span>Copy text</span></button>
         </div>
         <p class="tp-muted" id="tl-editlog" aria-live="polite"></p>
@@ -593,8 +611,10 @@ const sample = [
     const title = t ? escapeHtml(t.title) : `<span class="tp-none">${escapeHtml(e.raw.trim())}</span>`;
     const vers = t ? t.versions.map((v) => chip(v.artists[0] ? `${v.type} · ${v.artists[0].name}` : v.type, "version")).join(" ") : "";
     const pos = t?.position ? `${chip(`#${t.position.number}`, "position")} ` : "";
+    // R13.13: a `w/` line plays over the previous track.
+    const layered = e.layered ? `${chip("w/", "position", "Layered: played over the previous track")} ` : "";
     const cls = [warn ? "is-warn" : "", changed.has(e.line) ? "is-changed" : ""].join(" ").trim();
-    return `<tr class="${cls}" id="tl-line-${e.line}"><td class="tl-num">${e.line}</td><td class="tl-kind${e.kind === "track" ? "" : " is-other"}">${e.kind}</td><td class="tl-time">${e.time ? escapeHtml(e.time.raw) : ""}</td><td>${pos}${artists}</td><td>${title}</td><td>${vers}</td></tr>`;
+    return `<tr class="${cls}" id="tl-line-${e.line}"><td class="tl-num">${e.line}</td><td class="tl-kind${e.kind === "track" ? "" : " is-other"}">${e.kind}</td><td class="tl-time">${e.time ? escapeHtml(e.time.raw) : ""}</td><td>${layered}${pos}${artists}</td><td>${title}</td><td>${vers}</td></tr>`;
   }
 
   function plural(n: number, word: string): string {
@@ -703,10 +723,17 @@ const sample = [
     $("tl-editlog").textContent = "Undone.";
     renderList();
   });
-  $("tl-sample").addEventListener("click", () => {
-    tl.value = tl.dataset.sample ?? "";
+  // A sample replaces the text: the edit log and the undo history belong to the old one.
+  function loadSample(text: string | undefined) {
+    tl.value = text ?? "";
+    history_.length = 0;
+    undoBtn.disabled = true;
+    changed.clear();
+    $("tl-editlog").textContent = "";
     renderList();
-  });
+  }
+  $("tl-sample").addEventListener("click", () => loadSample(tl.dataset.sample));
+  $("tl-sample-markdown").addEventListener("click", () => loadSample(tl.dataset.sampleMarkdown));
 
   // ---- start -------------------------------------------------------------------------------
   input.value = document.querySelector<HTMLButtonElement>("[data-example]")?.dataset.example ?? "";

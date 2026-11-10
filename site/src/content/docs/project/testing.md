@@ -65,7 +65,8 @@ For tracklists, on random multi-line text and random edit lists:
 - `applyEdits(t, [])` returns `t`, and an edit never touches a line it doesn't name;
 - shifting forward and back restores the text, unless something was clamped or upgraded;
 - 10,000 lines parse in linear time (the JS suite allows 3 s; it takes about 0.6 s);
-- Markdown emphasis around a time or a track line changes nothing.
+- Markdown emphasis around a time or a track line gives the same kind, time and track as the plain
+  line.
 
 ## Port against port
 

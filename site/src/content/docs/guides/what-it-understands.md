@@ -57,6 +57,21 @@ it stays in the title. That's the rule: anything unrecognised is left alone.
 are fine guesses on YouTube and bad ones in a music library, so the default `clean` mode won't make
 them. In `youtube` mode it does, and it tells you through `warnings`. See [Modes](/trackparse/guides/modes/).
 
+## In a tracklist
+
+Lines of a pasted tracklist go through
+[`parseTracklist`](/trackparse/guides/tracklists/), which also reads list bullets, Markdown
+emphasis and `w/` lines. Each input below is one line; click it to open it in the playground's
+tracklist tab.
+
+| Line | Artists | Title | Other fields |
+|---|---|---|---|
+| [`* 00:00 Noisia - Stigma`](/trackparse/playground/#list=*%2000%3A00%20Noisia%20-%20Stigma) | Noisia | `Stigma` | time 0 s, bullet in `lead` |
+| [`**[**00:00**] 10. Nitepunk - ID**`](/trackparse/playground/#list=**%5B**00%3A00**%5D%2010.%20Nitepunk%20-%20ID**) | Nitepunk | `ID` | time 0 s, position 10, `**` kept in `parts` |
+| [`00:00 **Noisia** - _Stigma_`](/trackparse/playground/#list=00%3A00%20**Noisia**%20-%20_Stigma_) | Noisia | `Stigma` | time 0 s |
+| [`w/ Nitepunk & Habstrakt - Point`](/trackparse/playground/#list=w%2F%20Nitepunk%20%26%20Habstrakt%20-%20Point) | Nitepunk, Habstrakt | `Point` | layered |
+| [`00:00 P*nk - Raise Your Glass`](/trackparse/playground/#list=00%3A00%20P*nk%20-%20Raise%20Your%20Glass) | P\*nk | `Raise Your Glass` | the star stays |
+
 ## By topic
 
 - [Artists and credits](/trackparse/guides/artists/): joiners, features, producers, `knownArtists`.
