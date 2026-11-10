@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.4.0](https://github.com/4matic/trackparse/compare/python-v0.3.3...python-v0.4.0) (2026-11-10)
+
+
+### Features
+
+* **spec:** accept a list bullet before a tracklist time ([e926348](https://github.com/4matic/trackparse/commit/e9263487a5eca866f95f4ac01873e6c2baf25df9))
+* **spec:** layered "w/" lines in tracklists ([7fbb7f1](https://github.com/4matic/trackparse/commit/7fbb7f1b35fcb32233a6a3e3d3e2f245cef27b41))
+* **spec:** read Markdown emphasis in tracklists ([888bc9e](https://github.com/4matic/trackparse/commit/888bc9ea2b2602e37cccdf82e7991ff8dcaf2d47))
+
+
+### Bug Fixes
+
+* **spec:** pair Markdown emphasis only inside rest ([942d5a9](https://github.com/4matic/trackparse/commit/942d5a9514d81f4b53bc79773b30793ad51dce86))
+
+
+### Documentation
+
+* describe emphasis next to the time and layered lines as the spec does ([d5c0c6c](https://github.com/4matic/trackparse/commit/d5c0c6c5dac7795e0df835e345cb7c810811921c))
+* update the fixture and test counts and the tracklist bundle size ([a581eca](https://github.com/4matic/trackparse/commit/a581ecabcbe92a7aa3be8ebf285f7fde5a19c3a5))
+
 ## [0.3.3](https://github.com/4matic/trackparse/compare/python-v0.3.2...python-v0.3.3) (2026-10-14)
 
 
