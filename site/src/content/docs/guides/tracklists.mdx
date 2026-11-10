@@ -175,9 +175,10 @@ b.track.title                       # 'Stigma'
 </TabItem>
 </Tabs>
 
-A `*` or `_` only counts as emphasis when it has a partner on the same line and sits against a
-space, a bracket or the end of the line on its outer side. So names keep their stars and
-underscores: `P*nk`, `*NSYNC`, `DJ_Name`, `Noisia_-_Stigma` and a censored `F**k` come out as
+Right next to the time, a run of one or two `*` or `_` is read as emphasis by its position, with or
+without a partner, so `**14:21 Artist - Title` still has its time. Anywhere else, a `*` or `_` only
+counts when it has a partner on the same line and its outer side is a space, a bracket, another `*`
+or `_`, or the end of the line. So names keep their stars and underscores: `P*nk`, `*NSYNC`, `DJ_Name`, `Noisia_-_Stigma` and a censored `F**k` come out as
 written. Runs of three or more, `~~`, `||` and backticks are never treated as Markdown.
 
 ## Layered tracks
@@ -218,7 +219,8 @@ tl.warnings                        # ()
 </TabItem>
 </Tabs>
 
-Only a leading `w/` (or `W/`) followed by a space counts. `w/` inside a line
+Only `w/` (or `W/`) at the start of the track text, after any time or bullet, and followed by
+whitespace and a track counts, so `00:30 w/ Phace - Psycho` is layered too. `w/` inside a line
 (`Noisia w/ Phace - Stigma`), right after a track number (`10. w/ …`) or glued to the name
 (`w/Noisia`) is left alone, and so are `with`, `+` and `x`.
 

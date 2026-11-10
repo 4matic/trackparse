@@ -72,7 +72,7 @@ One per line, in order.
 | `parts` | `{ lead, time, gap, rest }` | `raw` cut into four strings that join back into it |
 | `time` | `{ raw, seconds } \| null` | The start time |
 | `track` | `ParsedTrack \| null` | Parsed from `rest` in tracklist mode, without its [Markdown emphasis](/trackparse/guides/tracklists/#markdown), a leading `w/` and a bare track number. Only `track` and `marker` lines have one |
-| `layered` | `boolean` | The line starts with `w/`: a [layered track](/trackparse/guides/tracklists/#layered-tracks), played over the previous one |
+| `layered` | `boolean` | The track text (after any time) starts with `w/` and a space: a [layered track](/trackparse/guides/tracklists/#layered-tracks), played over the previous one |
 
 ### TracklistWarning
 
