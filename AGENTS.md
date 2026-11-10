@@ -18,7 +18,8 @@ spec/
   fixtures/handwritten/   curated cases by topic (edit by hand)
   fixtures/generated/     combinatorial cases (NEVER edit by hand)
   generator/              @trackparse/fixture-gen: writes fixtures/generated
-                          (src/tracklist.ts + scenarios/tracklist.ts: multi-line tracklist cases)
+                          (src/tracklist.ts + scenarios/tracklist.ts, tracklist-emphasis.ts:
+                          multi-line tracklist cases)
   proposals/tracklist.md  the platform proposal behind R13 (historical; SPEC.md wins)
   corpus/                 git-ignored: private real-world corpora (platform data, never commit)
 js/                       npm package `trackparse`, reference implementation
@@ -27,6 +28,7 @@ js/                       npm package `trackparse`, reference implementation
     index.ts              exports parseTracklist, applyEdits and the tracklist types
     types.ts              public tracklist types (mirror tracklist.schema.json)
     options.ts            R13.10     split.ts     R13.1 lines + eol    times.ts  R13.2, R13.9.2
+    emphasis.ts           R13.12 Markdown emphasis markers (pairing) and runs next to the time
     kinds.ts              R13.3, R13.4.2 candidate lines           positions.ts  R13.5
     warnings.ts           R13.7 + out-of-order suggestion search   parse.ts  R13.1–R13.8
     edits.ts              R13.9 applyEdits
@@ -68,7 +70,7 @@ python/                   PyPI package `trackparse` (Python 3.9+, zero deps, uv 
     _digits.py            digit runs (js/src/digits.ts)
     tracklist.py          public `trackparse.tracklist` (parse_tracklist, apply_edits, types)
     _tracklist_*.py       one per js/src/tracklist file: _types, _options, _split, _times,
-                          _kinds, _positions, _warnings, _parse, _edits
+                          _kinds, _positions, _warnings, _parse, _edits, _emphasis
     _tables.py            R12    _context.py   per-call context
     _data.py              GENERATED from spec/data + spec/VERSION (never edit)
   scripts/gen_data.py     codegen for _data.py (--check for CI)

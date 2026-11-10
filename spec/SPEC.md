@@ -542,9 +542,14 @@ section and `mode: "tracklist"`.
 
 Read at the start of `raw` (this scanner is separate from R4.1, which is unchanged):
 
-- **R13.2.1 lead:** R0.2 whitespace, an optional *bullet*, then an optional `[` or `(`. A bullet
-  is one of `-` `–` `—` `*` `•` followed by at least one R0.2 whitespace (the whole run).
-  `* 14:21 Noisia - Stigma` → lead `* `, time `14:21`; `- [01:02] A - B` → lead `- [`.
+- **R13.2.1 lead:** R0.2 whitespace, an optional *bullet*, an optional *emphasis run*, an optional
+  `[` or `(`, then, only after a bracket, another optional emphasis run. A bullet is one of `-` `–`
+  `—` `*` `•` followed by at least one R0.2 whitespace (the whole run). An emphasis run is a maximal
+  run of 1 or 2 `*`, or of 1 or 2 `_`; the first one counts only when the next character is `[`,
+  `(` or a digit, the second only when the next character is a digit. Otherwise the run is not
+  part of the lead (and the line has no time).
+  `* 14:21 Noisia - Stigma` → lead `* `, time `14:21`; `- [01:02] A - B` → lead `- [`;
+  `**[**14:21**] A - B` → lead `**[**`.
   - On a line **without** a time, `lead` holds only the optional bullet and the R0.2 whitespace
     before and after it. Without that shape `lead` is `""`. `- Noisia - Stigma` → lead `- `, rest
     `Noisia - Stigma`; `-Intro` has no bullet.
@@ -559,10 +564,21 @@ Read at the start of `raw` (this scanner is separate from R4.1, which is unchang
     `seconds = W`; with one, `seconds` is the double nearest the decimal string `"<W>.<fraction
     digits>"` (correctly rounded: JS `Number()`, Python `float()`), so ports agree bit for bit
     (`07.500` → 7.5).
-- **R13.2.3 gap:** the matching `]` / `)` if one was opened (else no time), then R0.2 whitespace, then
-  optionally one separator from `-` `–` `—` `|` `.` `:` and whitespace, then optionally an arrow
-  `=>` / `==>` and whitespace. The time must be followed by end of line, whitespace, a separator or
-  the closing bracket; otherwise there is no time.
+- **R13.2.3 gap:** in order:
+  1. a *closing run* for the lead's second emphasis run, if it took one;
+  2. the matching `]` / `)` if one was opened (else no time);
+  3. a closing run for the lead's first emphasis run, if it took one. After a bracket, this run is
+     only taken when it is followed by end of line, R0.2 whitespace or a separator below;
+  4. R0.2 whitespace, then optionally one separator from `-` `–` `—` `|` `.` `:` and whitespace,
+     then optionally an arrow `=>` / `==>` and whitespace.
+
+  A closing run is an emphasis run (R13.2.1) of the same character as its opening run, of either
+  length (pasted bold is not always balanced). It is optional: a lead run without one is fine.
+  Without a bracket, the time and its closing run must be followed by end of line, whitespace or a
+  separator; otherwise there is no time. `**14:21** A - B` → lead `**`, gap `** `;
+  `**14:21**A - B` and `[14:21]_ A - B` (no opening `_`) read as without emphasis.
+  - Emphasis runs next to the time are read by position, not paired (R13.12), so an edit that
+    replaces `rest` (R13.9) never changes whether a line has a time.
 - **R13.2.4 invalid times:** the time candidate (after lead) is the **maximal** run
   `digits(:digits)+`, plus an optional fraction. When that run fails R13.2.2 (`1:75`, `0:61:00`,
   `1:02:75`, `1:02:03:04`), it is not a time: the entry has no time, `rest === raw`, and the
@@ -580,8 +596,9 @@ Read at the start of `raw` (this scanner is separate from R4.1, which is unchang
 2. Lines **with** a time: `marker` when the track part (R13.4) has no separator and has a marker
    word; else `track`. A line that is only a time (its track part is empty after R1) is a `track`
    and warns `line-unparsed` (R13.7).
-3. Lines **without** a time: `link` when `rest` (trimmed) starts with `http://`, `https://` or `www.`
-   (ASCII case-insensitive); `header` when it (trimmed of R0.2 whitespace) ends with `:` or its
+3. Lines **without** a time: `link` when the line text (R13.4.1, trimmed) starts with `http://`,
+   `https://` or `www.` (ASCII case-insensitive); `header` when it (trimmed of R0.2 whitespace) ends
+   with `:` or its
    first word is in
    [`data/header-words.json`](data/header-words.json) and it has at most one more word; `marker` as in
    2; `track` when the track part has a separator; else `note`.
@@ -603,8 +620,12 @@ Nothing is ever dropped.
 
 ### R13.4 The track part
 
-- **R13.4.1** The track part is `rest`, minus a bare position (R13.5). It is parsed with `parse(rest,
-  { mode, knownArtists, keywords, splitAnd })`, `mode` defaulting to `"tracklist"`.
+- **R13.4.1** The *line text* is `rest` without its emphasis markers (R13.12). The *track part* is
+  the line text minus a bare position (R13.5). The kind tests (R13.3), the probe (R13.4.2) and the
+  bare-position test (R13.5) read the line text; the track part is parsed with
+  `parse(trackPart, { mode, knownArtists, keywords, splitAnd })`, `mode` defaulting to
+  `"tracklist"`. `rest` itself is never changed. `**[**14:21**] 10. Nitepunk - ID**` → rest
+  `10. Nitepunk - ID**`, line text `10. Nitepunk - ID`.
 - **R13.4.2** *Candidate lines* are non-blank lines with a time or a spaced dash. The list is in
   *list context* when at least half of the candidate lines contain a spaced dash. R6.10's tight
   dash is enabled only on lines **with a time** whose track part has no marker word (R13.3.5), and
@@ -616,7 +637,7 @@ Nothing is ever dropped.
 
 ### R13.5 Bare positions
 
-A track part that starts with 1–3 ASCII digits and a space (U+0020 only, not other R0.2 whitespace),
+A line text (R13.4.1) that starts with 1–3 ASCII digits and a space (U+0020 only, not other R0.2 whitespace),
 where R4.2 does not take a position, has a **bare position** candidate `N` if the remainder after
 the space is not empty or only whitespace. It is a position when the nearest preceding or the
 nearest following candidate line (a line with a time or a spaced dash, R13.4.2) also has a bare
@@ -751,8 +772,35 @@ marker words). Bad values are ignored (R0.8).
    `insert` edits on 5 000 lines stay within those ceilings.
 3. Locality and identity (R13.9.1).
 4. Round trip (R13.9.7).
-5. A one-line text's track equals `parse(rest, { mode: "tracklist" })` for a `track` or `marker`
-   line without a bare position (other kinds have `track: null`).
+5. A one-line text's track equals `parse(lineText, { mode: "tracklist" })` for a `track` or
+   `marker` line (R13.4.1; one line has no bare position, other kinds have `track: null`).
+6. Emphasis changes nothing: wrapping a line's time as `**T**`, `__T__`, `*T*`, `_T_`, `**[T]**`,
+   `[**T**]`, `**[**T**]` or `_[T]_`, or its track part as `**…**`, `__…__`, `*…*` or `_…_`, keeps
+   its `time.seconds`, `kind` and `track`, as long as the track part does not itself start or end
+   with `*`, `_` or whitespace.
+
+### R13.12 Emphasis markers
+
+Markdown emphasis (`**bold**`, `__bold__`, `*italic*`, `_italic_`, from Discord, Reddit, Telegram or
+YouTube comments) is found once per line, on `raw`, by pairing runs:
+
+- **R13.12.1 Runs.** A run is a maximal run of `*` or of `_`. Only runs of 1 or 2 characters can be
+  markers; `***` and longer are always text.
+- **R13.12.2 Sides.** The *outer side* of a run is acceptable when it is the line edge, R0.2
+  whitespace, one of `[` `]` `(` `)`, or a `*` / `_` (of another run). The *inner side* is
+  acceptable when it is a character that is not R0.2 whitespace. A run can *close* when the
+  character before it is an inner side and the one after it an outer side, and can *open* when the
+  character before it is an outer side and the one after it an inner side.
+- **R13.12.3 Pairing.** Scan the runs left to right with a stack of openers. A run that can close
+  pairs with the nearest opener on the stack with the same character and length; that opener and
+  every opener above it leave the stack. A run that did not close and can open is pushed. Paired
+  runs are *emphasis markers*; every other run is text.
+
+So markers never touch a letter, digit or other punctuation on their outer side: `P*nk`,
+`A**hole`, `DJ_Name`, `Noisia_-_Stigma` and `_-_Intro` have none, and neither do unpaired runs
+(`*NSYNC - Bye Bye Bye`, `Artist - Holy Sh**`). Backticks, `~~` and `||` are never markers.
+`**[**14:21**] 10. Nitepunk - ID**` has four (two pairs), `00:00 Nitepunk - No Manners (**VIP**)`
+two. Markers are left out of the line text (R13.4.1); `raw` and `parts` keep them.
 
 ---
 
@@ -787,7 +835,9 @@ Tracklists (R13) have their own invariants: R13.11.
 - **Credit list** — a substring that R7.3 splits into names.
 - **Word key** — R0.3.
 - **Dedup key** — R0.4.
-- **Track part** — a tracklist line's `rest` minus a bare position, parsed as a track (R13.4.1).
+- **Line text** — a tracklist line's `rest` without its emphasis markers (R13.4.1, R13.12).
+- **Track part** — the line text minus a bare position, parsed as a track (R13.4.1).
+- **Emphasis marker** — a paired run of 1 or 2 `*` or `_` (R13.12).
 - **Candidate line** — a non-blank tracklist line with a time or a spaced dash (R13.4.2).
 - **List context** — at least half of the candidate lines have a spaced dash; enables R6.10's
   tight dash (R13.4.2).

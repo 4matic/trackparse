@@ -313,6 +313,13 @@ apply_edits(text, [{"op": "set-time", "line": 8, "seconds": 4262}]).changed
 # (8,)
 ```
 
+Lists pasted from Discord, Reddit or YouTube comments often keep their list bullets and Markdown.
+`* 14:21 Artist - Title`, `**[**14:21**] 10. Artist - Title**` and `[14:21] **Artist** - _Title_`
+all read like the plain line; the decoration stays in `raw` and `parts`. A `*` or `_` only counts as
+emphasis when it has a partner on the line and sits against a space, a bracket or the line's end, so
+`P*nk`, `DJ_Name` and a censored `F**k` keep their stars and underscores
+([details](https://4matic.github.io/trackparse/guides/tracklists/#markdown)).
+
 ### Tracklist mode
 
 **Docs:** [Tracklist mode](https://4matic.github.io/trackparse/guides/tracklists/#tracklist-mode)
@@ -556,7 +563,7 @@ that only parses single tracks never loads it.
 | `kind` | `"track" \| "marker" \| "header" \| "link" \| "note" \| "blank"` | See below |
 | `eol` | `"\n" \| "\r\n" \| "\r" \| ""` | The line's own terminator; `""` on a last line without one |
 | `raw` | `string` | The line exactly as written, never normalized |
-| `parts` | `{ lead, time, gap, rest }` | `raw` cut into four strings that join back into it. `lead` is spaces, a list bullet or an opening bracket, `gap` is what sits between the time and the track (`] `, ` - `, ` \| `, ` => `) |
+| `parts` | `{ lead, time, gap, rest }` | `raw` cut into four strings that join back into it. `lead` is spaces, a list bullet, Markdown emphasis or an opening bracket, `gap` is what sits between the time and the track (`] `, ` - `, ` \| `, ` => `) |
 | `time` | `{ raw, seconds } \| null` | `12:34`, `1:02:03`, `125:30` (long mixes), `00:00:07.500` (7.5 s) |
 | `track` | `ParsedTrack \| null` | Parsed from `rest` in tracklist mode. Only `track` and `marker` lines have one |
 

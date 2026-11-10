@@ -1101,6 +1101,463 @@
         "R13.8"
       ],
       "note": "A bulleted list pasted from Discord or Reddit."
+    },
+    {
+      "id": "tracklist-times-036",
+      "input": "**[**14:21**] 10. Nitepunk - ID**",
+      "expected": {
+        "entries": [
+          {
+            "parts": {
+              "lead": "**[**",
+              "time": "14:21",
+              "gap": "**] ",
+              "rest": "10. Nitepunk - ID**"
+            },
+            "time": {
+              "raw": "14:21",
+              "seconds": 861
+            },
+            "track": {
+              "artists": [
+                "Nitepunk"
+              ],
+              "title": "ID",
+              "position": {
+                "number": 10
+              }
+            }
+          }
+        ]
+      },
+      "rules": [
+        "R13.2.1",
+        "R13.2.3",
+        "R13.12",
+        "R13.4.1"
+      ],
+      "note": "Two bold spans around a styled time, from a list pasted with Markdown. The closing ** at the end pairs with the opening one and is left out of the track part.",
+      "source": "real DJ set tracklist (Nitepunk)"
+    },
+    {
+      "id": "tracklist-times-037",
+      "input": "**[**14:21**] Nitepunk - ID",
+      "expected": {
+        "entries": [
+          {
+            "parts": {
+              "lead": "**[**",
+              "time": "14:21",
+              "gap": "**] ",
+              "rest": "Nitepunk - ID"
+            },
+            "time": {
+              "raw": "14:21",
+              "seconds": 861
+            },
+            "track": {
+              "artists": [
+                "Nitepunk"
+              ],
+              "title": "ID"
+            }
+          }
+        ]
+      },
+      "rules": [
+        "R13.2.1",
+        "R13.2.3",
+        "R13.12"
+      ],
+      "note": "Runs next to the time are read by position, so the line keeps its time without the closing run at the end."
+    },
+    {
+      "id": "tracklist-times-038",
+      "input": "**14:21** Nitepunk - ID",
+      "expected": {
+        "entries": [
+          {
+            "parts": {
+              "lead": "**",
+              "time": "14:21",
+              "gap": "** ",
+              "rest": "Nitepunk - ID"
+            },
+            "time": {
+              "raw": "14:21",
+              "seconds": 861
+            },
+            "track": {
+              "artists": [
+                "Nitepunk"
+              ],
+              "title": "ID"
+            }
+          }
+        ]
+      },
+      "rules": [
+        "R13.2.1",
+        "R13.2.3",
+        "R13.12"
+      ]
+    },
+    {
+      "id": "tracklist-times-039",
+      "input": "[**14:21**] Nitepunk - ID",
+      "expected": {
+        "entries": [
+          {
+            "parts": {
+              "lead": "[**",
+              "time": "14:21",
+              "gap": "**] ",
+              "rest": "Nitepunk - ID"
+            },
+            "time": {
+              "raw": "14:21",
+              "seconds": 861
+            },
+            "track": {
+              "artists": [
+                "Nitepunk"
+              ],
+              "title": "ID"
+            }
+          }
+        ]
+      },
+      "rules": [
+        "R13.2.1",
+        "R13.2.3",
+        "R13.12"
+      ]
+    },
+    {
+      "id": "tracklist-times-040",
+      "input": "**[14:21]** Nitepunk - ID",
+      "expected": {
+        "entries": [
+          {
+            "parts": {
+              "lead": "**[",
+              "time": "14:21",
+              "gap": "]** ",
+              "rest": "Nitepunk - ID"
+            },
+            "time": {
+              "raw": "14:21",
+              "seconds": 861
+            },
+            "track": {
+              "artists": [
+                "Nitepunk"
+              ],
+              "title": "ID"
+            }
+          }
+        ]
+      },
+      "rules": [
+        "R13.2.1",
+        "R13.2.3",
+        "R13.12"
+      ]
+    },
+    {
+      "id": "tracklist-times-041",
+      "input": "__[14:21] Nitepunk - ID__",
+      "expected": {
+        "entries": [
+          {
+            "parts": {
+              "lead": "__[",
+              "time": "14:21",
+              "gap": "] ",
+              "rest": "Nitepunk - ID__"
+            },
+            "time": {
+              "raw": "14:21",
+              "seconds": 861
+            },
+            "track": {
+              "artists": [
+                "Nitepunk"
+              ],
+              "title": "ID"
+            }
+          }
+        ]
+      },
+      "rules": [
+        "R13.2.1",
+        "R13.2.3",
+        "R13.12",
+        "R13.4.1"
+      ]
+    },
+    {
+      "id": "tracklist-times-042",
+      "input": "*[14:21] Nitepunk - ID*",
+      "expected": {
+        "entries": [
+          {
+            "parts": {
+              "lead": "*[",
+              "time": "14:21",
+              "gap": "] ",
+              "rest": "Nitepunk - ID*"
+            },
+            "time": {
+              "raw": "14:21",
+              "seconds": 861
+            },
+            "track": {
+              "artists": [
+                "Nitepunk"
+              ],
+              "title": "ID"
+            }
+          }
+        ]
+      },
+      "rules": [
+        "R13.2.1",
+        "R13.2.3",
+        "R13.12",
+        "R13.4.1"
+      ],
+      "note": "YouTube comments write bold with single stars."
+    },
+    {
+      "id": "tracklist-times-043",
+      "input": "_[14:21]_ Nitepunk - ID",
+      "expected": {
+        "entries": [
+          {
+            "parts": {
+              "lead": "_[",
+              "time": "14:21",
+              "gap": "]_ ",
+              "rest": "Nitepunk - ID"
+            },
+            "time": {
+              "raw": "14:21",
+              "seconds": 861
+            },
+            "track": {
+              "artists": [
+                "Nitepunk"
+              ],
+              "title": "ID"
+            }
+          }
+        ]
+      },
+      "rules": [
+        "R13.2.1",
+        "R13.2.3",
+        "R13.12"
+      ]
+    },
+    {
+      "id": "tracklist-times-044",
+      "input": "[14:21]_ Nitepunk - ID",
+      "expected": {
+        "entries": [
+          {
+            "parts": {
+              "lead": "[",
+              "time": "14:21",
+              "gap": "]",
+              "rest": "_ Nitepunk - ID"
+            },
+            "time": {
+              "raw": "14:21",
+              "seconds": 861
+            }
+          }
+        ]
+      },
+      "rules": [
+        "R13.2.1",
+        "R13.2.3",
+        "R13.12"
+      ],
+      "note": "Near miss: a closing run needs an opening run of the same character in the lead, so the _ stays in rest as before."
+    },
+    {
+      "id": "tracklist-times-045",
+      "input": "**14:21**Nitepunk - ID",
+      "expected": {
+        "entries": [
+          {
+            "parts": {
+              "lead": "",
+              "time": "",
+              "gap": "",
+              "rest": "**14:21**Nitepunk - ID"
+            },
+            "time": null
+          }
+        ]
+      },
+      "rules": [
+        "R13.2.1",
+        "R13.2.3",
+        "R13.12"
+      ],
+      "note": "Near miss: without a bracket, the closing run must be followed by the end of the line, whitespace or a gap separator."
+    },
+    {
+      "id": "tracklist-times-046",
+      "input": "**[**1:75**] Nitepunk - ID",
+      "expected": {
+        "entries": [
+          {
+            "parts": {
+              "lead": "",
+              "time": "",
+              "gap": "",
+              "rest": "**[**1:75**] Nitepunk - ID"
+            },
+            "time": null
+          }
+        ],
+        "warnings": [
+          {
+            "code": "invalid-time",
+            "line": 1,
+            "severity": "warning",
+            "suggestion": null
+          }
+        ]
+      },
+      "rules": [
+        "R13.2.1",
+        "R13.2.3",
+        "R13.12",
+        "R13.2.4"
+      ]
+    },
+    {
+      "id": "tracklist-times-047",
+      "input": "* **14:21** Nitepunk - ID",
+      "expected": {
+        "entries": [
+          {
+            "parts": {
+              "lead": "* **",
+              "time": "14:21",
+              "gap": "** ",
+              "rest": "Nitepunk - ID"
+            },
+            "time": {
+              "raw": "14:21",
+              "seconds": 861
+            },
+            "track": {
+              "artists": [
+                "Nitepunk"
+              ],
+              "title": "ID"
+            }
+          }
+        ]
+      },
+      "rules": [
+        "R13.2.1",
+        "R13.2.3",
+        "R13.12"
+      ],
+      "note": "A bullet, then a bold time."
+    },
+    {
+      "id": "tracklist-times-048",
+      "input": "**14:21 - Nitepunk - ID**",
+      "expected": {
+        "entries": [
+          {
+            "parts": {
+              "lead": "**",
+              "time": "14:21",
+              "gap": " - ",
+              "rest": "Nitepunk - ID**"
+            },
+            "time": {
+              "raw": "14:21",
+              "seconds": 861
+            },
+            "track": {
+              "artists": [
+                "Nitepunk"
+              ],
+              "title": "ID"
+            }
+          }
+        ]
+      },
+      "rules": [
+        "R13.2.1",
+        "R13.2.3",
+        "R13.12",
+        "R13.4.1"
+      ],
+      "note": "One bold span over the whole line."
+    },
+    {
+      "id": "tracklist-times-049",
+      "input": "***14:21*** Nitepunk - ID",
+      "expected": {
+        "entries": [
+          {
+            "parts": {
+              "lead": "",
+              "time": "",
+              "gap": "",
+              "rest": "***14:21*** Nitepunk - ID"
+            },
+            "time": null
+          }
+        ]
+      },
+      "rules": [
+        "R13.2.1",
+        "R13.2.3",
+        "R13.12"
+      ],
+      "note": "Near miss: a run of three is not an emphasis run."
+    },
+    {
+      "id": "tracklist-times-050",
+      "input": "**14:21**- Nitepunk - ID",
+      "expected": {
+        "entries": [
+          {
+            "parts": {
+              "lead": "**",
+              "time": "14:21",
+              "gap": "**- ",
+              "rest": "Nitepunk - ID"
+            },
+            "time": {
+              "raw": "14:21",
+              "seconds": 861
+            },
+            "track": {
+              "artists": [
+                "Nitepunk"
+              ],
+              "title": "ID"
+            }
+          }
+        ]
+      },
+      "rules": [
+        "R13.2.1",
+        "R13.2.3",
+        "R13.12"
+      ]
     }
   ]
 }

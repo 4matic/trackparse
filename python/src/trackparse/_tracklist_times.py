@@ -6,6 +6,7 @@ import math
 from typing import NamedTuple, Optional
 
 from ._digits import digit_run
+from ._tracklist_emphasis import emphasis_run, without_markers
 from ._tracklist_types import Parts, TimeValue
 from ._words import char_at, is_digit, is_whitespace
 
@@ -33,6 +34,8 @@ class TimeScan(NamedTuple):
     style: Optional[TimeStyle]
     #: R13.2.4: a ``digits:digits`` shape after lead that fails R13.2.2.
     invalid: bool
+    #: R13.12: ``rest`` without its paired emphasis markers (the line text, before R13.13 / R13.5).
+    text: str
 
 
 def _is_gap_separator(ch: Optional[str]) -> bool:
@@ -61,7 +64,20 @@ def _untimed(raw: str, invalid: bool) -> TimeScan:
     lead_end = 0
     if _is_bullet(char_at(raw, at)) and is_whitespace(char_at(raw, at + 1)):
         lead_end = _skip_whitespace(raw, at + 1)
-    return TimeScan(Parts(raw[:lead_end], "", "", raw[lead_end:]), None, None, invalid)
+    return TimeScan(
+        Parts(raw[:lead_end], "", "", raw[lead_end:]),
+        None,
+        None,
+        invalid,
+        without_markers(raw, lead_end),
+    )
+
+
+def _closing_run(raw: str, at: int, open_ch: Optional[str]) -> int:
+    """R13.2.3: a closing run for an opening run of ``open_ch`` (same character, 1 or 2 long)."""
+    if open_ch is None or char_at(raw, at) != open_ch:
+        return at
+    return at + emphasis_run(raw, at)
 
 
 def seconds_of(whole: int, frac: str) -> float:
@@ -113,14 +129,28 @@ def shape_seconds(parts: list[str]) -> Optional[int]:
 
 def scan_time(raw: str) -> TimeScan:
     """R13.2: lead, time and gap at the start of ``raw``; the rest is everything after."""
-    # R13.2.1 lead: whitespace, an optional bullet, then an optional `[` / `(`.
+    # R13.2.1 lead: whitespace, an optional bullet, an optional emphasis run, an optional `[` /
+    # `(`, then (after a bracket) another optional emphasis run. A run counts only when the next
+    # character is a bracket (first run) or a digit.
     i = _skip_whitespace(raw, 0)
     if _is_bullet(char_at(raw, i)) and is_whitespace(char_at(raw, i + 1)):
         i = _skip_whitespace(raw, i + 1)
+    outer_open: Optional[str] = None
+    n = emphasis_run(raw, i)
+    if n:
+        after = char_at(raw, i + n)
+        if after == "[" or after == "(" or is_digit(after):
+            outer_open = raw[i]
+            i += n
     first_ch = char_at(raw, i)
     closer = "]" if first_ch == "[" else ")" if first_ch == "(" else None
+    inner_open: Optional[str] = None
     if closer is not None:
         i += 1
+        n = emphasis_run(raw, i)
+        if n and is_digit(char_at(raw, i + n)):
+            inner_open = raw[i]
+            i += n
     lead_end = i
 
     # R13.2.2 time
@@ -143,13 +173,22 @@ def scan_time(raw: str) -> TimeScan:
             j += 1 + n
     time_end = j
 
-    # R13.2.3 gap
+    # R13.2.3 gap: closing runs for the lead's runs (same character), around the closing bracket.
+    def follows_time(at: int) -> bool:
+        return at >= len(raw) or is_whitespace(raw[at]) or _is_gap_separator(raw[at])
+
     if closer is not None:
+        j = _closing_run(raw, j, inner_open)
         if char_at(raw, j) != closer:
             return _untimed(raw, False)
         j += 1
-    elif j < len(raw) and not is_whitespace(raw[j]) and not _is_gap_separator(raw[j]):
-        return _untimed(raw, False)
+        k = _closing_run(raw, j, outer_open)
+        if k > j and follows_time(k):
+            j = k
+    else:
+        j = _closing_run(raw, j, outer_open)
+        if not follows_time(j):
+            return _untimed(raw, False)
     j = _skip_whitespace(raw, j)
     if _is_gap_separator(char_at(raw, j)):
         j = _skip_whitespace(raw, j + 1)
@@ -183,6 +222,7 @@ def scan_time(raw: str) -> TimeScan:
             frac_digits=len(frac),
         ),
         False,
+        without_markers(raw, j),
     )
 
 

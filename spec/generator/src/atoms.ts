@@ -783,6 +783,38 @@ export const LEADS: LeadAtom[] = [
   { id: "spaces-square", text: "  [", close: "]" },
 ];
 
+/**
+ * Leads with Markdown emphasis or a list bullet (R13.2.1, R13.2.3, R13.12). `close` is everything
+ * between the time and the gap atom: closing runs and the closing bracket.
+ */
+export const EMPHASIS_LEADS: LeadAtom[] = [
+  { id: "bold", text: "**", close: "**" },
+  { id: "bold-square", text: "**[", close: "]**" },
+  { id: "square-bold", text: "[**", close: "**]" },
+  { id: "bold-square-bold", text: "**[**", close: "**]" },
+  { id: "underline", text: "__", close: "__" },
+  { id: "star", text: "*", close: "*" },
+  { id: "under-square", text: "_[", close: "]_" },
+  { id: "bold-open-only", text: "**[", close: "]" },
+  { id: "bullet-star", text: "* ", close: "" },
+  { id: "bullet-dash", text: "- ", close: "" },
+  { id: "bullet-dot-square", text: "• [", close: "]" },
+  { id: "bullet-bold", text: "- **", close: "**" },
+];
+
+export interface WrapAtom extends Atom {
+  /** Written before and after a track line's text (R13.12). */
+  text: string;
+}
+
+export const WRAPS: WrapAtom[] = [
+  { id: "none", text: "" },
+  { id: "bold", text: "**" },
+  { id: "underline", text: "__" },
+  { id: "star", text: "*" },
+  { id: "under", text: "_" },
+];
+
 export interface GapAtom extends Atom {
   /** `parts.gap` after the closing bracket (R13.2.3). Never empty: the time must be followed by whitespace or a separator. */
   text: string;

@@ -1,6 +1,7 @@
 /** R13.2: the tracklist time scanner (separate from R4.1) and R13.9.2 time formatting. */
 import { digitRun } from "../digits.js";
 import { isDigit, isWhitespace } from "../words.js";
+import { emphasisRun, withoutMarkers } from "./emphasis.js";
 import type { EntryParts, TracklistTime } from "./types.js";
 
 /** The written shape of a time, kept by edits (R13.9.2). */
@@ -22,6 +23,8 @@ export interface TimeScan {
   style: TimeStyle | null;
   /** R13.2.4: a `digits:digits` shape after lead that fails R13.2.2. */
   invalid: boolean;
+  /** R13.12: `rest` without its paired emphasis markers (the line text, before R13.13 / R13.5). */
+  text: string;
 }
 
 /** R13.2.3 separators after the time. */
@@ -54,8 +57,13 @@ function untimed(raw: string, invalid: boolean): TimeScan {
     time: null,
     style: null,
     invalid,
+    text: withoutMarkers(raw, lead.length),
   };
 }
+
+/** R13.2.3: past a closing run for an opening run of `open` (same character, 1 or 2 long). */
+const closingRun = (raw: string, at: number, open: string | undefined) =>
+  open && raw[at] === open ? at + emphasisRun(raw, at) : at;
 
 /** `int.frac` parsed as one decimal literal, so every port gets the same double. */
 export function secondsOf(whole: number, frac: string): number {
@@ -101,11 +109,26 @@ export function shapeSeconds(parts: readonly string[]): number | null {
 
 /** R13.2: lead, time and gap at the start of `raw`; the rest is everything after. */
 export function scanTime(raw: string): TimeScan {
-  // R13.2.1 lead: whitespace, an optional bullet, then an optional `[` / `(`.
+  // R13.2.1 lead: whitespace, an optional bullet, an optional emphasis run, an optional `[` / `(`,
+  // then (after a bracket) another optional emphasis run. A run counts only when the next
+  // character is a bracket (first run) or a digit.
   let i = skipWhitespace(raw, 0);
   if (isBullet(raw[i]) && isWhitespace(raw[i + 1])) i = skipWhitespace(raw, i + 1);
+  let outerOpen: string | undefined;
+  let n = emphasisRun(raw, i);
+  if (n && (raw[i + n] === "[" || raw[i + n] === "(" || isDigit(raw[i + n]))) {
+    outerOpen = raw[i];
+    i += n;
+  }
   const closer = raw[i] === "[" ? "]" : raw[i] === "(" ? ")" : null;
-  if (closer) i++;
+  let innerOpen: string | undefined;
+  if (closer) {
+    n = emphasisRun(raw, ++i);
+    if (n && isDigit(raw[i + n])) {
+      innerOpen = raw[i];
+      i += n;
+    }
+  }
   const leadEnd = i;
 
   // R13.2.2 time
@@ -127,12 +150,18 @@ export function scanTime(raw: string): TimeScan {
   }
   const timeEnd = j;
 
-  // R13.2.3 gap
+  // R13.2.3 gap: closing runs for the lead's runs (same character), around the closing bracket.
+  const followsTime = (at: number) =>
+    at >= raw.length || isWhitespace(raw[at]) || isGapSeparator(raw[at]);
   if (closer) {
+    j = closingRun(raw, j, innerOpen);
     if (raw[j] !== closer) return untimed(raw, false);
     j++;
-  } else if (j < raw.length && !isWhitespace(raw[j]) && !isGapSeparator(raw[j])) {
-    return untimed(raw, false);
+    const k = closingRun(raw, j, outerOpen);
+    if (k > j && followsTime(k)) j = k;
+  } else {
+    j = closingRun(raw, j, outerOpen);
+    if (!followsTime(j)) return untimed(raw, false);
   }
   j = skipWhitespace(raw, j);
   if (isGapSeparator(raw[j])) j = skipWhitespace(raw, j + 1);
@@ -167,6 +196,7 @@ export function scanTime(raw: string): TimeScan {
       fracDigits: frac.length,
     },
     invalid: false,
+    text: withoutMarkers(raw, j),
   };
 }
 

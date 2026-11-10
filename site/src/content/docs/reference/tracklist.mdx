@@ -71,7 +71,7 @@ One per line, in order.
 | `raw` | `string` | The line exactly as written, never normalised |
 | `parts` | `{ lead, time, gap, rest }` | `raw` cut into four strings that join back into it |
 | `time` | `{ raw, seconds } \| null` | The start time |
-| `track` | `ParsedTrack \| null` | Parsed from `rest` in tracklist mode. Only `track` and `marker` lines have one |
+| `track` | `ParsedTrack \| null` | Parsed from `rest` in tracklist mode, without its [Markdown emphasis](/trackparse/guides/tracklists/#markdown) and a bare track number. Only `track` and `marker` lines have one |
 
 ### TracklistWarning
 

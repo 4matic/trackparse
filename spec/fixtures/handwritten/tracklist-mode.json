@@ -1633,6 +1633,270 @@
         "R6.10"
       ],
       "note": "Control for tracklist-mode-053: a timed line without a marker word still uses the tight dash."
+    },
+    {
+      "id": "tracklist-mode-055",
+      "input": "00:00 **Nitepunk** - ID",
+      "expected": {
+        "entries": [
+          {
+            "parts": {
+              "lead": "",
+              "time": "00:00",
+              "gap": " ",
+              "rest": "**Nitepunk** - ID"
+            },
+            "time": {
+              "raw": "00:00",
+              "seconds": 0
+            },
+            "track": {
+              "artists": [
+                "Nitepunk"
+              ],
+              "title": "ID"
+            }
+          }
+        ]
+      },
+      "rules": [
+        "R13.12",
+        "R13.4.1"
+      ]
+    },
+    {
+      "id": "tracklist-mode-056",
+      "input": "00:00 Nitepunk - **No Manners**",
+      "expected": {
+        "entries": [
+          {
+            "parts": {
+              "lead": "",
+              "time": "00:00",
+              "gap": " ",
+              "rest": "Nitepunk - **No Manners**"
+            },
+            "time": {
+              "raw": "00:00",
+              "seconds": 0
+            },
+            "track": {
+              "artists": [
+                "Nitepunk"
+              ],
+              "title": "No Manners"
+            }
+          }
+        ]
+      },
+      "rules": [
+        "R13.12",
+        "R13.4.1"
+      ]
+    },
+    {
+      "id": "tracklist-mode-057",
+      "input": "00:00 __**Nitepunk - No Manners**__",
+      "expected": {
+        "entries": [
+          {
+            "parts": {
+              "lead": "",
+              "time": "00:00",
+              "gap": " ",
+              "rest": "__**Nitepunk - No Manners**__"
+            },
+            "time": {
+              "raw": "00:00",
+              "seconds": 0
+            },
+            "track": {
+              "artists": [
+                "Nitepunk"
+              ],
+              "title": "No Manners"
+            }
+          }
+        ]
+      },
+      "rules": [
+        "R13.12",
+        "R13.4.1"
+      ],
+      "note": "Discord underline around bold."
+    },
+    {
+      "id": "tracklist-mode-058",
+      "input": "00:00 Nitepunk - No Manners (**VIP**)",
+      "expected": {
+        "entries": [
+          {
+            "parts": {
+              "lead": "",
+              "time": "00:00",
+              "gap": " ",
+              "rest": "Nitepunk - No Manners (**VIP**)"
+            },
+            "time": {
+              "raw": "00:00",
+              "seconds": 0
+            },
+            "track": {
+              "artists": [
+                "Nitepunk"
+              ],
+              "title": "No Manners",
+              "versions": [
+                {
+                  "type": "vip"
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "rules": [
+        "R13.12",
+        "R13.4.1"
+      ],
+      "note": "A bracket is an outer side, so the VIP inside the bold is still a version."
+    },
+    {
+      "id": "tracklist-mode-059",
+      "input": "00:00 *Nitepunk - No Manners*",
+      "expected": {
+        "entries": [
+          {
+            "parts": {
+              "lead": "",
+              "time": "00:00",
+              "gap": " ",
+              "rest": "*Nitepunk - No Manners*"
+            },
+            "time": {
+              "raw": "00:00",
+              "seconds": 0
+            },
+            "track": {
+              "artists": [
+                "Nitepunk"
+              ],
+              "title": "No Manners"
+            }
+          }
+        ]
+      },
+      "rules": [
+        "R13.12",
+        "R13.4.1"
+      ]
+    },
+    {
+      "id": "tracklist-mode-060",
+      "input": "00:00 _Nitepunk - No Manners_",
+      "expected": {
+        "entries": [
+          {
+            "parts": {
+              "lead": "",
+              "time": "00:00",
+              "gap": " ",
+              "rest": "_Nitepunk - No Manners_"
+            },
+            "time": {
+              "raw": "00:00",
+              "seconds": 0
+            },
+            "track": {
+              "artists": [
+                "Nitepunk"
+              ],
+              "title": "No Manners"
+            }
+          }
+        ]
+      },
+      "rules": [
+        "R13.12",
+        "R13.4.1"
+      ]
+    },
+    {
+      "id": "tracklist-mode-061",
+      "input": "00:00 P*nk - Raise Your Glass\n01:00 *NSYNC - Bye Bye Bye\n02:00 A**hole - Title\n03:00 Artist - Holy Sh**\n04:00 DJ_Name - Title\n05:00 Art_ist - Don`t Stop\n06:00 Mr_Bill - F**k It\n07:00 Noisia_-_Stigma",
+      "expected": {
+        "entries": [
+          {
+            "track": {
+              "artists": [
+                "P*nk"
+              ],
+              "title": "Raise Your Glass"
+            }
+          },
+          {
+            "track": {
+              "artists": [
+                "*NSYNC"
+              ],
+              "title": "Bye Bye Bye"
+            }
+          },
+          {
+            "track": {
+              "artists": [
+                "A**hole"
+              ],
+              "title": "Title"
+            }
+          },
+          {
+            "track": {
+              "artists": [
+                "Artist"
+              ],
+              "title": "Holy Sh**"
+            }
+          },
+          {
+            "track": {
+              "artists": [
+                "DJ_Name"
+              ],
+              "title": "Title"
+            }
+          },
+          {
+            "track": {
+              "artists": [
+                "Art_ist"
+              ],
+              "title": "Don't Stop"
+            }
+          },
+          {
+            "track": {
+              "artists": [
+                "Mr_Bill"
+              ],
+              "title": "F**k It"
+            }
+          },
+          {
+            "track": {
+              "artists": [
+                "Noisia"
+              ],
+              "title": "Stigma"
+            }
+          }
+        ]
+      },
+      "rules": [
+        "R13.12",
+        "R13.4.1"
+      ],
+      "note": "Near misses: stars and underscores inside words, unpaired ones, backticks and the _-_ separator are text, never emphasis."
     }
   ]
 }

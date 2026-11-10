@@ -14,6 +14,7 @@ from referencing import Registry, Resource
 
 from runner import SPEC_DIR
 from trackparse import parse
+from trackparse._tracklist_emphasis import without_markers
 from trackparse.tracklist import apply_edits, parse_tracklist
 
 
@@ -42,6 +43,7 @@ FRAGMENTS = [
     "0:61:00 ", "1:2", "[", "]", "(", ")", "[00:10] ", "(1:00)", " - ", " – ", "-", "|", ".",
     ":", "=> ", "==>", "1 ", "2 ", "01. ", "3) ", "Artist", "Title", "Noisia - Stigma", "Intro",
     "interview", "Tracklist:", "Part 2", "https://x.y", "www.", "_-_", "Ab-Cd", "ID", "(VIP)",
+    "**", "*", "__", "_", "***", "* ", "- ", "**[", "]**",
     "​", "𝄞", "\ud800",
 ]  # fmt: skip
 
@@ -355,7 +357,12 @@ def test_sort_keeps_eol_slots_and_is_idempotent(text: str) -> None:
     assert apply_edits(once.text, [{"op": "sort-by-time"}]).text == once.text
 
 
-# 5. One line equals parse(rest, mode="tracklist")
+# 5. One line equals parse(track part, mode="tracklist"). R13.4.1: the track part of a one-line
+# text (no neighbours, so no bare position) is `rest` without its paired emphasis markers (R13.12).
+
+
+def track_part(raw: str, rest: str) -> str:
+    return without_markers(raw, len(raw) - len(rest))
 
 
 @fast(1500)
@@ -366,7 +373,52 @@ def test_one_line_equals_parse(text: str) -> None:
     if not entries or entries[0].track is None:
         return
     e = entries[0]
-    assert e.track == parse(e.parts.rest, mode="tracklist")
+    assert e.track == parse(track_part(e.raw, e.parts.rest), mode="tracklist")
+
+
+# 6. Emphasis around the time or the track part changes nothing.
+
+EMPHASIS_REST = [
+    "Noisia - Stigma",
+    "01. Phace - Plastic Acid",
+    "Intro",
+    "Paperclip interview",
+    "Mefjus - Suicide Bassline (VIP)",
+    "ID - ID",
+    "Noisia feat. Foreign Beggars - Shellshock",
+]
+TIME_WRAPS = [
+    ("", ""),
+    ("**", "**"),
+    ("__", "__"),
+    ("*", "*"),
+    ("_", "_"),
+    ("**[", "]**"),
+    ("[**", "**]"),
+    ("**[**", "**]"),
+    ("_[", "]_"),
+]
+
+
+@fast(500)
+@given(
+    st.sampled_from(["M:SS", "MM:SS", "H:MM:SS", "HH:MM:SS", "MM:SS.d", "M:SS,ddd"]),
+    st.integers(0, 3599),
+    st.integers(0, 999),
+    st.sampled_from(EMPHASIS_REST),
+    st.sampled_from(TIME_WRAPS),
+    st.sampled_from(["", "**", "__", "*", "_"]),
+)
+def test_emphasis_changes_nothing(
+    style: str, seconds: int, frac: int, rest: str, wrap_time: tuple[str, str], wrap: str
+) -> None:
+    t = write_time(style, seconds, frac)
+    bare = parse_tracklist(f"{t} {rest}").entries[0]
+    e = parse_tracklist(f"{wrap_time[0]}{t}{wrap_time[1]} {wrap}{rest}{wrap}").entries[0]
+    assert e.time is not None and bare.time is not None
+    assert e.time.seconds == bare.time.seconds
+    assert e.kind == bare.kind
+    assert e.track == bare.track
 
 
 def test_many_edits_are_linear() -> None:

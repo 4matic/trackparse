@@ -112,9 +112,9 @@ mixed in one text, and trailing spaces survive. A last line without a newline ha
 
 | Part | Holds |
 |---|---|
-| `lead` | spaces, a list bullet (`- `, `* `, `• `) or an opening bracket before the time |
+| `lead` | spaces, a list bullet (`- `, `* `, `• `), Markdown emphasis or an opening bracket before the time |
 | `time` | the time as written, `52:47` |
-| `gap` | whatever sits between the time and the track: `] `, ` - `, ` \| `, ` => ` |
+| `gap` | whatever sits between the time and the track: `] `, ` - `, ` \| `, ` => `, `**] ` |
 | `rest` | the track text, which is what gets parsed |
 
 That split is what lets an editor rewrite a time without touching anything else on the line.
@@ -136,6 +136,49 @@ bullet goes into `lead`.
 
 Something that looks like a time but can't be one, like `1:75` or `0:61:00`, stays in `rest` and
 raises an `invalid-time` warning.
+
+## Markdown
+
+Lists copied from Discord, Reddit, Telegram or YouTube comments often keep their Markdown:
+`**bold**`, `__underline__`, `*italic*` or `_italic_`, sometimes only around the time. trackparse
+reads through it. Emphasis next to the time goes into `lead` and `gap`, so an edit keeps it.
+Emphasis in the rest of the line stays in `rest`, but the parser reads the text without it.
+
+<Tabs syncKey="lang">
+<TabItem label="JavaScript">
+
+```js
+const list = parseTracklist("**[**14:21**] 10. Nitepunk - ID**\n* 18:02 Noisia - _Stigma_");
+const [a, b] = list.entries;
+
+a.parts;   // { lead: '**[**', time: '14:21', gap: '**] ', rest: '10. Nitepunk - ID**' }
+a.track.artists.map((x) => x.name);   // [ 'Nitepunk' ]
+a.track.title;                        // 'ID'
+a.track.position;                     // { raw: '10', number: 10 }
+b.track.title;                        // 'Stigma'
+```
+
+</TabItem>
+<TabItem label="Python">
+
+```python
+tl = parse_tracklist("**[**14:21**] 10. Nitepunk - ID**\n* 18:02 Noisia - _Stigma_")
+a, b = tl.entries
+
+a.parts   # Parts(lead='**[**', time='14:21', gap='**] ', rest='10. Nitepunk - ID**')
+[x.name for x in a.track.artists]   # ['Nitepunk']
+a.track.title                       # 'ID'
+a.track.position                    # Position(raw='10', number=10)
+b.track.title                       # 'Stigma'
+```
+
+</TabItem>
+</Tabs>
+
+A `*` or `_` only counts as emphasis when it has a partner on the same line and sits against a
+space, a bracket or the end of the line on its outer side. So names keep their stars and
+underscores: `P*nk`, `*NSYNC`, `DJ_Name`, `Noisia_-_Stigma` and a censored `F**k` come out as
+written. Runs of three or more, `~~`, `||` and backticks are never treated as Markdown.
 
 ## Line kinds
 

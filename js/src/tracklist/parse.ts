@@ -51,11 +51,11 @@ export function parseTracklist(text: string, options?: TracklistOptions): Trackl
       marker: false,
     };
     if (blank) return row;
-    const probe = lp.probe(scan.parts.rest);
+    const probe = lp.probe(scan.text); // R13.4.1: the line text, without emphasis (R13.12)
     row.probe = probe;
     row.dash = probe.spacedDash;
     row.candidate = scan.time !== null || row.dash;
-    row.bare = bareCandidate(scan.parts.rest, probe.position); // R13.5
+    row.bare = bareCandidate(scan.text, probe.position); // R13.5
     return row;
   });
   let candidates = 0;
@@ -76,7 +76,7 @@ export function parseTracklist(text: string, options?: TracklistOptions): Trackl
     if (r.blank || !r.probe) return;
     const bare = confirmed[i] ? r.bare : null;
     const probe = bare ? lp.probe(bare.stripped) : r.probe;
-    r.marker = hasMarkerWord(bare ? bare.stripped : r.scan.parts.rest, markers);
+    r.marker = hasMarkerWord(bare ? bare.stripped : r.scan.text, markers);
     // R13.4.2: the R6.10 tight dash only on timed lines without a marker word.
     const track = probe.finish(listContext && r.scan.time !== null && !r.marker);
     if (bare) track.position = { raw: bare.raw, number: bare.number };
@@ -113,9 +113,9 @@ function kindOf(r: Row): EntryKind {
   if (r.blank || !r.track) return "blank";
   const marker = !r.separated && r.marker;
   if (r.scan.time) return marker ? "marker" : "track";
-  const rest = r.scan.parts.rest;
-  if (isLink(rest)) return "link";
-  if (isHeader(rest)) return "header";
+  const text = r.scan.text;
+  if (isLink(text)) return "link";
+  if (isHeader(text)) return "header";
   if (marker) return "marker";
   return r.separated ? "track" : "note";
 }
