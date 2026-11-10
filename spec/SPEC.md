@@ -542,11 +542,12 @@ section and `mode: "tracklist"`.
 
 Read at the start of `raw` (this scanner is separate from R4.1, which is unchanged):
 
-- **R13.2.1 lead:** R0.2 whitespace, then an optional `[` or `(`.
-  - On a line **without** a time, `lead` instead holds an optional bullet: R0.2 whitespace, one of
-    `-` `–` `—` `*` `•`, then at least one R0.2 whitespace (the whole run). Without that shape
-    `lead` is `""`. `- Noisia - Stigma` → lead `- `, rest `Noisia - Stigma`; `-Intro` has no
-    bullet.
+- **R13.2.1 lead:** R0.2 whitespace, an optional *bullet*, then an optional `[` or `(`. A bullet
+  is one of `-` `–` `—` `*` `•` followed by at least one R0.2 whitespace (the whole run).
+  `* 14:21 Noisia - Stigma` → lead `* `, time `14:21`; `- [01:02] A - B` → lead `- [`.
+  - On a line **without** a time, `lead` holds only the optional bullet and the R0.2 whitespace
+    before and after it. Without that shape `lead` is `""`. `- Noisia - Stigma` → lead `- `, rest
+    `Noisia - Stigma`; `-Intro` has no bullet.
 - **R13.2.2 time:** `A:B` or `A:B:C` in ASCII digits, then an optional fraction (`.` or `,` and 1–3
   digits). With three parts: `A` is 1–2 digits (hours), `B` and `C` are 2 digits each and at most 59.
   With two parts: `A` is 1–3 digits (minutes, **any value**, so `125:30` is 7530 s), `B` is 2 digits and

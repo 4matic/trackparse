@@ -112,7 +112,7 @@ mixed in one text, and trailing spaces survive. A last line without a newline ha
 
 | Part | Holds |
 |---|---|
-| `lead` | spaces or an opening bracket before the time |
+| `lead` | spaces, a list bullet (`- `, `* `, `• `) or an opening bracket before the time |
 | `time` | the time as written, `52:47` |
 | `gap` | whatever sits between the time and the track: `] `, ` - `, ` \| `, ` => ` |
 | `rest` | the track text, which is what gets parsed |
@@ -129,6 +129,10 @@ All of these are read as start times:
 | `1:02:03`, `01:02:03` | 3723 |
 | `125:30` (a long mix with no hours) | 7530 |
 | `00:00:07.500`, `0:07,5` | 7.5 |
+
+A list bullet in front is fine too, as in lists pasted from Discord or Reddit:
+`* 12:34 Artist - Title` and `- [12:34] Artist - Title` are both read at 754 seconds, and the
+bullet goes into `lead`.
 
 Something that looks like a time but can't be one, like `1:75` or `0:61:00`, stays in `rest` and
 raises an `invalid-time` warning.
