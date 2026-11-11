@@ -18,7 +18,6 @@ python/dist/
 
 # Rust
 target/
-rust/Cargo.lock
 
 # Editors / OS
 .DS_Store
