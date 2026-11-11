@@ -1,0 +1,72 @@
+name: rust
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    paths:
+      - "rust/**"
+      - "spec/**"
+      - "scripts/compare-ports.mjs"
+      - ".github/workflows/rust.yml"
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # stable, and the minimum supported Rust version from rust/Cargo.toml (rust-version).
+        toolchain: [stable, "1.74.0"]
+    defaults:
+      run:
+        working-directory: rust
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.toolchain }}
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: rust
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Data codegen is up to date
+        run: node scripts/gen_data.mjs --check
+      - if: matrix.toolchain == 'stable'
+        run: cargo fmt --check
+      - if: matrix.toolchain == 'stable'
+        run: cargo clippy --all-targets --all-features -- -D warnings
+      # Every shared fixture, the invariants and the API tests.
+      - run: cargo test
+      - if: matrix.toolchain == 'stable'
+        run: cargo test --all-features
+      - if: matrix.toolchain == 'stable'
+        name: The crate packages cleanly
+        run: cargo publish --dry-run
+
+  # Every fixture input through the built JS package and the Rust crate: full outputs must match.
+  compare:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: rust
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter trackparse build
+      - run: node scripts/compare-ports.mjs --only=rust
