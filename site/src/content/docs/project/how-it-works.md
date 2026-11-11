@@ -4,8 +4,12 @@ description: The parsing pipeline, why it has no regex lookaround, and how track
 ---
 
 trackparse is a fixed pipeline of small hand-written scanners. There are no regexes with lookaround
-or backreferences and no backtracking, so it runs in linear time and ports to Python and Rust with
-the same output.
+or backreferences, so nothing backtracks. A 10,000-code-point input takes tens of milliseconds in
+JavaScript and Rust, and well under a second in Python.
+The same design is what lets the JavaScript, Python and Rust packages give the same output: each
+step is a short function that reads the same way in all three languages.
+
+Each step below is a rule group in the [spec](/trackparse/reference/spec/):
 
 ```text
 input
@@ -19,6 +23,11 @@ input
                           └─ assemble   dedupe credits, build the ParsedTrack            (R9)
 ```
 
+Every port keeps one source file per step, with the same rule IDs in the comments:
+[`js/src`](https://github.com/4matic/trackparse/tree/main/js/src),
+[`python/src/trackparse`](https://github.com/4matic/trackparse/tree/main/python/src/trackparse) and
+[`rust/src`](https://github.com/4matic/trackparse/tree/main/rust/src).
+
 ## Brackets first
 
 Before anything is split, every bracket group is swapped for a placeholder. That's what keeps a `&`
@@ -27,33 +36,43 @@ being taken as the separator.
 
 Each group is then classified on its own: junk, feat, producer, flag, year, version, or unknown.
 Unknown groups go back into the title, untouched. This is where "extract, don't delete" lives in
-the code: there's no path that drops an unknown group.
+the code: there's no path that drops an unknown group. The scanner is
+[R3](/trackparse/reference/spec/#r3-group-scanner-and-skeleton) and the classification is
+[R5](/trackparse/reference/spec/#r5-group-classification).
 
 ## Finding the separator
 
 The separator search is the part that differs most between modes. In `clean` mode only a spaced
 dash counts, and dash suffixes that look like versions (`- Remastered 2015`) are peeled off the end
 first. `youtube` adds pipes, quoted titles, `"Title" by Artist` and unspaced dashes. `filename`
-adds underscores and `01-Track` numbering. Each fallback leaves a [warning](/trackparse/reference/warnings/),
-so you can always tell a confident split from a guess.
+adds underscores and `01-Track` numbering. Each fallback leaves a
+[warning](/trackparse/reference/warnings/), so you can always tell a confident split from a guess.
+The search is [R6](/trackparse/reference/spec/#r6-artisttitle-separator), and
+[Modes](/trackparse/guides/modes/) shows the difference on real strings.
 
 ## Words come from data
 
 Every word list (joiners, feat markers, version keywords, junk phrases, genres, extensions) lives in
 JSON files under [`spec/data`](https://github.com/4matic/trackparse/tree/main/spec/data). The ports
 compile them into source at build time. No keyword is hard-coded in a scanner, which is why
-`keywords` in the options can extend any of them.
+[`keywords`](/trackparse/reference/options/#keywords) in the options can extend any of them.
 
 ## Portability rules
 
-The spec opens with rule R0, which exists so that every port gives the same bytes:
+The spec opens with rule [R0](/trackparse/reference/spec/#r0-portability), which exists so that
+every port gives the same bytes:
 
 - Whitespace is an explicit list of code points, never a language's `\s` or `trim()`.
 - Keywords compare with ASCII-only lowercasing. Full Unicode folding is used only for
   deduplicating names.
 - Strings are walked by code point, not by UTF-16 unit or byte.
-- A "digit" is `0`–`9` and nothing else.
-- Any string must produce a result. Nothing throws, ever.
+- A "digit" is `0` to `9` and nothing else.
+- "Letter" and "uppercase letter" mean the Unicode general categories L and Lu, not whatever a
+  language's `isalpha` accepts.
+- Any string must produce a result. Nothing throws or panics.
+
+[Ports](/trackparse/project/ports/) lists the places where a language's standard library disagreed
+with these rules.
 
 ## Tracklists on top
 
@@ -64,6 +83,12 @@ the rest goes through `parse()` in tracklist mode.
 Two decisions look across lines. A bare track number is only accepted when a neighbour continues
 the sequence. And an unspaced dash only splits when at least half the list uses spaced dashes. To
 make both decisions without parsing everything twice, each line first gets a cheap probe (time,
-normalisation, prefixes), then one real parse. The checks run last, over the finished entries.
+normalization, prefixes), then one real parse. The checks run last, over the finished entries.
 
-The full rules are in the [spec](/trackparse/reference/spec/).
+The tracklist rules are [R13](/trackparse/reference/spec/#r13-tracklists).
+
+## See also
+
+- [The spec](/trackparse/reference/spec/) for the full rules.
+- [How it's tested](/trackparse/project/testing/) for the fixtures and the cross-port diff.
+- [Ports](/trackparse/project/ports/) for the three implementations.

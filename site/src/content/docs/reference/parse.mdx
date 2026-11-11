@@ -9,6 +9,8 @@ import { Tabs, TabItem } from "@astrojs/starlight/components";
 <TabItem label="JavaScript">
 
 ```ts
+import { parse } from "trackparse";
+
 parse(input: string, options?: ParseOptions): ParsedTrack
 ```
 
@@ -16,6 +18,8 @@ parse(input: string, options?: ParseOptions): ParsedTrack
 <TabItem label="Python">
 
 ```python
+from trackparse import parse
+
 parse(input: str, *, mode="auto", known_artists=(), uploader=None, split_and="auto", keywords=None) -> ParsedTrack
 ```
 
@@ -23,6 +27,8 @@ parse(input: str, *, mode="auto", known_artists=(), uploader=None, split_and="au
 <TabItem label="Rust">
 
 ```rust
+use trackparse::{parse, parse_with};
+
 pub fn parse(input: &str) -> ParsedTrack
 pub fn parse_with(input: &str, options: &ParseOptions) -> ParsedTrack
 ```
@@ -30,32 +36,112 @@ pub fn parse_with(input: &str, options: &ParseOptions) -> ParsedTrack
 </TabItem>
 </Tabs>
 
-`parse` never throws on a string. Any string gives a `ParsedTrack`, and unknown or malformed options
-fall back to their defaults. (Python raises `TypeError` if `input` isn't a `str` at all. Rust takes
-`&str` and never panics.) The options are on the [Options](/trackparse/reference/options/) page.
+`parse` never fails on a string. Any string gives a `ParsedTrack`, the empty string included, and
+unknown or malformed options fall back to their defaults. What differs between the languages:
+
+- JavaScript: never throws on a string.
+- Python: raises `TypeError` if `input` isn't a `str` (`parse() expects str input, got int`), and
+  nothing else.
+- Rust: takes `&str`, returns the value itself (no `Result`), and never panics. Use `parse` for the
+  defaults and `parse_with` to pass options.
+
+The options are on the [Options](/trackparse/reference/options/) page. The other functions
+(`parseArtists`, `format`, `createParser`) are under
+[Other functions](/trackparse/reference/functions/), and the output model is
+[defined in the spec](/trackparse/reference/spec/#output-model).
 
 ## ParsedTrack
 
-Every key is always present. Python has the same fields as attributes of a frozen dataclass, in
-snake_case (`full_title`, `flags.unknown_artist`), with tuples instead of arrays and `None` instead
-of `null`. Rust has a struct with the same snake_case names as public fields: `Vec<T>` for arrays,
-`Option<T>` where the table says `null`, enums for `mode`, roles, kinds and warnings, `u32` for
-`year` and `position.number`, and `u64` for `timestamp.seconds`.
+Every key is always present.
+
+<Tabs syncKey="lang">
+<TabItem label="JavaScript">
+
+```ts
+interface ParsedTrack {
+  input: string;
+  mode: Mode;
+  position: Position | null;     // { raw: string; number: number }
+  timestamp: Timestamp | null;   // { raw: string; seconds: number }
+  artists: Artist[];
+  title: string;
+  fullTitle: string;
+  versions: Version[];
+  year: number | null;
+  flags: Flags;                  // { explicit, clean, unknownArtist, unknownTitle }
+  junk: Junk[];                  // { raw: string; kind: JunkKind }
+  warnings: Warning[];
+}
+```
+
+</TabItem>
+<TabItem label="Python">
+
+```python
+@dataclass(frozen=True)
+class ParsedTrack:
+    input: str
+    mode: Mode
+    position: Optional[Position]     # Position(raw: str, number: int)
+    timestamp: Optional[Timestamp]   # Timestamp(raw: str, seconds: int)
+    artists: tuple[Artist, ...]
+    title: str
+    full_title: str
+    versions: tuple[Version, ...]
+    year: Optional[int]
+    flags: Flags                     # Flags(explicit, clean, unknown_artist, unknown_title)
+    junk: tuple[Junk, ...]           # Junk(raw: str, kind: JunkKind)
+    warnings: tuple[Warning, ...]
+```
+
+</TabItem>
+<TabItem label="Rust">
+
+```rust
+pub struct ParsedTrack {
+    pub input: String,
+    pub mode: Mode,
+    pub position: Option<Position>,     // Position { raw: String, number: u32 }
+    pub timestamp: Option<Timestamp>,   // Timestamp { raw: String, seconds: u64 }
+    pub artists: Vec<Artist>,
+    pub title: String,
+    pub full_title: String,
+    pub versions: Vec<Version>,
+    pub year: Option<u32>,
+    pub flags: Flags,                   // Flags { explicit, clean, unknown_artist, unknown_title }
+    pub junk: Vec<Junk>,                // Junk { raw: String, kind: JunkKind }
+    pub warnings: Vec<Warning>,
+}
+```
+
+</TabItem>
+</Tabs>
+
+The table below uses the JavaScript and JSON names. Python has the same fields as attributes of a
+frozen dataclass, in snake_case (`full_title`, `flags.unknown_artist`), with tuples instead of
+arrays and `None` instead of `null`. Rust has a struct with the same snake_case names as public
+fields: `Vec<T>` for arrays, `Option<T>` where the table says `null`, and enums for `mode`, roles,
+kinds and warnings.
 
 | Field | Type | Description |
 |---|---|---|
-| `input` | `string` | The original string, untouched (not normalised) |
-| `mode` | `"clean" \| "youtube" \| "filename" \| "tracklist"` | The mode that actually ran |
+| `input` | `string` | The original string, untouched (not normalized) |
+| `mode` | `"clean" \| "youtube" \| "filename" \| "tracklist"` | The mode that ran |
 | `position` | `{ raw: string, number: number } \| null` | Track number. `raw` is the digits as written (`"01"`) |
 | `timestamp` | `{ raw: string, seconds: number } \| null` | Leading cue time, `"1:02:03"` → 3723 |
 | `artists` | `Artist[]` | Primary, featured and producer credits. Remixers are in `versions` |
-| `title` | `string` | The clean title. Brackets it doesn't recognise stay in |
+| `title` | `string` | The clean title. Brackets it doesn't recognize stay in |
 | `fullTitle` | `string` | `title` with the versions put back in their original brackets |
 | `versions` | `Version[]` | Remixes and versions, left to right |
 | `year` | `number \| null` | From `(2015)` or `- 2015` |
 | `flags` | `{ explicit, clean, unknownArtist, unknownTitle }` | All booleans |
 | `junk` | `{ raw: string, kind: JunkKind }[]` | What was taken out of the title, and what kind of noise it was |
 | `warnings` | `Warning[]` | Which heuristics fired. See [Warnings](/trackparse/reference/warnings/) |
+
+The guides show each field at work: [Modes](/trackparse/guides/modes/) for `mode`,
+[Junk, flags and prefixes](/trackparse/guides/junk-and-flags/) for `position`, `timestamp`, `year`,
+`flags` and `junk`, [Artists and credits](/trackparse/guides/artists/) for `artists`, and
+[Versions and remixes](/trackparse/guides/versions/) for `versions`.
 
 ## Artist
 
@@ -89,7 +175,9 @@ pub struct Artist { pub name: String, pub role: ArtistRole, pub joiner: Option<S
 | `joiner` | the text before the name as written (`"&"`, `","`, `"ft."`, `"prod. by"`), or `null` for the first name in a list |
 | `source` | `artist` (left of the dash), `title` (right of it), `version` (inside a version) |
 
-`&`, `x` and `vs.` are joiners, not roles. Everyone they join is `primary`.
+`&`, `x` and `vs.` are joiners, not roles. Everyone they join is `primary`. In Rust, `role` and
+`source` are `ArtistRole::Primary`, `ArtistSource::Artist` and so on.
+[Artists and credits](/trackparse/guides/artists/) has examples.
 
 ## Version
 
@@ -155,46 +243,89 @@ pub struct Version {
 | `unknownArtist` | `true` for `ID Remix` and the like |
 | `delimiter` | the bracket it was in, or `-` for a dash suffix |
 
+Python uses `unknown_artist`. Rust uses `unknown_artist` and `version_type`, because `type` is a
+reserved word, and `delimiter` is `VersionDelimiter::Paren`, `Square`, `Curly` or `Dash`.
 [Versions and remixes](/trackparse/guides/versions/) explains how the type is chosen.
 
 ## Junk kinds
 
 `video`, `audio`, `lyrics`, `quality`, `promo`, `platform`, `label`, `genre`, `other`. Examples are
 in [Junk, flags and prefixes](/trackparse/guides/junk-and-flags/#junk). The vocabulary is in
-[`spec/data`](https://github.com/4matic/trackparse/tree/main/spec/data).
+[`spec/data`](https://github.com/4matic/trackparse/tree/main/spec/data). In Rust the kind is the
+enum `JunkKind` (`JunkKind::Video` and so on).
 
-## JSON and Python objects
+<a id="json-and-python-objects"></a>
+<a id="serialising-to-json"></a>
 
-In JavaScript the result is a plain object, so `JSON.stringify(track)` is the spec's JSON.
+## Serializing to JSON
 
-In Python, `ParsedTrack`, `Artist`, `Version`, `Junk`, `Flags`, `Position` and `Timestamp` are
-frozen dataclasses. Sequences are tuples, so results are immutable and hashable: you can put them in
-sets or use them as dict keys. `to_dict()` gives the spec's JSON with its camelCase keys, and
-`from_dict()` goes the other way:
+All three packages write the same JSON, byte for byte, on every fixture input. The keys are the
+camelCase ones of the spec (`fullTitle`, `unknownArtist`), also in Python and Rust.
+
+<Tabs syncKey="lang">
+<TabItem label="JavaScript">
+
+```js
+import { parse } from "trackparse";
+
+const track = parse("Noisia - Stigma (2015)");
+
+JSON.stringify(track);
+// '{"input":"Noisia - Stigma (2015)","mode":"clean","position":null,"timestamp":null,"artists":[{"name":"Noisia","role":"primary","joiner":null,"source":"artist"}],"title":"Stigma","fullTitle":"Stigma","versions":[],"year":2015,"flags":{"explicit":false,"clean":false,"unknownArtist":false,"unknownTitle":false},"junk":[],"warnings":[]}'
+```
+
+The result is a plain object, so `JSON.stringify` is all you need, and `JSON.parse` gives the
+object back.
+
+</TabItem>
+<TabItem label="Python">
 
 ```python
 import json
+from trackparse import ParsedTrack, parse
+
+track = parse("Noisia - Stigma (2015)")
 
 json.dumps(track.to_dict(), separators=(",", ":"), ensure_ascii=False)
-# the same bytes as JSON.stringify(parse(s)) in JavaScript
+# '{"input":"Noisia - Stigma (2015)","mode":"clean","position":null,"timestamp":null,"artists":[{"name":"Noisia","role":"primary","joiner":null,"source":"artist"}],"title":"Stigma","fullTitle":"Stigma","versions":[],"year":2015,"flags":{"explicit":false,"clean":false,"unknownArtist":false,"unknownTitle":false},"junk":[],"warnings":[]}'
 
 ParsedTrack.from_dict(track.to_dict()) == track   # True
 ```
 
-In Rust the results are plain structs that derive `Debug`, `Clone`, `PartialEq` and `Eq`. Each has
-`to_json()`, which writes the spec's JSON as a compact string with no extra dependency. With the
-optional `serde` feature the same types implement `Serialize` and `Deserialize`, with the same keys:
+`ParsedTrack`, `Artist`, `Version`, `Junk`, `Flags`, `Position` and `Timestamp` are frozen
+dataclasses. Sequences are tuples, so results are immutable and hashable: you can put them in sets
+or use them as dict keys. `to_dict()` gives the spec's JSON shape as a dict, and `from_dict()` goes
+the other way. The `separators` and `ensure_ascii` arguments above make `json.dumps` write the
+same bytes as JavaScript.
+
+</TabItem>
+<TabItem label="Rust">
 
 ```rust
-let track = parse(s);
+use trackparse::{parse, ParsedTrack};
 
-track.to_json()
-// the same bytes as JSON.stringify(parse(s)) in JavaScript
+let track = parse("Noisia - Stigma (2015)");
 
-// with features = ["serde"]
-serde_json::to_string(&track)? == track.to_json()            // true
-serde_json::from_str::<ParsedTrack>(&track.to_json())? == track   // true
+track.to_json();
+// "{\"input\":\"Noisia - Stigma (2015)\",\"mode\":\"clean\",\"position\":null,\"timestamp\":null,\"artists\":[{\"name\":\"Noisia\",\"role\":\"primary\",\"joiner\":null,\"source\":\"artist\"}],\"title\":\"Stigma\",\"fullTitle\":\"Stigma\",\"versions\":[],\"year\":2015,\"flags\":{\"explicit\":false,\"clean\":false,\"unknownArtist\":false,\"unknownTitle\":false},\"junk\":[],\"warnings\":[]}"
+
+// with the `serde` feature and serde_json:
+let json = serde_json::to_string(&track).unwrap();
+json == track.to_json();                                         // true
+serde_json::from_str::<ParsedTrack>(&json).unwrap() == track;    // true
 ```
+
+The results are plain structs that derive `Debug`, `Clone`, `PartialEq` and `Eq`. Each has
+`to_json()`, which writes the spec's JSON as a compact string and needs no feature and no extra
+dependency. With the optional `serde` feature (`cargo add trackparse --features serde`) the result
+types, the options and the tracklist `Edit` implement `Serialize` and `Deserialize` with the same
+keys, so `serde_json` writes the same text and reads it back.
+
+</TabItem>
+</Tabs>
+
+Tracklist results serialize the same way: `JSON.stringify(list)`, `tl.to_dict()` and
+`list.to_json()`. See the [Tracklist API](/trackparse/reference/tracklist/).
 
 ## Types
 
@@ -232,8 +363,30 @@ All of these are exported from the crate root (`use trackparse::…`):
   `SplitAnd`, `FeatPlacement`, `JoinerStyle` and `VersionsOption`;
 - `Parser`. Every result type has `to_json()`.
 
+```rust
+use trackparse::VersionType;
+
+VersionType::SpedUp.as_str();            // "spedUp"
+VersionType::from_name("remix");         // Some(Remix)
+"bootleg".parse::<VersionType>();        // Ok(Bootleg)
+VersionType::ALL.len();                  // 27
+```
+
+Most of these enums are `#[non_exhaustive]`, because a later spec version can add a version type or
+a warning. A `match` on them needs a `_` arm. The full API is on
+[docs.rs](https://docs.rs/trackparse).
+
 </TabItem>
 </Tabs>
 
 The JSON shape is also published as a JSON Schema,
 [`parsed-track.schema.json`](https://github.com/4matic/trackparse/blob/main/spec/schema/parsed-track.schema.json).
+
+## See also
+
+- [Options](/trackparse/reference/options/): everything `parse` accepts.
+- [Other functions](/trackparse/reference/functions/): `parseArtists`, `format`, `normalize`,
+  `allArtists`, `createParser`.
+- [Warnings](/trackparse/reference/warnings/): every warning and how to check for it.
+- [Tracklist API](/trackparse/reference/tracklist/): `parseTracklist` and `applyEdits`.
+- [What it understands](/trackparse/guides/what-it-understands/): results for real inputs.

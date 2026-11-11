@@ -1,26 +1,45 @@
 ---
 // One install line under the hero, switchable between npm, pip and cargo, with a copy button.
+// The switch shares its choice with the docs' language tabs and the playground (lib/lang.ts).
+import Check from "@lucide/astro/icons/check";
 import Copy from "@lucide/astro/icons/copy";
+import { PACKAGE } from "../lib/lang";
 
-const cmds = { npm: "npm install trackparse", pip: "pip install trackparse", cargo: "cargo add trackparse" };
+const pms = [
+  { lang: "js", label: "npm" },
+  { lang: "py", label: "pip" },
+  { lang: "rs", label: "cargo" },
+] as const;
 ---
 
-<div class="install not-content" data-cmds={JSON.stringify(cmds)}>
-  <div class="seg" role="group" aria-label="Package manager">
-    <button type="button" data-pm="npm" aria-pressed="true">npm</button>
-    <button type="button" data-pm="pip" aria-pressed="false">pip</button>
-    <button type="button" data-pm="cargo" aria-pressed="false">cargo</button>
+<div class="install-wrap not-content">
+  <div class="install">
+    <div class="seg" role="group" aria-label="Package manager">
+      {
+        pms.map((p, i) => (
+          <button type="button" data-pm={p.lang} data-cmd={PACKAGE[p.lang].install} aria-pressed={i === 0 ? "true" : "false"}>
+            {p.label}
+          </button>
+        ))
+      }
+    </div>
+    <code><span class="prompt" aria-hidden="true">$</span> <span class="cmd">{PACKAGE.js.install}</span></code>
+    <button type="button" class="copy" aria-label="Copy the install command"><Copy size={15} class="i-copy" aria-hidden="true" /><Check size={15} class="i-check" aria-hidden="true" /></button>
   </div>
-  <code><span class="prompt" aria-hidden="true">$</span> <span class="cmd">{cmds.npm}</span></code>
-  <button type="button" class="copy" aria-label="Copy the install command"><Copy size={15} aria-hidden="true" /></button>
+  <p class="pkgs">
+    Published on <a href={PACKAGE.js.url}>npm</a>, <a href={PACKAGE.py.url}>PyPI</a> and{" "}
+    <a href={PACKAGE.rs.url}>crates.io</a>. The Rust API docs are on <a href="https://docs.rs/trackparse">docs.rs</a>.
+  </p>
 </div>
 
 <style>
+  .install-wrap {
+    margin-top: 1.75rem;
+  }
   .install {
     display: inline-flex;
     align-items: center;
     max-width: 100%;
-    margin-top: 1.75rem;
     border: 1px solid var(--tp-border);
     border-radius: var(--tp-radius);
     background: var(--tp-surface);
@@ -73,6 +92,29 @@ const cmds = { npm: "npm install trackparse", pip: "pip install trackparse", car
   .copy.done {
     color: var(--sl-color-white);
   }
+  .copy :global(.i-check),
+  .copy.done :global(.i-copy) {
+    display: none;
+  }
+  .copy.done :global(.i-check) {
+    display: block;
+  }
+  .pkgs {
+    margin: 0.7rem 0 0;
+    font-size: 0.82rem;
+    line-height: 1.5;
+    color: var(--sl-color-gray-3);
+  }
+  .pkgs a {
+    color: var(--sl-color-gray-2);
+    text-decoration: underline;
+    text-decoration-color: var(--tp-border-strong);
+    text-underline-offset: 0.2em;
+  }
+  .pkgs a:hover {
+    color: var(--sl-color-white);
+    text-decoration-color: var(--sl-color-accent);
+  }
   /* Three package managers and a command don't fit one row on a phone: the switch gets its own. */
   @media (max-width: 26rem) {
     .install {
@@ -91,26 +133,40 @@ const cmds = { npm: "npm install trackparse", pip: "pip install trackparse", car
 </style>
 
 <script>
+  import { getLang, onDocsLang, setLang, type Lang } from "../lib/lang";
+
   for (const root of document.querySelectorAll<HTMLElement>(".install")) {
-    const cmds = JSON.parse(root.dataset.cmds ?? "{}") as Record<string, string>;
     const cmd = root.querySelector<HTMLElement>(".cmd")!;
     const copy = root.querySelector<HTMLButtonElement>(".copy")!;
-    for (const b of root.querySelectorAll<HTMLButtonElement>("[data-pm]")) {
+    const buttons = [...root.querySelectorAll<HTMLButtonElement>("[data-pm]")];
+    const show = (lang: Lang) => {
+      for (const b of buttons) {
+        b.setAttribute("aria-pressed", String(b.dataset.pm === lang));
+        if (b.dataset.pm === lang) cmd.textContent = b.dataset.cmd ?? "";
+      }
+    };
+    for (const b of buttons) {
       b.addEventListener("click", () => {
-        cmd.textContent = cmds[b.dataset.pm!];
-        for (const x of root.querySelectorAll("[data-pm]")) x.setAttribute("aria-pressed", String(x === b));
+        show(b.dataset.pm as Lang);
+        setLang(b.dataset.pm as Lang);
       });
     }
+    // The language picked earlier, here or in any code tab of the docs.
+    show(getLang());
+    onDocsLang(show);
     copy.addEventListener("click", async () => {
+      let label = "Copied";
       try {
         await navigator.clipboard.writeText(cmd.textContent ?? "");
         copy.classList.add("done");
-        copy.setAttribute("aria-label", "Copied");
-        setTimeout(() => {
-          copy.classList.remove("done");
-          copy.setAttribute("aria-label", "Copy the install command");
-        }, 1200);
-      } catch {}
+      } catch {
+        label = "Copy failed";
+      }
+      copy.setAttribute("aria-label", label);
+      setTimeout(() => {
+        copy.classList.remove("done");
+        copy.setAttribute("aria-label", "Copy the install command");
+      }, 1200);
     });
   }
 </script>

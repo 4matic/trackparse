@@ -6,7 +6,8 @@ description: parseArtists, format, normalize, allArtists, createParser and SPEC_
 import { Tabs, TabItem } from "@astrojs/starlight/components";
 
 All of these are exported from `trackparse`. The Python package and the Rust crate have the same
-functions in snake_case:
+functions in snake_case. [`parse`](/trackparse/reference/parse/) and the
+[tracklist functions](/trackparse/reference/tracklist/) have pages of their own.
 
 | JavaScript | Python | Rust |
 |---|---|---|
@@ -19,13 +20,21 @@ functions in snake_case:
 | `SPEC_VERSION` | `SPEC_VERSION` | `SPEC_VERSION` |
 | `parseTracklist`, `applyEdits` (from `trackparse/tracklist`) | `parse_tracklist`, `apply_edits` (from `trackparse.tracklist`) | `parse_tracklist`, `parse_tracklist_with`, `apply_edits`, `apply_edits_with` (from `trackparse::tracklist`) |
 
-Options are keyword arguments in Python, and fields are snake_case attributes (`full_title`,
-`unknown_artist`). Every function raises `TypeError` if the input isn't a `str`; anything else,
-including bad options, falls back to defaults.
+What to know for each language:
 
-Rust has no optional arguments, so each function that takes options comes in two forms: the plain
-one uses the defaults, and the `_with` one takes a reference to an options struct
-(`parse_with(input, &options)`). Inputs are `&str`, fields are snake_case, and no function panics.
+- **JavaScript.** Options are one object, the last argument. No function throws on a string.
+  The tracklist functions are in the separate entry `trackparse/tracklist`.
+- **Python.** Options are keyword arguments, and fields are snake_case attributes (`full_title`,
+  `unknown_artist`). Every function that takes a string raises `TypeError` if the input isn't a
+  `str`. `format_track` and `all_artists` take a `ParsedTrack` and don't check it, so a wrong value
+  fails with `AttributeError`. Anything else, bad options included, falls back to defaults.
+- **Rust.** There are no optional arguments, so each function that takes options comes in two
+  forms. The plain one uses the defaults, and the `_with` one takes a reference to an options
+  struct (`parse_with(input, &options)`). Inputs are `&str`, fields are snake_case, results are
+  returned by value with no `Result`, and no function panics. The signatures are on
+  [docs.rs](https://docs.rs/trackparse).
+
+The options themselves are on the [Options](/trackparse/reference/options/) page.
 
 ## parseArtists(input, options?)
 
@@ -37,6 +46,8 @@ Splits a bare artist string, with no title, into credits.
 <TabItem label="JavaScript">
 
 ```js
+import { allArtists, format, normalize, parse, parseArtists } from "trackparse";
+
 parseArtists("Sub Focus, Wilkinson & Dimension feat. Kojo").map((a) => `${a.name}:${a.role}`);
 // [ 'Sub Focus:primary', 'Wilkinson:primary', 'Dimension:primary', 'Kojo:featured' ]
 ```
@@ -45,6 +56,8 @@ parseArtists("Sub Focus, Wilkinson & Dimension feat. Kojo").map((a) => `${a.name
 <TabItem label="Python">
 
 ```python
+from trackparse import all_artists, format_track, normalize, parse, parse_artists
+
 [f"{a.name}:{a.role}" for a in parse_artists("Sub Focus, Wilkinson & Dimension feat. Kojo")]
 # ['Sub Focus:primary', 'Wilkinson:primary', 'Dimension:primary', 'Kojo:featured']
 ```
@@ -53,6 +66,9 @@ parseArtists("Sub Focus, Wilkinson & Dimension feat. Kojo").map((a) => `${a.name
 <TabItem label="Rust">
 
 ```rust
+use trackparse::{all_artists, format_track_with, normalize, parse, parse_artists};
+use trackparse::{FeatPlacement, FormatOptions, JoinerStyle};
+
 parse_artists("Sub Focus, Wilkinson & Dimension feat. Kojo")
     .iter().map(|a| format!("{}:{}", a.name, a.role)).collect::<Vec<_>>();
 // ["Sub Focus:primary", "Wilkinson:primary", "Dimension:primary", "Kojo:featured"]
@@ -62,16 +78,49 @@ parse_artists("Sub Focus, Wilkinson & Dimension feat. Kojo")
 </Tabs>
 
 Takes `knownArtists`, `splitAnd` and `keywords` (`known_artists`, `split_and`, `keywords`; in Rust
-through `parse_artists_with`). Useful for the artist field of ID3 tags or a
-streaming API, where the title is already separate.
+through `parse_artists_with`). Use it for the artist field of ID3 tags or a streaming API, where
+the title is already separate. The result is a list of
+[`Artist`](/trackparse/reference/parse/#artist) values, and the splitting rules are explained in
+[Artists and credits](/trackparse/guides/artists/). In the spec this is
+[R10](/trackparse/reference/spec/#r10-parseartists).
 
 ## format(track, options?)
 
 *(Python and Rust: `format_track`)*
 
-Renders a `ParsedTrack` back to a string. The options are `feat`, `featMarker` (`feat_marker`),
-`joiners`, `versions`, `producers` and `position`. [Formatting](/trackparse/guides/formatting/) has examples
-of each.
+Renders a `ParsedTrack` back to a string. Junk is left out.
+
+<Tabs syncKey="lang">
+<TabItem label="JavaScript">
+
+```js
+format(parse("Wilkinson ft. Becky Hill - Afterglow (Sub Focus Remix)"), { feat: "title", joiners: "canonical" });
+// 'Wilkinson - Afterglow (feat. Becky Hill) (Sub Focus Remix)'
+```
+
+</TabItem>
+<TabItem label="Python">
+
+```python
+format_track(parse("Wilkinson ft. Becky Hill - Afterglow (Sub Focus Remix)"), feat="title", joiners="canonical")
+# 'Wilkinson - Afterglow (feat. Becky Hill) (Sub Focus Remix)'
+```
+
+</TabItem>
+<TabItem label="Rust">
+
+```rust
+let options = FormatOptions::new().feat(FeatPlacement::Title).joiners(JoinerStyle::Canonical);
+format_track_with(&parse("Wilkinson ft. Becky Hill - Afterglow (Sub Focus Remix)"), &options);
+// "Wilkinson - Afterglow (feat. Becky Hill) (Sub Focus Remix)"
+```
+
+</TabItem>
+</Tabs>
+
+The options are `feat`, `featMarker` (`feat_marker`), `joiners`, `versions`, `producers` and
+`position`. [Formatting](/trackparse/guides/formatting/) has the table and an example of each. In
+the spec this is [R11](/trackparse/reference/spec/#r11-format).
 
 ## normalize(input)
 
@@ -103,8 +152,8 @@ normalize("Noisia\u{200b} — “Stigma”");   // "Noisia - \"Stigma\""
 </TabItem>
 </Tabs>
 
-You don't need to call it before `parse`. It's exported because it's handy for building lookup
-keys.
+You don't need to call it before `parse`. It's exported because it helps when you build lookup
+keys. The steps are [R1](/trackparse/reference/spec/#r1-normalization) in the spec.
 
 ## allArtists(track)
 
@@ -145,10 +194,12 @@ all_artists(&parse("Wilkinson ft. Becky Hill - Afterglow (Sub Focus Remix)"))
 *(Python: `create_parser`, Rust: `Parser::new`)*
 
 Compiles options and keywords once and returns an object with `parse` and `parseArtists`
-(`parse_artists`). Per-call
-options are merged over the compiled ones. Use it when you parse many strings with the same
-`knownArtists` or `keywords`. The Rust `Parser` takes its options once, in `Parser::new(&options)`;
-its `parse` and `parse_artists` take only the input.
+(`parse_artists`). Use it when you parse many strings with the same `knownArtists` or `keywords`.
+
+In JavaScript and Python the two methods still accept options, and per-call options are merged
+over the compiled ones: `parser.parse(s, { mode: "youtube" })`, `parser.parse(s, mode="youtube")`.
+The Rust `Parser` takes its options once, in `Parser::new(&options)`. Its `parse` and
+`parse_artists` take only the input, and it is `Send + Sync`, so one parser can serve many threads.
 
 <Tabs syncKey="lang">
 <TabItem label="JavaScript">
@@ -200,5 +251,14 @@ parser.parse("Chase & Status x Camo & Krooked - Track (Alix Perez Rerub)").versi
 
 ## SPEC_VERSION
 
-The version of the [spec](/trackparse/reference/spec/) the package implements, as a string (`&str` in Rust). The
-packages and the spec are released together, so it's the same as the package version.
+The version of the [spec](/trackparse/reference/spec/) the package implements, as a string (`&str`
+in Rust). The packages and the spec are released together, so it's the same as the package version.
+A parsed tracklist carries it too, as `specVersion` (`spec_version`).
+
+## See also
+
+- [`parse` and `ParsedTrack`](/trackparse/reference/parse/) and
+  [Options](/trackparse/reference/options/).
+- [Tracklist API](/trackparse/reference/tracklist/) for `parseTracklist` and `applyEdits`.
+- [Warnings](/trackparse/reference/warnings/) for the codes these functions report.
+- [Ports](/trackparse/project/ports/) for how the three packages are kept identical.

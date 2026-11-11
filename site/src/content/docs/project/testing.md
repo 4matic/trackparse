@@ -4,9 +4,9 @@ description: 13,130 shared fixtures, a generator that can't agree with the code 
 ---
 
 The fixtures in [`spec/fixtures`](https://github.com/4matic/trackparse/tree/main/spec/fixtures) are
-the source of truth. The spec says what should happen, the fixtures pin it down, and every port has
-to pass all of them. All three ports do: **13,130 of 13,130**, with empty skip lists, in CI on every
-push.
+the source of truth. The [spec](/trackparse/reference/spec/) says what should happen, the fixtures
+pin it down, and every port has to pass all of them. The JavaScript, Python and Rust ports all do:
+**13,130 of 13,130**, with empty skip lists, in CI on every push.
 
 ## Handwritten: 1,203 cases
 
@@ -22,7 +22,7 @@ field, so nothing drifts unnoticed.
 | Separators and suffixes | 63 | Dash variants, `- Remastered 2015`, unspaced and asymmetric dashes |
 | Prefixes, junk, flags | 111 | Track numbers vs `2 Unlimited`, cue times, every junk kind, years, explicit/clean |
 | Modes | 65 | YouTube pipes, `"Title" by Artist`, uploader fallback, file names |
-| Unicode and normalisation | 71 | NFC, zero-width characters, fullwidth brackets, Cyrillic, CJK, Turkish İ |
+| Unicode and normalization | 71 | NFC, zero-width characters, fullwidth brackets, Cyrillic, CJK, Turkish İ |
 | `format`, `parseArtists`, unknown IDs | 94 | Round trips, canonical joiners, `ID - ID` |
 | Tracklist mode | 67 | Real lines that single-line `parse()` gets wrong, real lines with no separator at all, Markdown around names, and names that keep their `*` and `_` |
 | Tracklist lines and times | 104 | LF/CRLF/CR, trailing spaces, line kinds, every time form, brackets, gap separators, invalid times, list bullets, Markdown around times, `w/` lines |
@@ -49,15 +49,22 @@ don't model are rejected instead of guessed.
 
 ## Properties
 
-[fast-check](https://github.com/dubzzz/fast-check) (JS) and [Hypothesis](https://hypothesis.works)
-(Python) throw thousands of random strings at the parser to check the invariants from the spec.
-The Rust suite checks the tracklist invariants with a small seeded generator of its own:
+Each port throws thousands of random strings at the parser to check the
+[invariants](/trackparse/reference/spec/#invariants) from the spec. The JavaScript suite uses
+[fast-check](https://github.com/dubzzz/fast-check) and the Python suite uses
+[Hypothesis](https://hypothesis.works). The Rust suite has a small seeded generator of its own, so
+the crate needs no extra test dependency.
 
-- it never throws, on any input, and a 10,000-character input stays linear;
+- it never throws or panics, on any input, in any mode;
+- a 10,000-code-point input finishes inside a ceiling: 1 s in JavaScript and Python, 2 s in Rust.
+  It normally takes tens of milliseconds in JavaScript and Rust and well under a second in Python;
+  the ceiling is loose so that a busy CI machine doesn't
+  fail the run but a blowup does;
 - `normalize` is idempotent;
 - whitespace, dash and zero-width noise don't change the result;
-- every output validates against the JSON Schema;
-- no word of the input goes missing from the output;
+- every output validates against the JSON Schema (JavaScript and Python; the Rust output is
+  compared with JavaScript byte for byte instead, see below);
+- no word of the input goes missing from the output (the Rust suite);
 - `parse(format(parse(s)))` round-trips.
 
 For tracklists, on random multi-line text and random edit lists:
@@ -65,7 +72,8 @@ For tracklists, on random multi-line text and random edit lists:
 - `raw + eol` over all entries gives back the input, and `lead + time + gap + rest` gives `raw`;
 - `applyEdits(t, [])` returns `t`, and an edit never touches a line it doesn't name;
 - shifting forward and back restores the text, unless something was clamped or upgraded;
-- 10,000 lines parse in linear time (the JS suite allows 3 s; it takes about 0.6 s);
+- 10,000 lines parse inside a ceiling each suite sets for itself: 3 s in JavaScript (it takes
+  about 0.6 s), 15 s in Python, 3 s in an optimised Rust build;
 - Markdown emphasis around a time or a track line gives the same kind, time and track as the plain
   line.
 
@@ -86,15 +94,44 @@ The tracklist rules were written against a private corpus of real podcast trackl
 5,000 lines. It can't be published, so it stays out of the repository. Every surprising line in it
 became a handwritten fixture instead, which is why the tracklist fixtures talk about "real lines".
 
+## In CI
+
+Every push runs one workflow per port, plus one for the spec:
+
+| Workflow | What it runs |
+|---|---|
+| [`js.yml`](https://github.com/4matic/trackparse/blob/main/.github/workflows/js.yml) | The full suite on Node 22 and 24, and every fixture against the built package on Node 18 and 20 |
+| [`python.yml`](https://github.com/4matic/trackparse/blob/main/.github/workflows/python.yml) | ruff, `mypy --strict` and pytest on Python 3.9 to 3.14, and every fixture against the installed wheel |
+| [`rust.yml`](https://github.com/4matic/trackparse/blob/main/.github/workflows/rust.yml) | `cargo test --locked` on stable and on Rust 1.74. On stable only: rustfmt, clippy, the tests with `--all-features` and a publish dry run. Also the Rust output against the built JavaScript package on every fixture |
+| [`spec.yml`](https://github.com/4matic/trackparse/blob/main/.github/workflows/spec.yml) | Fixture validation, stale generated files, the generator's own tests, and that the four version numbers match |
+
 ## Run it yourself
 
 ```sh
+# JavaScript (from the repository root; Node 22 or newer, pnpm)
 pnpm install
 pnpm test          # fixtures, properties, generator tests
 pnpm conformance   # pass rate per fixture file and per spec rule
 
-cd python && uv run pytest   # the same fixtures and invariants in Python
-cd rust && cargo test         # and in Rust
+# Python (uv)
+cd python
+uv run pytest                          # the same fixtures and invariants
+uv run python scripts/conformance.py   # pass rate per fixture file and per spec rule
 
-node scripts/compare-ports.mjs   # after pnpm build: all three ports, full outputs
+# Rust (1.74 or newer)
+cd ../rust
+cargo test                                                      # the same fixtures and invariants
+TRACKPARSE_REPORT=1 cargo test --test fixtures -- --nocapture   # pass rate per file and per rule
+
+# All three against each other (from the root)
+cd ..
+pnpm build
+node scripts/compare-ports.mjs   # must print "differences: 0"
 ```
+
+## See also
+
+- [Ports](/trackparse/project/ports/) for what each port had to get right.
+- [Contributing](/trackparse/project/contributing/) for how a rule change goes through the spec,
+  the fixtures and the three ports.
+- [How it works](/trackparse/project/how-it-works/) for the pipeline the fixtures exercise.

@@ -11,12 +11,13 @@ const examples = [
   "Кино - Группа крови (Remastered 2019)",
   "ID - ID (ID Remix)",
 ];
-const playground = `${import.meta.env.BASE_URL}playground/`;
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+const playground = `${base}/playground/`;
 ---
 
-<section class="hero-demo tp-card not-content" data-playground={playground} aria-label="Live demo">
+<section class="hero-demo tp-card not-content" data-playground={playground} data-base={base} aria-label="Live demo">
   <header class="hd-bar">
-    <span class="hd-title"><span class="tp-mono">parse(input)</span><span class="hd-sub">runs the real package in your browser</span></span>
+    <span class="hd-title"><span class="tp-mono">parse(input)</span><span class="hd-sub">the npm package, running in your browser</span></span>
     <span class="tp-muted tp-mono hd-time" id="hd-time"></span>
   </header>
   <div class="hd-body">
@@ -47,6 +48,7 @@ const playground = `${import.meta.env.BASE_URL}playground/`;
     <div id="hd-fields"></div>
   </div>
   <footer class="hd-foot">
+    <span class="hd-note">The Python package and the Rust crate return the same fields. <a href={`${base}/project/ports/`}>How the ports stay identical</a></span>
     <a class="hd-open" id="hd-open" href={playground}>Open in the playground <ArrowRight size={14} aria-hidden="true" /></a>
   </footer>
 </section>
@@ -120,8 +122,22 @@ const playground = `${import.meta.env.BASE_URL}playground/`;
     padding: 0.4rem 1.1rem 1.1rem;
   }
   .hd-foot {
-    justify-content: flex-end;
+    flex-wrap: wrap;
     border-top: 1px solid var(--tp-border);
+  }
+  .hd-note {
+    color: var(--sl-color-gray-3);
+  }
+  .hd-note a {
+    color: var(--sl-color-gray-2);
+    text-decoration: underline;
+    text-decoration-color: var(--tp-border-strong);
+    text-underline-offset: 0.2em;
+    white-space: nowrap;
+  }
+  .hd-note a:hover {
+    color: var(--sl-color-white);
+    text-decoration-color: var(--sl-color-accent);
   }
   .hd-open {
     display: inline-flex;
@@ -130,6 +146,8 @@ const playground = `${import.meta.env.BASE_URL}playground/`;
     font-weight: 500;
     color: var(--sl-color-white);
     text-decoration: none;
+    margin-left: auto;
+    white-space: nowrap;
   }
   .hd-open:hover {
     color: var(--sl-color-accent-high);
@@ -163,7 +181,7 @@ const playground = `${import.meta.env.BASE_URL}playground/`;
       line.innerHTML = segmentsHtml(segs) || '<span class="tp-gap">type a track name</span>';
       const kinds = [...new Set(segs.map((x) => x.kind).filter(Boolean))] as Kind[];
       legend.innerHTML = kinds.map((k) => chip(KIND_LABEL[k], k)).join("");
-      fields.innerHTML = fieldsHtml(track);
+      fields.innerHTML = fieldsHtml(track, root.dataset.base);
       open.href = `${base}#track=${encodeURIComponent(s)}`;
       time.textContent = `${ms < 1 ? "<1" : ms.toFixed(1)} ms`;
       for (const b of buttons) b.setAttribute("aria-pressed", String(b.dataset.example === s));

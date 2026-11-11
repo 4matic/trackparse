@@ -7,13 +7,16 @@ import { Tabs, TabItem } from "@astrojs/starlight/components";
 
 ## Junk
 
-Junk is everything that describes the upload rather than the song. It leaves the title, and it goes
-into `junk` with a kind so you can decide what to do with it.
+Junk is everything that describes the upload and not the song. It leaves the title, and it goes
+into `junk` with a kind so you can decide what to do with it. You can open the example below in the
+[playground](/trackparse/playground/#track=Daft%20Punk%20-%20One%20More%20Time%20%28Official%20Music%20Video%29%20%5BHD%5D).
 
 <Tabs syncKey="lang">
 <TabItem label="JavaScript">
 
 ```js
+import { parse } from "trackparse";
+
 const t = parse("Daft Punk - One More Time (Official Music Video) [HD]");
 t.title;  // 'One More Time'
 t.junk;   // [ { raw: 'Official Music Video', kind: 'video' }, { raw: 'HD', kind: 'quality' } ]
@@ -23,6 +26,8 @@ t.junk;   // [ { raw: 'Official Music Video', kind: 'video' }, { raw: 'HD', kind
 <TabItem label="Python">
 
 ```python
+from trackparse import parse
+
 t = parse("Daft Punk - One More Time (Official Music Video) [HD]")
 t.title  # 'One More Time'
 t.junk   # (Junk(raw='Official Music Video', kind='video'), Junk(raw='HD', kind='quality'))
@@ -32,6 +37,8 @@ t.junk   # (Junk(raw='Official Music Video', kind='video'), Junk(raw='HD', kind=
 <TabItem label="Rust">
 
 ```rust
+use trackparse::parse;
+
 let t = parse("Daft Punk - One More Time (Official Music Video) [HD]");
 t.title;  // "One More Time"
 t.junk;   // [Junk { raw: "Official Music Video", kind: Video }, Junk { raw: "HD", kind: Quality }]
@@ -54,7 +61,11 @@ t.junk;   // [Junk { raw: "Official Music Video", kind: Video }, Junk { raw: "HD
 
 The phrases are in [`junk.json`](https://github.com/4matic/trackparse/blob/main/spec/data/junk.json)
 (plus `genres.json` for the genre kind) and [`platform-suffixes.json`](https://github.com/4matic/trackparse/blob/main/spec/data/platform-suffixes.json).
-Seeing junk is also one of the ways `mode: "auto"` decides a string came from YouTube.
+Seeing junk is also one of the ways `mode: "auto"` decides a string came from YouTube
+(see [Modes](/trackparse/guides/modes/#how-auto-decides)).
+
+In Rust the kind is the enum `JunkKind` (`JunkKind::Video`, `JunkKind::Quality` and so on). Its
+`as_str()` gives the lowercase names in the table.
 
 <Tabs syncKey="lang">
 <TabItem label="JavaScript">
@@ -83,8 +94,11 @@ parse("Elektronomia - Sky High [NCS Release]").junk; // [Junk { raw: "NCS Releas
 </TabItem>
 </Tabs>
 
-Catalogue numbers like `[HOSP123]` are not junk yet. They stay in the title. See the
+Catalog numbers like `[HOSP123]` are not junk yet. They stay in the title. See the
 [roadmap](/trackparse/project/roadmap/).
+
+To treat a phrase of your own as junk, add it with
+[`keywords.junk`](/trackparse/reference/options/#keywords).
 
 ## Flags
 
@@ -116,7 +130,9 @@ parse("Eminem - Without Me (Explicit)").flags;
 </Tabs>
 
 `explicit` and `clean` come from `(Explicit)`, `[Clean]` and the like. `unknownArtist` and
-`unknownTitle` (`unknown_artist` and `unknown_title` in Python and Rust) are set when the artist or title is a placeholder such as `ID`.
+`unknownTitle` (`unknown_artist` and `unknown_title` in Python and Rust) are set when the artist
+or title is a placeholder such as `ID`. See
+[Unknown artists](/trackparse/guides/artists/#unknown-artists).
 
 ## Year
 
@@ -153,6 +169,7 @@ t.year;   // Some(2015)
 </Tabs>
 
 A year inside a version (`Remastered 2015`) belongs to that version instead, in `versions[i].year`.
+In Rust both are `Option<u32>`.
 
 ## Track numbers
 
@@ -190,11 +207,14 @@ parse("2 Unlimited - No Limit").position;  // None
 - a number and a dash, when another dash follows: `3 - Artist - Title`;
 - in file names, also `07_Burial`, `01-Track` and `3 My Song.mp3`.
 
-A plain number before a word is part of the name: `2 Unlimited`, `50 Cent`, `808 State`.
+A plain number before a word is part of the name: `2 Unlimited`, `50 Cent`, `808 State`. The rule
+is [R4](/trackparse/reference/spec/#r4-prefixes-timestamp-and-position). In a tracklist, a bare
+number can still count when the lines around it continue the sequence: see
+[Bare track numbers](/trackparse/guides/tracklists/#bare-track-numbers).
 
 ## Cue times
 
-A time at the very start becomes `timestamp`, with seconds worked out for you:
+A time at the start becomes `timestamp`, with the seconds worked out for you:
 
 <Tabs syncKey="lang">
 <TabItem label="JavaScript">
@@ -224,4 +244,12 @@ parse("1:02:03 Noisia - Stigma").timestamp;   // Some(Timestamp { raw: "1:02:03"
 </Tabs>
 
 For whole tracklists with a time on every line, use [`parseTracklist`](/trackparse/guides/tracklists/)
-(`parse_tracklist`) instead. It understands many more time formats and checks the order.
+(`parse_tracklist` in Python and Rust) instead. It reads more time formats and checks the order.
+
+## See also
+
+- [`ParsedTrack` in the reference](/trackparse/reference/parse/#parsedtrack) for the types of
+  `junk`, `flags`, `year`, `position` and `timestamp`.
+- [Modes](/trackparse/guides/modes/) for how junk and file extensions pick the mode.
+- [Formatting](/trackparse/guides/formatting/): junk is never written back, and the track number
+  only when you ask.
