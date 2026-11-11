@@ -1,10 +1,10 @@
 //! Turn messy track names into structured data: artists with roles, remixes and versions,
 //! junk, and whole tracklists.
 //!
-//! trackparse is driven by a written spec. Behaviour is defined by [`SPEC.md`] and 13,130 shared
-//! fixtures, and this crate gives byte-identical output to the JavaScript (npm `trackparse`) and
-//! Python (PyPI `trackparse`) packages for every input. Rule IDs such as `R6.2` in these docs
-//! refer to the spec.
+//! trackparse is driven by a written spec. Behaviour is defined by [`SPEC.md`] and its shared
+//! fixtures. This crate passes every shared fixture, and for every fixture input its output is
+//! byte-identical to the JavaScript (npm `trackparse`) and Python (PyPI `trackparse`) packages.
+//! Rule IDs such as `R6.2` in these docs refer to the spec.
 //!
 //! - User documentation: <https://4matic.github.io/trackparse/>
 //! - The spec: <https://4matic.github.io/trackparse/reference/spec/>
@@ -33,7 +33,7 @@
 //!
 //! [`parse_with`] takes [`ParseOptions`]; a [`Parser`] keeps resolved options for many calls.
 //! [`parse_artists`] splits a credit string, [`format_track`] writes a track back as a string,
-//! [`normalize`] cleans a string without parsing it, and [`all_artists`] lists every credited
+//! [`normalize()`] cleans a string without parsing it, and [`all_artists`] lists every credited
 //! name, remixers included.
 //!
 //! ```
@@ -86,17 +86,31 @@
 //!
 //! With the `serde` feature the output types implement `Serialize` and `Deserialize` with the
 //! same keys, so `serde_json::to_string(&track)` gives the text of `track.to_json()`. The
-//! options and [`tracklist::Edit`] implement both traits too.
+//! options and [`tracklist::Edit`] implement both traits too. Numbers are written as
+//! `to_json()` writes them. The exceptions are numbers no parse result contains: seconds from
+//! 0.000001 up to 0.00001 (and, with older `serde_json` releases, of 1e21 and more) in an
+//! `Edit` or an option built by hand, which `serde_json` writes in its own float notation
+//! (`1e-6` for `0.000001`). Non-finite seconds are written as `null`, as by `to_json()`, and
+//! `null` reads back as NaN. Keyword maps are written without repeated keys (the last value
+//! wins, as in a JS object).
 //!
 //! # Guarantees
 //!
 //! - Total: any `&str` gives a result. No panics, no `Result` (R0.8).
-//! - Linear time: no regular expressions, no backtracking.
+//! - No regular expressions and no backtracking: the scanners make a bounded number of passes
+//!   over the input. A 10,000-code-point string parses in a few milliseconds, and the test suite
+//!   checks that repeated hostile fragments scale far below quadratic.
 //! - No `unsafe`. One dependency (`unicode-normalization`); `serde` only with the feature.
-//! - The Unicode tables the rules depend on are compiled in, so the output does not change
-//!   with the compiler version.
+//! - The Unicode tables the rules depend on (letters, uppercase letters, lowercase mapping) are
+//!   compiled in, so the output does not change with the compiler version.
+//! - NFC and NFD (R1, R0.4) come from `unicode-normalization` and follow that crate's Unicode
+//!   version: 0.1.26, the minimum this crate accepts, has the Unicode 18 tables. The JavaScript
+//!   reference normalizes with its runtime's tables (Unicode 17 on Node 24), so a string with
+//!   one of the 32 combining marks added in Unicode 18 can come out in another mark order than
+//!   it does there. Text without those marks is not affected.
 
 #![warn(missing_docs)]
+#![cfg_attr(docsrs, feature(doc_cfg))]
 
 pub mod json;
 pub mod tracklist;
@@ -144,6 +158,7 @@ use parser::Engine;
 
 /// The examples of the README, run as doc tests (they use the `serde` feature).
 #[cfg(all(doctest, feature = "serde"))]
+#[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
 #[doc = include_str!("../README.md")]
 pub struct ReadmeDoctests;
 
@@ -259,7 +274,7 @@ pub fn all_artists(track: &ParsedTrack) -> Vec<Artist> {
 
 /// A parser with its options resolved and its vocabulary tables built once (`createParser` in
 /// JavaScript, `create_parser` in Python). Use it to parse many strings with the same options.
-/// It is `Send + Sync`.
+/// It is `Send + Sync`, and cloning it is cheap (the tables are shared).
 ///
 /// ```
 /// use trackparse::{ParseOptions, Parser};
@@ -269,6 +284,7 @@ pub fn all_artists(track: &ParsedTrack) -> Vec<Artist> {
 /// assert_eq!(track.artists.len(), 1);
 /// assert_eq!(track.artists[0].name, "Chase & Status");
 /// ```
+#[derive(Clone)]
 pub struct Parser {
     engine: Engine,
 }

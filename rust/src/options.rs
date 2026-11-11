@@ -144,7 +144,7 @@ impl Default for VersionsOption {
 /// assert_eq!(track.versions[0].artists[0].name, "Phace");
 /// assert_eq!(track.junk[0].kind, JunkKind::Promo);
 /// ```
-#[derive(Debug, Clone, PartialEq, Eq, Default)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde", serde(default, rename_all = "camelCase"))]
 #[non_exhaustive]
@@ -224,7 +224,7 @@ impl KeywordOptions {
 /// same.split_and = SplitAnd::Never;
 /// assert_eq!(same, options);
 /// ```
-#[derive(Debug, Clone, PartialEq, Eq, Default)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde", serde(default, rename_all = "camelCase"))]
 #[non_exhaustive]
@@ -300,7 +300,7 @@ impl ParseOptions {
 ///     "03. Sub Focus feat. Alice Gold - Out the Blue (Wilkinson Remix)"
 /// );
 /// ```
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde", serde(default, rename_all = "camelCase"))]
 #[non_exhaustive]

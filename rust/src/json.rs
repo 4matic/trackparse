@@ -13,7 +13,10 @@
 /// assert_eq!(value.write(), r#"{"title":"Stigma","year":2015,"tags":["dnb",null]}"#);
 /// assert_eq!(Json::parse("{oops"), None);
 /// ```
+///
+/// The enum is `#[non_exhaustive]`: a `match` on it outside this crate needs a `_` arm.
 #[derive(Debug, Clone, PartialEq)]
+#[non_exhaustive]
 pub enum Json {
     /// `null`.
     Null,
@@ -136,6 +139,13 @@ impl Json {
 /// JS `Number::toString` (what `JSON.stringify` writes): the shortest digits that round-trip,
 /// laid out without an exponent from 1e-6 up to 1e21 and as `1e+21` / `1.5e-7` outside it.
 /// Non-finite values are `null`; `-0` is `0`.
+#[cfg(feature = "serde")]
+pub(crate) fn number_text(n: f64) -> String {
+    let mut out = String::new();
+    write_number(n, &mut out);
+    out
+}
+
 fn write_number(n: f64, out: &mut String) {
     if !n.is_finite() {
         out.push_str("null");

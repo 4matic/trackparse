@@ -381,3 +381,24 @@ fn loose_edits_follow_js_number_rules() {
     );
     assert_eq!(wire_edits(text, r#"{"op":"sort-by-time"}"#), wire_edits(text, "[]"));
 }
+
+#[test]
+fn edit_warning_lines_are_usize() {
+    // The edit's own line comes back, as every other line number: a `usize`.
+    let result = apply_edits("00:00 a - b", &[Edit::delete(9), Edit::insert(usize::MAX, "x")]);
+    let lines: Vec<Option<usize>> = result.warnings.iter().map(|w| w.line).collect();
+    assert_eq!(lines, [Some(9), Some(usize::MAX)]);
+    // Edits run on JS numbers (R13.9): above 2^53 the line is the nearest double, and the JSON
+    // is what `JSON.stringify` writes for it.
+    let result = apply_edits("00:00 a - b", &[Edit::delete((1 << 53) + 1)]);
+    assert_eq!(result.warnings[0].line, Some(1 << 53));
+    let result = apply_edits("00:00 a - b", &[Edit::delete(usize::MAX)]);
+    assert_eq!(
+        result.to_json(),
+        r#"{"text":"00:00 a - b","changed":[],"warnings":[{"code":"edit-invalid","edit":0,"line":18446744073709552000}]}"#
+    );
+    assert_eq!(
+        result.to_json(),
+        wire_edits("00:00 a - b", &format!("[{}]", Edit::delete(usize::MAX).to_json()))
+    );
+}

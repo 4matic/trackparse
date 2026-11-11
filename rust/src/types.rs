@@ -3,6 +3,8 @@
 
 use crate::json::Json;
 
+// Decision: output structs stay constructible (not `#[non_exhaustive]`): tests build them.
+
 /// The error of `FromStr` on the crate's enums: the string is not one of the spec's names.
 ///
 /// ```
@@ -11,7 +13,7 @@ use crate::json::Json;
 /// let err: UnknownName = "singer".parse::<ArtistRole>().unwrap_err();
 /// assert_eq!(err.to_string(), "unknown ArtistRole name: \"singer\"");
 /// ```
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct UnknownName {
     pub(crate) kind: &'static str,
     pub(crate) name: String,
@@ -81,6 +83,7 @@ macro_rules! string_enum {
         }
 
         #[cfg(feature = "serde")]
+        #[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
         impl serde::Serialize for $name {
             fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
                 serializer.serialize_str(self.as_str())
@@ -88,6 +91,7 @@ macro_rules! string_enum {
         }
 
         #[cfg(feature = "serde")]
+        #[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
         impl<'de> serde::Deserialize<'de> for $name {
             fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<$name, D::Error> {
                 let name = <String as serde::Deserialize>::deserialize(deserializer)?;
@@ -99,10 +103,13 @@ macro_rules! string_enum {
 }
 pub(crate) use string_enum;
 
-/// Adds the inherent `to_json()` to types that implement [`ToJson`], so no import is needed.
+/// Adds the inherent `to_json()` to types that implement [`ToJson`], so no import is needed, and
+/// marks them as the crate's own (`ToJson` is sealed).
 macro_rules! json_methods {
     ($($name:ty),+ $(,)?) => {
         $(
+            impl $crate::types::sealed::Sealed for $name {}
+
             impl $name {
                 /// The spec's JSON form as compact text: camelCase keys, every key present, in
                 /// the schema's order. The same text the JavaScript and Python packages give.
@@ -251,7 +258,7 @@ string_enum! {
 ///     r#"{"name":"The Upbeats","role":"primary","joiner":"&","source":"artist"}"#
 /// );
 /// ```
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Artist {
     /// The name as written, trimmed.
@@ -282,7 +289,7 @@ pub struct Artist {
 /// assert_eq!(live.year, Some(2016));
 /// assert_eq!(live.delimiter, VersionDelimiter::Square);
 /// ```
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
 pub struct Version {
@@ -315,7 +322,7 @@ pub struct Version {
 /// assert_eq!(track.junk[0].raw, "Official Video");
 /// assert_eq!(track.junk[0].kind, JunkKind::Video);
 /// ```
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Junk {
     /// The fragment as written, without its brackets.
@@ -332,7 +339,7 @@ pub struct Junk {
 /// assert!(track.flags.unknown_artist && track.flags.unknown_title);
 /// assert!(!track.flags.clean);
 /// ```
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
 pub struct Flags {
@@ -354,7 +361,7 @@ pub struct Flags {
 /// assert_eq!(position.raw, "01");
 /// assert_eq!(position.number, 1);
 /// ```
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Position {
     /// As written, without the separator after it.
@@ -371,7 +378,7 @@ pub struct Position {
 /// assert_eq!(timestamp.raw, "01:23:45");
 /// assert_eq!(timestamp.seconds, 5025);
 /// ```
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Timestamp {
     /// As written, without brackets.
@@ -397,7 +404,7 @@ pub struct Timestamp {
 ///     )
 /// );
 /// ```
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
 pub struct ParsedTrack {
@@ -433,6 +440,7 @@ json_methods!(Artist, Version, Junk, Flags, Position, Timestamp, ParsedTrack);
 /// Conversion to the spec's JSON form (camelCase keys, every key present, schema order).
 ///
 /// Every output type also has `to_json()` as an inherent method; the trait is for generic code.
+/// It is sealed: only the types of this crate implement it.
 ///
 /// ```
 /// use trackparse::json::Json;
@@ -442,7 +450,7 @@ json_methods!(Artist, Version, Junk, Flags, Position, Timestamp, ParsedTrack);
 /// let value: Json = track.to_json_value();
 /// assert_eq!(value.get("title").and_then(Json::as_str), Some("Stigma"));
 /// ```
-pub trait ToJson {
+pub trait ToJson: sealed::Sealed {
     /// The value as a JSON tree.
     fn to_json_value(&self) -> Json;
 
@@ -450,6 +458,11 @@ pub trait ToJson {
     fn to_json(&self) -> String {
         self.to_json_value().write()
     }
+}
+
+pub(crate) mod sealed {
+    /// Keeps [`ToJson`](super::ToJson) closed to this crate's types.
+    pub trait Sealed {}
 }
 
 pub(crate) fn obj(entries: Vec<(&str, Json)>) -> Json {

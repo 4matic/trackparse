@@ -52,8 +52,14 @@ impl RawEditResult {
             warnings: self
                 .warnings
                 .into_iter()
-                // The cast saturates; typed edits only carry real line numbers.
-                .map(|w| EditWarning { code: w.code, edit: w.edit, line: w.line.map(|l| l as i64) })
+                // Typed edits carry `usize` lines, written as JS numbers: the value is a whole
+                // number from 0 to 2^64 and the cast saturates at `usize::MAX`. Negative and
+                // larger lines only exist behind the JSON door, which writes `to_json_value`.
+                .map(|w| EditWarning {
+                    code: w.code,
+                    edit: w.edit,
+                    line: w.line.map(|l| l as usize),
+                })
                 .collect(),
         }
     }

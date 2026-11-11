@@ -53,7 +53,7 @@ string_enum! {
 /// assert_eq!(parts.gap, "] ");
 /// assert_eq!(parts.rest, "Phace - Cold Champagne");
 /// ```
-#[derive(Debug, Clone, PartialEq, Eq, Default)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Parts {
     /// What stands before the time: indentation, a bullet, an opening bracket.
@@ -84,7 +84,7 @@ pub struct TimeValue {
     /// As written, without brackets.
     pub raw: String,
     /// The time in seconds; it may carry a fraction. A whole value is an integer in JSON.
-    #[cfg_attr(feature = "serde", serde(serialize_with = "crate::serde_support::seconds"))]
+    #[cfg_attr(feature = "serde", serde(with = "crate::serde_support::seconds"))]
     pub seconds: f64,
 }
 
@@ -183,7 +183,7 @@ pub struct Suggestion {
     /// The time to write there.
     pub raw: String,
     /// That time in seconds.
-    #[cfg_attr(feature = "serde", serde(serialize_with = "crate::serde_support::seconds"))]
+    #[cfg_attr(feature = "serde", serde(with = "crate::serde_support::seconds"))]
     pub seconds: f64,
 }
 
@@ -294,22 +294,37 @@ pub enum Edit {
     /// Rewrite the time of `line`, keeping its written style (R13.9.2).
     SetTime {
         /// The line to change.
+        #[cfg_attr(feature = "serde", serde(with = "crate::serde_support::line"))]
         line: usize,
         /// The new time in seconds.
-        #[cfg_attr(feature = "serde", serde(serialize_with = "crate::serde_support::seconds"))]
+        #[cfg_attr(feature = "serde", serde(with = "crate::serde_support::seconds"))]
         seconds: f64,
     },
     /// Add `seconds` to every timed line of `lines`, else from line `from` on, else of the
     /// whole text.
     Shift {
         /// Seconds to add; negative moves the times back.
-        #[cfg_attr(feature = "serde", serde(serialize_with = "crate::serde_support::seconds"))]
+        #[cfg_attr(feature = "serde", serde(with = "crate::serde_support::seconds"))]
         seconds: f64,
         /// Only these lines.
-        #[cfg_attr(feature = "serde", serde(default, skip_serializing_if = "Option::is_none"))]
+        #[cfg_attr(
+            feature = "serde",
+            serde(
+                default,
+                skip_serializing_if = "Option::is_none",
+                with = "crate::serde_support::opt_lines"
+            )
+        )]
         lines: Option<Vec<usize>>,
         /// Only this line and the ones after it.
-        #[cfg_attr(feature = "serde", serde(default, skip_serializing_if = "Option::is_none"))]
+        #[cfg_attr(
+            feature = "serde",
+            serde(
+                default,
+                skip_serializing_if = "Option::is_none",
+                with = "crate::serde_support::opt_line"
+            )
+        )]
         from: Option<usize>,
     },
     /// Stable sort of the timed lines, each with the untimed lines after it (R13.9.4).
@@ -317,6 +332,7 @@ pub enum Edit {
     /// Replace everything after the time and gap of `line`.
     SetRest {
         /// The line to change.
+        #[cfg_attr(feature = "serde", serde(with = "crate::serde_support::line"))]
         line: usize,
         /// The new text after the time.
         rest: String,
@@ -324,6 +340,7 @@ pub enum Edit {
     /// Insert `text` as a new line after line `after` (0: at the start).
     Insert {
         /// The line to insert after.
+        #[cfg_attr(feature = "serde", serde(with = "crate::serde_support::line"))]
         after: usize,
         /// The new line, without a terminator.
         text: String,
@@ -331,6 +348,7 @@ pub enum Edit {
     /// Remove `line`.
     Delete {
         /// The line to remove.
+        #[cfg_attr(feature = "serde", serde(with = "crate::serde_support::line"))]
         line: usize,
     },
 }
@@ -413,7 +431,7 @@ string_enum! {
 /// assert_eq!(warning.edit, 0);
 /// assert_eq!(warning.line, Some(1));
 /// ```
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct EditWarning {
     /// What happened.
@@ -422,7 +440,12 @@ pub struct EditWarning {
     pub edit: usize,
     /// The line concerned; for `EditInvalid` the edit's own `line` (or `after`), which may not
     /// exist in the text.
-    pub line: Option<i64>,
+    ///
+    /// The edits run on JS numbers (R13.9), so a line number above 2^53 comes back as the
+    /// nearest double, saturated to `usize`: `Edit::delete(usize::MAX)` warns with
+    /// `Some(usize::MAX)`, and `to_json()` writes `18446744073709552000` as JavaScript does.
+    #[cfg_attr(feature = "serde", serde(default, with = "crate::serde_support::opt_line"))]
+    pub line: Option<usize>,
 }
 
 /// The result of [`apply_edits`](super::apply_edits).
@@ -439,7 +462,7 @@ pub struct EditWarning {
 ///     r#"{"text":"00:00 A - B\n01:00 E - F","changed":[2],"warnings":[]}"#
 /// );
 /// ```
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct EditResult {
     /// The edited text.
