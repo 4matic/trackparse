@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.1](https://github.com/4matic/trackparse/compare/js-v0.5.0...js-v0.5.1) (2026-11-11)
+
+
+### Documentation
+
+* **js:** README with modes, warnings, errors, types and links to the Python and Rust packages ([d919e56](https://github.com/4matic/trackparse/commit/d919e5698e7f5aefbe0f65cc9b1cd25378c068f7))
+
 ## [0.5.0](https://github.com/4matic/trackparse/compare/js-v0.4.0...js-v0.5.0) (2026-11-11)
 
 

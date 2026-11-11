@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.1](https://github.com/4matic/trackparse/compare/python-v0.5.0...python-v0.5.1) (2026-11-11)
+
+
+### Documentation
+
+* **python:** README with warnings, errors, limitations and links to the JavaScript and Rust packages ([8e39510](https://github.com/4matic/trackparse/commit/8e3951037eb51f3d59565dc54a85991c916a2b94))
+
 ## [0.5.0](https://github.com/4matic/trackparse/compare/python-v0.4.0...python-v0.5.0) (2026-11-11)
 
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.1](https://github.com/4matic/trackparse/compare/rust-v0.5.0...rust-v0.5.1) (2026-11-11)
+
+
+### Documentation
+
+* **rust:** README with warnings, errors, limitations and links to the JavaScript and Python packages ([c13ec1f](https://github.com/4matic/trackparse/commit/c13ec1f6fe7fbf235fda0ca142c01b7a5caa3021))
+
 ## [0.5.0](https://github.com/4matic/trackparse/compare/rust-v0.4.0...rust-v0.5.0) (2026-11-11)
 
 
