@@ -514,24 +514,19 @@ Version rules:
   `x-release-please-version`) and `SPEC_VERSION` in `rust/src/data.rs`, and writes
   `rust/CHANGELOG.md`. Merging it tags `rust-vX.Y.Z` and creates the GitHub Release. The release PR
   also bumps the crate's own entry in the committed `rust/Cargo.lock`.
-- **crates.io publishing is gated.** The `publish-crates` job in `release.yml` (environment
-  `crates`: version check, `cargo test --all-features`, `cargo package`, `cargo publish` with a
-  token from crates.io trusted publishing, the `.crate` file attached to the release) runs only
-  when the repository variable `CRATES_PUBLISH` is `true`. crates.io can only configure trusted
-  publishing for a crate that already exists, so the first publish was done by hand (0.4.0,
-  2026-11-11). Two steps switch the job on:
-  1. on crates.io, add a trusted publisher for `4matic/trackparse`, workflow `release.yml`,
-     environment `crates`;
-  2. set the repository variable `CRATES_PUBLISH` to `true`
-     (`gh variable set CRATES_PUBLISH --body true`).
-
-  Until then a release still tags `rust-vX.Y.Z` but skips the crates.io job, and that version
-  has to be published by hand (`cd rust && cargo publish --locked` from the tag).
+- **crates.io publishing** is the `publish-crates` job in `release.yml` (environment `crates`:
+  version check, `cargo test --all-features`, `cargo package`, `cargo publish` with a token from
+  crates.io trusted publishing, the `.crate` file attached to the release). It runs only when the
+  repository variable `CRATES_PUBLISH` is `true`, which it has been since 0.5.0. The trusted
+  publisher on crates.io is `4matic/trackparse`, workflow `release.yml`, environment `crates`.
+  0.4.0 was published by hand, because crates.io can only configure trusted publishing for a
+  crate that already exists. With the variable off, a release still tags `rust-vX.Y.Z` but skips
+  the job.
 - **A publish job failed after the tags were created?** Fix the cause on `main` with a hidden commit
   type (`ci`/`chore`, so no new release), then re-run publishing for the existing tag:
-  `gh workflow run release.yml -f python_tag=python-vX.Y.Z` (PyPI). The npm job always republishes
-  from a fresh release; a failed npm publish needs the same treatment by hand, and so does a failed
-  crates.io publish (`cargo publish` from the `rust-vX.Y.Z` tag; there is no re-run input for it).
+  `gh workflow run release.yml -f python_tag=python-vX.Y.Z` (PyPI) or
+  `-f rust_tag=rust-vX.Y.Z` (crates.io). The npm job always republishes from a fresh release; a
+  failed npm publish needs the same treatment by hand.
 - **Agents never merge release PRs, publish, push tags or bump versions on their own initiative.**
   Merging the release PR is the maintainer's publish decision.
 
