@@ -290,10 +290,19 @@ assert_eq!(edit, Edit::set_time(3, 90.0));
 assert_eq!(serde_json::to_string(&edit).unwrap(), r#"{"op":"set-time","line":3,"seconds":90}"#);
 ```
 
-Whole seconds are written as integers (`90`, not `90.0`), as in the other packages. For every
-result the parser can produce the two texts are equal. Only an `Edit` you build yourself with
-seconds between 0.000001 and 0.00001, or a whole value of 2^64 and more, is written in another
-notation by `serde_json` (`1e-6` where `to_json()` writes `0.000001`); the number is the same.
+Numbers are written as `to_json()` writes them: whole seconds are integers (`90`, not `90.0`), and
+a value of 2^53 and more has the digits JavaScript prints. For every result the parser can produce
+the two texts are equal. The edge cases, all in an `Edit` or an option you build yourself:
+
+- Seconds from 0.000001 up to 0.00001 are written in `serde_json`'s float notation (`1e-6` where
+  `to_json()` writes `0.000001`), and so are seconds of 1e21 and more by older `serde_json`
+  releases (`1e21` for `1e+21`). The number is the same and reads back the same.
+- Non-finite seconds (NaN, infinity) are written as `null`, as `to_json()` and `JSON.stringify`
+  do, and `null` reads back as NaN. `apply_edits` reports such an edit as `EditInvalid` either way.
+- Line numbers above 2^53 are written as the nearest double, because that is what the edit runs
+  on (`Edit::delete(usize::MAX)` is `{"op":"delete","line":18446744073709552000}`).
+- `KeywordOptions` maps are written as JSON objects without repeated keys: a key added twice
+  keeps its first place and takes the last value, as in a JavaScript object.
 
 Reading options is strict: a missing key is the default, an unknown name such as
 `"mode":"radio"` is an error.
@@ -580,17 +589,39 @@ assert_eq!(parse_with("Electrosoul System - Liquid Metal", &options).title, "Liq
 **Docs:** [Testing](https://4matic.github.io/trackparse/project/testing/) · [Ports](https://4matic.github.io/trackparse/project/ports/)
 
 - `cargo test` runs all 13,130 shared fixtures (1,203 written by hand, the rest generated from
-  the rules), the tracklist invariants on random input, and the API tests. The skip list is empty.
+  the rules), the spec's invariants for single tracks and for tracklists on generated input (no
+  panic in any mode, `normalize` idempotent, the format round trip, no word lost, timing), and the
+  API tests. The skip list is empty.
 - `scripts/compare-ports.mjs` in the repository runs every fixture input through the JavaScript
-  package and this crate and compares the complete output, byte for byte. The Python package is
-  checked the same way.
+  package and this crate and compares the complete JSON output, every field of it, not only the
+  ones a fixture asserts. The Python package is checked the same way.
 - The Unicode facts the rules need (letters, uppercase letters, lowercase mapping) are tables
   generated from the reference implementation and compiled into the crate. The output does not
   depend on the compiler's Unicode version: Rust 1.74 and current stable give the same bytes.
+  NFC and NFD are the exception, see [Unicode version](#unicode-version).
 - With the `serde` feature, a test asserts that `serde_json::to_string` equals `to_json()` for
   every fixture input.
 - Clippy denies `unwrap`, `expect`, `panic!` and indexing in the library code, and `unsafe` is
   forbidden.
+
+## Unicode version
+
+Normalization (NFC in `normalize`, NFD in the key that finds duplicate artists) comes from the
+`unicode-normalization` crate and follows its Unicode version. This crate requires 0.1.26 or
+later, which has the Unicode 18 tables; older releases have older tables and give other results
+for some strings, so Cargo will not select them.
+
+The JavaScript package normalizes with its runtime's tables, which are Unicode 17 on Node 24.
+Unicode 18 added 32 combining marks, so a string that contains one of them can come out with its
+marks in another order here than in JavaScript on that runtime. Strings without those marks are
+not affected, and every shared fixture gives the same bytes.
+
+## Performance
+
+There are no regular expressions and no backtracking: each rule makes a bounded number of passes
+over the string. A 10,000-code-point input parses in a few milliseconds in a release build, and
+the test suite checks that hostile repetitions (thousands of duplicate credits, bracket groups or
+junk phrases) take time roughly in proportion to their length, not to its square.
 
 ## Minimum Rust version
 
