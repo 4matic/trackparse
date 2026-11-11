@@ -1,8 +1,8 @@
 name: release
 
 # release-please keeps a "chore: release" PR up to date from conventional commits on main.
-# Merging that PR tags js-vX.Y.Z / spec-vX.Y.Z / python-vX.Y.Z, creates the GitHub Releases, and
-# publishes to npm and PyPI.
+# Merging that PR tags js-vX.Y.Z / spec-vX.Y.Z / python-vX.Y.Z / rust-vX.Y.Z, creates the GitHub
+# Releases, and publishes to npm, PyPI and (once enabled) crates.io.
 
 on:
   push:
@@ -33,6 +33,9 @@ jobs:
       python_release_created: ${{ steps.release.outputs['python--release_created'] }}
       python_tag_name: ${{ steps.release.outputs['python--tag_name'] }}
       python_version: ${{ steps.release.outputs['python--version'] }}
+      rust_release_created: ${{ steps.release.outputs['rust--release_created'] }}
+      rust_tag_name: ${{ steps.release.outputs['rust--tag_name'] }}
+      rust_version: ${{ steps.release.outputs['rust--version'] }}
     steps:
       - uses: googleapis/release-please-action@v4
         id: release
@@ -232,4 +235,68 @@ jobs:
           PyPI: https://pypi.org/project/trackparse/${VERSION}/ · implements spec ${VERSION} ([SPEC.md](https://github.com/${GITHUB_REPOSITORY}/blob/${TAG}/spec/SPEC.md))
           EOF
           # The npm release (js-vX.Y.Z) stays "Latest"; don't touch that flag here.
+          gh release edit "$TAG" --notes-file notes.md
+
+  # crates.io trusted publishing (OIDC, no stored token). It can only be configured for a crate
+  # that already exists, so the very first `cargo publish` is done by the maintainer by hand.
+  # After that: on crates.io add a trusted publisher for 4matic/trackparse, workflow release.yml,
+  # environment "crates", then set the repository variable CRATES_PUBLISH to "true".
+  publish-crates:
+    needs: release-please
+    if: needs.release-please.outputs.rust_release_created == 'true' && vars.CRATES_PUBLISH == 'true'
+    runs-on: ubuntu-latest
+    environment:
+      name: crates
+      url: https://crates.io/crates/trackparse
+    permissions:
+      contents: write # attach the .crate file to the GitHub Release
+      id-token: write # crates.io trusted publishing (OIDC)
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.release-please.outputs.rust_tag_name }}
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Verify versions are in sync
+        env:
+          TAG_VERSION: ${{ needs.release-please.outputs.rust_version }}
+        run: |
+          rs_version=$(python3 -c 'import tomllib; print(tomllib.load(open("rust/Cargo.toml", "rb"))["package"]["version"])')
+          spec_version=$(cat spec/VERSION)
+          echo "rust=$rs_version spec=$spec_version tag=$TAG_VERSION"
+          test "$rs_version" = "$TAG_VERSION"
+          test "$spec_version" = "$TAG_VERSION"
+      - name: Test
+        working-directory: rust
+        run: cargo test --all-features
+      - name: Package
+        working-directory: rust
+        run: cargo package
+      - uses: rust-lang/crates-io-auth-action@v1
+        id: auth
+      - name: Publish to crates.io
+        working-directory: rust
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
+        run: cargo publish
+      - name: Attach the crate file and install notes to the GitHub Release
+        working-directory: rust
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.release-please.outputs.rust_tag_name }}
+          VERSION: ${{ needs.release-please.outputs.rust_version }}
+        run: |
+          gh release upload "$TAG" target/package/*.crate --clobber
+          highlights="../.github/release-notes/${VERSION}.md"
+          {
+            if [ -f "$highlights" ]; then cat "$highlights"; echo; fi
+            gh release view "$TAG" --json body --jq .body
+            echo
+            echo "### Install"
+            echo
+            echo '```sh'
+            echo "cargo add trackparse@${VERSION}"
+            echo '```'
+            echo
+            echo "crates.io: https://crates.io/crates/trackparse/${VERSION} · docs: https://docs.rs/trackparse/${VERSION}"
+          } > notes.md
           gh release edit "$TAG" --notes-file notes.md

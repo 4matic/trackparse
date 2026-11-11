@@ -4,7 +4,7 @@
   "tag-separator": "-",
   "bump-minor-pre-major": true,
   "bump-patch-for-minor-pre-major": false,
-  "pull-request-header": ":robot: Merging this PR tags the release, publishes a GitHub Release with these notes and publishes to npm and PyPI.",
+  "pull-request-header": ":robot: Merging this PR tags the release, publishes a GitHub Release with these notes and publishes to npm, PyPI and crates.io.",
   "changelog-sections": [
     {
       "type": "feat",
@@ -94,6 +94,19 @@
         }
       ],
       "initial-version": "0.1.0"
+    },
+    "rust": {
+      "release-type": "rust",
+      "component": "rust",
+      "package-name": "trackparse",
+      "changelog-path": "CHANGELOG.md",
+      "extra-files": [
+        {
+          "type": "generic",
+          "path": "src/data.rs"
+        }
+      ],
+      "initial-version": "0.1.0"
     }
   },
   "plugins": [
@@ -103,7 +116,8 @@
       "components": [
         "js",
         "spec",
-        "python"
+        "python",
+        "rust"
       ]
     }
   ]
