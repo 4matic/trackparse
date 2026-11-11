@@ -1,30 +1,31 @@
 # @trackparse/fixture-gen
 
 Combinatorial fixture generator for the trackparse spec. It writes
-`spec/fixtures/generated/*.json` (about 12k cases, about 7.6 MB; `test/generated.test.ts` caps the
-size at 7.8 MB). Every port runs these files next to
-the handwritten fixtures.
+`spec/fixtures/generated/*.json`: 11,927 cases, about 7.7 MB (`test/generated.test.ts` caps the
+size at 7.8 MB). Every port (JavaScript, Python and Rust) runs these files next to the 1,203
+handwritten fixtures.
 
-**Docs:** [How it's tested: generated cases](https://4matic.github.io/trackparse/project/testing/#generated-11817-cases)
+**Docs:** [How it's tested: generated cases](https://4matic.github.io/trackparse/project/testing/#generated-11927-cases)
 
 ## Oracle principle
 
-The generator is **not a parser**. Each case is a *composition* of hand-written **atoms** (an
+The generator is not a parser. Each case is a composition of hand-written *atoms* (an
 artist, a joiner, a feat marker and placement, a title, a version, a junk phrase, a prefix, a mode,
 a Unicode transform…). Every atom carries two things: the text it renders, and the output it
 contributes to the parse result (for example `{R} Remix` → type `remix`, remixers = the credit).
-`model.ts` renders the input string and computes the expected result **from the atoms alone**.
+`model.ts` renders the input string and computes the expected result from the atoms alone.
 It never runs a parser.
 
 That only works when a composition is unambiguous. `problem()` in `model.ts` rejects every
 composition whose expected output would depend on rules the atoms do not encode, citing the
 SPEC rule each time (a digits-only artist before a dash suffix, a trailing junk phrase that
-overlaps the title, an undotted `ft` in the title…). `text.ts` holds *conservative* safety
-predicates for atoms ("could this title word be recognised as a marker/head/junk?"). They err on
+overlaps the title, an undotted `ft` in the title…). `text.ts` holds conservative safety
+predicates for atoms ("could this title word be recognized as a marker/head/junk?"). They err on
 the side of rejecting.
 
 When the SPEC changes, update the atom expectations and `problem()` in the same change. Then run
-`gen`, and the JS port must pass the result.
+`gen`, and every port must pass the result: JavaScript first, since it is the reference, then
+Python and Rust.
 
 ## Scenarios
 
@@ -89,3 +90,6 @@ pnpm --filter @trackparse/fixture-gen typecheck
 4. Run `gen`, then the JS suite (`pnpm --filter trackparse test`). A failure means either the
    atom's expectation is wrong or the reference implementation disagrees with the spec. Fix the
    one that is wrong. Never edit generated files by hand.
+5. Run the other ports on the new files (`cd python && uv run pytest`, `cd rust && cargo test`),
+   then `node scripts/compare-ports.mjs` from the repository root. It must print
+   `differences: 0`.
