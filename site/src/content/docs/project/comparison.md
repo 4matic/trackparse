@@ -10,7 +10,7 @@ description: How trackparse differs from get-artist-title, metadata-filter and t
 | Remixers and version types | 27 types | no | removed | raw remix name |
 | Noise | returned with a kind | removed | removed | no |
 | Tracklists | yes | no | no | no |
-| Languages | JS, Python, one spec | JS | JS | Ruby |
+| Languages | JS, Python, Rust, one spec | JS | JS | Ruby |
 | Last release | 2026 | 2021 | active | 2015 |
 
 These libraries are good at what they set out to do. If you need a clean string to scrobble,

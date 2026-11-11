@@ -34,9 +34,30 @@ parse(
 ```
 
 </TabItem>
+<TabItem label="Rust">
+
+```rust
+pub struct ParseOptions {
+    pub mode: ModeOption,                   // Auto | Clean | Youtube | Filename | Tracklist
+    pub known_artists: Vec<String>,
+    pub uploader: Option<String>,
+    pub split_and: SplitAnd,                // Auto | Always | Never
+    pub keywords: Option<KeywordOptions>,
+}
+
+// Start from the defaults and chain a setter per option:
+let options = ParseOptions::new()
+    .mode(ModeOption::Youtube)
+    .known_artists(["Chase & Status"])
+    .uploader("Daft Punk - Topic")
+    .split_and(SplitAnd::Never);
+parse_with(input, &options);
+```
+
+</TabItem>
 </Tabs>
 
-| Option (Python) | Default | |
+| Option (Python and Rust) | Default | |
 |---|---|---|
 | `mode` | `"auto"` | Which [mode](/trackparse/guides/modes/) to use. `auto` picks `filename`, `youtube` or `clean` from the string |
 | `knownArtists` (`known_artists`) | `[]` | Names that are never split, like `Chase & Status` or `Earth, Wind & Fire`. Matched case- and accent-insensitively |
@@ -45,12 +66,14 @@ parse(
 | `keywords` | – | Extra vocabulary, see below |
 
 Options never cause an error. An unknown mode, a `knownArtists` that isn't a list or a keyword of the wrong
-type is ignored and the default is used.
+type is ignored and the default is used. In Rust the options are typed, so those values can't be
+written in the first place: modes, `split_and`, version types and junk kinds are enums.
 
 ## keywords
 
 `keywords` adds words to the built-in vocabulary. It can't take any away. In Python its keys are
-snake_case too: `version_heads`, `feat_markers`.
+snake_case too: `version_heads`, `feat_markers`. In Rust, `KeywordOptions` has one setter per word,
+and each call adds one entry.
 
 <Tabs syncKey="lang">
 <TabItem label="JavaScript">
@@ -75,6 +98,19 @@ class KeywordOptions(TypedDict, total=False):
     genres: list[str]                       # extra genre names (junk kind 'genre')
     junk: dict[str, JunkKind]               # {"live stream": "other"}
     feat_markers: list[str]                 # extra feat markers
+```
+
+</TabItem>
+<TabItem label="Rust">
+
+```rust
+pub struct KeywordOptions {
+    pub version_heads: Vec<(String, VersionType)>,   // .version_head("rerub", VersionType::Rework)
+    pub descriptors: Vec<String>,                    // .descriptor(…): extra style words, like the built-in "D'n'B"
+    pub genres: Vec<String>,                         // .genre(…): extra genre names (junk kind Genre)
+    pub junk: Vec<(String, JunkKind)>,               // .junk("live stream", JunkKind::Other)
+    pub feat_markers: Vec<String>,                   // .feat_marker(…): extra feat markers
+}
 ```
 
 </TabItem>
@@ -116,12 +152,29 @@ t.versions[0].type            # 'rework'
 ```
 
 </TabItem>
+<TabItem label="Rust">
+
+```rust
+use trackparse::{KeywordOptions, ParseOptions, Parser, VersionType};
+
+let options = ParseOptions::new()
+    .known_artists(["Chase & Status", "Camo & Krooked"])
+    .keywords(KeywordOptions::new().version_head("rerub", VersionType::Rework));
+let parser = Parser::new(&options);
+
+let t = parser.parse("Chase & Status x Camo & Krooked - Track (Alix Perez Rerub)");
+t.artists.iter().map(|a| &a.name).collect::<Vec<_>>();   // ["Chase & Status", "Camo & Krooked"]
+t.versions[0].version_type;                              // Rework
+```
+
+</TabItem>
 </Tabs>
 
 ## Tracklist options
 
 `parseTracklist` and `applyEdits` (`parse_tracklist`, `apply_edits`) take `mode` (default
-`"tracklist"`), `knownArtists`, `splitAnd` and `keywords`, plus two of their own:
+`"tracklist"`), `knownArtists`, `splitAnd` and `keywords`, plus two of their own. In Rust they are
+the setters of `TracklistOptions`, passed to `parse_tracklist_with` and `apply_edits_with`:
 
 | Option | Default | Description |
 |---|---|---|

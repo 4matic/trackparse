@@ -5,7 +5,7 @@ description: 13,124 shared fixtures, a generator that can't agree with the code 
 
 The fixtures in [`spec/fixtures`](https://github.com/4matic/trackparse/tree/main/spec/fixtures) are
 the source of truth. The spec says what should happen, the fixtures pin it down, and every port has
-to pass all of them. Both packages do: **13,124 of 13,124**, with empty skip lists, in CI on every
+to pass all of them. All three ports do: **13,124 of 13,124**, with empty skip lists, in CI on every
 push.
 
 ## Handwritten: 1,197 cases
@@ -50,7 +50,8 @@ don't model are rejected instead of guessed.
 ## Properties
 
 [fast-check](https://github.com/dubzzz/fast-check) (JS) and [Hypothesis](https://hypothesis.works)
-(Python) throw thousands of random strings at the parser to check the invariants from the spec:
+(Python) throw thousands of random strings at the parser to check the invariants from the spec.
+The Rust suite checks the tracklist invariants with a small seeded generator of its own:
 
 - it never throws, on any input, and a 10,000-character input stays linear;
 - `normalize` is idempotent;
@@ -72,8 +73,12 @@ For tracklists, on random multi-line text and random edit lists:
 
 A fixture only checks the fields it asserts. So
 [`compare-ports.mjs`](https://github.com/4matic/trackparse/blob/main/scripts/compare-ports.mjs) runs
-every fixture input through both packages and diffs the complete JSON output, tracklists and edits
-included. The difference count is zero.
+every fixture input through all three ports, JavaScript, Python and Rust, and diffs the complete
+JSON output, tracklists and edits included. The difference count is zero.
+
+The Rust crate was also run against JavaScript on random input, which reaches places no fixture
+does: about 500,000 random single-track cases and 290,000 random tracklists with edits, again with
+zero differences.
 
 ## Real tracklists
 
@@ -89,4 +94,7 @@ pnpm test          # fixtures, properties, generator tests
 pnpm conformance   # pass rate per fixture file and per spec rule
 
 cd python && uv run pytest   # the same fixtures and invariants in Python
+cd rust && cargo test         # and in Rust
+
+node scripts/compare-ports.mjs   # after pnpm build: all three ports, full outputs
 ```

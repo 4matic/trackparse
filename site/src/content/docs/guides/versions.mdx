@@ -42,10 +42,30 @@ Version(
 ```
 
 </TabItem>
+<TabItem label="Rust">
+
+```rust
+pub struct Version {
+    pub version_type: VersionType,     // Remix, Vip, Radio, …
+    pub raw: String,                   // the text as written, without brackets: "Sub Focus VIP Remix"
+    pub artists: Vec<Artist>,          // remixers, role Remixer
+    pub modifiers: Vec<String>,        // other type words that didn't win: ["extended"]
+    pub descriptor: Option<String>,    // leftover words: "Taylor's", "at Wembley"
+    pub year: Option<u32>,
+    pub unknown_artist: bool,          // "ID Remix"
+    pub delimiter: VersionDelimiter,   // Paren | Square | Curly | Dash
+}
+```
+
+</TabItem>
 </Tabs>
 
-`title` never includes versions. `fullTitle` (`full_title` in Python) is the title with them put back, in their original
-brackets.
+`title` never includes versions. `fullTitle` (`full_title` in Python and Rust) is the title with them
+put back, in their original brackets.
+
+In Rust the type is the field `version_type`, because `type` is a reserved word, and its values are
+enum variants (`VersionType::Remix`, `VersionType::SpedUp`). `as_str()` gives the names used on this
+page (`"remix"`, `"spedUp"`), and so does `Display`.
 
 ## The 27 types
 
@@ -90,6 +110,15 @@ parse("Pendulum - Watercolour (Extended VIP Mix)").versions[0]
 ```
 
 </TabItem>
+<TabItem label="Rust">
+
+```rust
+parse("Pendulum - Watercolour (Extended VIP Mix)").versions[0];
+// Version { version_type: Vip, raw: "Extended VIP Mix", artists: [], modifiers: ["extended"],
+//           descriptor: None, year: None, unknown_artist: false, delimiter: Paren }
+```
+
+</TabItem>
 </Tabs>
 
 ## Several versions
@@ -119,6 +148,19 @@ parse("Dimension - Offshore (Mefjus Remix / Noisia Remix)").versions.map((v) => 
 ```
 
 </TabItem>
+<TabItem label="Rust">
+
+```rust
+parse("Avicii - Levels (Skrillex Remix) [Radio Edit]")
+    .versions.iter().map(|v| v.version_type).collect::<Vec<_>>();
+// [Remix, Radio]
+
+parse("Dimension - Offshore (Mefjus Remix / Noisia Remix)")
+    .versions.iter().map(|v| &v.artists[0].name).collect::<Vec<_>>();
+// ["Mefjus", "Noisia"]
+```
+
+</TabItem>
 </Tabs>
 
 ## Dash suffixes
@@ -145,6 +187,15 @@ t.versions[0]  # Version(type='remaster', raw='Remastered 2015', ..., year=2015,
 ```
 
 </TabItem>
+<TabItem label="Rust">
+
+```rust
+let t = parse("The Beatles - Hey Jude - Remastered 2015");
+t.title;        // "Hey Jude"
+t.versions[0];  // Version { version_type: Remaster, raw: "Remastered 2015", year: Some(2015), delimiter: Dash, .. }
+```
+
+</TabItem>
 </Tabs>
 
 A dash suffix that isn't a version stays in the title. In a [tracklist](/trackparse/guides/tracklists/#tracklist-mode)
@@ -157,7 +208,7 @@ the rule is stricter, because there the first dash is almost always the separato
 
 ## Your own words
 
-If your catalogue uses a word trackparse doesn't know, add it with `keywords.versionHeads` (`version_heads` in Python):
+If your catalogue uses a word trackparse doesn't know, add it with `keywords.versionHeads` (`version_heads` in Python, `KeywordOptions::version_head` in Rust):
 
 <Tabs syncKey="lang">
 <TabItem label="JavaScript">
@@ -179,6 +230,18 @@ from trackparse import create_parser
 parser = create_parser(keywords={"version_heads": {"rerub": "rework"}})
 parser.parse("Chase & Status x Camo & Krooked - Track (Alix Perez Rerub)").versions[0].type
 # 'rework'
+```
+
+</TabItem>
+<TabItem label="Rust">
+
+```rust
+use trackparse::{KeywordOptions, ParseOptions, Parser, VersionType};
+
+let keywords = KeywordOptions::new().version_head("rerub", VersionType::Rework);
+let parser = Parser::new(&ParseOptions::new().keywords(keywords));
+parser.parse("Chase & Status x Camo & Krooked - Track (Alix Perez Rerub)").versions[0].version_type;
+// Rework
 ```
 
 </TabItem>

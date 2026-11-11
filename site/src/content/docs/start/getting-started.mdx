@@ -1,6 +1,6 @@
 ---
 title: Getting started
-description: Install trackparse for JavaScript or Python and parse your first track.
+description: Install trackparse for JavaScript, Python or Rust and parse your first track.
 ---
 
 import { Aside, Steps, Tabs, TabItem } from "@astrojs/starlight/components";
@@ -25,6 +25,15 @@ import { Aside, Steps, Tabs, TabItem } from "@astrojs/starlight/components";
 
         Python 3.9 or newer, no dependencies. The package ships `py.typed` and passes
         `mypy --strict`.
+      </TabItem>
+      <TabItem label="Rust">
+        ```sh
+        cargo add trackparse
+        ```
+
+        Rust 1.74 or newer. The only dependency is `unicode-normalization`, `serde` support is an
+        optional feature, and there is no `unsafe` code. The crate is not on crates.io yet. Until it is, add it from the repository:
+        `cargo add trackparse --git https://github.com/4matic/trackparse`.
       </TabItem>
     </Tabs>
 
@@ -54,6 +63,17 @@ import { Aside, Steps, Tabs, TabItem } from "@astrojs/starlight/components";
         track.artists[1].role                 # 'featured'
         ```
       </TabItem>
+      <TabItem label="Rust">
+        ```rust
+        use trackparse::parse;
+
+        let track = parse("Noisia feat. Foreign Beggars - Shellshock");
+
+        track.title;                                                 // "Shellshock"
+        track.artists.iter().map(|a| &a.name).collect::<Vec<_>>();   // ["Noisia", "Foreign Beggars"]
+        track.artists[1].role;                                       // Featured
+        ```
+      </TabItem>
     </Tabs>
 
 3. Look at the versions and the noise.
@@ -81,6 +101,17 @@ import { Aside, Steps, Tabs, TabItem } from "@astrojs/starlight/components";
         # ['remix by Mefjus', 'remix by Noisia']
         ```
       </TabItem>
+      <TabItem label="Rust">
+        ```rust
+        let t = parse("Daft Punk - One More Time (Official Music Video) [HD]");
+        t.title;   // "One More Time"
+        t.junk;    // [Junk { raw: "Official Music Video", kind: Video }, Junk { raw: "HD", kind: Quality }]
+
+        let r = parse("Dimension - Offshore (Mefjus Remix / Noisia Remix)");
+        r.versions.iter().map(|v| format!("{} by {}", v.version_type, v.artists[0].name)).collect::<Vec<_>>();
+        // ["remix by Mefjus", "remix by Noisia"]
+        ```
+      </TabItem>
     </Tabs>
 
 4. Tell it about names that contain a joiner.
@@ -104,13 +135,25 @@ import { Aside, Steps, Tabs, TabItem } from "@astrojs/starlight/components";
         # ['Chase & Status']
         ```
       </TabItem>
+      <TabItem label="Rust">
+        ```rust
+        use trackparse::{parse, parse_with, ParseOptions};
+
+        parse("Chase & Status - Baddadan").artists.iter().map(|a| &a.name).collect::<Vec<_>>();
+        // ["Chase", "Status"]
+
+        let options = ParseOptions::new().known_artists(["Chase & Status"]);
+        parse_with("Chase & Status - Baddadan", &options).artists.iter().map(|a| &a.name).collect::<Vec<_>>();
+        // ["Chase & Status"]
+        ```
+      </TabItem>
     </Tabs>
 
 </Steps>
 
 <Aside type="tip" title="Parsing a lot of strings?">
-`createParser(options)` compiles your options and keywords once. Its `parse` method is the same
-function with those options already applied. See [Other functions](/trackparse/reference/functions/#createparseroptions).
+`createParser(options)` (`create_parser` in Python, `Parser::new(&options)` in Rust) compiles your
+options and keywords once. Its `parse` method is the same function with those options already applied. See [Other functions](/trackparse/reference/functions/#createparseroptions).
 </Aside>
 
 ## Next

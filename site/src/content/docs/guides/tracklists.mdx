@@ -25,10 +25,20 @@ from trackparse.tracklist import parse_tracklist
 ```
 
 </TabItem>
+<TabItem label="Rust">
+
+```rust
+use trackparse::tracklist::parse_tracklist;
+```
+
+</TabItem>
 </Tabs>
 
-It's a separate entry point, about 8.3 KiB gzipped, so code that only parses single tracks never
-loads it.
+In JavaScript it's a separate entry point, about 8.3 KiB gzipped, so code that only parses single
+tracks never loads it. In Rust it is the module `trackparse::tracklist`.
+
+Rust keeps seconds as `f64`, since a time can carry a fraction, so `Debug` prints `3167.0` where
+JavaScript and Python print `3167`. `to_json()` writes `3167`, like the other two.
 
 ## A first list
 
@@ -94,6 +104,41 @@ tl.entries[3].track.flags.unknown_title                                  # True 
 
 tl.stats
 # Stats(lines=9, tracks=7, markers=1, timed=8, first_time=2900, last_time=4536)
+```
+
+</TabItem>
+<TabItem label="Rust">
+
+```rust
+let text = [
+    "Hour 2",
+    "48:20 Noisia - Stigma",
+    "52:47 Mefjus & Kasra - Bandwagon (Phace Remix)",
+    "56:05 Black Sun Empire - ID",
+    "59:31 Alix Perez - Fade Away",
+    "01:03:10 Interview with Hybris",
+    "01:07:44 Imanu - Sacrifice",
+    "00:11:02 Current Value feat. Teddy Killerz - Payload", // typo: should be 01:11:02
+    "01:15:36 Hybris - Spinning Top",
+]
+.join("\r\n");
+
+let list = parse_tracklist(&text);
+
+list.entries.iter().map(|e| e.kind).collect::<Vec<_>>();
+// [Header, Track, Track, Track, Track, Marker, Track, Track, Track]
+
+let bandwagon = &list.entries[2];
+bandwagon.time;   // Some(TimeValue { raw: "52:47", seconds: 3167.0 })
+bandwagon.parts;  // Parts { lead: "", time: "52:47", gap: " ", rest: "Mefjus & Kasra - Bandwagon (Phace Remix)" }
+let track = bandwagon.track.as_ref().unwrap();
+track.artists.iter().map(|a| &a.name).collect::<Vec<_>>();   // ["Mefjus", "Kasra"]
+track.versions.iter().map(|v| format!("{} by {}", v.version_type, v.artists[0].name)).collect::<Vec<_>>();
+// ["remix by Phace"]
+list.entries[3].track.as_ref().unwrap().flags.unknown_title;   // true (the ID)
+
+list.stats;
+// Stats { lines: 9, tracks: 7, markers: 1, timed: 8, first_time: Some(2900.0), last_time: Some(4536.0) }
 ```
 
 </TabItem>
@@ -173,6 +218,21 @@ b.track.title                       # 'Stigma'
 ```
 
 </TabItem>
+<TabItem label="Rust">
+
+```rust
+let list = parse_tracklist("**[**14:21**] 10. Nitepunk - ID**\n* 18:02 Noisia - _Stigma_");
+let (a, b) = (&list.entries[0], &list.entries[1]);
+
+a.parts;   // Parts { lead: "**[**", time: "14:21", gap: "**] ", rest: "10. Nitepunk - ID**" }
+let track = a.track.as_ref().unwrap();
+track.artists.iter().map(|x| &x.name).collect::<Vec<_>>();   // ["Nitepunk"]
+track.title;                                                 // "ID"
+track.position;                                              // Some(Position { raw: "10", number: 10 })
+b.track.as_ref().unwrap().title;                             // "Stigma"
+```
+
+</TabItem>
 </Tabs>
 
 Right next to the time, a run of one or two `*` or `_` is read as emphasis by its position, with or
@@ -217,6 +277,21 @@ tl.warnings                        # ()
 ```
 
 </TabItem>
+<TabItem label="Rust">
+
+```rust
+let list = parse_tracklist("00:00 Noisia - Stigma\nw/ Phace - Psycho (Acapella)\n03:10 Mefjus - Sleepless");
+let e = &list.entries[1];
+
+e.layered;                                                   // true
+e.time;                                                      // None
+let track = e.track.as_ref().unwrap();
+track.artists.iter().map(|a| &a.name).collect::<Vec<_>>();   // ["Phace"]
+track.title;                                                 // "Psycho"
+list.warnings;                                               // []
+```
+
+</TabItem>
 </Tabs>
 
 Only `w/` (or `W/`) at the start of the track text, after any time or bullet, and followed by
@@ -236,7 +311,7 @@ whitespace and a track counts, so `00:30 w/ Phace - Psycho` is layered too. `w/`
 | `blank` | empty or only whitespace |
 
 Only `track` and `marker` entries have a `track`. No line is ever dropped. Extra marker words go in
-the `markerWords` option (`marker_words` in Python): with `["drop"]`, `03:00 Drop` becomes a marker instead of a track.
+the `markerWords` option (`marker_words` in Python and Rust): with `["drop"]`, `03:00 Drop` becomes a marker instead of a track.
 
 ## Checks
 
@@ -263,11 +338,21 @@ tl.warnings
 ```
 
 </TabItem>
+<TabItem label="Rust">
+
+```rust
+list.warnings;
+// [TracklistWarning { code: NoStartAtZero, line: 2, severity: Info, suggestion: None },
+//  TracklistWarning { code: TimeOutOfOrder, line: 8, severity: Warning,
+//                     suggestion: Some(Suggestion { line: 8, raw: "01:11:02", seconds: 4262.0 }) }]
+```
+
+</TabItem>
 </Tabs>
 
 `00:11:02` sits between `01:07:44` and `01:15:36`. Changing one digit gives exactly one time that
 fits, `01:11:02`, so the warning carries it as a suggestion. When several fixes would fit, or none
-does, `suggestion` is `null` and you only get the warning.
+does, `suggestion` is `null` (`None`) and you only get the warning.
 
 Sometimes the typo is on the line before. In `01:22:21` followed by `01:03:55`, the second line is
 flagged, but the suggestion is to change the first one to `01:02:21`. All the codes are listed in

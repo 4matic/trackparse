@@ -20,16 +20,27 @@ parse(input: str, *, mode="auto", known_artists=(), uploader=None, split_and="au
 ```
 
 </TabItem>
+<TabItem label="Rust">
+
+```rust
+pub fn parse(input: &str) -> ParsedTrack
+pub fn parse_with(input: &str, options: &ParseOptions) -> ParsedTrack
+```
+
+</TabItem>
 </Tabs>
 
 `parse` never throws on a string. Any string gives a `ParsedTrack`, and unknown or malformed options
-fall back to their defaults. (Python raises `TypeError` if `input` isn't a `str` at all.) The options are on the [Options](/trackparse/reference/options/) page.
+fall back to their defaults. (Python raises `TypeError` if `input` isn't a `str` at all. Rust takes
+`&str` and never panics.) The options are on the [Options](/trackparse/reference/options/) page.
 
 ## ParsedTrack
 
 Every key is always present. Python has the same fields as attributes of a frozen dataclass, in
 snake_case (`full_title`, `flags.unknown_artist`), with tuples instead of arrays and `None` instead
-of `null`.
+of `null`. Rust has a struct with the same snake_case names as public fields: `Vec<T>` for arrays,
+`Option<T>` where the table says `null`, enums for `mode`, roles, kinds and warnings, `u32` for
+`year` and `position.number`, and `u64` for `timestamp.seconds`.
 
 | Field | Type | Description |
 |---|---|---|
@@ -60,6 +71,13 @@ of `null`.
 
 ```python
 Artist(name: str, role: ArtistRole, joiner: Optional[str], source: ArtistSource)
+```
+
+</TabItem>
+<TabItem label="Rust">
+
+```rust
+pub struct Artist { pub name: String, pub role: ArtistRole, pub joiner: Option<String>, pub source: ArtistSource }
 ```
 
 </TabItem>
@@ -108,6 +126,22 @@ Version(
 ```
 
 </TabItem>
+<TabItem label="Rust">
+
+```rust
+pub struct Version {
+    pub version_type: VersionType,
+    pub raw: String,
+    pub artists: Vec<Artist>,
+    pub modifiers: Vec<String>,
+    pub descriptor: Option<String>,
+    pub year: Option<u32>,
+    pub unknown_artist: bool,
+    pub delimiter: VersionDelimiter,
+}
+```
+
+</TabItem>
 </Tabs>
 
 | Field | |
@@ -147,6 +181,21 @@ json.dumps(track.to_dict(), separators=(",", ":"), ensure_ascii=False)
 ParsedTrack.from_dict(track.to_dict()) == track   # True
 ```
 
+In Rust the results are plain structs that derive `Debug`, `Clone`, `PartialEq` and `Eq`. Each has
+`to_json()`, which writes the spec's JSON as a compact string with no extra dependency. With the
+optional `serde` feature the same types implement `Serialize` and `Deserialize`, with the same keys:
+
+```rust
+let track = parse(s);
+
+track.to_json()
+// the same bytes as JSON.stringify(parse(s)) in JavaScript
+
+// with features = ["serde"]
+serde_json::to_string(&track)? == track.to_json()            // true
+serde_json::from_str::<ParsedTrack>(&track.to_json())? == track   // true
+```
+
 ## Types
 
 <Tabs syncKey="lang">
@@ -168,6 +217,20 @@ The package ships `py.typed` and passes `mypy --strict`. These are exported from
   `Warning`, `Mode`, `ModeOption`;
 - `TypedDict`s for options: `ParseOptions`, `KeywordOptions`, `FormatOptions`;
 - `Parser`, the class `create_parser` returns.
+
+</TabItem>
+<TabItem label="Rust">
+
+All of these are exported from the crate root (`use trackparse::…`):
+
+- structs with public fields: `ParsedTrack`, `Artist`, `Version`, `Junk`, `Flags`, `Position`,
+  `Timestamp`;
+- enums: `ArtistRole`, `ArtistSource`, `VersionType`, `VersionDelimiter`, `JunkKind`, `Warning`,
+  `Mode`. Each has `as_str()` (the spec's name, which `Display` prints too), `from_name()`,
+  `FromStr` (its error is `UnknownName`) and `ALL`;
+- options: `ParseOptions`, `KeywordOptions`, `FormatOptions`, with the enums `ModeOption`,
+  `SplitAnd`, `FeatPlacement`, `JoinerStyle` and `VersionsOption`;
+- `Parser`. Every result type has `to_json()`.
 
 </TabItem>
 </Tabs>
