@@ -28,7 +28,7 @@ Artist(name: str, role: ArtistRole, joiner: Optional[str], source: ArtistSource)
 ```rust
 pub struct Artist {
     pub name: String,
-    pub role: ArtistRole,         // Primary | Featured | Producer | Remixer
+    pub role: ArtistRole,         // Primary | Featured | Remixer | Producer
     pub joiner: Option<String>,
     pub source: ArtistSource,     // Artist | Title | Version
 }

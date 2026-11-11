@@ -219,6 +219,7 @@ Exported from `trackparse::tracklist`: the structs `Tracklist`, `TracklistEntry`
 the edits:
 
 ```rust
+#[non_exhaustive]
 pub enum Edit {
     SetTime { line: usize, seconds: f64 },
     Shift { seconds: f64, lines: Option<Vec<usize>>, from: Option<usize> },

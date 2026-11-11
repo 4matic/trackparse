@@ -9,9 +9,11 @@ description: The JavaScript, Python and Rust implementations, and what it takes 
 | Python | [`trackparse`](https://pypi.org/project/trackparse/) on PyPI | 13,130 / 13,130 fixtures, output identical to JS. Tracklists in `trackparse.tracklist` |
 | Rust | `trackparse` on crates.io | Passes 13,130 / 13,130, output identical to JS; publishing to crates.io pending. Tracklists in `trackparse::tracklist` |
 
-All three share one version number. The spec, the JavaScript package and the Python package are
-released together, and CI fails if their versions drift apart. The Rust crate carries the same
-version and joins the releases with its first publish.
+All three share one version number. The spec, the JavaScript package, the Python package and the
+Rust crate are released together, from one release PR, and CI fails if their versions drift apart.
+Each release tags the crate too (`rust-vX.Y.Z`). Publishing it to crates.io is switched on after
+the first publish, which has to be done by hand; until then the crate installs from the repository
+with `cargo add trackparse --git https://github.com/4matic/trackparse`.
 
 ## Adding a language
 
