@@ -29,8 +29,8 @@ output.
 | [`01. Aphex Twin - Xtal`](/trackparse/playground/#track=01.%20Aphex%20Twin%20-%20Xtal) | Aphex Twin | `Xtal` | position 1 |
 | [`[12:34] Noisia - Stigma`](/trackparse/playground/#track=%5B12%3A34%5D%20Noisia%20-%20Stigma) | Noisia | `Stigma` | timestamp 754 s |
 | [`07_Burial_-_Archangel.mp3`](/trackparse/playground/#track=07_Burial_-_Archangel.mp3) | Burial | `Archangel` | filename mode, position 7 |
-| [`"Numb" by Linkin Park`](/trackparse/playground/#track=%22Numb%22%20by%20Linkin%20Park) *(youtube)* | Linkin Park | `Numb` | ⚠ bySplit |
-| [`Blink-182-All The Small Things`](/trackparse/playground/#track=Blink-182-All%20The%20Small%20Things) *(youtube)* | Blink-182 | `All The Small Things` | ⚠ unspacedDashSplit |
+| [`"Numb" by Linkin Park`](/trackparse/playground/#track=%22Numb%22%20by%20Linkin%20Park&mode=youtube) *(youtube)* | Linkin Park | `Numb` | ⚠ bySplit |
+| [`Blink-182-All The Small Things`](/trackparse/playground/#track=Blink-182-All%20The%20Small%20Things&mode=youtube) *(youtube)* | Blink-182 | `All The Small Things` | ⚠ unspacedDashSplit |
 | [`Кино - Группа крови (Remastered 2019)`](/trackparse/playground/#track=%D0%9A%D0%B8%D0%BD%D0%BE%20-%20%D0%93%D1%80%D1%83%D0%BF%D0%BF%D0%B0%20%D0%BA%D1%80%D0%BE%D0%B2%D0%B8%20%28Remastered%202019%29) | Кино | `Группа крови` | remaster, 2019 |
 | [`ID - ID (ID Remix)`](/trackparse/playground/#track=ID%20-%20ID%20%28ID%20Remix%29) |  | `ID` | unknown artist, title and remixer |
 | [`AC/DC - Back In Black`](/trackparse/playground/#track=AC%2FDC%20-%20Back%20In%20Black) | AC/DC | `Back In Black` |  |
