@@ -62,6 +62,10 @@ fn same<T: Serialize + DeserializeOwned + PartialEq + std::fmt::Debug>(value: &T
     assert_eq!(&back, value, "round trip of {json}");
 }
 
+fn same_value<T: PartialEq>(a: &T, b: &T) -> bool {
+    a == b
+}
+
 fn same_artists(artists: &[Artist]) -> String {
     let json = format!("[{}]", artists.iter().map(Artist::to_json).collect::<Vec<_>>().join(","));
     same(&artists.to_vec(), json.clone());
@@ -134,7 +138,12 @@ fn check_case(
             if let Ok(typed) = serde_json::from_value::<Vec<Edit>>(edits.clone()) {
                 n.typed_edits += typed.len();
                 for edit in &typed {
-                    same(edit, edit.to_json());
+                    if same_value(edit, edit) {
+                        same(edit, edit.to_json());
+                    } else {
+                        // Non-finite seconds (`null`) read back as NaN, which equals nothing.
+                        assert_eq!(serde_json::to_string(edit).unwrap(), edit.to_json());
+                    }
                 }
                 let result: EditResult = apply_edits(input, &typed);
                 same(&result, result.to_json());
@@ -293,4 +302,185 @@ fn edits_read_and_write_the_spec_form() {
     );
     assert!(serde_json::from_str::<Edit>(r#"{"op":"rename","line":1}"#).is_err());
     assert_eq!(format_track(&parse("A - B")), "A - B");
+}
+
+/// `serde_json` writes `json`, which is also `to_json()`.
+fn text<T: Serialize>(value: &T, to_json: String, json: &str) {
+    assert_eq!(to_json, json);
+    assert_eq!(serde_json::to_string(value).unwrap(), json);
+}
+
+#[test]
+fn numbers_are_written_as_to_json_writes_them() {
+    // Whole seconds of 2^53 and more: the digits JavaScript prints, not the exact integer.
+    let big = [
+        (9007199254740992.0, "9007199254740992"),
+        (9007199254740994.0, "9007199254740994"),
+        (2f64.powi(60), "1152921504606847000"),
+        (-(2f64.powi(60)), "-1152921504606847000"),
+        (2f64.powi(63), "9223372036854776000"),
+        (2f64.powi(64), "18446744073709552000"),
+        (-(2f64.powi(64)), "-18446744073709552000"),
+        (1e20, "100000000000000000000"),
+        (123456789012345680000.0, "123456789012345680000"),
+        (-0.0, "0"),
+        (0.1, "0.1"),
+        (3600.5, "3600.5"),
+        (0.00001, "0.00001"),
+        (1.5e-7, "1.5e-7"),
+    ];
+    for (seconds, digits) in big {
+        let edit = Edit::set_time(1, seconds);
+        text(&edit, edit.to_json(), &format!(r#"{{"op":"set-time","line":1,"seconds":{digits}}}"#));
+        // Read back: the same double. (Without its `float_roundtrip` feature `serde_json` may
+        // read a long digit string one unit in the last place off; allow exactly that.)
+        let Edit::SetTime { seconds: back, .. } = serde_json::from_str(&edit.to_json()).unwrap()
+        else {
+            panic!("{digits}")
+        };
+        assert!((back - seconds).abs() <= seconds.abs() * f64::EPSILON, "{digits}: {back}");
+        let edit = Edit::shift(seconds);
+        text(&edit, edit.to_json(), &format!(r#"{{"op":"shift","seconds":{digits}}}"#));
+        let options = TracklistOptions::new().audio_seconds(seconds);
+        let json = serde_json::to_string(&options).unwrap();
+        assert!(json.contains(&format!(r#""audioSeconds":{digits},"#)), "{json}");
+        let back = serde_json::from_str::<TracklistOptions>(&json).unwrap().audio_seconds.unwrap();
+        assert!((back - seconds).abs() <= seconds.abs() * f64::EPSILON, "{digits}: {back}");
+    }
+
+    // Where `serde_json` has its own float notation the characters can differ from `to_json()`
+    // (which writes what JavaScript writes): `1e-6` for `0.000001`, and in serde_json releases
+    // that write floats with ryu, `1e21` for `1e+21`. It is the same number and reads back equal from either text.
+    for (seconds, js) in [(0.000001, "0.000001"), (0.0000025, "0.0000025"), (1e21, "1e+21")] {
+        let edit = Edit::shift(seconds);
+        assert_eq!(edit.to_json(), format!(r#"{{"op":"shift","seconds":{js}}}"#));
+        let json = serde_json::to_string(&edit).unwrap();
+        assert_eq!(serde_json::from_str::<Edit>(&json).unwrap(), edit);
+        assert_eq!(serde_json::from_str::<Edit>(&edit.to_json()).unwrap(), edit);
+    }
+    assert_eq!(
+        serde_json::to_string(&Edit::shift(0.000001)).unwrap(),
+        r#"{"op":"shift","seconds":1e-6}"#
+    );
+}
+
+#[test]
+fn non_finite_seconds_are_null_and_read_back_as_nan() {
+    for seconds in [f64::NAN, f64::INFINITY, f64::NEG_INFINITY] {
+        let edit = Edit::set_time(2, seconds);
+        text(&edit, edit.to_json(), r#"{"op":"set-time","line":2,"seconds":null}"#);
+        let back: Edit = serde_json::from_str(&edit.to_json()).unwrap();
+        assert!(matches!(back, Edit::SetTime { line: 2, seconds } if seconds.is_nan()), "{back:?}");
+        // Either way the edit is invalid (R13.9.6).
+        let text = "00:00 A - B\n01:00 C - D";
+        assert_eq!(apply_edits(text, &[back]), apply_edits(text, &[edit]));
+        assert_eq!(apply_edits(text, &[Edit::shift(seconds)]).warnings[0].line, None);
+
+        let options = TracklistOptions::new().audio_seconds(seconds);
+        let json = serde_json::to_string(&options).unwrap();
+        assert!(json.contains(r#""audioSeconds":null"#), "{json}");
+        // A non-finite length is ignored (R13.10), so reading it back as "not set" is the same.
+        assert_eq!(serde_json::from_str::<TracklistOptions>(&json).unwrap().audio_seconds, None);
+    }
+    assert!(serde_json::from_str::<Edit>(r#"{"op":"set-time","line":2,"seconds":"5"}"#).is_err());
+}
+
+#[test]
+fn line_numbers_above_2_53_are_js_numbers() {
+    let edit = Edit::delete(usize::MAX);
+    text(&edit, edit.to_json(), r#"{"op":"delete","line":18446744073709552000}"#);
+    assert_eq!(serde_json::from_str::<Edit>(&edit.to_json()).unwrap(), edit);
+
+    let odd = (1usize << 53) + 1;
+    for edit in [Edit::set_time(odd, 1.0), Edit::set_rest(odd, "x"), Edit::insert(odd, "x")] {
+        let json = edit.to_json();
+        assert!(json.contains("9007199254740992"), "{json}");
+        assert_eq!(serde_json::to_string(&edit).unwrap(), json);
+    }
+    let edit = Edit::shift_lines(1.0, [1, odd, usize::MAX]);
+    text(
+        &edit,
+        edit.to_json(),
+        r#"{"op":"shift","seconds":1,"lines":[1,9007199254740992,18446744073709552000]}"#,
+    );
+    assert_eq!(
+        serde_json::from_str::<Edit>(&edit.to_json()).unwrap(),
+        Edit::shift_lines(1.0, [1, 1 << 53, usize::MAX])
+    );
+    let edit = Edit::shift_from(1.0, usize::MAX);
+    text(&edit, edit.to_json(), r#"{"op":"shift","seconds":1,"from":18446744073709552000}"#);
+    assert_eq!(serde_json::from_str::<Edit>(&edit.to_json()).unwrap(), edit);
+
+    // The warning carries the edit's line as a `usize`, and its JSON is the wire's.
+    let result = apply_edits("00:00 a - b", &[Edit::delete(usize::MAX), Edit::delete(5)]);
+    assert_eq!(result.warnings[0].line, Some(usize::MAX));
+    same(&result, result.to_json());
+    assert_eq!(
+        result.to_json(),
+        wire::call(
+            "applyEdits",
+            "00:00 a - b",
+            &none(),
+            &none(),
+            &crate_json(&[Edit::delete(usize::MAX), Edit::delete(5)])
+        )
+        .write()
+    );
+
+    // A line is a non-negative whole number; `3.0` is one, as in JavaScript.
+    assert_eq!(
+        serde_json::from_str::<Edit>(r#"{"op":"delete","line":3.0}"#).unwrap(),
+        Edit::delete(3)
+    );
+    for bad in ["-1", "1.5", "\"1\"", "null", "true"] {
+        let json = format!(r#"{{"op":"delete","line":{bad}}}"#);
+        assert!(serde_json::from_str::<Edit>(&json).is_err(), "{json}");
+    }
+    assert_eq!(
+        serde_json::from_str::<Edit>(r#"{"op":"shift","seconds":1}"#).unwrap(),
+        Edit::shift(1.0)
+    );
+}
+
+#[test]
+fn keyword_maps_have_no_repeated_keys() {
+    // A repeated key keeps its first place and takes the last value, like a JS object.
+    let keywords = KeywordOptions::new()
+        .version_head("rerub", VersionType::Remix)
+        .version_head("touch", VersionType::Edit)
+        .version_head("rerub", VersionType::Vip)
+        .junk("out now", JunkKind::Promo)
+        .junk("out now", JunkKind::Label);
+    let unique = KeywordOptions::new()
+        .version_head("rerub", VersionType::Vip)
+        .version_head("touch", VersionType::Edit)
+        .junk("out now", JunkKind::Label);
+    let json = serde_json::to_string(&keywords).unwrap();
+    assert_eq!(
+        json,
+        concat!(
+            r#"{"versionHeads":{"rerub":"vip","touch":"edit"},"descriptors":[],"genres":[],"#,
+            r#""junk":{"out now":"label"},"featMarkers":[]}"#
+        )
+    );
+    assert_eq!(serde_json::from_str::<KeywordOptions>(&json).unwrap(), unique);
+    let repeated = r#"{"versionHeads":{"rerub":"remix","touch":"edit","rerub":"vip"},
+        "junk":{"out now":"promo","out now":"label"}}"#;
+    assert_eq!(serde_json::from_str::<KeywordOptions>(repeated).unwrap(), unique);
+    // All three mean the same options.
+    let input = "Noisia - Stigma (Phace Rerub) [Out Now]";
+    let with = |k: &KeywordOptions| parse_with(input, &ParseOptions::new().keywords(k.clone()));
+    assert_eq!(with(&keywords), with(&unique));
+    assert_eq!(with(&unique).versions[0].version_type, VersionType::Vip);
+    assert_eq!(
+        with(&keywords).to_json(),
+        wire::call(
+            "parse",
+            input,
+            &Json::parse(&format!(r#"{{"keywords":{repeated}}}"#)).unwrap(),
+            &none(),
+            &none()
+        )
+        .write()
+    );
 }

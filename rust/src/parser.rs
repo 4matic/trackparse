@@ -44,6 +44,7 @@ fn uploader_skel(uploader: Option<&str>) -> Option<Skel> {
 }
 
 /// Resolved options with the tables built once (JS `createParser` / `createListParser`).
+#[derive(Clone)]
 pub(crate) struct Engine {
     options: Resolved,
     tables: Arc<Tables>,

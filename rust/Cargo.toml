@@ -14,7 +14,9 @@ categories = ["parser-implementations", "multimedia::audio", "text-processing"]
 include = ["src/**", "README.md", "LICENSE"]
 
 [dependencies]
-unicode-normalization = "0.1"
+# NFC / NFD follow this crate's Unicode tables (Unicode 18 in 0.1.26). Older releases have older
+# tables and normalize some strings differently, so they are not accepted.
+unicode-normalization = "0.1.26"
 serde = { version = "1", features = ["derive"], optional = true }
 
 [dev-dependencies]
@@ -27,6 +29,7 @@ serde = ["dep:serde"]
 
 [package.metadata.docs.rs]
 all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
 
 [lints.rust]
 unsafe_code = "forbid"
