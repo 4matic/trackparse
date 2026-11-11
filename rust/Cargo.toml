@@ -1,6 +1,6 @@
 [package]
 name = "trackparse"
-version = "0.4.0" # x-release-please-version
+version = "0.5.0" # x-release-please-version
 edition = "2021"
 rust-version = "1.74"
 description = "Turn messy track names into structured data: artists with roles, remixes and versions, junk, and whole tracklists. One spec, same output as the JavaScript and Python packages."
