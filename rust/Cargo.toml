@@ -22,7 +22,11 @@ serde_json = "1"
 
 [features]
 default = []
+# Serialize / Deserialize on the result types, the options and tracklist::Edit.
 serde = ["dep:serde"]
+
+[package.metadata.docs.rs]
+all-features = true
 
 [lints.rust]
 unsafe_code = "forbid"

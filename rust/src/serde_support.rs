@@ -6,10 +6,16 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 /// Seconds as JS writes numbers: a whole value is an integer (`3167`, not `3167.0`). Only for
 /// human-readable formats; a binary format always gets an `f64`.
+///
+/// With `serde_json` the text is that of `to_json()` for every time the parser can produce.
+/// Outside that, two ranges an `Edit` could carry are written differently (same number, other
+/// notation): `1e-6 <= |x| < 1e-5` (`1e-6` for `0.000001`) and whole values from 2^64 to 1e21.
 pub(crate) fn seconds<S: Serializer>(value: &f64, serializer: S) -> Result<S::Ok, S::Error> {
-    let whole = value.is_finite() && value.fract() == 0.0 && value.abs() < 9.0e18;
-    if whole && serializer.is_human_readable() {
+    let whole = value.is_finite() && value.fract() == 0.0 && serializer.is_human_readable();
+    if whole && value.abs() < 9.0e18 {
         serializer.serialize_i64(*value as i64)
+    } else if whole && *value > 0.0 && *value < 1.8e19 {
+        serializer.serialize_u64(*value as u64)
     } else {
         serializer.serialize_f64(*value)
     }
