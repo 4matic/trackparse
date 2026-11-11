@@ -37,10 +37,11 @@ parse(
 <TabItem label="Rust">
 
 ```rust
+#[non_exhaustive]
 pub struct ParseOptions {
     pub mode: ModeOption,                   // Auto | Clean | Youtube | Filename | Tracklist
-    pub known_artists: Vec<String>,
     pub uploader: Option<String>,
+    pub known_artists: Vec<String>,
     pub split_and: SplitAnd,                // Auto | Always | Never
     pub keywords: Option<KeywordOptions>,
 }
@@ -104,6 +105,7 @@ class KeywordOptions(TypedDict, total=False):
 <TabItem label="Rust">
 
 ```rust
+#[non_exhaustive]
 pub struct KeywordOptions {
     pub version_heads: Vec<(String, VersionType)>,   // .version_head("rerub", VersionType::Rework)
     pub descriptors: Vec<String>,                    // .descriptor(…): extra style words, like the built-in "D'n'B"

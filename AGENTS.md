@@ -79,16 +79,19 @@ python/                   PyPI package `trackparse` (Python 3.9+, zero deps, uv 
                           test_api.py, test_match.py, test_tracklist_api.py,
                           test_tracklist_properties.py, skip.json (only ever shrinks)
 rust/                     crates.io package `trackparse` (Rust 1.74+, one dependency, no unsafe;
-                          not published yet)
+                          a release-please component, first crates.io publish still to do)
   src/lib.rs              public API: parse, parse_with, parse_artists(_with), format_track(_with),
-                          normalize, all_artists, Parser, SPEC_VERSION
-  src/types.rs            public structs and enums (mirror the schemas), to_json()
-  src/options.rs          ParseOptions, FormatOptions, KeywordOptions (builders) + resolved forms
+                          normalize, all_artists, Parser, SPEC_VERSION; re-exports every type and
+                          option at the crate root (`types` and `options` are private modules)
+  src/types.rs            public structs and enums (mirror the schemas): to_json(), and
+                          as_str() / from_name() / ALL / Display / FromStr on the enums
+  src/options.rs          ParseOptions, FormatOptions, KeywordOptions (#[non_exhaustive], chained
+                          setters from ::new()) + resolved forms
   src/*.rs                one module per js/src file, same rule IDs in comments: parser, normalize,
                           mode, scanner, prefix, classify, separator, artists, credits, title,
                           assemble, format, words, digits, tables, context
   src/tracklist/          public `trackparse::tracklist` (parse_tracklist(_with), apply_edits(_with)),
-                          one module per js/src/tracklist file, plus emphasis.rs
+                          one module per js/src/tracklist file (mod.rs is index.ts)
   src/json.rs             hand-written JSON value, parser and writer with JS number formatting
   src/wire.rs             the JSON door (doc-hidden): every function with loose JSON arguments,
                           for the fixtures and the cross-port diff
@@ -101,10 +104,10 @@ rust/                     crates.io package `trackparse` (Rust 1.74+, one depend
   examples/dump.rs        Rust side of compare-ports (JSONL in, JSON out, through wire)
   tests/                  fixtures.rs (every shared fixture + the conformance report), api.rs,
                           tracklist_api.rs, tracklist_properties.rs (R13.11 invariants), serde.rs,
-                          skip.json (only ever shrinks)
+                          data/primitives.json (from dump_primitives.mjs), skip.json (only ever shrinks)
 site/                     documentation site + playground (Astro + Starlight, GitHub Pages)
   astro.config.mjs        base /trackparse, sidebar
-  src/content/docs/       the pages (Markdown/MDX, JS + Python tabs on every example);
+  src/content/docs/       the pages (Markdown/MDX, JS + Python + Rust tabs on every example);
                           reference/spec.md is generated from spec/SPEC.md
   src/components/         HeroDemo, Playground (runs js/ in the browser), Feature, Stats
   src/lib/                trackview.ts (highlight + field rendering), icons.ts (Lucide SVG strings)
@@ -119,8 +122,8 @@ scripts/dump_py.py        Python side of compare-ports (JSONL in, to_dict() JSON
                           rust.yml (codegen drift, fmt, clippy, cargo test on stable and 1.74,
                           publish dry run; compare: Rust vs built JS on every fixture),
                           spec.yml (fixture validation, generated/codegen drift, generator tests,
-                          js/python/spec version link), release.yml (release-please + npm and PyPI
-                          publish), pages.yml (build site/, deploy to GitHub Pages),
+                          js/python/rust/spec version link), release.yml (release-please + npm, PyPI
+                          and crates.io publish), pages.yml (build site/, deploy to GitHub Pages),
                           pr-title.yml (conventional PR titles)
 .github/release-notes/    optional hand-written highlights prepended to a GitHub Release
 release-please-config.json, .release-please-manifest.json   release automation (never hand-edit the manifest)
@@ -402,7 +405,7 @@ and are good second references next to JS: their modules map one to one onto `js
    file against the fixture schema, each output against `parsed-track.schema.json` (or
    `tracklist.schema.json` for `fn: "parseTracklist"`; `applyEdits` cases also check `text`), honour
    `status` (pass / xfail / ambiguous), and keep a port-local skip list that can only shrink.
-6. **Property tests** for the SPEC invariants (Hypothesis for Python, proptest for Rust).
+6. **Property tests** for the SPEC invariants (Hypothesis for Python; the Rust crate uses a small seeded generator of its own, to stay free of dev dependencies).
 7. **API** idiomatic for the language but equivalent: Python `parse`, `parse_artists`,
    `format_track`, `normalize` (snake_case fields are fine only if the JSON output keeps the spec's
    keys); Rust with `serde` behind a feature flag and `unicode-normalization` as the only required
@@ -482,16 +485,17 @@ Releases are automated with [release-please](https://github.com/googleapis/relea
 1. Feature PRs are **rebase-merged**, so every commit lands on `main` and becomes its own
    changelog line: each commit message must be a conventional commit, and so must the PR title
    (`pr-title.yml` enforces the title). Release PRs (`chore: release main`) are squash-merged. Types: `feat`, `fix`, `perf`, `revert`, `docs` (shown in the changelog) and `refactor`,
-   `test`, `build`, `ci`, `chore` (hidden). Scopes: `js`, `python`, `spec`, `generator`, `fixtures`, `site`, `ci`, `deps`…
+   `test`, `build`, `ci`, `chore` (hidden). Scopes: `js`, `python`, `rust`, `spec`, `generator`, `fixtures`, `site`, `ci`, `deps`…
 2. On every push to `main`, `release.yml` updates a **release PR** (`chore: release main`) that
    bumps `js/package.json`, `spec/VERSION`, `SPEC_VERSION` in `js/src/data.generated.ts`, the
-   Python version files (below), and writes `js/CHANGELOG.md` / `spec/CHANGELOG.md` /
-   `python/CHANGELOG.md`.
-3. **Merging the release PR** creates tags `js-vX.Y.Z`, `spec-vX.Y.Z` and `python-vX.Y.Z`, GitHub
-   Releases with the changelog as notes, then publishes `trackparse` to npm and to PyPI via trusted
-   publishing (OIDC, no stored token), attaches the tarball / wheel + sdist and appends install
-   instructions to each release. For a bigger release, add
-   `.github/release-notes/X.Y.Z.md` beforehand: it is prepended to the notes.
+   Python and Rust version files (below), and writes `js/CHANGELOG.md` / `spec/CHANGELOG.md` /
+   `python/CHANGELOG.md` / `rust/CHANGELOG.md`.
+3. **Merging the release PR** creates tags `js-vX.Y.Z`, `spec-vX.Y.Z`, `python-vX.Y.Z` and
+   `rust-vX.Y.Z`, GitHub Releases with the changelog as notes, then publishes `trackparse` to npm
+   and to PyPI via trusted publishing (OIDC, no stored token), attaches the tarball / wheel + sdist
+   and appends install instructions to each release. The crates.io job (`publish-crates`) runs
+   only when the repository variable `CRATES_PUBLISH` is `true` (see below). For a bigger release,
+   add `.github/release-notes/X.Y.Z.md` beforehand: it is prepended to the notes.
 
 Version rules:
 
@@ -504,15 +508,32 @@ Version rules:
   `python/pyproject.toml`, `__version__` in `python/src/trackparse/__init__.py` and `SPEC_VERSION`
   in `python/src/trackparse/_data.py`, and writes `python/CHANGELOG.md`. Merging it tags
   `python-vX.Y.Z` and publishes to PyPI via trusted publishing (environment `pypi`), with the wheel
-  and sdist attached to the release. `spec.yml` checks that all three versions match.
-- The Rust crate carries the same version in `rust/Cargo.toml` (marked `x-release-please-version`)
-  but is not a release-please component yet: adding it to `release-please-config.json`, the
-  manifest, the `linked-versions` group and a crates.io publish job in `release.yml` is the last
-  step before its first release.
+  and sdist attached to the release. `spec.yml` checks that all four versions match.
+- `rust` is **linked** as well: a release-please component (`release-type: rust`) in the same
+  `linked-versions` group. The release PR bumps `rust/Cargo.toml` (the line marked
+  `x-release-please-version`) and `SPEC_VERSION` in `rust/src/data.rs`, and writes
+  `rust/CHANGELOG.md`. Merging it tags `rust-vX.Y.Z` and creates the GitHub Release. `Cargo.lock`
+  is git-ignored, so there is no lock file to bump.
+- **crates.io publishing is gated.** The `publish-crates` job in `release.yml` (environment
+  `crates`: version check, `cargo test --all-features`, `cargo package`, `cargo publish` with a
+  token from crates.io trusted publishing, the `.crate` file attached to the release) runs only
+  when the repository variable `CRATES_PUBLISH` is `true`. crates.io can only configure trusted
+  publishing for a crate that already exists, so the first publish is the maintainer's, by hand:
+  1. from the `rust-vX.Y.Z` tag, `cd rust && cargo publish` with a personal crates.io token;
+  2. on crates.io, add a trusted publisher for `4matic/trackparse`, workflow `release.yml`,
+     environment `crates`;
+  3. set the repository variable `CRATES_PUBLISH` to `true`
+     (`gh variable set CRATES_PUBLISH --body true`).
+
+  Until then a release still tags `rust-vX.Y.Z` but skips the crates.io job, and the crate is
+  installed from git (`cargo add trackparse --git https://github.com/4matic/trackparse`; cargo
+  finds the package in `rust/` by name). After step 3, drop the "not on crates.io yet" notes from
+  the READMEs and the site.
 - **A publish job failed after the tags were created?** Fix the cause on `main` with a hidden commit
   type (`ci`/`chore`, so no new release), then re-run publishing for the existing tag:
   `gh workflow run release.yml -f python_tag=python-vX.Y.Z` (PyPI). The npm job always republishes
-  from a fresh release; a failed npm publish needs the same treatment by hand.
+  from a fresh release; a failed npm publish needs the same treatment by hand, and so does a failed
+  crates.io publish (`cargo publish` from the `rust-vX.Y.Z` tag; there is no re-run input for it).
 - **Agents never merge release PRs, publish, push tags or bump versions on their own initiative.**
   Merging the release PR is the maintainer's publish decision.
 
