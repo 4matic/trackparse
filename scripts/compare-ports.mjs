@@ -1,11 +1,14 @@
 #!/usr/bin/env node
-// Cross-port byte check: runs every fixture case (spec/fixtures/**) through the built JS package
-// and through the Python port, and diffs the FULL outputs (not the partial fixture expectations).
+// Cross-port byte check: runs every fixture case (spec/fixtures/**) through the built JS package,
+// the Python port and the Rust port, and diffs the FULL outputs (not the partial fixture
+// expectations). JS is the reference; each other port is compared with it.
 //
 // Usage (from the repo root):
 //   pnpm --filter trackparse build        # builds js/dist
-//   node scripts/compare-ports.mjs        # needs `uv`; runs scripts/dump_py.py in the python/ project
+//   node scripts/compare-ports.mjs        # needs `uv` (Python) and `cargo` (Rust)
+//   node scripts/compare-ports.mjs --only=python   # or --only=rust
 //
+// Rust runs `cargo run --release --example dump` in rust/ (JSONL in, one JSON result per line).
 // Options are merged like js/test/runner.ts ({...defaults.options, ...case.options}, same for
 // formatOptions). Python gets one process for all cases (JSONL over stdin/stdout); dump_py.py maps
 // the camelCase options to snake_case kwargs and serialises with to_dict() (ParsedTrack, and the
@@ -119,6 +122,38 @@ function runPython(all) {
   });
 }
 
+function runRust(all) {
+  return new Promise((resolveRs, reject) => {
+    const child = spawn("cargo", ["run", "--quiet", "--release", "--example", "dump"], {
+      cwd: join(root, "rust"),
+      stdio: ["pipe", "pipe", "inherit"],
+    });
+    const chunks = [];
+    child.stdout.on("data", (chunk) => chunks.push(chunk));
+    child.on("error", reject);
+    child.on("close", (code) => {
+      if (code !== 0) return reject(new Error(`the Rust dump example exited with code ${code}`));
+      const lines = Buffer.concat(chunks).toString("utf8").split("\n");
+      const byIndex = new Map();
+      // One output line per input line, in order. Rust never throws: every line is a result.
+      all.forEach((c, k) => byIndex.set(c.i, lines[k] ? { ok: JSON.parse(lines[k]) } : undefined));
+      resolveRs(byIndex);
+    });
+    child.stdin.on("error", reject);
+    for (const c of all) {
+      const { fn, input, options, formatOptions, edits } = c;
+      // Non-finite numbers travel as 1e999 / -1e999, which the crate's JSON reader takes as infinity.
+      const line = JSON.stringify({ fn, input, options, formatOptions, edits }, (_k, v) =>
+        typeof v === "number" && !Number.isFinite(v) ? `\u0000num:${v}` : v,
+      )
+        .replaceAll('"\\u0000num:Infinity"', "1e999")
+        .replaceAll('"\\u0000num:-Infinity"', "-1e999");
+      child.stdin.write(`${line}\n`);
+    }
+    child.stdin.end();
+  });
+}
+
 /** JSON with object keys sorted recursively, so key order never counts as a difference. */
 function canonical(value) {
   return JSON.stringify(value, (_key, v) =>
@@ -151,35 +186,45 @@ function firstDiff(a, b, path = "$") {
   return `${path}: js=${show(a)} py=${show(b)}`;
 }
 
-const py = await runPython(cases);
+const only = process.argv.find((a) => a.startsWith("--only="))?.slice(7);
+const ports = [
+  { name: "Python", key: "py", run: runPython },
+  { name: "Rust", key: "rs", run: runRust },
+].filter((p) => !only || p.name.toLowerCase() === only);
 
-const diffs = [];
-const byFn = {};
-let bothThrew = 0;
-for (const c of cases) {
-  const j = runJs(c);
-  const p = py.get(c.i);
-  byFn[c.fn] ??= { total: 0, differ: 0 };
-  byFn[c.fn].total++;
-  if (j.error && p?.error) bothThrew++;
-  if (comparable(j) === comparable(p)) continue;
-  byFn[c.fn].differ++;
-  let detail;
-  if (!p) detail = "python produced no output";
-  else if (j.error || p.error) detail = `js ${j.error ?? "ok"} | py ${p.error ?? "ok"}`;
-  else detail = firstDiff(j.ok, p.ok);
-  diffs.push({ c, detail });
-}
+const jsResults = cases.map(runJs);
+let total = 0;
+for (const port of ports) {
+  const other = await port.run(cases);
+  const diffs = [];
+  const byFn = {};
+  let bothThrew = 0;
+  cases.forEach((c, k) => {
+    const j = jsResults[k];
+    const p = other.get(c.i);
+    byFn[c.fn] ??= { total: 0, differ: 0 };
+    byFn[c.fn].total++;
+    if (j.error && p?.error) bothThrew++;
+    if (comparable(j) === comparable(p)) return;
+    byFn[c.fn].differ++;
+    let detail;
+    if (!p) detail = `${port.name} produced no output`;
+    else if (j.error || p.error) detail = `js ${j.error ?? "ok"} | ${port.key} ${p.error ?? "ok"}`;
+    else detail = firstDiff(j.ok, p.ok).replace(" py=", ` ${port.key}=`);
+    diffs.push({ c, detail });
+  });
 
-console.log(`compared ${cases.length} cases (JS dist vs Python)`);
-for (const [fn, s] of Object.entries(byFn)) {
-  console.log(`  ${fn.padEnd(15)} ${s.total - s.differ}/${s.total} identical`);
+  console.log(`compared ${cases.length} cases (JS dist vs ${port.name})`);
+  for (const [fn, s] of Object.entries(byFn)) {
+    console.log(`  ${fn.padEnd(15)} ${s.total - s.differ}/${s.total} identical`);
+  }
+  if (bothThrew) console.log(`  (${bothThrew} cases threw in both ports)`);
+  console.log(`differences: ${diffs.length}`);
+  for (const { c, detail } of diffs.slice(0, MAX_SHOWN)) {
+    console.log(`\n- ${c.file} ${c.id} [${c.fn}] ${JSON.stringify(c.input)}`);
+    console.log(`  ${detail}`);
+  }
+  if (diffs.length > MAX_SHOWN) console.log(`\n... and ${diffs.length - MAX_SHOWN} more`);
+  total += diffs.length;
 }
-if (bothThrew) console.log(`  (${bothThrew} cases threw in both ports)`);
-console.log(`differences: ${diffs.length}`);
-for (const { c, detail } of diffs.slice(0, MAX_SHOWN)) {
-  console.log(`\n- ${c.file} ${c.id} [${c.fn}] ${JSON.stringify(c.input)}`);
-  console.log(`  ${detail}`);
-}
-if (diffs.length > MAX_SHOWN) console.log(`\n... and ${diffs.length - MAX_SHOWN} more`);
-process.exit(diffs.length ? 1 : 0);
+process.exit(total ? 1 : 0);
