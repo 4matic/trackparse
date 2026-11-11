@@ -4,6 +4,7 @@ import { defineConfig } from "astro/config";
 
 const repo = "https://github.com/4matic/trackparse";
 
+
 export default defineConfig({
   site: "https://4matic.github.io",
   base: "/trackparse",
@@ -34,6 +35,13 @@ export default defineConfig({
         { tag: "meta", attrs: { property: "og:image:width", content: "1200" } },
         { tag: "meta", attrs: { property: "og:image:height", content: "630" } },
         { tag: "meta", attrs: { name: "twitter:card", content: "summary_large_image" } },
+        // Inline code without a space in a table cell (`time-out-of-order`, `knownArtists`) never
+        // breaks at a hyphen; code with spaces still wraps at the spaces (custom.css, code.nowrap).
+        {
+          tag: "script",
+          content:
+            'document.addEventListener("DOMContentLoaded",()=>{for(const c of document.querySelectorAll(".sl-markdown-content :is(td,th) code"))if(!/\\s/.test(c.textContent))c.classList.add("nowrap")})',
+        },
       ],
       expressiveCode: {
         themes: ["vitesse-dark", "vitesse-light"],

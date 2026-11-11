@@ -63,7 +63,7 @@ Tracklist(
 
 One per line, in order.
 
-| Field | Type | |
+| Field | Type | Description |
 |---|---|---|
 | `line` | `number` | 1-based |
 | `kind` | `"track" \| "marker" \| "header" \| "link" \| "note" \| "blank"` | See [line kinds](/trackparse/guides/tracklists/#line-kinds) |
@@ -144,7 +144,7 @@ style, up to 100 hours (or 999 minutes for lists that never use hours).
 Both functions take the same options. `applyEdits` accepts them for symmetry; edits don't depend on
 them.
 
-| Option | Default | |
+| Option | Default | Description |
 |---|---|---|
 | `mode` | `"tracklist"` | Mode for each line's `parse()` |
 | `knownArtists`, `splitAnd`, `keywords` | | As for [`parse()`](/trackparse/reference/options/) |

@@ -188,10 +188,25 @@ h5 {
 .sl-markdown-content a > code {
   color: inherit;
 }
-/* In table cells, code wraps only at spaces: the table scrolls sideways instead of breaking
-   `knownArtists` into pieces. */
+/* In table cells, code is an ordinary inline box that wraps only at spaces (each line keeps its
+   own background), and cells align to the top. An inline-block puts its baseline on its last
+   line, so with baseline-aligned cells a two-line code span pushed the other cells' text down,
+   and Firefox then sized the row too short and let that text spill into the next row. */
+.sl-markdown-content :is(td, th) {
+  vertical-align: top;
+}
 .sl-markdown-content :is(td, th) code:not(pre code, .not-content code) {
+  display: inline;
   overflow-wrap: normal;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+  line-height: 1.9;
+}
+.sl-markdown-content :is(td, th) code.nowrap {
+  white-space: nowrap;
+}
+.sl-markdown-content th code:not(pre code, .not-content code) {
+  font-size: 0.95em;
 }
 
 /* Tables: hairlines, small muted headers, tabular numbers. */
@@ -457,6 +472,8 @@ starlight-tabs [role="tab"] {
   border: 1px solid color-mix(in srgb, var(--tp-c) 22%, transparent);
 }
 .tp-position { --tp-c: var(--tp-position); }
+/* A layered (`w/`) line: muted and dashed, so it does not read as a position. */
+.tp-layered { --tp-c: var(--sl-color-gray-3); border-style: dashed; }
 .tp-primary { --tp-c: var(--tp-primary); }
 .tp-featured { --tp-c: var(--tp-featured); }
 .tp-producer { --tp-c: var(--tp-producer); }
