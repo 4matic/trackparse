@@ -200,22 +200,29 @@ export function jsonHtml(value: unknown): string {
   );
 }
 
-const KEYWORDS: Record<"js" | "py", Set<string>> = {
+/** The languages of the playground's code panels. */
+export type Lang = "js" | "py" | "rs";
+
+const KEYWORDS: Record<Lang, Set<string>> = {
   js: new Set(["import", "from", "export", "const", "let", "var", "return", "new", "await", "async", "function"]),
   py: new Set(["from", "import", "def", "return", "for", "in", "as", "lambda", "not", "and", "or"]),
+  rs: new Set(["use", "let", "mut", "fn", "pub", "struct", "enum", "impl", "for", "in", "if", "else", "match", "return", "as", "ref", "const", "static", "mod", "crate", "self", "where", "while", "loop"]),
 };
-const CONSTANTS = new Set(["true", "false", "null", "undefined", "True", "False", "None"]);
+const CONSTANTS = new Set(["true", "false", "null", "undefined", "True", "False", "None", "Some"]);
 
 /**
  * A small highlighter for the snippets the playground generates (one import, a call or two).
  * Strings, comments, keywords, constants, numbers, function calls, keyword arguments, punctuation.
  */
-export function codeHtml(src: string, lang: "js" | "py"): string {
+export function codeHtml(src: string, lang: Lang): string {
   // Groups: comment, string, number, word, punctuation. A fresh RegExp per call (it is stateful).
   const re =
     lang === "js"
       ? /(\/\/[^\n]*)|("(?:\\.|[^"\\\n])*"|'(?:\\.|[^'\\\n])*'|`(?:\\.|[^`\\])*`)|\b(\d+(?:\.\d+)?)\b|([A-Za-z_$][\w$]*)|([{}()[\],.;:=])/g
-      : /(#[^\n]*)|("(?:\\.|[^"\\\n])*"|'(?:\\.|[^'\\\n])*')|\b(\d+(?:\.\d+)?)\b|([A-Za-z_][\w]*)|([{}()[\],.;:=])/g;
+      : lang === "rs"
+        ? // Rust: `//` comments, double-quoted strings only (a `'` may start a lifetime).
+          /(\/\/[^\n]*)|("(?:\\.|[^"\\\n])*")|\b(\d+(?:\.\d+)?)\b|([A-Za-z_][\w]*)|([{}()[\],.;:=&])/g
+        : /(#[^\n]*)|("(?:\\.|[^"\\\n])*"|'(?:\\.|[^'\\\n])*')|\b(\d+(?:\.\d+)?)\b|([A-Za-z_][\w]*)|([{}()[\],.;:=])/g;
   let out = "";
   let last = 0;
   for (let m = re.exec(src); m; m = re.exec(src)) {
@@ -230,7 +237,7 @@ export function codeHtml(src: string, lang: "js" | "py"): string {
     else if (word) {
       if (KEYWORDS[lang].has(word)) cls = "s-kw";
       else if (CONSTANTS.has(word)) cls = "s-const";
-      else if (/^\s*\(/.test(rest)) cls = "s-fn";
+      else if (/^\s*\(/.test(rest) || (lang === "rs" && /^!\(/.test(rest))) cls = "s-fn";
       else if (lang === "py" && /^=(?!=)/.test(rest)) cls = "s-param";
       else cls = "s-var";
     } else if (punct) cls = "s-punct";

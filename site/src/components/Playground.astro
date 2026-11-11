@@ -174,6 +174,7 @@ const listExamples: { label: string; title: string; text: string }[] = [
           <span class="pg-lang" role="group" aria-label="Language">
             <button type="button" class="tp-btn small" data-lang="js" aria-pressed="true">JS</button>
             <button type="button" class="tp-btn small" data-lang="py" aria-pressed="false">Python</button>
+            <button type="button" class="tp-btn small" data-lang="rs" aria-pressed="false">Rust</button>
           </span>
         </div>
         <pre class="tp-json tp-code" id="pg-code"></pre>
@@ -247,6 +248,7 @@ const listExamples: { label: string; title: string; text: string }[] = [
             <span class="pg-lang" role="group" aria-label="Language" id="tl-lang" hidden>
               <button type="button" class="tp-btn small" data-lang="js" aria-pressed="true">JS</button>
               <button type="button" class="tp-btn small" data-lang="py" aria-pressed="false">Python</button>
+              <button type="button" class="tp-btn small" data-lang="rs" aria-pressed="false">Rust</button>
             </span>
             <button type="button" class="tp-btn small" id="tl-copy-out" hidden><Copy size={14} aria-hidden="true" /><span>Copy</span></button>
           </div>
@@ -522,7 +524,7 @@ const listExamples: { label: string; title: string; text: string }[] = [
   import { format, parse, type ParseOptions } from "trackparse";
   import { applyEdits, parseTracklist, type Edit, type Tracklist, type TracklistEntry } from "trackparse/tracklist";
   import { icon } from "../lib/icons";
-  import { chip, codeHtml, escapeHtml, fieldsHtml, highlight, jsonHtml, KIND_LABEL, roleKind, segmentsHtml, type Kind } from "../lib/trackview";
+  import { chip, codeHtml, escapeHtml, fieldsHtml, highlight, jsonHtml, KIND_LABEL, roleKind, segmentsHtml, type Kind, type Lang } from "../lib/trackview";
 
   const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 
@@ -631,7 +633,40 @@ const listExamples: { label: string; title: string; text: string }[] = [
   const feat = $<HTMLSelectElement>("pg-feat");
   const joiners = $<HTMLSelectElement>("pg-joiners");
   const versions = $<HTMLSelectElement>("pg-versions");
-  let lang: "js" | "py" = "js";
+  let lang: Lang = "js";
+
+  // ---- Rust literals for the generated code -------------------------------------------------
+  /** A Rust string literal. Control, invisible and bidi characters are written as `\u{…}`. */
+  function rsStr(s: string): string {
+    let out = '"';
+    for (const ch of s) {
+      const cp = ch.codePointAt(0)!;
+      if (ch === '"' || ch === "\\") out += `\\${ch}`;
+      else if (ch === "\n") out += "\\n";
+      else if (ch === "\r") out += "\\r";
+      else if (ch === "\t") out += "\\t";
+      // A lone surrogate cannot be in a Rust string: U+FFFD, as a lossy conversion would give.
+      else if (cp >= 0xd800 && cp <= 0xdfff) out += "\\u{fffd}";
+      else if (cp < 0x20 || (cp >= 0x7f && cp <= 0x9f) || (cp >= 0x200b && cp <= 0x200f) || (cp >= 0x2028 && cp <= 0x202e) || (cp >= 0x2066 && cp <= 0x2069) || cp === 0xfeff)
+        out += `\\u{${cp.toString(16)}}`;
+      else out += ch;
+    }
+    return `${out}"`;
+  }
+  /** An `f64` literal: `45.0`, `7.5`, `1e21`. */
+  function rsNum(n: number): string {
+    if (!Number.isFinite(n)) return Number.isNaN(n) ? "f64::NAN" : n > 0 ? "f64::INFINITY" : "f64::NEG_INFINITY";
+    const s = String(n).replace("e+", "e");
+    return /[.e]/.test(s) ? s : `${s}.0`;
+  }
+  /** `youtube` → `Youtube`: the enum variant of an option value. */
+  const variant = (v: unknown) => String(v).charAt(0).toUpperCase() + String(v).slice(1);
+  /** `use` items in rustfmt order: functions first, then types. */
+  function rsUse(path: string, names: string[]): string {
+    const lower = (n: string) => n[0] === n[0].toLowerCase();
+    const sorted = [...names.filter(lower).sort(), ...names.filter((n) => !lower(n)).sort()];
+    return `use ${path}::${sorted.length === 1 ? sorted[0] : `{${sorted.join(", ")}}`};`;
+  }
 
   function options(): ParseOptions {
     const o: ParseOptions = {};
@@ -656,6 +691,40 @@ const listExamples: { label: string; title: string; text: string }[] = [
       const opts = Object.keys(o).length ? `, ${js(o)}` : "";
       const fopts = Object.keys(f).length ? `, ${js(f)}` : "";
       return `import { parse, format } from "trackparse";\n\nconst track = parse(${q(s)}${opts});\nformat(track${fopts});`;
+    }
+    if (lang === "rs") {
+      // A whole program: options are builders, and the `_with` functions take them by reference.
+      const names: string[] = [];
+      let popts = "";
+      if (o.mode) popts += `.mode(ModeOption::${variant(o.mode)})`;
+      if (o.knownArtists) popts += `.known_artists([${o.knownArtists.map(rsStr).join(", ")}])`;
+      if (o.uploader) popts += `.uploader(${rsStr(o.uploader)})`;
+      if (o.splitAnd) popts += `.split_and(SplitAnd::${variant(o.splitAnd)})`;
+      if (o.mode) names.push("ModeOption");
+      if (o.splitAnd) names.push("SplitAnd");
+      let fopts = "";
+      if (f.feat) fopts += `.feat(FeatPlacement::${variant(f.feat)})`;
+      if (f.joiners) fopts += `.joiners(JoinerStyle::${variant(f.joiners)})`;
+      if (f.versions) fopts += `.versions(VersionsOption::${variant(f.versions)})`;
+      if (f.feat) names.push("FeatPlacement");
+      if (f.joiners) names.push("JoinerStyle");
+      if (f.versions) names.push("VersionsOption");
+      const body: string[] = [];
+      if (popts) {
+        names.push("parse_with", "ParseOptions");
+        body.push(`let options = ParseOptions::new()${popts};`, `let track = parse_with(${rsStr(s)}, &options);`);
+      } else {
+        names.push("parse");
+        body.push(`let track = parse(${rsStr(s)});`);
+      }
+      if (fopts) {
+        names.push("format_track_with", "FormatOptions");
+        body.push(`let format = FormatOptions::new()${fopts};`, 'println!("{}", format_track_with(&track, &format));');
+      } else {
+        names.push("format_track");
+        body.push('println!("{}", format_track(&track));');
+      }
+      return `${rsUse("trackparse", names)}\n\nfn main() {\n${body.map((l) => `    ${l}`).join("\n")}\n}`;
     }
     const snake = (k: string) => k.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`);
     const py = (v: unknown): string =>
@@ -699,7 +768,7 @@ const listExamples: { label: string; title: string; text: string }[] = [
   // One language choice for both code panels.
   for (const b of document.querySelectorAll<HTMLButtonElement>("[data-lang]")) {
     b.addEventListener("click", () => {
-      lang = b.dataset.lang as "js" | "py";
+      lang = b.dataset.lang as Lang;
       for (const x of document.querySelectorAll<HTMLElement>("[data-lang]"))
         x.setAttribute("aria-pressed", String(x.dataset.lang === lang));
       renderTrack();
@@ -815,7 +884,7 @@ const listExamples: { label: string; title: string; text: string }[] = [
   type View = "table" | "json" | "code";
   let view: View = "table";
 
-  /** JS / Python for the current text, options and edit inputs. */
+  /** JS / Python / Rust for the current text, options and edit inputs. */
   function listCode(text: string, list: Tracklist): string {
     const q = (v: string) => JSON.stringify(v);
     const lines = text.split("\n");
@@ -843,6 +912,28 @@ const listExamples: { label: string; title: string; text: string }[] = [
       ];
       if (fix) out.push(`applyEdits(text, [{ op: "set-time", line: ${fix.line}, seconds: ${fix.seconds} }]);  // the suggested fix`);
       return out.join("\n");
+    }
+    if (lang === "rs") {
+      // A whole program. A list without CR line endings is an array of lines joined into a String.
+      const joined = !(text.includes("\r") || lines.length < 2);
+      const t = joined ? "&text" : "text";
+      const names = ["apply_edits", "Edit", audioSeconds !== undefined ? "parse_tracklist_with" : "parse_tracklist"];
+      if (audioSeconds !== undefined) names.push("TracklistOptions");
+      const body = [
+        joined ? `let text = [\n${lines.map((l) => `        ${rsStr(l)},`).join("\n")}\n    ]\n    .join("\\n");` : `let text = ${rsStr(text)};`,
+        "",
+        audioSeconds !== undefined
+          ? `let options = TracklistOptions::new().audio_seconds(${rsNum(audioSeconds)});\n    let list = parse_tracklist_with(${t}, &options);`
+          : `let list = parse_tracklist(${t});`,
+        'println!("{:#?}", list.entries);   // one entry per line',
+        'println!("{:#?}", list.warnings);  // the checks, with line numbers',
+        "",
+        `let shifted = apply_edits(${t}, &[Edit::shift_from(${rsNum(seconds)}, ${from})]);`,
+        `let sorted = apply_edits(${t}, &[Edit::sort_by_time()]);`,
+      ];
+      if (fix) body.push(`let fixed = apply_edits(${t}, &[Edit::set_time(${fix.line}, ${rsNum(fix.seconds)})]);  // the suggested fix`);
+      body.push(`println!("{}\\n\\n{}${fix ? "\\n\\n{}" : ""}", shifted.text, sorted.text${fix ? ", fixed.text" : ""});`);
+      return `${rsUse("trackparse::tracklist", names)}\n\nfn main() {\n${body.map((l) => (l ? `    ${l}` : "")).join("\n")}\n}`;
     }
     const out = [
       "from trackparse.tracklist import apply_edits, parse_tracklist",
