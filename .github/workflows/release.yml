@@ -255,7 +255,8 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ needs.release-please.outputs.rust_tag_name }}
-      - uses: dtolnay/rust-toolchain@stable
+      # The runner image ships stable Rust; no third-party toolchain action in the publishing job.
+      - run: rustup update stable --no-self-update && rustup default stable
       - name: Verify versions are in sync
         env:
           TAG_VERSION: ${{ needs.release-please.outputs.rust_version }}
@@ -271,7 +272,7 @@ jobs:
       - name: Package
         working-directory: rust
         run: cargo package
-      - uses: rust-lang/crates-io-auth-action@v1
+      - uses: rust-lang/crates-io-auth-action@3268eb413133e2960fa4ae0e963ca76380c54cd9 # v1.0.6
         id: auth
       - name: Publish to crates.io
         working-directory: rust
