@@ -99,15 +99,16 @@ Every key is always present. When a guess was involved, `warnings` says which on
 
 | Number | What it means |
 |---|---|
-| **13,124** shared fixtures | 1,197 written by hand, 11,927 generated from combinations. 100% pass in JS and Python, nothing skipped. |
+| **13,124** shared fixtures | 1,197 written by hand, 11,927 generated from combinations. 100% pass in JS, Python and Rust, nothing skipped. |
 | **1,233** of them on tracklists | 297 handwritten, 936 generated. Line splitting, times, bullets and Markdown, warnings, edits |
 | **1,346** JS tests | every fixture, a schema check on every output, property-based tests of the spec invariants, API tests |
 | **27** version types | remix, VIP, bootleg, extended, radio, original, live, remaster, sped up, … |
 | **0** dependencies | ESM + CJS + TypeScript types, about 17 kB gzipped. `trackparse/tracklist` adds about 8.3 KiB, only if you import it |
 | **Node 18+** | CI runs the full suite on 22 and 24, and every fixture against the built package on 18 and 20 |
 | **Python 3.9+** | 1,336 pytest tests on 3.9 to 3.14, plus every fixture against the built wheel. Output is byte-identical to JS |
+| **Rust 1.74+** | every fixture, the tracklist invariants and the typed API tests on stable and on 1.74. Output is byte-identical to JS on every fixture and on about 790,000 random inputs |
 | **5,031** real tracklist lines | 117 podcast tracklists the tracklist rules were checked against. Every line round-trips byte for byte |
-| **1 spec** | [`spec/SPEC.md`](spec/SPEC.md) defines the behaviour; the Python port passes the same fixtures, and so will Rust |
+| **1 spec** | [`spec/SPEC.md`](spec/SPEC.md) defines the behaviour; the Python and Rust ports pass the same fixtures |
 
 ## Install
 
@@ -121,7 +122,14 @@ Works in Node 18+ and any runtime with ES2020.
 pip install trackparse   # or: uv add trackparse
 ```
 
-Python 3.9+, no dependencies. A Rust port is [on the way](#ports).
+Python 3.9+, no dependencies.
+
+```sh
+cargo add trackparse
+```
+
+Rust 1.74+, one dependency (`unicode-normalization`), `serde` as an optional feature. The crate is not on crates.io yet; until it
+is, use `cargo add trackparse --git https://github.com/4matic/trackparse`. See [Ports](#ports).
 
 ## Quick start
 
@@ -175,10 +183,45 @@ track.to_dict()["artists"][1]
 Options are keyword arguments: `parse(s, mode="youtube", known_artists=["Chase & Status"])`. The
 full Python API is in [`python/README.md`](python/README.md).
 
+### Rust
+
+The same parser again. Functions are snake_case, results are structs with public fields and enums
+for roles, types and kinds, and `to_json()` writes the spec's JSON, identical to the JS output.
+
+```rust
+use trackparse::{format_track_with, parse, parse_artists, FeatPlacement, FormatOptions, JoinerStyle};
+
+let track = parse("Noisia feat. Foreign Beggars - Shellshock");
+track.artists;
+// [Artist { name: "Noisia", role: Primary, joiner: None, source: Artist },
+//  Artist { name: "Foreign Beggars", role: Featured, joiner: Some("feat."), source: Artist }]
+
+parse("Queen - Bohemian Rhapsody (Live at Wembley 1986)").versions[0];
+// Version { version_type: Live, raw: "Live at Wembley 1986", artists: [], modifiers: [],
+//           descriptor: Some("at Wembley"), year: Some(1986), unknown_artist: false, delimiter: Paren }
+
+parse_artists("Sub Focus, Wilkinson & Dimension feat. Kojo")
+    .iter().map(|a| format!("{}:{}", a.name, a.role)).collect::<Vec<_>>();
+// ["Sub Focus:primary", "Wilkinson:primary", "Dimension:primary", "Kojo:featured"]
+
+let options = FormatOptions::new().feat(FeatPlacement::Title).joiners(JoinerStyle::Canonical);
+format_track_with(&parse("Wilkinson ft. Becky Hill - Afterglow (Sub Focus Remix)"), &options);
+// "Wilkinson - Afterglow (feat. Becky Hill) (Sub Focus Remix)"
+
+track.artists[1].to_json();
+// {"name":"Foreign Beggars","role":"featured","joiner":"feat.","source":"artist"}
+```
+
+Options are builders passed to the `_with` form of a function:
+`parse_with(s, &ParseOptions::new().known_artists(["Chase & Status"]))`. Tracklists are in
+`trackparse::tracklist`. Every example on the [documentation site](https://4matic.github.io/trackparse/)
+has a Rust tab.
+
 > [!TIP]
 > `&` is a joiner, so `Chase & Status` comes out as two artists. There's no built-in artist
 > database. Pass the names you know instead: `parse(s, { knownArtists: ["Chase & Status"] })` in
-> JS, `parse(s, known_artists=["Chase & Status"])` in Python.
+> JS, `parse(s, known_artists=["Chase & Status"])` in Python,
+> `parse_with(s, &ParseOptions::new().known_artists(["Chase & Status"]))` in Rust.
 
 ## What it understands
 
@@ -353,12 +396,13 @@ of the list uses spaced dashes.
 
 The fixtures in [`spec/fixtures`](spec/fixtures) are the source of truth. The spec says what should
 happen, the fixtures pin it down, and every port has to pass all of them. The JS and Python
-packages both do: **13,124 of 13,124**, with empty skip lists, in CI on every push.
+packages and the Rust crate all do: **13,124 of 13,124**, with empty skip lists, in CI on every push.
 
 Passing a fixture only checks the fields the case asserts, so
-[`scripts/compare-ports.mjs`](scripts/compare-ports.mjs) also runs every fixture input through both
-ports and diffs the complete outputs, tracklists and edits included. Result: 0 differences, byte
-for byte.
+[`scripts/compare-ports.mjs`](scripts/compare-ports.mjs) also runs every fixture input through all
+three ports and diffs the complete outputs, tracklists and edits included. Result: 0 differences,
+byte for byte. The Rust crate was also compared with JS on about 500,000 random single-track cases
+and 290,000 random tracklists with edits: 0 differences.
 
 ### Handwritten: 1,197 cases in 27 files
 
@@ -452,6 +496,7 @@ pnpm conformance   # pass rate per fixture file and per spec rule
 pnpm --filter trackparse build && node scripts/corpus-check.mjs spec/corpus/<file>.jsonl
 
 cd python && uv run pytest   # the same fixtures and invariants in Python
+cd rust && cargo test         # and in Rust
 ```
 
 ## API
@@ -557,7 +602,7 @@ parser.parse("Chase & Status x Camo & Krooked - Track (Alix Perez Rerub)").versi
 
 **Docs:** [Tracklist API](https://4matic.github.io/trackparse/reference/tracklist/) · [Warnings](https://4matic.github.io/trackparse/reference/warnings/)
 
-Import from `trackparse/tracklist` (Python: `trackparse.tracklist`). It's a separate entry, so code
+Import from `trackparse/tracklist` (Python: `trackparse.tracklist`, Rust: `trackparse::tracklist`). It's a separate entry, so code
 that only parses single tracks never loads it.
 
 #### `parseTracklist(text, options?)` → `Tracklist`
@@ -679,7 +724,7 @@ spaced dashes. The checks run last, over the finished entries.
 |---|---|---|
 | JavaScript / TypeScript | [`trackparse`](https://www.npmjs.com/package/trackparse) on npm | reference implementation, 13,124 / 13,124 fixtures, tracklists as `trackparse/tracklist` |
 | Python | [`trackparse`](https://pypi.org/project/trackparse/) on PyPI | 13,124 / 13,124 fixtures, output identical to JS, tracklists as `trackparse.tracklist` |
-| Rust | `trackparse` on crates.io | planned, same fixtures |
+| Rust | `trackparse` on crates.io | passes 13,130 / 13,130, output identical to JS, tracklists as `trackparse::tracklist`; publishing to crates.io pending |
 
 Want another language? The porting checklist is in [AGENTS.md](AGENTS.md).
 
@@ -718,7 +763,7 @@ Not there yet:
   doesn't yet learn names from its other lines.
 - Warnings for gaps or overlaps between consecutive tracklist times.
 
-Planned next: the Rust port. The browser playground is already live at
+Planned next: publishing the Rust crate to crates.io. The browser playground is already live at
 [4matic.github.io/trackparse/playground](https://4matic.github.io/trackparse/playground/).
 
 ## Contributing
