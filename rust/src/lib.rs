@@ -1,25 +1,105 @@
-//! trackparse: a spec-driven parser for music track strings.
+//! Turn messy track names into structured data: artists with roles, remixes and versions,
+//! junk, and whole tracklists.
 //!
-//! Behaviour is defined by `spec/SPEC.md`; rule IDs (`R6.2`…) in comments refer to it. The output
-//! is byte-identical to the JavaScript and Python packages for every input.
+//! trackparse is driven by a written spec. Behaviour is defined by [`SPEC.md`] and 13,130 shared
+//! fixtures, and this crate gives byte-identical output to the JavaScript (npm `trackparse`) and
+//! Python (PyPI `trackparse`) packages for every input. Rule IDs such as `R6.2` in these docs
+//! refer to the spec.
+//!
+//! - User documentation: <https://4matic.github.io/trackparse/>
+//! - The spec: <https://4matic.github.io/trackparse/reference/spec/>
+//!
+//! [`SPEC.md`]: https://github.com/4matic/trackparse/blob/main/spec/SPEC.md
+//!
+//! # Single tracks
+//!
+//! [`parse`] takes any string and returns a [`ParsedTrack`]. It never panics and never returns
+//! an error: what it recognises goes into a field, what it does not stays in the title.
 //!
 //! ```
-//! use trackparse::{parse, ArtistRole, VersionType};
+//! use trackparse::{parse, ArtistRole, JunkKind, VersionType};
 //!
-//! let track = parse("Noisia feat. Foreign Beggars - Shellshock (Rockwell Remix)");
+//! let track = parse("Noisia feat. Foreign Beggars - Shellshock (Rockwell Remix) [Official Video]");
+//!
 //! assert_eq!(track.artists[0].name, "Noisia");
+//! assert_eq!(track.artists[1].name, "Foreign Beggars");
 //! assert_eq!(track.artists[1].role, ArtistRole::Featured);
 //! assert_eq!(track.title, "Shellshock");
+//! assert_eq!(track.full_title, "Shellshock (Rockwell Remix)");
 //! assert_eq!(track.versions[0].version_type, VersionType::Remix);
+//! assert_eq!(track.versions[0].artists[0].name, "Rockwell");
+//! assert_eq!(track.junk[0].kind, JunkKind::Video);
 //! ```
 //!
-//! Multi-line tracklists (R13) are in [`tracklist`]: `parse_tracklist` and `apply_edits`.
+//! [`parse_with`] takes [`ParseOptions`]; a [`Parser`] keeps resolved options for many calls.
+//! [`parse_artists`] splits a credit string, [`format_track`] writes a track back as a string,
+//! [`normalize`] cleans a string without parsing it, and [`all_artists`] lists every credited
+//! name, remixers included.
+//!
+//! ```
+//! use trackparse::{format_track_with, parse_with, FeatPlacement, FormatOptions, ParseOptions};
+//!
+//! let options = ParseOptions::new().known_artists(["Chase & Status"]);
+//! let track = parse_with("Chase & Status - Blind Faith ft. Liam Bailey", &options);
+//! assert_eq!(track.artists.len(), 2);
+//!
+//! let format = FormatOptions::new().feat(FeatPlacement::Artist);
+//! assert_eq!(format_track_with(&track, &format), "Chase & Status ft. Liam Bailey - Blind Faith");
+//! ```
+//!
+//! # Tracklists
+//!
+//! The [`tracklist`] module reads a whole pasted tracklist: one entry per line, with its time,
+//! its kind and the parsed track, plus warnings about the times. [`tracklist::apply_edits`]
+//! rewrites times and lines without touching anything else.
+//!
+//! ```
+//! use trackparse::tracklist::{apply_edits, parse_tracklist, Edit, WarningCode};
+//!
+//! let text = "00:00 Noisia - Stigma\n03:45 Phace & Misanthrop - Desert Orgy\n02:10 Mefjus - Suicide Bassline";
+//! let list = parse_tracklist(text);
+//! assert_eq!(list.stats.tracks, 3);
+//! assert_eq!(list.entries[1].time.as_ref().unwrap().seconds, 225.0);
+//! assert_eq!(list.entries[1].track.as_ref().unwrap().title, "Desert Orgy");
+//! assert_eq!(list.warnings[0].code, WarningCode::TimeOutOfOrder);
+//!
+//! let fixed = apply_edits(text, &[Edit::sort_by_time()]);
+//! assert_eq!(
+//!     fixed.text,
+//!     "00:00 Noisia - Stigma\n02:10 Mefjus - Suicide Bassline\n03:45 Phace & Misanthrop - Desert Orgy"
+//! );
+//! ```
+//!
+//! # JSON
+//!
+//! Fields are snake_case in Rust. `to_json()` on every output type writes the spec's JSON form:
+//! camelCase keys (`fullTitle`, `unknownArtist`), every key present, in the schema's order. It is
+//! the same text the JavaScript and Python packages produce, and needs no dependency.
+//!
+//! ```
+//! let artists = trackparse::parse_artists("Noisia & Phace");
+//! assert_eq!(
+//!     artists[1].to_json(),
+//!     r#"{"name":"Phace","role":"primary","joiner":"&","source":"artist"}"#
+//! );
+//! ```
+//!
+//! With the `serde` feature the output types implement `Serialize` and `Deserialize` with the
+//! same keys, so `serde_json::to_string(&track)` gives the text of `track.to_json()`. The
+//! options and [`tracklist::Edit`] implement both traits too.
+//!
+//! # Guarantees
+//!
+//! - Total: any `&str` gives a result. No panics, no `Result` (R0.8).
+//! - Linear time: no regular expressions, no backtracking.
+//! - No `unsafe`. One dependency (`unicode-normalization`); `serde` only with the feature.
+//! - The Unicode tables the rules depend on are compiled in, so the output does not change
+//!   with the compiler version.
+
+#![warn(missing_docs)]
 
 pub mod json;
-pub mod options;
 pub mod tracklist;
-pub mod types;
-pub mod value;
 #[doc(hidden)]
 pub mod wire;
 
@@ -34,14 +114,19 @@ mod digits;
 mod format;
 mod mode;
 mod normalize;
+mod options;
 mod parser;
 mod prefix;
 mod scanner;
 mod separator;
+#[cfg(feature = "serde")]
+mod serde_support;
 mod tables;
 mod title;
+mod types;
 #[rustfmt::skip]
 mod unicode_tables;
+mod value;
 mod words;
 
 pub use data::SPEC_VERSION;
@@ -51,11 +136,16 @@ pub use options::{
 };
 pub use types::{
     Artist, ArtistRole, ArtistSource, Flags, Junk, JunkKind, Mode, ParsedTrack, Position,
-    Timestamp, ToJson, Version, VersionDelimiter, VersionType, Warning,
+    Timestamp, ToJson, UnknownName, Version, VersionDelimiter, VersionType, Warning,
 };
 
 use options::{Resolved, ResolvedFormat};
 use parser::Engine;
+
+/// The examples of the README, run as doc tests (they use the `serde` feature).
+#[cfg(all(doctest, feature = "serde"))]
+#[doc = include_str!("../README.md")]
+pub struct ReadmeDoctests;
 
 /// Parse one track string with the default options (mode `auto`).
 ///
@@ -100,6 +190,15 @@ pub fn parse_artists(input: &str) -> Vec<Artist> {
 }
 
 /// [`parse_artists`] with options (`known_artists`, `split_and`, `keywords`).
+///
+/// ```
+/// use trackparse::{parse_artists_with, ParseOptions};
+///
+/// let options = ParseOptions::new().known_artists(["Above & Beyond"]);
+/// let artists = parse_artists_with("Above & Beyond & Zoë Johnston", &options);
+/// let names: Vec<&str> = artists.iter().map(|a| a.name.as_str()).collect();
+/// assert_eq!(names, ["Above & Beyond", "Zoë Johnston"]);
+/// ```
 pub fn parse_artists_with(input: &str, options: &ParseOptions) -> Vec<Artist> {
     Parser::new(options).parse_artists(input)
 }
@@ -158,7 +257,9 @@ pub fn all_artists(track: &ParsedTrack) -> Vec<Artist> {
     )
 }
 
-/// A parser with its options resolved and its vocabulary tables built once (JS `createParser`).
+/// A parser with its options resolved and its vocabulary tables built once (`createParser` in
+/// JavaScript, `create_parser` in Python). Use it to parse many strings with the same options.
+/// It is `Send + Sync`.
 ///
 /// ```
 /// use trackparse::{ParseOptions, Parser};
@@ -173,16 +274,24 @@ pub struct Parser {
 }
 
 impl Parser {
+    /// Resolve `options` and build the vocabulary tables.
     pub fn new(options: &ParseOptions) -> Parser {
         Parser { engine: Engine::new(Resolved::from_typed(options)) }
     }
 
-    /// See [`parse`].
+    /// [`parse`] with this parser's options.
     pub fn parse(&self, input: &str) -> ParsedTrack {
         self.engine.run(input, false).into_track()
     }
 
-    /// See [`parse_artists`].
+    /// [`parse_artists`] with this parser's options.
+    ///
+    /// ```
+    /// use trackparse::{ParseOptions, Parser, SplitAnd};
+    ///
+    /// let parser = Parser::new(&ParseOptions::new().split_and(SplitAnd::Always));
+    /// assert_eq!(parser.parse_artists("Above and Beyond").len(), 2);
+    /// ```
     pub fn parse_artists(&self, input: &str) -> Vec<Artist> {
         self.engine.run_artists(input)
     }

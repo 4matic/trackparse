@@ -309,3 +309,38 @@ fn numbers_are_written_like_js() {
         assert_eq!(Json::Num(*n).write(), *text);
     }
 }
+
+#[test]
+fn enums_have_names_both_ways() {
+    for role in ArtistRole::ALL {
+        assert_eq!(ArtistRole::from_name(role.as_str()), Some(*role));
+        assert_eq!(role.to_string().parse::<ArtistRole>(), Ok(*role));
+    }
+    assert_eq!(VersionType::ALL.len(), VersionType::NAMES.len());
+    assert_eq!(VersionType::NAMES[24], "spedUp");
+    assert_eq!("spedUp".parse::<VersionType>(), Ok(VersionType::SpedUp));
+    // Names are exact: no case folding, no trimming.
+    let err = "Remix".parse::<VersionType>().unwrap_err();
+    assert_eq!(err.name(), "Remix");
+    assert_eq!(err.to_string(), "unknown VersionType name: \"Remix\"");
+    let boxed: Box<dyn std::error::Error + Send + Sync> = Box::new(err);
+    assert!(boxed.to_string().contains("VersionType"));
+    assert_eq!(ModeOption::default(), ModeOption::Auto);
+    assert_eq!(SplitAnd::default(), SplitAnd::Auto);
+    assert_eq!(FeatPlacement::default(), FeatPlacement::Source);
+    assert_eq!(JoinerStyle::default(), JoinerStyle::Original);
+    assert_eq!(VersionsOption::default(), VersionsOption::All);
+}
+
+#[test]
+fn to_json_needs_no_import() {
+    mod inner {
+        // No `ToJson` in scope here.
+        pub fn json(input: &str) -> String {
+            trackparse::parse(input).to_json()
+        }
+    }
+    let track = parse("Noisia - Stigma");
+    assert_eq!(inner::json("Noisia - Stigma"), ToJson::to_json(&track));
+    assert_eq!(track.to_json_value().to_string(), track.to_json());
+}

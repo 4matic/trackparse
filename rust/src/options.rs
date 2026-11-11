@@ -8,7 +8,19 @@ use crate::json::Json;
 use crate::types::{string_enum, JunkKind, Mode, VersionType};
 
 string_enum! {
-    /// R2: the requested mode. `Auto` resolves to clean, youtube or filename (never tracklist).
+    /// The mode to parse in (R2). `Auto` picks clean, youtube or filename from the string
+    /// itself, never tracklist.
+    ///
+    /// ```
+    /// use trackparse::{parse_with, Mode, ModeOption, ParseOptions};
+    ///
+    /// let input = "Noisia - Stigma (Official Video)";
+    /// assert_eq!(parse_with(input, &ParseOptions::new()).mode, Mode::Youtube);
+    /// let clean = ParseOptions::new().mode(ModeOption::Clean);
+    /// assert_eq!(parse_with(input, &clean).mode, Mode::Clean);
+    /// assert_eq!(ModeOption::default(), ModeOption::Auto);
+    /// ```
+    #[non_exhaustive]
     ModeOption {
         Auto => "auto", Clean => "clean", Youtube => "youtube", Filename => "filename",
         Tracklist => "tracklist",
@@ -16,109 +28,241 @@ string_enum! {
 }
 
 string_enum! {
-    /// R7.3: when `and` splits a credit list.
+    /// When the word `and` splits a credit list (R7.3). `&` and the other joiners always split.
+    ///
+    /// ```
+    /// use trackparse::{parse_artists_with, ParseOptions, SplitAnd};
+    ///
+    /// let count = |split_and| {
+    ///     let options = ParseOptions::new().split_and(split_and);
+    ///     parse_artists_with("Above and Beyond", &options).len()
+    /// };
+    /// assert_eq!(count(SplitAnd::Auto), 1);
+    /// assert_eq!(count(SplitAnd::Always), 2);
+    /// assert_eq!(count(SplitAnd::Never), 1);
+    /// ```
+    #[non_exhaustive]
     SplitAnd { Auto => "auto", Always => "always", Never => "never" }
 }
 
 string_enum! {
-    /// R11.2: where featured artists are rendered.
+    /// Where [`format_track_with`](crate::format_track_with) writes featured artists (R11.2).
+    ///
+    /// ```
+    /// use trackparse::{format_track_with, parse, FeatPlacement, FormatOptions};
+    ///
+    /// let track = parse("Sub Focus - Out the Blue ft. Alice Gold");
+    /// let with = |feat| format_track_with(&track, &FormatOptions::new().feat(feat));
+    /// assert_eq!(with(FeatPlacement::Source), "Sub Focus - Out the Blue (ft. Alice Gold)");
+    /// assert_eq!(with(FeatPlacement::Artist), "Sub Focus ft. Alice Gold - Out the Blue");
+    /// assert_eq!(with(FeatPlacement::Title), "Sub Focus - Out the Blue (ft. Alice Gold)");
+    /// assert_eq!(with(FeatPlacement::Omit), "Sub Focus - Out the Blue");
+    /// ```
+    #[non_exhaustive]
     FeatPlacement { Source => "source", Artist => "artist", Title => "title", Omit => "omit" }
 }
 
 string_enum! {
-    /// R11.5: joiners as written, or mapped to their canonical form.
+    /// Joiners as written, or mapped to their canonical form (R11.5).
+    ///
+    /// ```
+    /// use trackparse::{format_track_with, parse, FormatOptions, JoinerStyle};
+    ///
+    /// let track = parse("Noisia & The Upbeats ft Tasha Baxter - Dead Limit");
+/// assert_eq!(format_track_with(&track, &FormatOptions::new()), track.input);
+    /// let options = FormatOptions::new().joiners(JoinerStyle::Canonical);
+    /// assert_eq!(
+    ///     format_track_with(&track, &options),
+    ///     "Noisia & The Upbeats feat. Tasha Baxter - Dead Limit"
+    /// );
+    /// ```
+    #[non_exhaustive]
     JoinerStyle { Original => "original", Canonical => "canonical" }
 }
 
 string_enum! {
-    /// R11.3: render versions or leave them out.
+    /// Whether [`format_track_with`](crate::format_track_with) writes the versions (R11.3).
+    ///
+    /// ```
+    /// use trackparse::{format_track_with, parse, FormatOptions, VersionsOption};
+    ///
+    /// let track = parse("Fox Stevenson - Bruises (Magnetude Remix)");
+    /// let options = FormatOptions::new().versions(VersionsOption::None);
+    /// assert_eq!(format_track_with(&track, &options), "Fox Stevenson - Bruises");
+    /// ```
+    #[non_exhaustive]
     VersionsOption { All => "all", None => "none" }
 }
 
-/// Additive vocabulary (R12). Keys are lowercased with ASCII rules.
+#[allow(clippy::derivable_impls)] // the enum comes from a macro
+impl Default for ModeOption {
+    fn default() -> Self {
+        ModeOption::Auto
+    }
+}
+
+#[allow(clippy::derivable_impls)] // the enum comes from a macro
+impl Default for SplitAnd {
+    fn default() -> Self {
+        SplitAnd::Auto
+    }
+}
+
+#[allow(clippy::derivable_impls)] // the enum comes from a macro
+impl Default for FeatPlacement {
+    fn default() -> Self {
+        FeatPlacement::Source
+    }
+}
+
+#[allow(clippy::derivable_impls)] // the enum comes from a macro
+impl Default for JoinerStyle {
+    fn default() -> Self {
+        JoinerStyle::Original
+    }
+}
+
+#[allow(clippy::derivable_impls)] // the enum comes from a macro
+impl Default for VersionsOption {
+    fn default() -> Self {
+        VersionsOption::All
+    }
+}
+
+/// Extra vocabulary, added to the built-in word lists (R12). Keys are matched with ASCII
+/// lowercasing.
+///
+/// ```
+/// use trackparse::{parse_with, JunkKind, KeywordOptions, ParseOptions, VersionType};
+///
+/// let keywords = KeywordOptions::new()
+///     .version_head("rerub", VersionType::Remix)
+///     .junk("out now", JunkKind::Promo);
+/// let options = ParseOptions::new().keywords(keywords);
+/// let track = parse_with("Noisia - Stigma (Phace Rerub) [Out Now]", &options);
+/// assert_eq!(track.versions[0].version_type, VersionType::Remix);
+/// assert_eq!(track.versions[0].artists[0].name, "Phace");
+/// assert_eq!(track.junk[0].kind, JunkKind::Promo);
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "serde", serde(default, rename_all = "camelCase"))]
+#[non_exhaustive]
 pub struct KeywordOptions {
-    /// Extra version heads: key → version type.
+    /// Extra version heads: word and the version type it means. A JSON object (`versionHeads`).
+    #[cfg_attr(feature = "serde", serde(with = "crate::serde_support::pairs"))]
     pub version_heads: Vec<(String, VersionType)>,
+    /// Extra descriptor words (`Extended`, `Deluxe`).
     pub descriptors: Vec<String>,
+    /// Extra genre names.
     pub genres: Vec<String>,
-    /// Extra junk phrases: phrase → kind.
+    /// Extra junk phrases: phrase and its kind. A JSON object.
+    #[cfg_attr(feature = "serde", serde(with = "crate::serde_support::pairs"))]
     pub junk: Vec<(String, JunkKind)>,
+    /// Extra markers that introduce featured artists (`featMarkers` in JSON).
     pub feat_markers: Vec<String>,
 }
 
 impl KeywordOptions {
+    /// No extra words.
     pub fn new() -> Self {
         Self::default()
     }
 
-    /// Add a version head (`"rerub"` → `VersionType::Remix`).
+    /// Add a version head (`"rerub"` means [`VersionType::Remix`]).
     pub fn version_head(mut self, key: impl Into<String>, version_type: VersionType) -> Self {
         self.version_heads.push((key.into(), version_type));
         self
     }
 
+    /// Add a descriptor word.
     pub fn descriptor(mut self, word: impl Into<String>) -> Self {
         self.descriptors.push(word.into());
         self
     }
 
+    /// Add a genre name.
     pub fn genre(mut self, word: impl Into<String>) -> Self {
         self.genres.push(word.into());
         self
     }
 
-    /// Add a junk phrase (`"free download"` → `JunkKind::Promo`).
+    /// Add a junk phrase (`"free download"` is [`JunkKind::Promo`]).
     pub fn junk(mut self, phrase: impl Into<String>, kind: JunkKind) -> Self {
         self.junk.push((phrase.into(), kind));
         self
     }
 
+    /// Add a marker that introduces featured artists.
     pub fn feat_marker(mut self, marker: impl Into<String>) -> Self {
         self.feat_markers.push(marker.into());
         self
     }
 }
 
-/// Parse options (R12). `ParseOptions::default()` is what [`crate::parse`] uses.
-#[derive(Debug, Clone, PartialEq, Eq)]
+/// Options of [`parse_with`](crate::parse_with), [`parse_artists_with`](crate::parse_artists_with)
+/// and [`Parser`](crate::Parser) (R12). The default is what [`parse`](crate::parse) uses.
+///
+/// Build one with the chained setters, or set the public fields on a default value.
+///
+/// ```
+/// use trackparse::{parse_with, ModeOption, ParseOptions, SplitAnd};
+///
+/// let options = ParseOptions::new()
+///     .mode(ModeOption::Youtube)
+///     .uploader("Noisia")
+///     .known_artists(["Chase & Status"])
+///     .split_and(SplitAnd::Never);
+/// let track = parse_with("Stigma (Official Video)", &options);
+/// assert_eq!(track.artists[0].name, "Noisia");
+/// assert_eq!(track.title, "Stigma");
+///
+/// let mut same = ParseOptions::default();
+/// same.mode = ModeOption::Youtube;
+/// same.uploader = Some("Noisia".into());
+/// same.known_artists = vec!["Chase & Status".into()];
+/// same.split_and = SplitAnd::Never;
+/// assert_eq!(same, options);
+/// ```
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "serde", serde(default, rename_all = "camelCase"))]
+#[non_exhaustive]
 pub struct ParseOptions {
+    /// The mode; default [`ModeOption::Auto`].
     pub mode: ModeOption,
-    /// youtube mode: channel name used as the artist when no separator is found (R6.8).
+    /// youtube mode: the channel name, used as the artist when the title has no separator
+    /// (R6.8).
+    #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
     pub uploader: Option<String>,
-    /// Names that must never be split (R7.3a).
+    /// Names that must never be split (R7.3a): `Chase & Status`, `Above & Beyond`.
     pub known_artists: Vec<String>,
+    /// When `and` splits a credit list; default [`SplitAnd::Auto`].
     pub split_and: SplitAnd,
+    /// Extra vocabulary.
+    #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
     pub keywords: Option<KeywordOptions>,
 }
 
-impl Default for ParseOptions {
-    fn default() -> Self {
-        ParseOptions {
-            mode: ModeOption::Auto,
-            uploader: None,
-            known_artists: Vec::new(),
-            split_and: SplitAnd::Auto,
-            keywords: None,
-        }
-    }
-}
-
 impl ParseOptions {
+    /// The default options.
     pub fn new() -> Self {
         Self::default()
     }
 
+    /// Set the mode.
     pub fn mode(mut self, mode: ModeOption) -> Self {
         self.mode = mode;
         self
     }
 
+    /// Set the uploader (the channel name, for youtube mode).
     pub fn uploader(mut self, uploader: impl Into<String>) -> Self {
         self.uploader = Some(uploader.into());
         self
     }
 
+    /// Set the names that must never be split.
     pub fn known_artists<I, S>(mut self, names: I) -> Self
     where
         I: IntoIterator<Item = S>,
@@ -128,26 +272,51 @@ impl ParseOptions {
         self
     }
 
+    /// Set when `and` splits a credit list.
     pub fn split_and(mut self, split_and: SplitAnd) -> Self {
         self.split_and = split_and;
         self
     }
 
+    /// Set the extra vocabulary.
     pub fn keywords(mut self, keywords: KeywordOptions) -> Self {
         self.keywords = Some(keywords);
         self
     }
 }
 
-/// Format options (R11).
+/// Options of [`format_track_with`](crate::format_track_with) (R11).
+///
+/// ```
+/// use trackparse::{format_track_with, parse, FeatPlacement, FormatOptions};
+///
+/// let track = parse("03. Sub Focus - Out the Blue ft. Alice Gold (Wilkinson Remix)");
+/// let options = FormatOptions::new()
+///     .feat(FeatPlacement::Artist)
+///     .feat_marker("feat.")
+///     .position(true);
+/// assert_eq!(
+///     format_track_with(&track, &options),
+///     "03. Sub Focus feat. Alice Gold - Out the Blue (Wilkinson Remix)"
+/// );
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "serde", serde(default, rename_all = "camelCase"))]
+#[non_exhaustive]
 pub struct FormatOptions {
+    /// Where featured artists go; default [`FeatPlacement::Source`] (where they were found).
     pub feat: FeatPlacement,
     /// Marker written in front of featured lists instead of the one in the input.
+    #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
     pub feat_marker: Option<String>,
+    /// Joiners as written or canonical; default [`JoinerStyle::Original`].
     pub joiners: JoinerStyle,
+    /// Write the versions or not; default [`VersionsOption::All`].
     pub versions: VersionsOption,
+    /// Write `prod.` credits; default `true`.
     pub producers: bool,
+    /// Write the position in front; default `false`.
     pub position: bool,
 }
 
@@ -165,35 +334,42 @@ impl Default for FormatOptions {
 }
 
 impl FormatOptions {
+    /// The default options.
     pub fn new() -> Self {
         Self::default()
     }
 
+    /// Set where featured artists go.
     pub fn feat(mut self, feat: FeatPlacement) -> Self {
         self.feat = feat;
         self
     }
 
+    /// Set the marker written in front of featured lists.
     pub fn feat_marker(mut self, marker: impl Into<String>) -> Self {
         self.feat_marker = Some(marker.into());
         self
     }
 
+    /// Set the joiner style.
     pub fn joiners(mut self, joiners: JoinerStyle) -> Self {
         self.joiners = joiners;
         self
     }
 
+    /// Set whether versions are written.
     pub fn versions(mut self, versions: VersionsOption) -> Self {
         self.versions = versions;
         self
     }
 
+    /// Set whether `prod.` credits are written.
     pub fn producers(mut self, producers: bool) -> Self {
         self.producers = producers;
         self
     }
 
+    /// Set whether the position is written in front.
     pub fn position(mut self, position: bool) -> Self {
         self.position = position;
         self

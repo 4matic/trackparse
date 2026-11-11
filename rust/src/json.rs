@@ -1,22 +1,48 @@
 //! A small JSON value with a reader and a writer. The crate has no JSON dependency: this is what
-//! `to_json()` writes with, and what the `wire` module (fixtures, cross-port diff) reads.
+//! `to_json()` writes with, and what the fixtures and the cross-port diff read.
 
 /// An owned JSON value. Objects keep insertion order (like JS objects with string keys).
+///
+/// ```
+/// use trackparse::json::Json;
+///
+/// let value = Json::parse(r#"{"title":"Stigma","year":2015,"tags":["dnb",null]}"#).unwrap();
+/// assert_eq!(value.get("title").and_then(Json::as_str), Some("Stigma"));
+/// assert_eq!(value.get("year"), Some(&Json::Num(2015.0)));
+/// assert_eq!(value.get("tags").and_then(Json::as_array).map(|t| t.len()), Some(2));
+/// assert_eq!(value.write(), r#"{"title":"Stigma","year":2015,"tags":["dnb",null]}"#);
+/// assert_eq!(Json::parse("{oops"), None);
+/// ```
 #[derive(Debug, Clone, PartialEq)]
 pub enum Json {
+    /// `null`.
     Null,
+    /// `true` or `false`.
     Bool(bool),
+    /// A number. Written as JS writes it: `3167`, `7.5`; a non-finite value is `null`.
     Num(f64),
+    /// A string.
     Str(String),
+    /// An array.
     Arr(Vec<Json>),
+    /// An object: its members in order.
     Obj(Vec<(String, Json)>),
 }
 
+impl std::fmt::Display for Json {
+    /// The compact JSON text of [`Json::write`].
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&self.write())
+    }
+}
+
 impl Json {
+    /// A string value.
     pub fn str(s: &str) -> Json {
         Json::Str(s.to_string())
     }
 
+    /// A string value, or `null` for `None`.
     pub fn opt_str(s: Option<&str>) -> Json {
         s.map_or(Json::Null, Json::str)
     }
@@ -29,6 +55,7 @@ impl Json {
         }
     }
 
+    /// The string, if the value is one.
     pub fn as_str(&self) -> Option<&str> {
         match self {
             Json::Str(s) => Some(s),
@@ -36,6 +63,7 @@ impl Json {
         }
     }
 
+    /// The items, if the value is an array.
     pub fn as_array(&self) -> Option<&[Json]> {
         match self {
             Json::Arr(items) => Some(items),
@@ -43,6 +71,7 @@ impl Json {
         }
     }
 
+    /// The members in order, if the value is an object.
     pub fn as_object(&self) -> Option<&[(String, Json)]> {
         match self {
             Json::Obj(entries) => Some(entries),

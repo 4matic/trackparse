@@ -7,18 +7,44 @@ use crate::options::{
 };
 use crate::types::Mode;
 
-/// R13.10: options of [`parse_tracklist_with`](super::parse_tracklist_with).
+/// Options of [`parse_tracklist_with`](super::parse_tracklist_with) (R13.10).
+///
+/// ```
+/// use trackparse::tracklist::{parse_tracklist_with, TracklistOptions, WarningCode};
+///
+/// let options = TracklistOptions::new()
+///     .audio_seconds(3600.0)
+///     .marker_words(["Outro Speech"])
+///     .known_artists(["Chase & Status"]);
+/// let list = parse_tracklist_with("00:00 Chase & Status - Blind Faith\n1:00:05 A - B", &options);
+/// assert_eq!(list.entries[0].track.as_ref().unwrap().artists.len(), 1);
+/// assert_eq!(list.warnings[0].code, WarningCode::TimeAfterAudioEnd);
+/// ```
 #[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "serde", serde(default, rename_all = "camelCase"))]
+#[non_exhaustive]
 pub struct TracklistOptions {
     /// Per-line parse mode; default [`ModeOption::Tracklist`].
     pub mode: ModeOption,
+    /// Names that must never be split (R7.3a).
     pub known_artists: Vec<String>,
+    /// When `and` splits a credit list; default [`SplitAnd::Auto`].
     pub split_and: SplitAnd,
+    /// Extra vocabulary for the per-line parse.
+    #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
     pub keywords: Option<KeywordOptions>,
     /// Length of the audio in seconds; enables `time-after-audio-end`. A negative or non-finite
     /// value is ignored.
+    #[cfg_attr(
+        feature = "serde",
+        serde(
+            skip_serializing_if = "Option::is_none",
+            serialize_with = "crate::serde_support::opt_seconds"
+        )
+    )]
     pub audio_seconds: Option<f64>,
-    /// Extra R13.3 marker words.
+    /// Extra marker words (R13.3): a line that is only such a word is a `Marker`.
     pub marker_words: Vec<String>,
 }
 
@@ -36,15 +62,18 @@ impl Default for TracklistOptions {
 }
 
 impl TracklistOptions {
+    /// The default options.
     pub fn new() -> Self {
         Self::default()
     }
 
+    /// Set the per-line parse mode.
     pub fn mode(mut self, mode: ModeOption) -> Self {
         self.mode = mode;
         self
     }
 
+    /// Set the names that must never be split.
     pub fn known_artists<I, S>(mut self, names: I) -> Self
     where
         I: IntoIterator<Item = S>,
@@ -54,21 +83,25 @@ impl TracklistOptions {
         self
     }
 
+    /// Set when `and` splits a credit list.
     pub fn split_and(mut self, split_and: SplitAnd) -> Self {
         self.split_and = split_and;
         self
     }
 
+    /// Set the extra vocabulary.
     pub fn keywords(mut self, keywords: KeywordOptions) -> Self {
         self.keywords = Some(keywords);
         self
     }
 
+    /// Set the length of the audio in seconds.
     pub fn audio_seconds(mut self, seconds: f64) -> Self {
         self.audio_seconds = Some(seconds);
         self
     }
 
+    /// Set the extra marker words.
     pub fn marker_words<I, S>(mut self, words: I) -> Self
     where
         I: IntoIterator<Item = S>,

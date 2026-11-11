@@ -2,6 +2,7 @@
 
 /// A compile-time data value. Objects keep the key order of the JSON source.
 #[derive(Debug, Clone, Copy, PartialEq)]
+#[allow(dead_code)] // the codegen can write every variant; today's data has no numbers
 pub enum V {
     Null,
     Bool(bool),
