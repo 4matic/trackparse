@@ -9,7 +9,9 @@ pub mod value;
 #[doc(hidden)]
 pub mod wire;
 
+#[rustfmt::skip]
 mod data;
+#[rustfmt::skip]
 mod unicode_tables;
 
 pub use data::SPEC_VERSION;
