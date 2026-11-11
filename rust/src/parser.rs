@@ -128,7 +128,6 @@ impl Engine {
 
     /// R1, R2 and R4 only, as `run` does them: no artist/title parsing. `finish` completes the
     /// parse from the same stage, so a probed line is not normalized twice.
-    #[allow(dead_code)] // the tracklist module (R13) is the caller
     pub(crate) fn probe(&self, input: &str) -> LineProbe<'_> {
         let staged = self.stage(input);
         LineProbe {
@@ -210,7 +209,6 @@ fn finish(st: Staged<'_>, list_context: bool) -> RawTrack {
 }
 
 /// Facts about a line's prefix and separator search, for the tracklist module (R13.4.2, R13.5).
-#[allow(dead_code)] // the tracklist module (R13) is the caller
 pub(crate) struct LineProbe<'a> {
     /// R4.2 took a position.
     pub position: bool,
@@ -221,7 +219,6 @@ pub(crate) struct LineProbe<'a> {
     staged: Staged<'a>,
 }
 
-#[allow(dead_code)] // the tracklist module (R13) is the caller
 impl LineProbe<'_> {
     /// The parse of the probed input (R6–R9 only).
     pub(crate) fn finish(self, list_context: bool) -> RawTrack {
@@ -230,20 +227,13 @@ impl LineProbe<'_> {
 }
 
 /// Internal: parsing hooks for the tracklist module, with the options compiled once.
-#[allow(dead_code)] // the tracklist module (R13) is the caller
 pub(crate) struct ListParser {
     engine: Engine,
 }
 
-#[allow(dead_code)] // the tracklist module (R13) is the caller
 impl ListParser {
     pub(crate) fn new(options: Resolved) -> ListParser {
         ListParser { engine: Engine::new(options) }
-    }
-
-    /// `parse` with the R13.4.2 list-context flag (it only matters in tracklist mode, R6.10).
-    pub(crate) fn parse(&self, input: &str, list_context: bool) -> RawTrack {
-        self.engine.run(input, list_context)
     }
 
     pub(crate) fn probe(&self, input: &str) -> LineProbe<'_> {

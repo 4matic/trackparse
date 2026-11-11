@@ -104,15 +104,50 @@ impl Json {
     }
 }
 
-/// JS number formatting for the values the output can hold: whole numbers without a fraction,
-/// others as the shortest round-trip decimal; non-finite values as `null` (JSON.stringify).
+/// JS `Number::toString` (what `JSON.stringify` writes): the shortest digits that round-trip,
+/// laid out without an exponent from 1e-6 up to 1e21 and as `1e+21` / `1.5e-7` outside it.
+/// Non-finite values are `null`; `-0` is `0`.
 fn write_number(n: f64, out: &mut String) {
     if !n.is_finite() {
         out.push_str("null");
-    } else if n == n.trunc() && n.abs() < 1e21 {
-        out.push_str(&format!("{}", n as i128));
+        return;
+    }
+    if n == 0.0 {
+        out.push('0');
+        return;
+    }
+    if n < 0.0 {
+        out.push('-');
+    }
+    // `{:e}` gives the shortest round-trip digits as `d[.ddd]e<exp>`.
+    let sci = format!("{:e}", n.abs());
+    let (mantissa, exp) = sci.split_once('e').unwrap_or((&sci, "0"));
+    let digits: String = mantissa.chars().filter(char::is_ascii_digit).collect();
+    let k = digits.len() as i32;
+    // The value is 0.digits × 10^point.
+    let point = exp.parse::<i32>().unwrap_or(0) + 1;
+    if k <= point && point <= 21 {
+        out.push_str(&digits);
+        out.extend(std::iter::repeat('0').take((point - k) as usize));
+    } else if 0 < point && point <= 21 {
+        let (int, frac) = digits.split_at(point as usize);
+        out.push_str(int);
+        out.push('.');
+        out.push_str(frac);
+    } else if -6 < point && point <= 0 {
+        out.push_str("0.");
+        out.extend(std::iter::repeat('0').take((-point) as usize));
+        out.push_str(&digits);
     } else {
-        out.push_str(&format!("{n}"));
+        let (first, rest) = digits.split_at(1.min(digits.len()));
+        out.push_str(first);
+        if !rest.is_empty() {
+            out.push('.');
+            out.push_str(rest);
+        }
+        out.push('e');
+        out.push(if point > 0 { '+' } else { '-' });
+        out.push_str(&(point - 1).abs().to_string());
     }
 }
 

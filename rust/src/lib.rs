@@ -12,9 +12,12 @@
 //! assert_eq!(track.title, "Shellshock");
 //! assert_eq!(track.versions[0].version_type, VersionType::Remix);
 //! ```
+//!
+//! Multi-line tracklists (R13) are in [`tracklist`]: `parse_tracklist` and `apply_edits`.
 
 pub mod json;
 pub mod options;
+pub mod tracklist;
 pub mod types;
 pub mod value;
 #[doc(hidden)]
@@ -25,7 +28,6 @@ mod assemble;
 mod classify;
 mod context;
 mod credits;
-#[allow(dead_code)] // generated: the R13 word lists are read by the tracklist module
 #[rustfmt::skip]
 mod data;
 mod digits;
