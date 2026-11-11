@@ -287,13 +287,14 @@ parsed with `mode: "tracklist"`. These lines all go wrong with a plain `parse()`
 
 | Line | `parse(line)` | In a tracklist |
 |---|---|---|
-| `Electrosoul System - Liquid Metal` | title `Electrosoul System`, `Liquid Metal` as genre junk | Electrosoul System / `Liquid Metal` |
-| `Effector - 2012` | title `Effector`, year 2012 | Effector / `2012` |
-| `Paperclip - Anticipation VIP` | title `Paperclip`, a `vip` version | Paperclip / `Anticipation VIP` |
+| [`Electrosoul System - Liquid Metal`](/trackparse/playground/#track=Electrosoul%20System%20-%20Liquid%20Metal&mode=tracklist) | title `Electrosoul System`, `Liquid Metal` as genre junk | Electrosoul System / `Liquid Metal` |
+| [`Effector - 2012`](/trackparse/playground/#track=Effector%20-%202012&mode=tracklist) | title `Effector`, year 2012 | Effector / `2012` |
+| [`Paperclip - Anticipation VIP`](/trackparse/playground/#track=Paperclip%20-%20Anticipation%20VIP&mode=tracklist) | title `Paperclip`, a `vip` version | Paperclip / `Anticipation VIP` |
 | `8 Linkin Park_-_Points Of Authority (Gydra Bootleg)` | no separator | position 8, Linkin Park / `Points Of Authority`, bootleg by Gydra |
 | `10 Optiv & BTK-Inception (Gydra remix)` | no separator | position 10, Optiv, BTK / `Inception`, remix by Gydra |
 
-The last two need neighbours: the position needs a 7 or 9 next to it, and the unspaced
+The first three open in the playground in tracklist mode; set the mode back to `auto` there to see
+what a plain `parse()` makes of them. The last two need neighbours: the position needs a 7 or 9 next to it, and the unspaced
 `BTK-Inception` dash only splits on a timed line when at least half the list uses spaced dashes.
 
 Next: [editing tracklists](/trackparse/guides/editing-tracklists/).

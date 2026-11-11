@@ -1,7 +1,6 @@
 ---
 import ArrowDownWideNarrow from "@lucide/astro/icons/arrow-down-wide-narrow";
 import Copy from "@lucide/astro/icons/copy";
-import FileText from "@lucide/astro/icons/file-text";
 import Timer from "@lucide/astro/icons/timer";
 import Undo2 from "@lucide/astro/icons/undo-2";
 import "../styles/playground.css";
@@ -31,16 +30,44 @@ const sample = [
   "01:15:36 Hybris - Spinning Top",
 ].join("\n");
 
-// Pasted from a chat or a comment: list bullets, Markdown emphasis and a layered `w/` line.
-const markdownSample = [
-  "**Tracklist**",
-  "* 00:00 Noisia - Stigma",
-  "* 03:30 **Phace** - Psycho",
-  "**[**07:10**] 3. Mefjus - Sleepless**",
-  "w/ Hybris - Spinning Top (Acapella)",
-  "[10:45] Imanu - _Sacrifice_",
-  "* 14:20 Black Sun Empire - ID",
-].join("\n");
+// Example tracklists for the Tracklist tab, each showing one thing the parser does.
+const listExamples: { label: string; title: string; text: string }[] = [
+  { label: "Podcast hour", title: "A podcast hour with one time out of order and a suggested fix", text: sample },
+  {
+    // Pasted from a chat or a comment: list bullets, Markdown emphasis and a layered `w/` line.
+    label: "Markdown",
+    title: "Pasted from a chat: list bullets, bold and italics, a w/ line",
+    text: [
+      "**Tracklist**",
+      "* 00:00 Noisia - Stigma",
+      "* 03:30 **Phace** - Psycho",
+      "**[**07:10**] 3. Mefjus - Sleepless**",
+      "w/ Hybris - Spinning Top (Acapella)",
+      "[10:45] Imanu - _Sacrifice_",
+      "* 14:20 Black Sun Empire - ID",
+    ].join("\n"),
+  },
+  {
+    label: "YouTube chapters",
+    title: "Chapters with an intro and an outro marker",
+    text: ["0:00 Intro", "1:45 Noisia - Stigma", "5:10 Phace - Psycho (VIP)", "9:02 Mefjus - Sleepless", "12:40 Outro"].join("\n"),
+  },
+  {
+    label: "No dots",
+    title: "Track numbers without dots: 1 Artist - Title",
+    text: [
+      "1 Dropzone - Pyramid",
+      "2 Gydra - Bassquake",
+      "3 Redpill & Coppa - Undercover",
+      "4 Linkin Park_-_Points Of Authority (Gydra Bootleg)",
+    ].join("\n"),
+  },
+  {
+    label: "Long mix",
+    title: "Minutes past 59 without hours: 125:30",
+    text: ["0:00 Noisia - Stigma", "58:40 Phace - Psycho", "61:15 Mefjus - Sleepless", "125:30 Imanu - Sacrifice"].join("\n"),
+  },
+];
 ---
 
 <div class="pg not-content">
@@ -162,35 +189,43 @@ const markdownSample = [
           <label class="tp-label" for="tl-input">Tracklist text</label>
           <span class="tp-muted" id="tl-meta"></span>
         </div>
-        <textarea
-          id="tl-input"
-          class="tp-input"
-          spellcheck="false"
-          data-sample={sample}
-          data-sample-markdown={markdownSample}
-        ></textarea>
+        <textarea id="tl-input" class="tp-input" spellcheck="false" data-sample={sample}></textarea>
+        <ul class="tp-examples" aria-label="Example tracklists">
+          {
+            listExamples.map((e, i) => (
+              <li>
+                <button type="button" data-list-example={e.text} title={e.title} aria-pressed={i === 0 ? "true" : "false"}>
+                  {e.label}
+                </button>
+              </li>
+            ))
+          }
+        </ul>
         <div class="tp-row">
           <div>
-            <label class="tp-label" for="tl-audio">audioSeconds</label>
+            <label class="tp-label" for="tl-audio">audioSeconds <span class="pg-hint">(length of the mix)</span></label>
             <input id="tl-audio" class="tp-input pg-num" type="number" min="0" placeholder="–" />
           </div>
-          <div>
-            <label class="tp-label" for="tl-shift">Shift by (s)</label>
-            <input id="tl-shift" class="tp-input pg-num" type="number" value="45" />
-          </div>
-          <div>
-            <label class="tp-label" for="tl-from">from line</label>
-            <input id="tl-from" class="tp-input pg-num" type="number" min="1" value="5" />
-          </div>
-          <button type="button" class="tp-btn" id="tl-do-shift"><Timer size={15} aria-hidden="true" /> Shift</button>
-          <button type="button" class="tp-btn" id="tl-do-sort"><ArrowDownWideNarrow size={15} aria-hidden="true" /> Sort by time</button>
         </div>
-        <div class="tp-row">
-          <button type="button" class="tp-btn small" id="tl-undo" disabled><Undo2 size={14} aria-hidden="true" /> Undo edit</button>
-          <button type="button" class="tp-btn small" id="tl-sample"><FileText size={14} aria-hidden="true" /> Load the sample</button>
-          <button type="button" class="tp-btn small" id="tl-sample-markdown"><FileText size={14} aria-hidden="true" /> Pasted with Markdown</button>
-          <button type="button" class="tp-btn small" data-copy="tl-input"><Copy size={14} aria-hidden="true" /><span>Copy text</span></button>
-        </div>
+        <fieldset class="pg-edit">
+          <legend class="tp-label">Edit the text</legend>
+          <div class="tp-row">
+            <div>
+              <label class="tp-label" for="tl-shift">Shift by (s)</label>
+              <input id="tl-shift" class="tp-input pg-num" type="number" value="45" />
+            </div>
+            <div>
+              <label class="tp-label" for="tl-from">from line</label>
+              <input id="tl-from" class="tp-input pg-num" type="number" min="1" value="5" />
+            </div>
+            <button type="button" class="tp-btn" id="tl-do-shift"><Timer size={15} aria-hidden="true" /> Shift</button>
+          </div>
+          <div class="tp-row">
+            <button type="button" class="tp-btn" id="tl-do-sort"><ArrowDownWideNarrow size={15} aria-hidden="true" /> Sort by time</button>
+            <button type="button" class="tp-btn" id="tl-undo" disabled><Undo2 size={15} aria-hidden="true" /> Undo</button>
+            <button type="button" class="tp-btn" data-copy="tl-input"><Copy size={15} aria-hidden="true" /><span>Copy text</span></button>
+          </div>
+        </fieldset>
         <p class="tp-muted" id="tl-editlog" aria-live="polite"></p>
         <p class="tp-muted" id="tl-urlnote" hidden>This list is too long to keep in the URL. Use Copy text to share it.</p>
       </div>
@@ -200,13 +235,29 @@ const markdownSample = [
           <div class="tl-stats" id="tl-stats"></div>
           <div id="tl-warnings"></div>
         </div>
-        <div class="tp-card pg-box pg-tablebox">
+        <div class="tp-card pg-box pg-out">
+          <div class="pg-head">
+            <span class="pg-seg" role="group" aria-label="Output">
+              <button type="button" class="tp-btn small" data-view="table" aria-pressed="true">Table</button>
+              <button type="button" class="tp-btn small" data-view="json" aria-pressed="false">JSON</button>
+              <button type="button" class="tp-btn small" data-view="code" aria-pressed="false">Code</button>
+            </span>
+            <span class="pg-lang" role="group" aria-label="Language" id="tl-lang" hidden>
+              <button type="button" class="tp-btn small" data-lang="js" aria-pressed="true">JS</button>
+              <button type="button" class="tp-btn small" data-lang="py" aria-pressed="false">Python</button>
+            </span>
+            <button type="button" class="tp-btn small" id="tl-copy-out" hidden><Copy size={14} aria-hidden="true" /><span>Copy</span></button>
+          </div>
+          <pre class="tp-json" id="tl-json" hidden></pre>
+          <pre class="tp-json tp-code" id="tl-code" hidden></pre>
+          <div class="pg-tablebox" id="tl-tablebox">
           <table class="tl-table">
             <thead>
               <tr><th>#</th><th>kind</th><th>time</th><th>artists</th><th>title</th><th>versions</th></tr>
             </thead>
             <tbody id="tl-rows"></tbody>
           </table>
+          </div>
         </div>
       </div>
     </div>
@@ -275,7 +326,7 @@ const markdownSample = [
   }
   @media (min-width: 72rem) {
     .pg-list {
-      grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+      grid-template-columns: minmax(0, 0.7fr) minmax(0, 1.3fr);
     }
   }
   .pg-col {
@@ -296,6 +347,25 @@ const markdownSample = [
   .pg-options select.tp-input {
     min-width: 8rem;
   }
+  /* The edit controls: one quiet group under the parse option. */
+  .pg-edit {
+    display: grid;
+    gap: 0.6rem;
+    margin: 0;
+    padding: 0.75rem 0 0;
+    border: 0;
+    border-top: 1px solid var(--tp-border);
+    min-width: 0;
+  }
+  .pg-edit legend {
+    float: left;
+    width: 100%;
+    margin-bottom: 0.1rem;
+  }
+  .pg-hint {
+    color: var(--sl-color-gray-4);
+    font-weight: 400;
+  }
   .tp-input.pg-num {
     width: 7rem;
   }
@@ -308,16 +378,30 @@ const markdownSample = [
     color: var(--sl-color-white);
     overflow-wrap: anywhere;
   }
-  .pg-lang {
+  /* Small segmented switches: output view (Table / JSON / Code) and language. */
+  .pg-lang,
+  .pg-seg {
     display: inline-flex;
     gap: 0.3rem;
   }
-  .pg-lang [aria-pressed="true"] {
+  .pg-lang[hidden],
+  .pg-out [hidden] {
+    display: none;
+  }
+  .pg-lang [aria-pressed="true"],
+  .pg-seg [aria-pressed="true"] {
     background: var(--tp-surface-2);
     border-color: var(--sl-color-gray-4);
   }
-  .pg-lang [aria-pressed="false"] {
+  .pg-lang [aria-pressed="false"],
+  .pg-seg [aria-pressed="false"] {
     color: var(--sl-color-gray-3);
+  }
+  .pg-out {
+    min-width: 0;
+  }
+  .pg-out .pg-head .pg-seg {
+    margin-right: auto;
   }
   .pg-tablebox {
     overflow-x: auto;
@@ -344,7 +428,13 @@ const markdownSample = [
   /* Artist and title columns keep whole words; only very long tokens break. */
   .tl-table :global(td:nth-child(4)),
   .tl-table :global(td:nth-child(5)) {
-    min-width: 9rem;
+    min-width: 7.5rem;
+  }
+  /* Phones: the kind column gives way to artists and title. */
+  @media (max-width: 40rem) {
+    .tl-table :global(:is(th, td):nth-child(2)) {
+      display: none;
+    }
   }
   .tl-table :global(tr.is-warn td:first-child) {
     box-shadow: inset 2px 0 0 var(--tp-featured);
@@ -428,7 +518,7 @@ const markdownSample = [
 
 <script>
   import { format, parse, type ParseOptions } from "trackparse";
-  import { applyEdits, parseTracklist, type Edit, type TracklistEntry } from "trackparse/tracklist";
+  import { applyEdits, parseTracklist, type Edit, type Tracklist, type TracklistEntry } from "trackparse/tracklist";
   import { icon } from "../lib/icons";
   import { chip, codeHtml, escapeHtml, fieldsHtml, highlight, jsonHtml, KIND_LABEL, roleKind, segmentsHtml, type Kind } from "../lib/trackview";
 
@@ -462,9 +552,20 @@ const markdownSample = [
   function saveHash() {
     clearTimeout(hashTimer);
     hashTimer = window.setTimeout(() => {
-      const value = current === "track" ? input.value : tl.value;
-      const key = current === "track" ? "track" : "list";
-      const hash = `#${key}=${encodeURIComponent(value)}`;
+      const params = new URLSearchParams();
+      if (current === "track") {
+        params.set("track", input.value);
+        // Options that change the result travel with it, so a shared link shows the same output.
+        if (mode.value !== "auto") params.set("mode", mode.value);
+        if (split.value !== "auto") params.set("splitAnd", split.value);
+        if (known.value.trim()) params.set("known", known.value.trim());
+        if (uploader.value.trim()) params.set("uploader", uploader.value.trim());
+      } else {
+        params.set("list", tl.value);
+        if (audio.value !== "") params.set("audioSeconds", audio.value);
+      }
+      // encodeURIComponent, not URLSearchParams.toString(): spaces stay %20 and `+` is %2B.
+      const hash = `#${[...params].map(([k, v]) => `${k}=${encodeURIComponent(v)}`).join("&")}`;
       // Browsers accept huge URLs, but nobody can share one: past this size, keep the URL clean.
       tooLong = hash.length > MAX_HASH;
       $("tl-urlnote").hidden = !(tooLong && current === "list");
@@ -484,6 +585,15 @@ const markdownSample = [
     // An empty value (a cleared box) keeps the current text but still picks the tab.
     if (t) input.value = t;
     if (l) tl.value = l;
+    if (t !== null) {
+      const pick = (el: HTMLSelectElement, v: string | null) =>
+        (el.value = v !== null && [...el.options].some((o) => o.value === v) ? v : "auto");
+      pick(mode, params.get("mode"));
+      pick(split, params.get("splitAnd"));
+      known.value = params.get("known") ?? "";
+      uploader.value = params.get("uploader") ?? "";
+    }
+    if (l !== null) audio.value = params.get("audioSeconds") ?? "";
     if (t !== null || l !== null) {
       renderTrack();
       renderList();
@@ -584,11 +694,14 @@ const markdownSample = [
       renderTrack();
     });
   }
+  // One language choice for both code panels.
   for (const b of document.querySelectorAll<HTMLButtonElement>("[data-lang]")) {
     b.addEventListener("click", () => {
       lang = b.dataset.lang as "js" | "py";
-      for (const x of document.querySelectorAll("[data-lang]")) x.setAttribute("aria-pressed", String(x === b));
+      for (const x of document.querySelectorAll<HTMLElement>("[data-lang]"))
+        x.setAttribute("aria-pressed", String(x.dataset.lang === lang));
       renderTrack();
+      renderList();
     });
   }
 
@@ -612,7 +725,7 @@ const markdownSample = [
     const vers = t ? t.versions.map((v) => chip(v.artists[0] ? `${v.type} · ${v.artists[0].name}` : v.type, "version")).join(" ") : "";
     const pos = t?.position ? `${chip(`#${t.position.number}`, "position")} ` : "";
     // R13.13: a `w/` line plays over the previous track.
-    const layered = e.layered ? `${chip("w/", "position", "Layered: played over the previous track")} ` : "";
+    const layered = e.layered ? `${chip("w/", "layered", "Layered: played over the previous track")} ` : "";
     const cls = [warn ? "is-warn" : "", changed.has(e.line) ? "is-changed" : ""].join(" ").trim();
     return `<tr class="${cls}" id="tl-line-${e.line}"><td class="tl-num">${e.line}</td><td class="tl-kind${e.kind === "track" ? "" : " is-other"}">${e.kind}</td><td class="tl-time">${e.time ? escapeHtml(e.time.raw) : ""}</td><td>${layered}${pos}${artists}</td><td>${title}</td><td>${vers}</td></tr>`;
   }
@@ -641,6 +754,71 @@ const markdownSample = [
     return `${h ? `${h}:` : ""}${String(m).padStart(h ? 2 : 1, "0")}:${String(sec).padStart(2, "0")}`;
   }
 
+  const lineCount = () => tl.value.split(/\r\n|\r|\n/).length;
+  /** "from line", kept between 1 and the last line. */
+  function shiftFrom(): number {
+    const v = Math.trunc(Number(($("tl-from") as HTMLInputElement).value)) || 1;
+    return Math.min(Math.max(v, 1), lineCount());
+  }
+
+  // The tracklist output: the table, the raw JSON, or the same calls as code.
+  type View = "table" | "json" | "code";
+  let view: View = "table";
+
+  /** JS / Python for the current text, options and edit inputs. */
+  function listCode(text: string, list: Tracklist): string {
+    const q = (v: string) => JSON.stringify(v);
+    const lines = text.split("\n");
+    // Lists without CR line endings are written one line per row; anything else as one string.
+    const literal = (indent: string, open: string, close: string) =>
+      text.includes("\r") || lines.length < 2
+        ? q(text)
+        : `${open}\n${lines.map((l) => `${indent}${q(l)},`).join("\n")}\n${close}`;
+    const audioSeconds = listOptions().audioSeconds;
+    const seconds = Number(($("tl-shift") as HTMLInputElement).value) || 0;
+    const from = shiftFrom();
+    const fix = list.warnings.find((w) => w.suggestion)?.suggestion;
+    if (lang === "js") {
+      const out = [
+        'import { applyEdits, parseTracklist } from "trackparse/tracklist";',
+        "",
+        `const text = ${literal("  ", "[", '].join("\\n")')};`,
+        "",
+        `const list = parseTracklist(text${audioSeconds !== undefined ? `, { audioSeconds: ${audioSeconds} }` : ""});`,
+        "list.entries;   // one entry per line",
+        "list.warnings;  // the checks, with line numbers",
+        "",
+        `applyEdits(text, [{ op: "shift", seconds: ${seconds}, from: ${from} }]);`,
+        'applyEdits(text, [{ op: "sort-by-time" }]);',
+      ];
+      if (fix) out.push(`applyEdits(text, [{ op: "set-time", line: ${fix.line}, seconds: ${fix.seconds} }]);  // the suggested fix`);
+      return out.join("\n");
+    }
+    const out = [
+      "from trackparse.tracklist import apply_edits, parse_tracklist",
+      "",
+      `text = ${literal("    ", '"\\n".join([', "])")}`,
+      "",
+      `tl = parse_tracklist(text${audioSeconds !== undefined ? `, audio_seconds=${audioSeconds}` : ""})`,
+      "tl.entries   # one entry per line",
+      "tl.warnings  # the checks, with line numbers",
+      "",
+      `apply_edits(text, [{"op": "shift", "seconds": ${seconds}, "from": ${from}}])`,
+      'apply_edits(text, [{"op": "sort-by-time"}])',
+    ];
+    if (fix) out.push(`apply_edits(text, [{"op": "set-time", "line": ${fix.line}, "seconds": ${fix.seconds}}])  # the suggested fix`);
+    return out.join("\n");
+  }
+
+  function showView() {
+    for (const b of document.querySelectorAll<HTMLElement>("[data-view]")) b.setAttribute("aria-pressed", String(b.dataset.view === view));
+    $("tl-tablebox").hidden = view !== "table";
+    $("tl-json").hidden = view !== "json";
+    $("tl-code").hidden = view !== "code";
+    $("tl-lang").hidden = view !== "code";
+    $("tl-copy-out").hidden = view === "table";
+  }
+
   function renderList() {
     const text = tl.value;
     const t0 = performance.now();
@@ -648,6 +826,11 @@ const markdownSample = [
     const ms = performance.now() - t0;
     const warned = new Set(list.warnings.map((w) => w.line));
     $("tl-rows").innerHTML = list.entries.map((e) => row(e, warned.has(e.line))).join("");
+    // Only the visible view is rendered: JSON of a long list is large.
+    if (view === "json") $("tl-json").innerHTML = jsonHtml(list);
+    if (view === "code") $("tl-code").innerHTML = codeHtml(listCode(text, list), lang);
+    for (const b of document.querySelectorAll<HTMLButtonElement>("[data-list-example]"))
+      b.setAttribute("aria-pressed", String(b.dataset.listExample === text));
     const st = list.stats;
     $("tl-stats").innerHTML = [
       plural(st.lines, "line"),
@@ -668,7 +851,7 @@ const markdownSample = [
             return `<div class="tl-warning ${w.severity}">${w.severity === "info" ? icon.info : icon.warning}<a href="#tl-line-${w.line}" data-line="${w.line}">line ${w.line}</a> <code>${w.code}</code>${fix}</div>`;
           })
           .join("")
-      : '<p class="tl-ok">No warnings. Times are in order.</p>';
+      :  `<p class="tl-ok">${st.timed > 1 ? "No warnings. Times are in order." : "No warnings."}</p>`;
     for (const a of $("tl-warnings").querySelectorAll<HTMLAnchorElement>("a[data-line]")) {
       a.addEventListener("click", (e) => {
         e.preventDefault();
@@ -698,22 +881,34 @@ const markdownSample = [
       tl.value = r.text;
       changed = new Set(r.changed);
     }
-    const notes = [...new Set(r.warnings.map((w) => w.code))].join(", ");
+    const NOTE: Record<string, string> = {
+      "edit-invalid": "the edit can't apply here",
+      "time-clamped": "a time stopped at zero",
+      "style-upgraded": "a time gained hours",
+    };
+    const notes = [...new Set(r.warnings.map((w) => NOTE[w.code] ?? w.code))].join(", ");
     const what = same ? "nothing changed" : `changed ${r.changed.length > 1 ? "lines" : "line"} ${ranges(r.changed)}`;
     $("tl-editlog").textContent = `${label}: ${what}${notes ? ` (${notes})` : ""}.`;
     renderList();
     changed = new Set();
   }
 
+  // Typing makes the undo history stale: Undo would throw the typed text away.
+  let typing = 0;
   tl.addEventListener("input", () => {
     $("tl-editlog").textContent = "";
-    renderList();
+    history_.length = 0;
+    undoBtn.disabled = true;
+    // Short lists re-parse on every key; long ones wait for a pause in typing.
+    clearTimeout(typing);
+    if (tl.value.length < 20000) renderList();
+    else typing = window.setTimeout(renderList, 250);
   });
   audio.addEventListener("input", renderList);
   $("tl-do-shift").addEventListener("click", () => {
     const seconds = Number(($("tl-shift") as HTMLInputElement).value);
-    const from = Number(($("tl-from") as HTMLInputElement).value);
-    edit([{ op: "shift", seconds, from: from || 1 }], `Shift ${seconds >= 0 ? "+" : ""}${seconds} s from line ${from || 1}`);
+    const from = shiftFrom();
+    edit([{ op: "shift", seconds, from }], `Shift ${seconds >= 0 ? "+" : ""}${seconds} s from line ${from}`);
   });
   $("tl-do-sort").addEventListener("click", () => edit([{ op: "sort-by-time" }], "Sort by time"));
   undoBtn.addEventListener("click", () => {
@@ -726,14 +921,37 @@ const markdownSample = [
   // A sample replaces the text: the edit log and the undo history belong to the old one.
   function loadSample(text: string | undefined) {
     tl.value = text ?? "";
+    audio.value = "";
+    // Keep "from line" inside the new list, so Shift and the generated code stay valid.
+    const fromEl = $<HTMLInputElement>("tl-from");
+    if (Number(fromEl.value) > lineCount()) fromEl.value = String(Math.min(2, lineCount()));
     history_.length = 0;
     undoBtn.disabled = true;
     changed.clear();
     $("tl-editlog").textContent = "";
     renderList();
   }
-  $("tl-sample").addEventListener("click", () => loadSample(tl.dataset.sample));
-  $("tl-sample-markdown").addEventListener("click", () => loadSample(tl.dataset.sampleMarkdown));
+  for (const b of document.querySelectorAll<HTMLButtonElement>("[data-list-example]"))
+    b.addEventListener("click", () => loadSample(b.dataset.listExample));
+  for (const b of document.querySelectorAll<HTMLButtonElement>("[data-view]")) {
+    b.addEventListener("click", () => {
+      view = b.dataset.view as View;
+      showView();
+      renderList();
+    });
+  }
+  $("tl-copy-out").addEventListener("click", async () => {
+    const btn = $("tl-copy-out");
+    const span = btn.querySelector("span") ?? btn;
+    try {
+      await navigator.clipboard.writeText($(view === "json" ? "tl-json" : "tl-code").textContent ?? "");
+      span.textContent = "Copied";
+    } catch {
+      span.textContent = "Copy failed";
+    }
+    setTimeout(() => (span.textContent = "Copy"), 1200);
+  });
+  for (const id of ["tl-shift", "tl-from"]) $(id).addEventListener("input", () => view === "code" && renderList());
 
   // ---- start -------------------------------------------------------------------------------
   input.value = document.querySelector<HTMLButtonElement>("[data-example]")?.dataset.example ?? "";
