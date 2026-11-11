@@ -1,8 +1,8 @@
 # trackparse
 
-[![PyPI](https://img.shields.io/pypi/v/trackparse?color=3775a9&logo=pypi&logoColor=white)](https://pypi.org/project/trackparse/)
+[![PyPI](https://img.shields.io/pypi/v/trackparse?logo=pypi&logoColor=white)](https://pypi.org/project/trackparse/)
 [![Python versions](https://img.shields.io/pypi/pyversions/trackparse?logo=python&logoColor=white)](https://pypi.org/project/trackparse/)
-[![python](https://img.shields.io/github/actions/workflow/status/4matic/trackparse/python.yml?branch=main&label=tests&logo=github)](https://github.com/4matic/trackparse/actions/workflows/python.yml)
+[![tests](https://img.shields.io/github/actions/workflow/status/4matic/trackparse/python.yml?branch=main&label=tests&logo=github)](https://github.com/4matic/trackparse/actions/workflows/python.yml)
 [![license](https://img.shields.io/badge/license-MIT-blue)](https://github.com/4matic/trackparse/blob/main/LICENSE)
 
 **[Documentation](https://4matic.github.io/trackparse/)** · **[Getting started](https://4matic.github.io/trackparse/start/getting-started/)** · **[Playground](https://4matic.github.io/trackparse/playground/)**
@@ -16,18 +16,18 @@ what's just noise.**
 
 Most title parsers split that into `"Wilkinson ft. Becky Hill & Tom Cane"` and
 `"Afterglow (Sub Focus VIP Remix)"` and stop. Others "clean" it and throw the feat and the remix
-away. trackparse keeps all of it. Everything it recognises goes into a field, and anything it
-doesn't recognise stays in the title, word for word.
+away. trackparse keeps all of it. Everything it recognizes goes into a field, and anything it
+doesn't recognize stays in the title, word for word.
 
 This is the Python port of [trackparse](https://github.com/4matic/trackparse). Its behaviour is
 defined by a [shared spec](https://github.com/4matic/trackparse/blob/main/spec/SPEC.md) and pinned
 by 13,130 fixtures. It passes all of them, and for every fixture input its output is byte-identical
-to the JavaScript package.
+to the [JavaScript and Rust packages](#other-languages).
 
 - Python 3.9 to 3.14
 - No dependencies
 - Typed (`py.typed`), immutable results
-- Never raises on string input
+- Never raises on `str` input
 
 ## Install
 
@@ -123,6 +123,11 @@ normalize(s) -> str
 all_artists(track) -> list[Artist]
 create_parser(**options) -> Parser   # Parser.parse(...), Parser.parse_artists(...)
 SPEC_VERSION, __version__
+
+# from trackparse.tracklist
+parse_tracklist(text, *, mode="tracklist", known_artists=(), keywords=None, split_and="auto",
+                audio_seconds=None, marker_words=()) -> Tracklist
+apply_edits(text, edits, *, <same options>) -> EditResult
 ```
 
 ### `parse(input, **options)`
@@ -131,7 +136,7 @@ SPEC_VERSION, __version__
 
 | Option | Default | |
 |---|---|---|
-| `mode` | `"auto"` | `"clean"`, `"youtube"`, `"filename"`, `"tracklist"`, or `"auto"` to detect from the string |
+| `mode` | `"auto"` | `"clean"`, `"youtube"`, `"filename"`, `"tracklist"`, or `"auto"` to detect from the string. See [Modes](#modes) |
 | `uploader` | `None` | YouTube channel name, used as the artist when there's no separator (`- Topic` and `VEVO` are dropped) |
 | `known_artists` | `()` | Names that are never split. There is no built-in list |
 | `split_and` | `"auto"` | `"auto"` splits on `and` only after a comma (`A, B and C`), so `Simon and Garfunkel` stays whole. Also `"always"`, `"never"` |
@@ -164,9 +169,6 @@ parse("Artist - Song [Some Label Rip]", keywords={"junk": {"some label rip": "la
 # (Junk(raw='Some Label Rip', kind='label'),)
 ```
 
-Parsing is total: any `str` gives a `ParsedTrack`, including `""`. Bad option values fall back to
-the defaults. Passing something that isn't a `str` raises `TypeError`.
-
 ### `ParsedTrack`
 
 **Docs:** [ParsedTrack fields](https://4matic.github.io/trackparse/reference/parse/#parsedtrack)
@@ -178,7 +180,7 @@ the defaults. Passing something that isn't a `str` raises `TypeError`.
 | `position` | `Position \| None` | Track number: `Position(raw='01', number=1)` |
 | `timestamp` | `Timestamp \| None` | Leading cue time: `[12:34]` gives `Timestamp(raw='12:34', seconds=754)` |
 | `artists` | `tuple[Artist, ...]` | Primary, featured and producer credits. Remixers live in `versions` |
-| `title` | `str` | Clean title. Brackets it doesn't recognise stay in |
+| `title` | `str` | Clean title. Brackets it doesn't recognize stay in |
 | `full_title` | `str` | `title` with the versions re-attached |
 | `versions` | `tuple[Version, ...]` | Remixes and other versions, left to right |
 | `year` | `int \| None` | From `(2015)` or `- 2015` |
@@ -206,14 +208,17 @@ parse("Queen - Bohemian Rhapsody (Live at Wembley 1986)").versions[0]
 #         descriptor='at Wembley', year=1986, unknown_artist=False, delimiter='(')
 ```
 
-Version types, junk kinds and warnings are listed in the
-[API reference](https://4matic.github.io/trackparse/reference/parse/) and typed as `Literal` aliases
-(`VersionType`, `JunkKind`, `Warning`, `ArtistRole`, `ArtistSource`, `Mode`, `ModeOption`,
-`VersionDelimiter`).
+- `VersionType`: `remix`, `bootleg`, `vip`, `edit`, `flip`, `refix`, `rework`, `mashup`, `blend`,
+  `dub`, `mix`, `extended`, `radio`, `club`, `original`, `instrumental`, `acapella`, `live`,
+  `acoustic`, `remaster`, `demo`, `reprise`, `cover`, `version`, `spedUp`, `slowed`, `nightcore`.
+- `JunkKind`: `video`, `audio`, `lyrics`, `quality`, `promo`, `platform`, `label`, `genre`, `other`.
+- `Warning`: see [Warnings](#warnings).
+
+These are plain strings, typed as `Literal` aliases (see [Typing](#typing)).
 
 ### `to_dict()` and `from_dict()`
 
-**Docs:** [JSON and Python objects](https://4matic.github.io/trackparse/reference/parse/#json-and-python-objects)
+**Docs:** [Serializing to JSON](https://4matic.github.io/trackparse/reference/parse/#serializing-to-json)
 
 Every result class has `to_dict()`, which returns plain dicts and lists matching
 [`parsed-track.schema.json`](https://github.com/4matic/trackparse/blob/main/spec/schema/parsed-track.schema.json)
@@ -222,14 +227,16 @@ ensure_ascii=False)` the bytes are the same as `JSON.stringify(parse(s))` in JS.
 (`ParsedTrack`, `Artist`, ...) also have a `from_dict()` classmethod that goes the other way:
 
 ```python
+from trackparse import ParsedTrack
+
 ParsedTrack.from_dict(track.to_dict()) == track  # True
 ```
 
 ### `parse_artists(input, **options)`
 
-**Docs:** [parseArtists](https://4matic.github.io/trackparse/reference/functions/#parseartistsinput-options)
+**Docs:** [parseArtists](https://4matic.github.io/trackparse/reference/functions/#parseartistsinput-options) · [Artists and credits](https://4matic.github.io/trackparse/guides/artists/)
 
-Splits a bare artist string. Takes the same options as `parse`.
+Splits a bare artist string (no title). Takes the same options as `parse`.
 
 ```python
 from trackparse import parse_artists
@@ -246,12 +253,12 @@ Renders a track back to a string.
 
 | Option | Default | |
 |---|---|---|
-| `feat` | `"source"` | Where featured artists go: `"source"` (where they were), `"artist"`, `"title"` or `"omit"` |
-| `feat_marker` | `None` | Marker for featured artists, such as `"feat."` |
-| `joiners` | `"original"` | `"original"` keeps the joiners as written, `"canonical"` uses the standard ones |
+| `feat` | `"source"` | Where featured artists go: `"source"` (where they were), `"artist"`, `"title"` (`(feat. X)` after the title) or `"omit"` |
+| `feat_marker` | `None` | Marker for featured artists, such as `"featuring"` |
+| `joiners` | `"original"` | `"original"` keeps the joiners as written. `"canonical"` writes `and` as `&`, `vs` as `vs.` and every feat marker as `feat.` |
 | `versions` | `"all"` | `"all"` or `"none"` |
 | `producers` | `True` | Include `(prod. ...)` credits |
-| `position` | `False` | Include the track number |
+| `position` | `False` | Include the track number (`01. `) |
 
 ```python
 from trackparse import format_track
@@ -273,13 +280,14 @@ format_track(track, position=True)
 
 **Docs:** [normalize](https://4matic.github.io/trackparse/reference/functions/#normalizeinput)
 
-The Unicode cleanup every function runs first: NFC, invisible characters, and dash, bracket and
-quote variants.
+The Unicode cleanup every function runs first: NFC, zero-width spaces, BOM and soft hyphens
+removed, fullwidth brackets, smart quotes and dash variants mapped to ASCII, whitespace collapsed.
+Running it twice changes nothing.
 
 ```python
 from trackparse import normalize
 
-normalize("Noisia​ – Stigma （VIP）")
+normalize("Noisia\u200b – Stigma （VIP）")
 # 'Noisia - Stigma (VIP)'
 ```
 
@@ -317,8 +325,9 @@ parser.parse("Chase & Status x Camo & Krooked - Track (Alix Perez Rerub)").versi
 
 ### `SPEC_VERSION`
 
-The spec version this build implements. The PyPI package, the npm package and the spec are
-released together and always share one version number.
+The spec version this build implements, `"0.5.0"` in this release. It equals `__version__`: the
+PyPI package, the npm package, the Rust crate and the spec are released together and always share
+one version number.
 
 ## Modes
 
@@ -345,9 +354,39 @@ parse("Shelter", mode="youtube", uploader="Porter Robinson").artists
 # (Artist(name='Porter Robinson', role='primary', joiner=None, source='artist'),)
 ```
 
+## Warnings
+
+**Docs:** [Warnings](https://4matic.github.io/trackparse/reference/warnings/)
+
+The parser never fails, but it says when it had to guess. `track.warnings` is a tuple of strings,
+empty when every decision was unambiguous.
+
+| Warning | Means |
+|---|---|
+| `noSeparator` | No artist/title separator was found. The whole string is the title |
+| `ambiguousSeparator` | A two-part pipe title with no dash was read as artist and title |
+| `unspacedDashSplit` | Split at a dash without spaces around it |
+| `asymmetricDashSplit` | Split at a dash with a space on one side only |
+| `bySplit` | Read `"Title" by Artist` |
+| `quotedTitleSplit` | Took a quoted span as the title and the text before it as the artist |
+| `ambiguousMixCredit` | `<Name> Mix` was read as a remix, but the name is long enough to be a style |
+| `unbalancedBrackets` | A bracket was opened and never closed |
+
+```python
+t = parse("Around the World")
+t.artists, t.title, t.warnings
+# ((), 'Around the World', ('noSeparator',))
+
+parse("Noisia - Stigma (VIP").warnings
+# ('unbalancedBrackets',)
+```
+
+Tracklists have their own warnings, with line numbers. They are listed under
+[Tracklists](#tracklists).
+
 ## Tracklists
 
-**Docs:** [Tracklists](https://4matic.github.io/trackparse/guides/tracklists/) · [Editing tracklists](https://4matic.github.io/trackparse/guides/editing-tracklists/)
+**Docs:** [Tracklists](https://4matic.github.io/trackparse/guides/tracklists/) · [Editing tracklists](https://4matic.github.io/trackparse/guides/editing-tracklists/) · [Tracklist API](https://4matic.github.io/trackparse/reference/tracklist/) · [Warnings](https://4matic.github.io/trackparse/reference/warnings/#tracklist-warnings)
 
 `trackparse.tracklist` parses a whole tracklist, one entry per line, and checks it. Each entry
 keeps its line exactly as written plus its own line ending, so `"".join(e.raw + e.eol for e in
@@ -416,13 +455,19 @@ apply_edits(text, [{"op": "shift", "seconds": -3000, "lines": [2, 3]}]).warnings
 ```
 
 A rewritten time keeps its line's style: `52:47` stays `MM:SS`, and a time that crosses the hour
-gets hours like the rest of the list, with a `style-upgraded` warning. A bad edit changes nothing
-and warns `edit-invalid`. Neither function raises on `str` input.
+gets hours like the rest of the list, with a `style-upgraded` warning. A time pushed below zero
+stops at zero and warns `time-clamped`. A bad edit changes nothing and warns `edit-invalid`.
+
+Both functions take the keyword options `mode` (default `"tracklist"`), `known_artists`,
+`split_and` and `keywords`, as `parse` does, plus `audio_seconds` (the length of the audio, which
+turns on the `time-after-audio-end` check) and `marker_words` (extra words that make a line a
+marker):
 
 ```python
-parse_tracklist(text, *, mode="tracklist", known_artists=(), keywords=None, split_and="auto",
-                audio_seconds=None, marker_words=()) -> Tracklist
-apply_edits(text, edits, *, <same options>) -> EditResult
+parse_tracklist(
+    "00:00 Noisia - Stigma\n1:02:03 Mefjus - Suicide Bassline", audio_seconds=3600
+).warnings
+# (TracklistWarning(code='time-after-audio-end', line=2, severity='warning', suggestion=None),)
 ```
 
 | Result | Fields |
@@ -448,7 +493,9 @@ Warning codes: `time-missing`, `time-out-of-order`, `time-duplicate`, `no-start-
 `position-duplicate`, `line-unparsed`. Edits: `set-time {line, seconds}`, `shift {seconds, lines? | from?}`
 (all timed lines when neither is given), `sort-by-time {}`, `set-rest {line, rest}`,
 `insert {after, text}` (`after: 0` inserts at the top), `delete {line}`. The
-[Tracklist API reference](https://4matic.github.io/trackparse/reference/tracklist/) explains each one.
+[Tracklist API reference](https://4matic.github.io/trackparse/reference/tracklist/) explains each one,
+and the rules are in
+[SPEC R13](https://github.com/4matic/trackparse/blob/main/spec/SPEC.md#r13-tracklists).
 `to_dict()` gives the camelCase JSON from
 [`tracklist.schema.json`](https://github.com/4matic/trackparse/blob/main/spec/schema/tracklist.schema.json),
 byte-identical to the JS package's output.
@@ -463,17 +510,86 @@ parse("Electrosoul System - Liquid Metal", mode="tracklist").title
 # 'Liquid Metal'
 ```
 
+## Errors
+
+Parsing is total: any `str` gives a complete `ParsedTrack`, `""` included, and `parse_tracklist`
+and `apply_edits` return for any text. An option of the wrong type or with an unknown value is
+ignored and the default is used. `apply_edits` reports a bad edit as an `edit-invalid` warning and
+leaves the text alone.
+
+The one exception is the input itself: passing something that isn't a `str` raises `TypeError`.
+
+```python
+parse(None)
+# TypeError: parse() expects str input, got NoneType
+```
+
+Recognition is done by hand-written scanners, so there is no regex backtracking. A
+10,000-code-point input parses in well under a second, and the test suite enforces a 1 s ceiling.
+
 ## Typing
 
-**Docs:** [Types](https://4matic.github.io/trackparse/reference/parse/#types)
+**Docs:** [Types](https://4matic.github.io/trackparse/reference/parse/#types) · [Tracklist types](https://4matic.github.io/trackparse/reference/tracklist/#types)
 
-The package ships `py.typed` and passes `mypy --strict`. `ParsedTrack`, `Artist`, `Version`,
-`Junk`, `Flags`, `Position` and `Timestamp` are frozen dataclasses with snake_case attributes, and
-so are the tracklist results in `trackparse.tracklist`.
-Sequences are tuples, so results are immutable and hashable and can go in sets or be used as dict
-keys. Option dicts have `TypedDict` types (`ParseOptions`, `KeywordOptions`, `FormatOptions`);
-tracklist edits are plain dicts. `trackparse.tracklist` also exports the `Literal` aliases
-`EntryKind`, `Eol`, `Severity`, `TracklistWarningCode` and `EditWarningCode`.
+The package ships `py.typed` and passes `mypy --strict`.
+
+- `ParsedTrack`, `Artist`, `Version`, `Junk`, `Flags`, `Position` and `Timestamp` are frozen
+  dataclasses with snake_case attributes, and so are the tracklist results in
+  `trackparse.tracklist`. Sequences are tuples, so results are immutable and hashable: they can go
+  in sets or be used as dict keys.
+- Version types, junk kinds, warnings, roles and modes are plain strings, typed as `Literal`
+  aliases: `VersionType`, `JunkKind`, `Warning`, `ArtistRole`, `ArtistSource`, `Mode`,
+  `ModeOption`, `VersionDelimiter`. `trackparse.tracklist` adds `EntryKind`, `Eol`, `Severity`,
+  `TracklistWarningCode` and `EditWarningCode`.
+- Option dicts have `TypedDict` types (`ParseOptions`, `KeywordOptions`, `FormatOptions`).
+  Tracklist edits are plain dicts.
+
+## How it is tested
+
+**Docs:** [How it's tested](https://4matic.github.io/trackparse/project/testing/)
+
+- 13,130 shared fixtures: 1,203 written by hand and 11,927 generated from the rules. Every output
+  is also validated against the JSON Schema.
+- Property tests with [Hypothesis](https://hypothesis.works) for the spec's invariants: no
+  exception on any string, `normalize` is idempotent, whitespace and dash noise doesn't change
+  the result, and `parse(format_track(parse(s)))` round-trips.
+- CI runs the suite on Python 3.9 to 3.14, and runs the fixtures again against the built wheel.
+- [`compare-ports.mjs`](https://github.com/4matic/trackparse/blob/main/scripts/compare-ports.mjs)
+  runs every fixture input through the JavaScript package, this package and the Rust crate and
+  diffs the complete JSON output. The difference count is zero.
+
+## Versioning
+
+**Changelog:** [python/CHANGELOG.md](https://github.com/4matic/trackparse/blob/main/python/CHANGELOG.md)
+
+The package version is the spec version (`SPEC_VERSION`). While it is 0.x, a release that changes
+the output for some input bumps the minor version, and a patch release only fixes bugs. If you
+store parsed results, pin the minor version (`trackparse~=0.5.0`) and read the changelog before
+moving up.
+
+## Other languages
+
+**Docs:** [Ports](https://4matic.github.io/trackparse/project/ports/)
+
+The same parser exists for JavaScript and Rust. All three implement one spec, pass the same
+fixtures, are released together under one version number, and return identical JSON for every
+fixture input. You can parse in one language and read the result in another.
+
+| Language | Package | Install |
+|---|---|---|
+| JavaScript / TypeScript | [trackparse on npm](https://www.npmjs.com/package/trackparse) | `npm install trackparse` |
+| Python | [trackparse on PyPI](https://pypi.org/project/trackparse/) | `pip install trackparse` |
+| Rust | [trackparse on crates.io](https://crates.io/crates/trackparse) | `cargo add trackparse` |
+
+## Limitations
+
+**Docs:** [Limitations and roadmap](https://4matic.github.io/trackparse/project/roadmap/)
+
+- `parse()` takes one track string. Whole tracklists go through `trackparse.tracklist`, which reads
+  start times only: no durations, trailing times or time ranges.
+- Catalog numbers, key and BPM are not fields. They stay in the title.
+- There is no artist database. Pass `known_artists` for names that contain a joiner
+  (`Earth, Wind & Fire`).
 
 ## Development
 
@@ -495,13 +611,14 @@ same spec rule IDs. Behaviour changes start in the spec, not here: see
 
 ## Links
 
-- [Documentation](https://4matic.github.io/trackparse/), with every example in Python and JavaScript, and a
-  [playground](https://4matic.github.io/trackparse/playground/) that runs the parser in your browser
+- [Documentation](https://4matic.github.io/trackparse/), with every example in JavaScript, Python
+  and Rust, and a [playground](https://4matic.github.io/trackparse/playground/) that runs the
+  parser in your browser
 - [Spec](https://github.com/4matic/trackparse/blob/main/spec/SPEC.md)
+- [Changelog](https://github.com/4matic/trackparse/blob/main/python/CHANGELOG.md)
 - [Project README](https://github.com/4matic/trackparse#readme)
 - [GitHub repository](https://github.com/4matic/trackparse)
-- [Changelog](https://github.com/4matic/trackparse/blob/main/python/CHANGELOG.md)
-- [npm package](https://www.npmjs.com/package/trackparse)
+- [npm package](https://www.npmjs.com/package/trackparse) · [Rust crate](https://crates.io/crates/trackparse)
 
 ## License
 
