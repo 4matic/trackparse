@@ -16,6 +16,8 @@ const body = spec
   // The page title comes from the frontmatter.
   .replace(/^# .*\n+/, "")
   .replace(/^Spec version: .*\n+/m, "")
+  // A `---` straight after a table row would be read as one more (empty) row.
+  .replace(/^(\|.*\|)\n---$/gm, "$1\n\n---")
   // Relative links: files go to blob/, directories (trailing slash or no extension) to tree/.
   .replace(/\]\((?!https?:|#|mailto:)([^)\s]+)\)/g, (_, href) => {
     const clean = href.replace(/^\.\//, "");
