@@ -13,6 +13,10 @@ on:
         description: "Re-publish an existing python release tag to PyPI (e.g. python-v0.2.0). Leave empty for a normal release-please run."
         required: false
         default: ""
+      rust_tag:
+        description: "Re-publish an existing rust release tag to crates.io (e.g. rust-v0.5.0). Leave empty for a normal release-please run."
+        required: false
+        default: ""
 
 permissions: {}
 
@@ -243,7 +247,7 @@ jobs:
   # environment "crates", then set the repository variable CRATES_PUBLISH to "true".
   publish-crates:
     needs: release-please
-    if: needs.release-please.outputs.rust_release_created == 'true' && vars.CRATES_PUBLISH == 'true'
+    if: vars.CRATES_PUBLISH == 'true' && (needs.release-please.outputs.rust_release_created == 'true' || (github.event_name == 'workflow_dispatch' && inputs.rust_tag != ''))
     runs-on: ubuntu-latest
     environment:
       name: crates
@@ -252,14 +256,34 @@ jobs:
       contents: write # attach the .crate file to the GitHub Release
       id-token: write # crates.io trusted publishing (OIDC)
     steps:
+      - name: Resolve the release tag
+        id: tag
+        env:
+          RELEASED_TAG: ${{ steps.tag.outputs.tag }}
+          RELEASED_VERSION: ${{ steps.tag.outputs.version }}
+          INPUT_TAG: ${{ inputs.rust_tag }}
+        run: |
+          if [ -n "$INPUT_TAG" ]; then
+            if ! printf '%s' "$INPUT_TAG" | grep -Eq '^rust-v[0-9]+\.[0-9]+\.[0-9]+$'; then
+              echo "rust_tag must look like rust-vX.Y.Z" >&2
+              exit 1
+            fi
+            tag="$INPUT_TAG"
+            version="${INPUT_TAG#rust-v}"
+          else
+            tag="$RELEASED_TAG"
+            version="$RELEASED_VERSION"
+          fi
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
       - uses: actions/checkout@v4
         with:
-          ref: ${{ needs.release-please.outputs.rust_tag_name }}
+          ref: ${{ steps.tag.outputs.tag }}
       # The runner image ships stable Rust; no third-party toolchain action in the publishing job.
       - run: rustup update stable --no-self-update && rustup default stable
       - name: Verify versions are in sync
         env:
-          TAG_VERSION: ${{ needs.release-please.outputs.rust_version }}
+          TAG_VERSION: ${{ steps.tag.outputs.version }}
         run: |
           rs_version=$(python3 -c 'import tomllib; print(tomllib.load(open("rust/Cargo.toml", "rb"))["package"]["version"])')
           spec_version=$(cat spec/VERSION)
@@ -283,8 +307,8 @@ jobs:
         working-directory: rust
         env:
           GH_TOKEN: ${{ github.token }}
-          TAG: ${{ needs.release-please.outputs.rust_tag_name }}
-          VERSION: ${{ needs.release-please.outputs.rust_version }}
+          TAG: ${{ steps.tag.outputs.tag }}
+          VERSION: ${{ steps.tag.outputs.version }}
         run: |
           gh release upload "$TAG" target/package/*.crate --clobber
           highlights="../.github/release-notes/${VERSION}.md"
