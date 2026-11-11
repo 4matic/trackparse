@@ -34,11 +34,13 @@ jobs:
         run: pnpm --filter @trackparse/fixture-gen test
       - name: Port data codegen is up to date
         run: pnpm --filter trackparse gen:data:check
-      - name: js, python and spec versions are linked
+      - name: js, python, rust and spec versions are linked
         run: |
           js_version=$(node -p "require('./js/package.json').version")
           py_version=$(python3 -c 'import tomllib; print(tomllib.load(open("python/pyproject.toml", "rb"))["project"]["version"])')
+          rs_version=$(python3 -c 'import tomllib; print(tomllib.load(open("rust/Cargo.toml", "rb"))["package"]["version"])')
           spec_version=$(cat spec/VERSION)
-          echo "js=$js_version python=$py_version spec=$spec_version"
+          echo "js=$js_version python=$py_version rust=$rs_version spec=$spec_version"
           test "$js_version" = "$spec_version"
           test "$py_version" = "$spec_version"
+          test "$rs_version" = "$spec_version"
