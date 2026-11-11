@@ -2,6 +2,7 @@
 import ArrowDownWideNarrow from "@lucide/astro/icons/arrow-down-wide-narrow";
 import Copy from "@lucide/astro/icons/copy";
 import Timer from "@lucide/astro/icons/timer";
+import Redo2 from "@lucide/astro/icons/redo-2";
 import Undo2 from "@lucide/astro/icons/undo-2";
 import "../styles/playground.css";
 
@@ -222,7 +223,8 @@ const listExamples: { label: string; title: string; text: string }[] = [
           </div>
           <div class="tp-row">
             <button type="button" class="tp-btn" id="tl-do-sort"><ArrowDownWideNarrow size={15} aria-hidden="true" /> Sort by time</button>
-            <button type="button" class="tp-btn" id="tl-undo" disabled><Undo2 size={15} aria-hidden="true" /> Undo</button>
+            <button type="button" class="tp-btn" id="tl-undo" title="Undo (Ctrl+Z)" disabled><Undo2 size={15} aria-hidden="true" /> Undo</button>
+            <button type="button" class="tp-btn" id="tl-redo" title="Redo (Ctrl+Shift+Z)" disabled><Redo2 size={15} aria-hidden="true" /> Redo</button>
             <button type="button" class="tp-btn" data-copy="tl-input"><Copy size={15} aria-hidden="true" /><span>Copy text</span></button>
           </div>
         </fieldset>
@@ -709,7 +711,55 @@ const listExamples: { label: string; title: string; text: string }[] = [
   const tl = $<HTMLTextAreaElement>("tl-input");
   const audio = $<HTMLInputElement>("tl-audio");
   const undoBtn = $<HTMLButtonElement>("tl-undo");
-  const history_: string[] = [];
+  const redoBtn = $<HTMLButtonElement>("tl-redo");
+
+  // One history for the tracklist box: typing, edits, examples and opened links. Setting
+  // `textarea.value` from a script clears the browser's own undo history, so the page keeps its
+  // own and Ctrl+Z / Ctrl+Shift+Z use it too.
+  interface Step {
+    text: string;
+    label: string;
+  }
+  const MAX_STEPS = 100;
+  const past: Step[] = [];
+  const future: Step[] = [];
+  /** The text as of the last step (what Undo of the next step goes back to). */
+  let settled = "";
+  /** A run of typing is one step; it ends after a pause. */
+  let typingOpen = false;
+  let typingTimer = 0;
+
+  function syncHistoryButtons() {
+    undoBtn.disabled = past.length === 0;
+    redoBtn.disabled = future.length === 0;
+  }
+  /** Record a step that leads away from the settled text. */
+  function pushStep(label: string) {
+    past.push({ text: settled, label });
+    if (past.length > MAX_STEPS) past.shift();
+    future.length = 0;
+  }
+  /** Replace the text from the page (an edit, an example, a link) as one undoable step. */
+  function setText(text: string, label: string) {
+    typingOpen = false;
+    if (text !== settled) pushStep(label);
+    tl.value = text;
+    settled = text;
+    syncHistoryButtons();
+  }
+  function stepBack(from: Step[], to: Step[], word: string) {
+    const step = from.pop();
+    if (!step) return;
+    typingOpen = false;
+    to.push({ text: tl.value, label: step.label });
+    tl.value = step.text;
+    settled = step.text;
+    syncHistoryButtons();
+    $("tl-editlog").textContent = `${word}: ${step.label}.`;
+    renderList();
+  }
+  const undo = () => stepBack(past, future, "Undone");
+  const redo = () => stepBack(future, past, "Redone");
   let changed = new Set<number>();
 
 
@@ -876,9 +926,7 @@ const listExamples: { label: string; title: string; text: string }[] = [
     const r = applyEdits(tl.value, edits);
     const same = r.text === tl.value;
     if (!same) {
-      history_.push(tl.value);
-      undoBtn.disabled = false;
-      tl.value = r.text;
+      setText(r.text, label);
       changed = new Set(r.changed);
     }
     const NOTE: Record<string, string> = {
@@ -893,12 +941,18 @@ const listExamples: { label: string; title: string; text: string }[] = [
     changed = new Set();
   }
 
-  // Typing makes the undo history stale: Undo would throw the typed text away.
   let typing = 0;
   tl.addEventListener("input", () => {
     $("tl-editlog").textContent = "";
-    history_.length = 0;
-    undoBtn.disabled = true;
+    // A run of typing is one undo step, closed by a pause.
+    if (!typingOpen && tl.value !== settled) {
+      pushStep("typing");
+      typingOpen = true;
+    }
+    settled = tl.value;
+    clearTimeout(typingTimer);
+    typingTimer = window.setTimeout(() => (typingOpen = false), 600);
+    syncHistoryButtons();
     // Short lists re-parse on every key; long ones wait for a pause in typing.
     clearTimeout(typing);
     if (tl.value.length < 20000) renderList();
@@ -911,28 +965,29 @@ const listExamples: { label: string; title: string; text: string }[] = [
     edit([{ op: "shift", seconds, from }], `Shift ${seconds >= 0 ? "+" : ""}${seconds} s from line ${from}`);
   });
   $("tl-do-sort").addEventListener("click", () => edit([{ op: "sort-by-time" }], "Sort by time"));
-  undoBtn.addEventListener("click", () => {
-    const prev = history_.pop();
-    if (prev !== undefined) tl.value = prev;
-    undoBtn.disabled = history_.length === 0;
-    $("tl-editlog").textContent = "Undone.";
-    renderList();
+  undoBtn.addEventListener("click", undo);
+  redoBtn.addEventListener("click", redo);
+  tl.addEventListener("keydown", (e) => {
+    if (!(e.ctrlKey || e.metaKey) || e.altKey) return;
+    const k = e.key.toLowerCase();
+    if (k !== "z" && k !== "y") return;
+    e.preventDefault();
+    if (k === "y" || e.shiftKey) redo();
+    else undo();
   });
-  // A sample replaces the text: the edit log and the undo history belong to the old one.
-  function loadSample(text: string | undefined) {
-    tl.value = text ?? "";
+  // An example replaces the text; Undo brings the old text back.
+  function loadSample(text: string | undefined, label = "example") {
+    setText(text ?? "", `Load ${label}`);
     audio.value = "";
     // Keep "from line" inside the new list, so Shift and the generated code stay valid.
     const fromEl = $<HTMLInputElement>("tl-from");
     if (Number(fromEl.value) > lineCount()) fromEl.value = String(Math.min(2, lineCount()));
-    history_.length = 0;
-    undoBtn.disabled = true;
     changed.clear();
     $("tl-editlog").textContent = "";
     renderList();
   }
   for (const b of document.querySelectorAll<HTMLButtonElement>("[data-list-example]"))
-    b.addEventListener("click", () => loadSample(b.dataset.listExample));
+    b.addEventListener("click", () => loadSample(b.dataset.listExample, `the "${b.textContent?.trim()}" example`));
   for (const b of document.querySelectorAll<HTMLButtonElement>("[data-view]")) {
     b.addEventListener("click", () => {
       view = b.dataset.view as View;
@@ -962,4 +1017,8 @@ const listExamples: { label: string; title: string; text: string }[] = [
     renderList();
     select("track");
   }
+  // History starts from whatever the page opened with.
+  past.length = 0;
+  settled = tl.value;
+  syncHistoryButtons();
 </script>
