@@ -29,6 +29,15 @@ t.junk   # (Junk(raw='Official Music Video', kind='video'), Junk(raw='HD', kind=
 ```
 
 </TabItem>
+<TabItem label="Rust">
+
+```rust
+let t = parse("Daft Punk - One More Time (Official Music Video) [HD]");
+t.title;  // "One More Time"
+t.junk;   // [Junk { raw: "Official Music Video", kind: Video }, Junk { raw: "HD", kind: Quality }]
+```
+
+</TabItem>
 </Tabs>
 
 | Kind | Examples |
@@ -64,6 +73,14 @@ parse("Elektronomia - Sky High [NCS Release]").junk # (Junk(raw='NCS Release', k
 ```
 
 </TabItem>
+<TabItem label="Rust">
+
+```rust
+parse("Porter Robinson - Shelter - YouTube").junk;   // [Junk { raw: "YouTube", kind: Platform }]
+parse("Elektronomia - Sky High [NCS Release]").junk; // [Junk { raw: "NCS Release", kind: Label }]
+```
+
+</TabItem>
 </Tabs>
 
 Catalogue numbers like `[HOSP123]` are not junk yet. They stay in the title. See the
@@ -88,10 +105,18 @@ parse("Eminem - Without Me (Explicit)").flags
 ```
 
 </TabItem>
+<TabItem label="Rust">
+
+```rust
+parse("Eminem - Without Me (Explicit)").flags;
+// Flags { explicit: true, clean: false, unknown_artist: false, unknown_title: false }
+```
+
+</TabItem>
 </Tabs>
 
 `explicit` and `clean` come from `(Explicit)`, `[Clean]` and the like. `unknownArtist` and
-`unknownTitle` (`unknown_artist` and `unknown_title` in Python) are set when the artist or title is a placeholder such as `ID`.
+`unknownTitle` (`unknown_artist` and `unknown_title` in Python and Rust) are set when the artist or title is a placeholder such as `ID`.
 
 ## Year
 
@@ -116,6 +141,15 @@ t.year   # 2015
 ```
 
 </TabItem>
+<TabItem label="Rust">
+
+```rust
+let t = parse("Noisia - Stigma (2015)");
+t.title;  // "Stigma"
+t.year;   // Some(2015)
+```
+
+</TabItem>
 </Tabs>
 
 A year inside a version (`Remastered 2015`) belongs to that version instead, in `versions[i].year`.
@@ -136,6 +170,14 @@ parse("2 Unlimited - No Limit").position;  // null
 ```python
 parse("01. Aphex Twin - Xtal").position   # Position(raw='01', number=1)
 parse("2 Unlimited - No Limit").position  # None
+```
+
+</TabItem>
+<TabItem label="Rust">
+
+```rust
+parse("01. Aphex Twin - Xtal").position;   // Some(Position { raw: "01", number: 1 })
+parse("2 Unlimited - No Limit").position;  // None
 ```
 
 </TabItem>
@@ -168,6 +210,14 @@ parse("1:02:03 Noisia - Stigma").timestamp;   // { raw: '1:02:03', seconds: 3723
 ```python
 parse("[12:34] Noisia - Stigma").timestamp   # Timestamp(raw='12:34', seconds=754)
 parse("1:02:03 Noisia - Stigma").timestamp   # Timestamp(raw='1:02:03', seconds=3723)
+```
+
+</TabItem>
+<TabItem label="Rust">
+
+```rust
+parse("[12:34] Noisia - Stigma").timestamp;   // Some(Timestamp { raw: "12:34", seconds: 754 })
+parse("1:02:03 Noisia - Stigma").timestamp;   // Some(Timestamp { raw: "1:02:03", seconds: 3723 })
 ```
 
 </TabItem>

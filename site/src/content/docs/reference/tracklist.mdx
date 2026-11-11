@@ -21,14 +21,25 @@ from trackparse.tracklist import apply_edits, parse_tracklist
 ```
 
 </TabItem>
+<TabItem label="Rust">
+
+```rust
+use trackparse::tracklist::{apply_edits, parse_tracklist, Edit};
+```
+
+</TabItem>
 </Tabs>
 
 Neither function throws on string input. In Python the results are frozen dataclasses with
 snake_case attributes (`spec_version`, `first_time`) and a `to_dict()` that returns the spec's JSON;
-edits are plain dicts with the same keys as in JavaScript, `"from"` included. The guides [Tracklists](/trackparse/guides/tracklists/)
+edits are plain dicts with the same keys as in JavaScript, `"from"` included. In Rust the results
+are structs with public snake_case fields and `to_json()`, edits are values of the `Edit` enum
+(listed under [Types](#types)), and nothing panics. The guides [Tracklists](/trackparse/guides/tracklists/)
 and [Editing tracklists](/trackparse/guides/editing-tracklists/) walk through examples.
 
 ## parseTracklist(text, options?)
+
+*(Python: `parse_tracklist`. Rust: `parse_tracklist(text)` and `parse_tracklist_with(text, &options)`)*
 
 Returns a `Tracklist`. Every key is always present.
 
@@ -57,11 +68,24 @@ Tracklist(
 ```
 
 </TabItem>
+<TabItem label="Rust">
+
+```rust
+pub struct Tracklist {
+    pub spec_version: String,
+    pub entries: Vec<TracklistEntry>,
+    pub warnings: Vec<TracklistWarning>,
+    pub stats: Stats,   // lines, tracks, markers, timed, first_time, last_time
+}
+```
+
+</TabItem>
 </Tabs>
 
 ### TracklistEntry
 
-One per line, in order.
+One per line, in order. In Rust, `line` is a `usize`, `kind` and `eol` are the enums `EntryKind` and
+`Eol` (`as_str()` gives the strings below), and `time.seconds` is an `f64`.
 
 | Field | Type | Description |
 |---|---|---|
@@ -92,6 +116,18 @@ TracklistWarning(code: TracklistWarningCode, line: int, severity: Severity, sugg
 ```
 
 </TabItem>
+<TabItem label="Rust">
+
+```rust
+pub struct TracklistWarning {
+    pub code: WarningCode,
+    pub line: usize,
+    pub severity: Severity,               // Info | Warning
+    pub suggestion: Option<Suggestion>,   // Suggestion { line: usize, raw: String, seconds: f64 }
+}
+```
+
+</TabItem>
 </Tabs>
 
 Sorted by line. The codes are listed under [Warnings](/trackparse/reference/warnings/#tracklist-warnings).
@@ -109,7 +145,9 @@ here.
 
 ## applyEdits(text, edits, options?)
 
-Returns `{ text, changed, warnings }` (Python: an `EditResult`).
+*(Python: `apply_edits`. Rust: `apply_edits(text, &edits)` and `apply_edits_with(text, &edits, &options)`)*
+
+Returns `{ text, changed, warnings }` (Python and Rust: an `EditResult`).
 
 | Field | |
 |---|---|
@@ -152,7 +190,8 @@ them.
 | `markerWords` | `[]` | Extra marker words |
 
 Python uses keyword arguments: `mode`, `known_artists`, `split_and`, `keywords`, `audio_seconds`,
-`marker_words`.
+`marker_words`. Rust has a setter of the same name for each on `TracklistOptions`, for example
+`TracklistOptions::new().audio_seconds(3600.0).marker_words(["drop"])`.
 
 ## Types
 
@@ -170,6 +209,29 @@ Exported from `trackparse/tracklist`: `Tracklist`, `TracklistEntry`, `EntryKind`
 Exported from `trackparse.tracklist`: the dataclasses `Tracklist`, `TracklistEntry`, `Parts`,
 `TimeValue`, `Suggestion`, `Stats`, `TracklistWarning`, `EditResult`, `EditWarning`, and the
 `Literal` aliases `EntryKind`, `Eol`, `Severity`, `TracklistWarningCode`, `EditWarningCode`.
+
+</TabItem>
+<TabItem label="Rust">
+
+Exported from `trackparse::tracklist`: the structs `Tracklist`, `TracklistEntry`, `Parts`,
+`TimeValue`, `Suggestion`, `Stats`, `TracklistWarning`, `TracklistOptions`, `EditResult` and
+`EditWarning`, the enums `EntryKind`, `Eol`, `Severity`, `WarningCode` and `EditWarningCode`, and
+the edits:
+
+```rust
+pub enum Edit {
+    SetTime { line: usize, seconds: f64 },
+    Shift { seconds: f64, lines: Option<Vec<usize>>, from: Option<usize> },
+    SortByTime,
+    SetRest { line: usize, rest: String },
+    Insert { after: usize, text: String },
+    Delete { line: usize },
+}
+```
+
+Each variant has a constructor: `Edit::set_time(line, seconds)`, `Edit::shift(seconds)`,
+`Edit::shift_from(seconds, from)`, `Edit::shift_lines(seconds, lines)`, `Edit::sort_by_time()`,
+`Edit::set_rest(line, rest)`, `Edit::insert(after, text)` and `Edit::delete(line)`.
 
 </TabItem>
 </Tabs>

@@ -1,14 +1,15 @@
 ---
-// One install line under the hero, switchable between npm and pip, with a copy button.
+// One install line under the hero, switchable between npm, pip and cargo, with a copy button.
 import Copy from "@lucide/astro/icons/copy";
 
-const cmds = { npm: "npm install trackparse", pip: "pip install trackparse" };
+const cmds = { npm: "npm install trackparse", pip: "pip install trackparse", cargo: "cargo add trackparse" };
 ---
 
 <div class="install not-content" data-cmds={JSON.stringify(cmds)}>
   <div class="seg" role="group" aria-label="Package manager">
     <button type="button" data-pm="npm" aria-pressed="true">npm</button>
     <button type="button" data-pm="pip" aria-pressed="false">pip</button>
+    <button type="button" data-pm="cargo" aria-pressed="false">cargo</button>
   </div>
   <code><span class="prompt" aria-hidden="true">$</span> <span class="cmd">{cmds.npm}</span></code>
   <button type="button" class="copy" aria-label="Copy the install command"><Copy size={15} aria-hidden="true" /></button>
@@ -71,6 +72,21 @@ const cmds = { npm: "npm install trackparse", pip: "pip install trackparse" };
   .copy:hover,
   .copy.done {
     color: var(--sl-color-white);
+  }
+  /* Three package managers and a command don't fit one row on a phone: the switch gets its own. */
+  @media (max-width: 26rem) {
+    .install {
+      flex-wrap: wrap;
+    }
+    .seg {
+      flex-basis: 100%;
+      border-right: 0;
+      border-bottom: 1px solid var(--tp-border);
+    }
+    code {
+      flex: 1;
+      padding-block: 0.8rem;
+    }
   }
 </style>
 

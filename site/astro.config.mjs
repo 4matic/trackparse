@@ -20,7 +20,7 @@ export default defineConfig({
       title: "trackparse",
       disable404Route: true,
       description:
-        "Turn messy track names into structured data: artists, features, remixes, versions and the noise around them. JavaScript and Python, one spec.",
+        "Turn messy track names into structured data: artists, features, remixes, versions and the noise around them. JavaScript, Python and Rust, one spec.",
       logo: { light: "./src/assets/logo-light.svg", dark: "./src/assets/logo-dark.svg", replacesTitle: false },
       favicon: "/favicon.svg",
       social: [

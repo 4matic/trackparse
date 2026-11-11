@@ -22,8 +22,8 @@ Behaviour starts in the spec, not in the code:
    trigger, and one exact case if the rule touches many fields.
 3. If the rule is combinatorial (a new joiner, a new version word), teach the generator the atom
    and regenerate.
-4. Change every port, JavaScript and Python, and cite the rule ID in a comment.
-5. Check that every fixture passes in both ports and that the cross-port diff reports zero
+4. Change every port, JavaScript, Python and Rust, and cite the rule ID in a comment.
+5. Check that every fixture passes in all three ports and that the cross-port diff reports zero
    differences.
 
 Word lists live only in `spec/data`. They're compiled into each port, so a new keyword is a JSON
@@ -35,8 +35,19 @@ change plus codegen, not a code change.
 spec/        SPEC.md, word lists, JSON Schemas, fixtures, the fixture generator
 js/          the npm package (reference implementation)
 python/      the PyPI package
+rust/        the crate for crates.io
 site/        this website
 scripts/     cross-port diff and other tools
+```
+
+## Working on the Rust crate
+
+```sh
+cd rust
+cargo test                                                         # fixtures, invariants, API tests
+TRACKPARSE_REPORT=1 cargo test --test fixtures -- --nocapture      # pass rate per file and per rule
+node scripts/gen_data.mjs                                          # regenerate src/data.rs from spec/data
+cd .. && node scripts/compare-ports.mjs --only=rust                # Rust against JavaScript, full outputs
 ```
 
 [AGENTS.md](https://github.com/4matic/trackparse/blob/main/AGENTS.md) has the full repository map,

@@ -57,6 +57,15 @@ parse("Queen - Bohemian Rhapsody (Live at Wembley 1986)").to_dict()
 ```
 
 </TabItem>
+<TabItem label="Rust">
+
+```rust
+use trackparse::parse;
+
+parse("Queen - Bohemian Rhapsody (Live at Wembley 1986)").to_json()
+```
+
+</TabItem>
 </Tabs>
 
 ```json
@@ -87,16 +96,17 @@ parse("Queen - Bohemian Rhapsody (Live at Wembley 1986)").to_dict()
 }
 ```
 
-Both give the same JSON. In Python the result is a frozen dataclass with snake_case attributes, and
-`to_dict()` turns it into the JSON above. The [`parse` reference](/trackparse/reference/parse/)
+All three give the same JSON. In Python the result is a frozen dataclass with snake_case attributes,
+and `to_dict()` turns it into the JSON above. In Rust it is a struct with snake_case fields, and
+`to_json()` writes that JSON as a string. The [`parse` reference](/trackparse/reference/parse/)
 explains every field.
 
 ## Spec first
 
 Behaviour isn't defined by the JavaScript code. It's defined by a written
 [spec](/trackparse/reference/spec/) with numbered rules, and by 13,124 fixtures that pin those rules
-down. The JavaScript package is the reference implementation. The Python package passes the same
-fixtures and produces the same JSON, byte for byte. A Rust port will do the same.
+down. The JavaScript package is the reference implementation. The Python package and the Rust
+crate pass the same fixtures and produce the same JSON, byte for byte.
 
 So if you ever wonder why something parses the way it does, there's a rule ID for it, and a fixture
 that cites that rule.
@@ -108,4 +118,4 @@ If all you need is a cleaned-up string to send to a scrobbler,
 scope. trackparse is for when you need to know who did what.
 
 It also has no artist database. `&` is a joiner, so `Chase & Status` comes out as two artists unless
-you pass it in `knownArtists`. More on that in [Artists and credits](/trackparse/guides/artists/).
+you pass it in `knownArtists` (`known_artists` in Python and Rust). More on that in [Artists and credits](/trackparse/guides/artists/).

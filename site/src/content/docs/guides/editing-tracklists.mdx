@@ -5,7 +5,7 @@ description: Fix times, shift whole sections, sort, insert and delete lines, and
 
 import { Tabs, TabItem } from "@astrojs/starlight/components";
 
-`applyEdits(text, edits)` (`apply_edits` in Python) takes a tracklist as text and returns new text. It's built for editors:
+`applyEdits(text, edits)` (`apply_edits` in Python and Rust) takes a tracklist as text and returns new text. It's built for editors:
 you get back the lines it changed, and every other line keeps its bytes and its line ending.
 
 <Tabs syncKey="lang">
@@ -20,6 +20,13 @@ import { applyEdits, parseTracklist } from "trackparse/tracklist";
 
 ```python
 from trackparse.tracklist import apply_edits, parse_tracklist
+```
+
+</TabItem>
+<TabItem label="Rust">
+
+```rust
+use trackparse::tracklist::{apply_edits, parse_tracklist, Edit};
 ```
 
 </TabItem>
@@ -73,14 +80,42 @@ result.text.split("\r\n")[4:]
 ```
 
 </TabItem>
+<TabItem label="Rust">
+
+```rust
+let fix = parse_tracklist(&text).warnings[1].suggestion.clone().unwrap();
+// Suggestion { line: 8, raw: "01:11:02", seconds: 4262.0 }
+
+let result = apply_edits(&text, &[Edit::set_time(fix.line, fix.seconds), Edit::shift_from(45.0, 5)]);
+
+result.changed;   // [5, 6, 7, 8, 9]
+result.warnings;  // [EditWarning { code: StyleUpgraded, edit: 1, line: Some(5) }]
+result.text.split("\r\n").skip(4).collect::<Vec<_>>();
+// [
+//     "01:00:16 Alix Perez - Fade Away",
+//     "01:03:55 Interview with Hybris",
+//     "01:08:29 Imanu - Sacrifice",
+//     "01:11:47 Current Value feat. Teddy Killerz - Payload",
+//     "01:16:21 Hybris - Spinning Top",
+// ]
+```
+
+</TabItem>
 </Tabs>
 
-In Python the edits are plain dicts with the same keys, `"from"` included.
+In Python the edits are plain dicts with the same keys, `"from"` included. In Rust they are
+values of the `Edit` enum, made with a function per edit: `Edit::set_time(line, seconds)`,
+`Edit::shift_from(seconds, from)`.
 
 Lines 1 to 4 are untouched, CRLF included. Edits run in order, each on the text the previous one
 produced, with line numbers as that text has them.
 
 ## The edits
+
+The table uses the JavaScript spelling. In Rust the same edits are `Edit::set_time(line, seconds)`,
+`Edit::shift(seconds)`, `Edit::shift_from(seconds, from)`, `Edit::shift_lines(seconds, lines)`,
+`Edit::sort_by_time()`, `Edit::set_rest(line, rest)`, `Edit::insert(after, text)` and
+`Edit::delete(line)`.
 
 | Edit | Effect |
 |---|---|
@@ -130,6 +165,18 @@ result.warnings  # (EditWarning(code='style-upgraded', edit=0, line=2),)
 ```
 
 </TabItem>
+<TabItem label="Rust">
+
+```rust
+let text = "**[**52:47**] Mefjus - Bandwagon**\n**[**59:31**] Alix Perez - Fade Away**";
+let result = apply_edits(text, &[Edit::shift(45.0)]);
+
+result.text;
+// "**[**53:32**] Mefjus - Bandwagon**\n**[**01:00:16**] Alix Perez - Fade Away**"
+result.warnings;  // [EditWarning { code: StyleUpgraded, edit: 0, line: Some(2) }]
+```
+
+</TabItem>
 </Tabs>
 
 `set-rest` replaces everything after the gap, including a closing `**` at the end of the line. The
@@ -138,7 +185,7 @@ time is still read afterwards, because emphasis next to a time doesn't need a pa
 
 ## When an edit can't apply
 
-Edits never throw. A bad one changes nothing and reports why:
+Edits never throw or panic. A bad one changes nothing and reports why:
 
 | Code | When |
 |---|---|
@@ -147,7 +194,7 @@ Edits never throw. A bad one changes nothing and reports why:
 | `style-upgraded` | a time gained hours (see above) |
 
 Each edit warning is `{ code, edit, line }`, where `edit` is the index in your `edits` array and
-`line` is `null` when the edit doesn't name a line.
+`line` is `null` (`None`) when the edit doesn't name a line.
 
 ## Guarantees
 

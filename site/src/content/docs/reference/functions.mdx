@@ -5,27 +5,31 @@ description: parseArtists, format, normalize, allArtists, createParser and SPEC_
 
 import { Tabs, TabItem } from "@astrojs/starlight/components";
 
-All of these are exported from `trackparse`. The Python package has the same functions in
-snake_case:
+All of these are exported from `trackparse`. The Python package and the Rust crate have the same
+functions in snake_case:
 
-| JavaScript | Python |
-|---|---|
-| `parse` | `parse` |
-| `parseArtists` | `parse_artists` |
-| `format` | `format_track` |
-| `normalize` | `normalize` |
-| `allArtists` | `all_artists` |
-| `createParser` | `create_parser` |
-| `SPEC_VERSION` | `SPEC_VERSION` |
-| `parseTracklist`, `applyEdits` (from `trackparse/tracklist`) | `parse_tracklist`, `apply_edits` (from `trackparse.tracklist`) |
+| JavaScript | Python | Rust |
+|---|---|---|
+| `parse` | `parse` | `parse`, `parse_with` |
+| `parseArtists` | `parse_artists` | `parse_artists`, `parse_artists_with` |
+| `format` | `format_track` | `format_track`, `format_track_with` |
+| `normalize` | `normalize` | `normalize` |
+| `allArtists` | `all_artists` | `all_artists` |
+| `createParser` | `create_parser` | `Parser::new` |
+| `SPEC_VERSION` | `SPEC_VERSION` | `SPEC_VERSION` |
+| `parseTracklist`, `applyEdits` (from `trackparse/tracklist`) | `parse_tracklist`, `apply_edits` (from `trackparse.tracklist`) | `parse_tracklist`, `parse_tracklist_with`, `apply_edits`, `apply_edits_with` (from `trackparse::tracklist`) |
 
 Options are keyword arguments in Python, and fields are snake_case attributes (`full_title`,
 `unknown_artist`). Every function raises `TypeError` if the input isn't a `str`; anything else,
 including bad options, falls back to defaults.
 
+Rust has no optional arguments, so each function that takes options comes in two forms: the plain
+one uses the defaults, and the `_with` one takes a reference to an options struct
+(`parse_with(input, &options)`). Inputs are `&str`, fields are snake_case, and no function panics.
+
 ## parseArtists(input, options?)
 
-*(Python: `parse_artists`)*
+*(Python and Rust: `parse_artists`)*
 
 Splits a bare artist string, with no title, into credits.
 
@@ -46,14 +50,24 @@ parseArtists("Sub Focus, Wilkinson & Dimension feat. Kojo").map((a) => `${a.name
 ```
 
 </TabItem>
+<TabItem label="Rust">
+
+```rust
+parse_artists("Sub Focus, Wilkinson & Dimension feat. Kojo")
+    .iter().map(|a| format!("{}:{}", a.name, a.role)).collect::<Vec<_>>();
+// ["Sub Focus:primary", "Wilkinson:primary", "Dimension:primary", "Kojo:featured"]
+```
+
+</TabItem>
 </Tabs>
 
-Takes `knownArtists`, `splitAnd` and `keywords` (`known_artists`, `split_and`, `keywords`). Useful for the artist field of ID3 tags or a
+Takes `knownArtists`, `splitAnd` and `keywords` (`known_artists`, `split_and`, `keywords`; in Rust
+through `parse_artists_with`). Useful for the artist field of ID3 tags or a
 streaming API, where the title is already separate.
 
 ## format(track, options?)
 
-*(Python: `format_track`)*
+*(Python and Rust: `format_track`)*
 
 Renders a `ParsedTrack` back to a string. The options are `feat`, `featMarker` (`feat_marker`),
 `joiners`, `versions`, `producers` and `position`. [Formatting](/trackparse/guides/formatting/) has examples
@@ -80,6 +94,13 @@ normalize("Noisia\u200b — “Stigma”")   # 'Noisia - "Stigma"'
 ```
 
 </TabItem>
+<TabItem label="Rust">
+
+```rust
+normalize("Noisia\u{200b} — “Stigma”");   // "Noisia - \"Stigma\""
+```
+
+</TabItem>
 </Tabs>
 
 You don't need to call it before `parse`. It's exported because it's handy for building lookup
@@ -87,7 +108,7 @@ keys.
 
 ## allArtists(track)
 
-*(Python: `all_artists`)*
+*(Python and Rust: `all_artists`)*
 
 Every credit of a track in one list: the artists, then every remixer, with duplicates removed.
 
@@ -108,16 +129,26 @@ allArtists(parse("Wilkinson ft. Becky Hill - Afterglow (Sub Focus Remix)")).map(
 ```
 
 </TabItem>
+<TabItem label="Rust">
+
+```rust
+all_artists(&parse("Wilkinson ft. Becky Hill - Afterglow (Sub Focus Remix)"))
+    .iter().map(|a| format!("{}:{}", a.name, a.role)).collect::<Vec<_>>();
+// ["Wilkinson:primary", "Becky Hill:featured", "Sub Focus:remixer"]
+```
+
+</TabItem>
 </Tabs>
 
 ## createParser(options)
 
-*(Python: `create_parser`)*
+*(Python: `create_parser`, Rust: `Parser::new`)*
 
 Compiles options and keywords once and returns an object with `parse` and `parseArtists`
 (`parse_artists`). Per-call
 options are merged over the compiled ones. Use it when you parse many strings with the same
-`knownArtists` or `keywords`.
+`knownArtists` or `keywords`. The Rust `Parser` takes its options once, in `Parser::new(&options)`;
+its `parse` and `parse_artists` take only the input.
 
 <Tabs syncKey="lang">
 <TabItem label="JavaScript">
@@ -150,9 +181,24 @@ parser.parse("Chase & Status x Camo & Krooked - Track (Alix Perez Rerub)").versi
 ```
 
 </TabItem>
+<TabItem label="Rust">
+
+```rust
+use trackparse::{KeywordOptions, ParseOptions, Parser, VersionType};
+
+let options = ParseOptions::new()
+    .known_artists(["Chase & Status", "Camo & Krooked"])
+    .keywords(KeywordOptions::new().version_head("rerub", VersionType::Rework));
+let parser = Parser::new(&options);
+
+parser.parse("Chase & Status x Camo & Krooked - Track (Alix Perez Rerub)").versions[0].version_type;
+// Rework
+```
+
+</TabItem>
 </Tabs>
 
 ## SPEC_VERSION
 
-The version of the [spec](/trackparse/reference/spec/) the package implements, as a string. The
+The version of the [spec](/trackparse/reference/spec/) the package implements, as a string (`&str` in Rust). The
 packages and the spec are released together, so it's the same as the package version.

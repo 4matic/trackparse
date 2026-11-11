@@ -18,7 +18,8 @@ source can take.
 | `tracklist` | one line of a tracklist | The first spaced dash always separates, and the words after it are never read as a version or genre suffix |
 | `auto` | anything (the default) | Picks `filename`, `youtube` or `clean` from the string. It never picks `tracklist` |
 
-The resolved mode is in `track.mode`, so you can always see which one ran.
+The resolved mode is in `track.mode`, so you can always see which one ran. In Rust the option is
+the enum `ModeOption` and the resolved mode is `Mode`, which has no `Auto`.
 
 ## How auto decides
 
@@ -47,6 +48,17 @@ parse("07_Burial_-_Archangel.mp3")
 
 parse("Noisia - Stigma | Official Video")
 # mode 'youtube', title 'Stigma', junk (Junk(raw='Official Video', kind='video'),)
+```
+
+</TabItem>
+<TabItem label="Rust">
+
+```rust
+parse("07_Burial_-_Archangel.mp3");
+// mode Filename, position 7, artist "Burial", title "Archangel"
+
+parse("Noisia - Stigma | Official Video");
+// mode Youtube, title "Stigma", junk [Junk { raw: "Official Video", kind: Video }]
 ```
 
 </TabItem>
@@ -86,6 +98,24 @@ parse("Blink-182-All The Small Things", mode="youtube")
 ```
 
 </TabItem>
+<TabItem label="Rust">
+
+```rust
+use trackparse::{parse_with, ModeOption, ParseOptions};
+
+let youtube = ParseOptions::new().mode(ModeOption::Youtube);
+
+parse_with("\"Numb\" by Linkin Park", &youtube);
+// artists ["Linkin Park"], title "Numb", warnings [BySplit]
+
+parse_with("Linkin Park: \"Numb\"", &youtube);
+// artists ["Linkin Park"], title "Numb", warnings [QuotedTitleSplit]
+
+parse_with("Blink-182-All The Small Things", &youtube);
+// artists ["Blink-182"], title "All The Small Things", warnings [UnspacedDashSplit]
+```
+
+</TabItem>
 </Tabs>
 
 In `clean` mode the last one comes back with no artist, the whole string as the title and a
@@ -114,6 +144,15 @@ parse("Around the World", mode="youtube", uploader="Daft Punk - Topic")
 ```
 
 </TabItem>
+<TabItem label="Rust">
+
+```rust
+let options = ParseOptions::new().mode(ModeOption::Youtube).uploader("Daft Punk - Topic");
+parse_with("Around the World", &options);
+// artists ["Daft Punk"], title "Around the World"
+```
+
+</TabItem>
 </Tabs>
 
 ## filename mode
@@ -134,6 +173,15 @@ parse("311 - Amber").artists[0].name;                  // '311'
 parse("07_Burial_-_Archangel.mp3")                     # position 7, Burial / Archangel
 parse("311 - Amber.mp3").position                      # Position(raw='311', number=311)
 parse("311 - Amber").artists[0].name                   # '311'
+```
+
+</TabItem>
+<TabItem label="Rust">
+
+```rust
+parse("07_Burial_-_Archangel.mp3");                    // position 7, Burial / Archangel
+parse("311 - Amber.mp3").position;                     // Some(Position { raw: "311", number: 311 })
+parse("311 - Amber").artists[0].name;                  // "311"
 ```
 
 </TabItem>
@@ -167,6 +215,17 @@ parse("Electrosoul System - Liquid Metal")
 
 parse("Electrosoul System - Liquid Metal", mode="tracklist")
 # artists ['Electrosoul System'], title 'Liquid Metal'
+```
+
+</TabItem>
+<TabItem label="Rust">
+
+```rust
+parse("Electrosoul System - Liquid Metal");
+// title "Electrosoul System", junk [Junk { raw: "Liquid Metal", kind: Genre }]
+
+parse_with("Electrosoul System - Liquid Metal", &ParseOptions::new().mode(ModeOption::Tracklist));
+// artists ["Electrosoul System"], title "Liquid Metal"
 ```
 
 </TabItem>

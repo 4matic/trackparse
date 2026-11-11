@@ -23,6 +23,18 @@ Artist(name: str, role: ArtistRole, joiner: Optional[str], source: ArtistSource)
 ```
 
 </TabItem>
+<TabItem label="Rust">
+
+```rust
+pub struct Artist {
+    pub name: String,
+    pub role: ArtistRole,         // Primary | Featured | Producer | Remixer
+    pub joiner: Option<String>,
+    pub source: ArtistSource,     // Artist | Title | Version
+}
+```
+
+</TabItem>
 </Tabs>
 
 `role` says what the person did. `joiner` is the text that introduced the name, exactly as written
@@ -31,7 +43,7 @@ the credit was found: left of the dash (`artist`), right of it (`title`), or ins
 (`version`).
 
 Remixers live inside `versions`, not in `artists`. Use [`allArtists(track)`](/trackparse/reference/functions/#allartiststrack)
-(`all_artists` in Python) when you want everyone in one list.
+(`all_artists` in Python and Rust) when you want everyone in one list.
 
 ## Joiners
 
@@ -58,6 +70,17 @@ parse("Skrillex & Diplo x Justin Bieber - Where Are Ü Now").artists
 
 [a.name for a in parse("Kanye West vs. Daft Punk - Stronger").artists]
 # ['Kanye West', 'Daft Punk']
+```
+
+</TabItem>
+<TabItem label="Rust">
+
+```rust
+parse("Skrillex & Diplo x Justin Bieber - Where Are Ü Now").artists;
+// Skrillex (joiner None), Diplo (joiner Some("&")), Justin Bieber (joiner Some("x")), all Primary
+
+parse("Kanye West vs. Daft Punk - Stronger").artists.iter().map(|a| &a.name).collect::<Vec<_>>();
+// ["Kanye West", "Daft Punk"]
 ```
 
 </TabItem>
@@ -99,9 +122,21 @@ parseArtists("Crosby, Stills, Nash and Young").map((a) => a.name);
 ```
 
 </TabItem>
+<TabItem label="Rust">
+
+```rust
+parse("Simon and Garfunkel - The Boxer").artists.iter().map(|a| &a.name).collect::<Vec<_>>();
+// ["Simon and Garfunkel"]
+
+parse_artists("Crosby, Stills, Nash and Young").iter().map(|a| &a.name).collect::<Vec<_>>();
+// ["Crosby", "Stills", "Nash", "Young"]
+```
+
+</TabItem>
 </Tabs>
 
-Set `splitAnd` (Python: `split_and`) to `"always"` or `"never"` to change that.
+Set `splitAnd` (Python: `split_and`) to `"always"` or `"never"` to change that. In Rust it is
+`ParseOptions::new().split_and(SplitAnd::Always)`.
 
 ## Features
 
@@ -128,6 +163,15 @@ parse("Silk City - Electricity (with Dua Lipa)")       # source 'title'
 ```
 
 </TabItem>
+<TabItem label="Rust">
+
+```rust
+parse("Noisia feat. Foreign Beggars - Shellshock");     // source Artist
+parse("Noisia - Shellshock ft. Foreign Beggars");       // source Title
+parse("Silk City - Electricity (with Dua Lipa)");       // source Title
+```
+
+</TabItem>
 </Tabs>
 
 If the same person is credited twice, they appear once:
@@ -146,6 +190,15 @@ parse("Noisia feat. Foreign Beggars - Shellshock (feat. Foreign Beggars)").artis
 ```python
 [a.name for a in parse("Noisia feat. Foreign Beggars - Shellshock (feat. Foreign Beggars)").artists]
 # ['Noisia', 'Foreign Beggars']
+```
+
+</TabItem>
+<TabItem label="Rust">
+
+```rust
+parse("Noisia feat. Foreign Beggars - Shellshock (feat. Foreign Beggars)")
+    .artists.iter().map(|a| &a.name).collect::<Vec<_>>();
+// ["Noisia", "Foreign Beggars"]
 ```
 
 </TabItem>
@@ -175,11 +228,20 @@ t.title       # 'Mask Off'
 ```
 
 </TabItem>
+<TabItem label="Rust">
+
+```rust
+let t = parse("Future - Mask Off (prod. by Metro Boomin)");
+t.artists[1];  // Artist { name: "Metro Boomin", role: Producer, joiner: Some("prod. by"), source: Title }
+t.title;       // "Mask Off"
+```
+
+</TabItem>
 </Tabs>
 
 ## knownArtists
 
-*(Python: `known_artists`)*
+*(Python and Rust: `known_artists`)*
 
 trackparse has no artist database, and that's deliberate. A built-in list would be wrong for half
 its users and impossible to keep current. Instead you tell it the names you care about:
@@ -207,16 +269,28 @@ parse("Chase & Status - Baddadan", { knownArtists: ["Chase & Status"] }).artists
 ```
 
 </TabItem>
+<TabItem label="Rust">
+
+```rust
+parse("Chase & Status - Baddadan").artists.iter().map(|a| &a.name).collect::<Vec<_>>();
+// ["Chase", "Status"]
+
+let options = ParseOptions::new().known_artists(["Chase & Status"]);
+parse_with("Chase & Status - Baddadan", &options).artists.iter().map(|a| &a.name).collect::<Vec<_>>();
+// ["Chase & Status"]
+```
+
+</TabItem>
 </Tabs>
 
 A known name is matched case- and accent-insensitively wherever a credit list starts. It also
 protects names that begin with digits from being read as a track number (`3 Doors Down`). If you
-parse a lot of strings with the same names, put them in [`createParser`](/trackparse/reference/functions/#createparseroptions) (`create_parser`).
+parse a lot of strings with the same names, put them in [`createParser`](/trackparse/reference/functions/#createparseroptions) (`create_parser` in Python, `Parser::new` in Rust).
 
 ## Unknown artists
 
 `ID` (and `Unknown`, `Untitled`, `?`, `???`) means the track hasn't been announced yet. It doesn't become a name.
-The track gets `flags.unknownArtist: true` (`flags.unknown_artist` in Python) instead, and the same goes for titles:
+The track gets `flags.unknownArtist: true` (`flags.unknown_artist` in Python and Rust) instead, and the same goes for titles:
 
 <Tabs syncKey="lang">
 <TabItem label="JavaScript">
@@ -238,6 +312,17 @@ t.artists                     # ()
 t.flags.unknown_artist        # True
 t.flags.unknown_title         # True
 t.versions[0].unknown_artist  # True
+```
+
+</TabItem>
+<TabItem label="Rust">
+
+```rust
+let t = parse("ID - ID (ID Remix)");
+t.artists;                     // []
+t.flags.unknown_artist;        // true
+t.flags.unknown_title;         // true
+t.versions[0].unknown_artist;  // true
 ```
 
 </TabItem>

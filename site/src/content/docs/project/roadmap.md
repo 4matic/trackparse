@@ -22,8 +22,9 @@ a rule gets written.
 
 ## Next
 
-1. The Rust port, on crates.io, passing the same fixtures. `serde` support behind a feature
-   flag, and `unicode-normalization` as the only required dependency.
+1. Publishing the Rust crate to crates.io. The port is done: it passes every fixture and its
+   output is identical to JavaScript, with `unicode-normalization` as its only required dependency and
+   `serde` behind a feature flag. What is left is the first release.
 2. Tracklist features from the list above, starting with durations and trailing times.
 
 The [changelog](https://github.com/4matic/trackparse/blob/main/js/CHANGELOG.md) lists what has
