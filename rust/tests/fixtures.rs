@@ -142,10 +142,14 @@ fn matches(expected: &Value, actual: &Value, exact: bool) -> Option<String> {
 }
 
 /// serde_json → the crate's own JSON (through text, which also exercises `Json::parse`).
-/// Non-finite numbers are written `1e999` in fixtures; serde_json reads them as f64 infinity only
-/// with arbitrary precision off, so the raw text of the file is used instead.
+/// Non-finite numbers travel as marker strings (see `load`) and become `1e999` again here, which
+/// `Json::parse` reads as infinity, as JS does.
 fn to_crate_json(v: &Value) -> Json {
-    Json::parse(&serde_json::to_string(v).unwrap()).expect("round trip")
+    let text = serde_json::to_string(v)
+        .unwrap()
+        .replace(&format!("\"{NEG_INFINITY}\""), "-1e999")
+        .replace(&format!("\"{INFINITY}\""), "1e999");
+    Json::parse(&text).expect("round trip")
 }
 
 fn merged(defaults: Option<&Value>, own: Option<&Value>) -> Value {
@@ -216,13 +220,18 @@ fn run_case(file: &Value, case: &Value) -> Outcome {
     Outcome { failure }
 }
 
-/// `1e999` is not valid for serde_json's default number parser; fixtures use it for infinity.
+const INFINITY: &str = "\u{1}trackparse:+infinity";
+const NEG_INFINITY: &str = "\u{1}trackparse:-infinity";
+
+/// `1e999` is not a number serde_json reads; fixtures use it for infinity (R13.9.6). It is read
+/// as a marker string (only where a value can stand, after `: `), which `to_crate_json` turns back into the number.
 fn load(path: &Path) -> Value {
     let text = std::fs::read_to_string(path).unwrap();
+    let marker = |m: &str| serde_json::to_string(m).unwrap();
     serde_json::from_str(
         &text
-            .replace("-1e999", "-1.7976931348623157e308")
-            .replace("1e999", "1.7976931348623157e308"),
+            .replace(": -1e999", &format!(": {}", marker(NEG_INFINITY)))
+            .replace(": 1e999", &format!(": {}", marker(INFINITY))),
     )
     .unwrap_or_else(|e| panic!("{}: {e}", path.display()))
 }

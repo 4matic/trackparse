@@ -26,7 +26,6 @@ fn format_raw(track: &RawTrack, format_options: &Json) -> String {
 ///
 /// `format` parses `input` with `options` first, then formats with `format_options`.
 pub fn call(func: &str, input: &str, options: &Json, format_options: &Json, edits: &Json) -> Json {
-    let _ = edits;
     match func {
         "parse" => Engine::new(Resolved::from_json(options)).run(input, false).to_json_value(),
         "parseArtists" => list(&Engine::new(Resolved::from_json(options)).run_artists(input)),
@@ -35,7 +34,8 @@ pub fn call(func: &str, input: &str, options: &Json, format_options: &Json, edit
             Json::Str(format_raw(&track, format_options))
         }
         "normalize" => Json::Str(normalize(input)),
-        // parseTracklist / applyEdits: filled in with R13.
+        "parseTracklist" => crate::tracklist::wire_parse(input, options),
+        "applyEdits" => crate::tracklist::wire_edits(input, edits),
         _ => Json::Null,
     }
 }
