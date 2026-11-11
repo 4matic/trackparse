@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.0](https://github.com/4matic/trackparse/compare/python-v0.4.0...python-v0.5.0) (2026-11-11)
+
+
+### Documentation
+
+* fixture and test counts after the emphasis pairing fix (13,130 fixtures) ([b287a88](https://github.com/4matic/trackparse/commit/b287a8818451b5570bf974a226d83db152be4dbc))
+
 ## [0.4.0](https://github.com/4matic/trackparse/compare/python-v0.3.3...python-v0.4.0) (2026-11-10)
 
 
