@@ -1,6 +1,7 @@
 #!/usr/bin/env node
-// Compiles spec/data/*.json and spec/VERSION into src/data.rs, and the Unicode category tables
-// (L and Lu, SPEC R0.6) into src/unicode_tables.rs.
+// Compiles spec/data/*.json and spec/VERSION into src/data.rs, and the Unicode tables into
+// src/unicode_tables.rs: the categories L and Lu (SPEC R0.6) and the lowercase mapping of
+// `String.prototype.toLowerCase()` with the two properties its final-sigma rule reads (R0.4).
 //
 //   node scripts/gen_data.mjs          write the files
 //   node scripts/gen_data.mjs --check  exit 1 if a committed file is stale
@@ -75,17 +76,61 @@ function ranges(re) {
   return out;
 }
 
+/**
+ * `toLowerCase()` of every scalar value that does not map to itself, as two tables: runs of code
+ * points `first, first + step, …, last` that all map to themselves plus `delta`, and the few that
+ * map to several code points. Runs never overlap.
+ */
+function lowercase() {
+  const runs = [];
+  const multi = [];
+  let run = null;
+  for (let cp = 0; cp < 0x110000; cp++) {
+    if (cp >= 0xd800 && cp <= 0xdfff) continue;
+    const lower = [...String.fromCodePoint(cp).toLowerCase()].map((c) => c.codePointAt(0));
+    if (lower.length === 1 && lower[0] === cp) continue;
+    if (lower.length !== 1) {
+      multi.push([cp, lower]);
+      run = null; // a run must not step over a code point of the other table
+      continue;
+    }
+    const delta = lower[0] - cp;
+    if (run && run.delta === delta && (run.step === 0 ? cp - run.last <= 2 : cp - run.last === run.step)) {
+      run.step = cp - run.last;
+      run.last = cp;
+    } else {
+      run = { first: cp, last: cp, step: 0, delta };
+      runs.push(run);
+    }
+  }
+  for (const r of runs) if (r.step === 0) r.step = 1;
+  return { runs, multi };
+}
+
 const UNICODE_HEADER = `// Unicode ${process.versions.unicode}`;
 function renderUnicode() {
   const table = (name, doc, rs) =>
     `/// ${doc}\npub static ${name}: &[(u32, u32)] = &[\n${rs.map(([a, b]) => `    (0x${a.toString(16)}, 0x${b.toString(16)}),\n`).join("")}];\n`;
+  const hex = (n) => `0x${n.toString(16)}`;
+  const { runs, multi } = lowercase();
   return [
     "// GENERATED — do not edit. Run `node scripts/gen_data.mjs` to regenerate.",
-    "// General category tables for SPEC R0.6, taken from the JS reference engine's \\p{L} and \\p{Lu}.",
+    "// General category tables for SPEC R0.6, taken from the JS reference engine's \\p{L} and \\p{Lu},",
+    "// and its `toLowerCase()` for the R0.4 dedup key (`str::to_lowercase` follows the compiler's",
+    "// Unicode version, so it cannot be used).",
     UNICODE_HEADER,
     "",
     table("LETTER", "General category L (Lu, Ll, Lt, Lm, Lo), inclusive ranges.", ranges(/^\p{L}$/u)),
     table("UPPERCASE_LETTER", "General category Lu, inclusive ranges.", ranges(/^\p{Lu}$/u)),
+    table("CASED", "Property Cased (the final-sigma rule), inclusive ranges.", ranges(/^\p{Cased}$/u)),
+    table("CASE_IGNORABLE", "Property Case_Ignorable (the final-sigma rule), inclusive ranges.", ranges(/^\p{Case_Ignorable}$/u)),
+    "/// JS `toLowerCase()` of one code point: `(first, last, step, delta)`. Every code point",
+    "/// `first + k * step <= last` maps to itself plus `delta`. Sorted by `first`, no overlaps.",
+    `pub static LOWERCASE: &[(u32, u32, u8, i32)] = &[\n${runs.map((r) => `    (${hex(r.first)}, ${hex(r.last)}, ${r.step}, ${r.delta}),\n`).join("")}];`,
+    "",
+    "/// Code points whose lowercase is several code points. Sorted.",
+    `pub static LOWERCASE_MULTI: &[(u32, &[u32])] = &[\n${multi.map(([cp, to]) => `    (${hex(cp)}, &[${to.map(hex).join(", ")}]),\n`).join("")}];`,
+    "",
   ].join("\n");
 }
 

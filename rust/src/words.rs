@@ -8,7 +8,9 @@ use std::collections::HashMap;
 
 use unicode_normalization::UnicodeNormalization;
 
-use crate::unicode_tables::{LETTER, UPPERCASE_LETTER};
+use crate::unicode_tables::{
+    CASED, CASE_IGNORABLE, LETTER, LOWERCASE, LOWERCASE_MULTI, UPPERCASE_LETTER,
+};
 
 pub(crate) fn chars(s: &str) -> Vec<char> {
     s.chars().collect()
@@ -272,9 +274,57 @@ pub(crate) fn span_texts(spans: &[WordSpan]) -> Vec<String> {
     spans.iter().map(|s| s.text.clone()).collect()
 }
 
+/// The final-sigma rule's "a cased letter follows", looking through case-ignorable code points.
+/// A code point that is both cased and case-ignorable (U+0345, modifier letters) is skipped,
+/// as in ICU, which is what JS engines run.
+fn cased_follows(mut it: impl Iterator<Item = char>) -> bool {
+    it.find(|c| !in_ranges(CASE_IGNORABLE, *c as u32)).is_some_and(|c| in_ranges(CASED, c as u32))
+}
+
+/// `toLowerCase()` of one code point out of context, appended to `out`.
+fn push_lower(ch: char, out: &mut String) {
+    let cp = ch as u32;
+    if cp < 0x80 {
+        out.push(ch.to_ascii_lowercase());
+        return;
+    }
+    let i = LOWERCASE.partition_point(|run| run.0 <= cp);
+    if let Some(&(first, last, step, delta)) = i.checked_sub(1).and_then(|i| LOWERCASE.get(i)) {
+        if cp <= last && (cp - first) % u32::from(step) == 0 {
+            let lower = cp.checked_add_signed(delta).and_then(char::from_u32);
+            out.push(lower.unwrap_or(ch));
+            return;
+        }
+    }
+    match LOWERCASE_MULTI.binary_search_by_key(&cp, |m| m.0) {
+        Ok(i) => {
+            let to = LOWERCASE_MULTI.get(i).map_or(&[][..], |m| m.1);
+            out.extend(to.iter().filter_map(|c| char::from_u32(*c)));
+        }
+        Err(_) => out.push(ch),
+    }
+}
+
+/// JS `String.prototype.toLowerCase()`, from the generated tables (the reference engine's
+/// Unicode version, whatever the compiler's is). The one context rule: `Σ` is `ς` after a cased
+/// letter when no cased letter follows (Final_Sigma), else `σ`.
+pub(crate) fn js_lower(s: &str) -> String {
+    let mut out = String::with_capacity(s.len());
+    for (i, ch) in s.char_indices() {
+        if ch != 'Σ' {
+            push_lower(ch, &mut out);
+            continue;
+        }
+        let before = s.get(..i).unwrap_or("").chars().rev();
+        let after = s.get(i + ch.len_utf8()..).unwrap_or("").chars();
+        out.push(if cased_follows(before) && !cased_follows(after) { 'ς' } else { 'σ' });
+    }
+    out
+}
+
 /// R0.4 dedup key: JS `toLowerCase()`, NFD, U+0300–U+036F removed, whitespace collapsed.
 pub(crate) fn dedup_key(s: &str) -> String {
-    let lowered = s.to_lowercase();
+    let lowered = js_lower(s);
     collapse_iter(lowered.nfd().filter(|c| !('\u{300}'..='\u{36f}').contains(c)))
 }
 
@@ -523,6 +573,7 @@ mod tests {
                 "utf16Len {s:?}"
             );
             assert_eq!(ascii_lower(s), field("asciiLower"), "asciiLower {s:?}");
+            assert_eq!(js_lower(s), field("lower"), "toLowerCase {s:?}");
             assert_eq!(word_key(s), field("wordKey"), "wordKey {s:?}");
             assert_eq!(dedup_key(s), field("dedupKey"), "dedupKey {s:?}");
             assert_eq!(collapse_spaces(s), field("collapse"), "collapse {s:?}");
@@ -541,6 +592,51 @@ mod tests {
             let year = r.get("year").filter(|y| !matches!(y, Json::Null)).map(num);
             assert_eq!(year_of(s), year, "yearOf {s:?}");
         }
+    }
+
+    /// `toLowerCase()` of every scalar value alone, against the JS dump. The result does not
+    /// depend on the compiler's Unicode version (`str::to_lowercase` does).
+    #[test]
+    fn primitives_lowercase_sweep() {
+        let data = data();
+        let sweep = data.get("lowerSweep").and_then(Json::as_array).unwrap_or(&[]);
+        assert!(sweep.len() > 1400, "no lowercase sweep");
+        let mut expected: HashMap<u32, &str> = HashMap::new();
+        for pair in sweep {
+            let pair = pair.as_array().unwrap_or(&[]);
+            expected.insert(
+                pair.first().map_or(0, num),
+                pair.get(1).and_then(Json::as_str).unwrap_or(""),
+            );
+        }
+        let mut wrong = Vec::new();
+        for ch in (0..=0x10ffffu32).filter_map(char::from_u32) {
+            let s = ch.to_string();
+            let want = expected.get(&(ch as u32)).copied().unwrap_or(s.as_str());
+            if js_lower(&s) != want {
+                wrong.push(format!("U+{:04X}: {:?}, JS {:?}", ch as u32, js_lower(&s), want));
+            }
+        }
+        assert!(
+            wrong.is_empty(),
+            "{} differ: {:?}",
+            wrong.len(),
+            wrong.iter().take(20).collect::<Vec<_>>()
+        );
+    }
+
+    #[test]
+    fn primitives_lowercase_context() {
+        assert_eq!(js_lower("ΟΔΥΣΣΕΑΣ"), "οδυσσεας");
+        assert_eq!(js_lower("Σ"), "σ"); // nothing cased before it
+        assert_eq!(js_lower("ΑΣ ΣΑ"), "ας σα");
+        assert_eq!(js_lower("ΑΣ'Α"), "ασ'α"); // the apostrophe is case-ignorable
+        assert_eq!(js_lower("ΑΣ'"), "ας'");
+        assert_eq!(js_lower("İΣ"), "i\u{307}ς");
+        assert_eq!(js_lower("STRAẞE"), "straße");
+        assert_eq!(js_lower("Ꭰꭰᏸ"), "ꭰꭰᏸ"); // Cherokee: uppercase is the base form
+        assert_eq!(js_lower("ᲐႠა"), "აⴀა"); // Georgian Mtavruli and Asomtavruli
+        assert_eq!(js_lower("𞤀𞤢"), "𞤢𞤢"); // Adlam
     }
 
     /// Only with the `--all` dump: every scalar value's dedup key (lowercase + NFD + marks).

@@ -5,7 +5,8 @@
 //   node scripts/dump_primitives.mjs            # writes tests/data/primitives.json
 //   node scripts/dump_primitives.mjs --check    # fails if that file is stale
 //   node scripts/dump_primitives.mjs --all out.json
-//       every Unicode scalar value (large; for a one-off sweep, not committed):
+//       every Unicode scalar value and 200,000 random strings around Σ (large; for a one-off
+//       sweep, not committed):
 //       TRACKPARSE_PRIMITIVES=out.json cargo test --lib primitives
 //
 // Needs Node 24+ (it imports the TypeScript source directly). Regenerate when Node's Unicode
@@ -79,6 +80,11 @@ const strings = new Set([
   "2015", "2015,", "2015.", "2015..", "1899", "1900", "2099", "2100", "02015", "201", "２０１５", "20１5", "2015a",
   "١٩٩٩", "feat.", "w/", "b2b", "P!nk", "A$AP", "AC/DC", "x", "X", "&", "?", "??", "ID?", "Ä:", "Z;", "[Z]", "Ź.",
   "ẞ", "ß", "ſ", "K", "Å", "Ǆungla", "ΌΣΟΣ", "ὈΔΥΣΣΕΎΣ", "Ꭰ", "ꭰ", "Ა", "ა", "Ⴀ", "Ɥ", "Ꟶ", "𞤀", "𑢠", "Ꙁ", "Ⱥ",
+  // toLowerCase(): special casing, scripts with late case pairs, and Σ in and out of final position.
+  "İΣ", "Σİ", "İΣİ", "İİ", "i̇Σ", "ẞΣ", "ΣẞΣ", "STRAẞΣ ẞΣ", "ᎠΣ", "ᎠᎡᎢ", "ΣᏴ", "ꭰΣ", "ᏸΣ", "ᲐᲑΣ", "ΣᲐ", "ႠΣ", "აΣ",
+  "𞤀Σ", "𞤀𞤁𞤂", "Σ𞤢", "𞤢Σ", "𞥃Σ𞤀", "ΑΣ𞤀", "ΑΣ ᲐΣ", "ǅΣ", "ʰΣ", "ΑʰΣ", "ΑΣʰ", "ΑΣʰΑ", "ᾼΣ", "ΑΣͅ", "ΑΣͅΑ", "ⒶΣ",
+  "ⅧΣ", "ΑΣΣ", "ΣΣ", "ΣΣΣ", "ΑΣΣ.", "ΑΣ·Σ", "ΑΣ·", "ΑΣ:Α", "ΑΣ'Α", "ΑΣ1", "1Σ1", "ΑΣ\u200b", "ΑΣ\u200bΑ", "Α\u00adΣ\u00ad",
+  "𝐀Σ", "Σ𝐀", "ΑΣ🎵", "🎵Σ", "aΣ a", "AΣ", "ÅΣ", "ΌΣ ΌΣΟ", "Ꟑ", "Ƛ", "Ꟛ", "Ꟗ", "Ꞔ", "Ᲊ", "𐵐", "𖺠",
 ]);
 if (!all) {
   // Sigma in context: a small alphabet, fixed seed.
@@ -88,10 +94,38 @@ if (!all) {
     return seed / 0x7fffffff;
   };
   const alphabet = ["Σ", "Α", "α", " ", "'", ".", "́", "­", "a", "1", ":", "-", "‍", "𝐀", "ͅ"];
+  // A second, later alphabet (the first one's strings stay as they were).
+  const wide = [...alphabet, "Σ", "İ", "ẞ", "Ꭰ", "ꭰ", "Ა", "ა", "𞤀", "𞤢", "ʰ", "·", "ǅ", "Ⓐ"];
+  const draw = (letters) => {
+    let s = "";
+    const n = 1 + Math.floor(rnd() * 6);
+    for (let k = 0; k < n; k++) s += letters[Math.floor(rnd() * letters.length)];
+    return s;
+  };
   for (let i = 0; i < 160; i++) {
     let s = "";
     const n = 1 + Math.floor(rnd() * 6);
     for (let k = 0; k < n; k++) s += alphabet[Math.floor(rnd() * alphabet.length)];
+    strings.add(s);
+  }
+  for (let i = 0; i < 400; i++) strings.add(draw(wide));
+}
+if (all) {
+  // Σ between code points drawn from all cased and case-ignorable ones, and a few others.
+  let seed = 11;
+  const rnd = (n) => {
+    // mulberry32
+    seed = (seed + 0x6d2b79f5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return Math.floor((((t ^ (t >>> 14)) >>> 0) / 4294967296) * n);
+  };
+  const pool = [];
+  for (const cp of cpList) if (/^[\p{Cased}\p{Case_Ignorable}]$/u.test(chr(cp))) pool.push(chr(cp));
+  const plain = ["Σ", "Σ", "Σ", "Α", " ", "1", "-", "İ", "ẞ", "가", "🎵"];
+  for (let i = 0; i < 200000; i++) {
+    let s = "";
+    for (let k = 1 + rnd(6); k > 0; k--) s += rnd(2) ? plain[rnd(plain.length)] : pool[rnd(pool.length)];
     strings.add(s);
   }
 }
@@ -99,6 +133,7 @@ const record = (s) => ({
   s,
   utf16Len: s.length,
   asciiLower: words.asciiLower(s),
+  lower: s.toLowerCase(),
   wordKey: words.wordKey(s),
   dedupKey: words.dedupKey(s),
   collapse: words.collapseSpaces(s),
@@ -113,6 +148,12 @@ const lines = [
   `"codePoints": ${JSON.stringify(codePoints)}`,
   `"strings": [\n${[...strings].map((s) => JSON.stringify(record(s))).join(",\n")}\n]`,
 ];
+// Every scalar value whose toLowerCase() is not itself; all others must map to themselves.
+const lowerSweep = [];
+for (let cp = 0; cp <= 0x10ffff; cp++) {
+  if (isScalar(cp) && chr(cp).toLowerCase() !== chr(cp)) lowerSweep.push([cp, chr(cp).toLowerCase()]);
+}
+lines.push(`"lowerSweep": ${JSON.stringify(lowerSweep)}`);
 if (all) {
   // Every scalar value whose dedup key is not itself; all others must map to themselves.
   const sweep = cpList.filter((cp) => words.dedupKey(chr(cp)) !== chr(cp)).map((cp) => [cp, words.dedupKey(chr(cp))]);
