@@ -99,13 +99,13 @@ Every key is always present. When a guess was involved, `warnings` says which on
 
 | Number | What it means |
 |---|---|
-| **13,124** shared fixtures | 1,197 written by hand, 11,927 generated from combinations. 100% pass in JS, Python and Rust, nothing skipped. |
-| **1,233** of them on tracklists | 297 handwritten, 936 generated. Line splitting, times, bullets and Markdown, warnings, edits |
-| **1,346** JS tests | every fixture, a schema check on every output, property-based tests of the spec invariants, API tests |
+| **13,130** shared fixtures | 1,203 written by hand, 11,927 generated from combinations. 100% pass in JS, Python and Rust, nothing skipped. |
+| **1,239** of them on tracklists | 303 handwritten, 936 generated. Line splitting, times, bullets and Markdown, warnings, edits |
+| **1,352** JS tests | every fixture, a schema check on every output, property-based tests of the spec invariants, API tests |
 | **27** version types | remix, VIP, bootleg, extended, radio, original, live, remaster, sped up, … |
 | **0** dependencies | ESM + CJS + TypeScript types, about 17 kB gzipped. `trackparse/tracklist` adds about 8.3 KiB, only if you import it |
 | **Node 18+** | CI runs the full suite on 22 and 24, and every fixture against the built package on 18 and 20 |
-| **Python 3.9+** | 1,336 pytest tests on 3.9 to 3.14, plus every fixture against the built wheel. Output is byte-identical to JS |
+| **Python 3.9+** | 1,342 pytest tests on 3.9 to 3.14, plus every fixture against the built wheel. Output is byte-identical to JS |
 | **Rust 1.74+** | every fixture, the tracklist invariants and the typed API tests on stable and on 1.74. Output is byte-identical to JS on every fixture and on about 790,000 random inputs |
 | **5,031** real tracklist lines | 117 podcast tracklists the tracklist rules were checked against. Every line round-trips byte for byte |
 | **1 spec** | [`spec/SPEC.md`](spec/SPEC.md) defines the behaviour; the Python and Rust ports pass the same fixtures |
@@ -396,7 +396,7 @@ of the list uses spaced dashes.
 
 The fixtures in [`spec/fixtures`](spec/fixtures) are the source of truth. The spec says what should
 happen, the fixtures pin it down, and every port has to pass all of them. The JS and Python
-packages and the Rust crate all do: **13,124 of 13,124**, with empty skip lists, in CI on every push.
+packages and the Rust crate all do: **13,130 of 13,130**, with empty skip lists, in CI on every push.
 
 Passing a fixture only checks the fields the case asserts, so
 [`scripts/compare-ports.mjs`](scripts/compare-ports.mjs) also runs every fixture input through all
@@ -404,7 +404,7 @@ three ports and diffs the complete outputs, tracklists and edits included. Resul
 byte for byte. The Rust crate was also compared with JS on about 500,000 random single-track cases
 and 290,000 random tracklists with edits: 0 differences.
 
-### Handwritten: 1,197 cases in 27 files
+### Handwritten: 1,203 cases in 27 files
 
 Each case cites the spec rules it exercises. 62 of them spell out the complete output field by
 field, so nothing can drift unnoticed.
@@ -420,7 +420,7 @@ field, so nothing can drift unnoticed.
 | Modes | 65 | YouTube pipes, `"Title" by Artist`, uploader fallback, filenames |
 | Unicode and normalization | 71 | NFC, zero-width characters, fullwidth brackets, Cyrillic, CJK, Turkish İ |
 | `format`, `parseArtists`, unknown IDs | 94 | Round-trips, canonical joiners, `ID - ID` |
-| Tracklist mode | 61 | All 17 real podcast lines that single-line `parse()` gets wrong, the 6 real lines with no separator at all, `parse(s, { mode: "tracklist" })`, Markdown emphasis around names, and names that keep their `*` and `_` |
+| Tracklist mode | 67 | All 17 real podcast lines that single-line `parse()` gets wrong, the 6 real lines with no separator at all, `parse(s, { mode: "tracklist" })`, Markdown emphasis around names, and names that keep their `*` and `_` |
 | Tracklist lines and times | 104 | LF/CRLF/CR, trailing spaces, line kinds, every time form, brackets, gap separators, `=>` arrows, invalid times, list bullets, Markdown around times, `w/` lines |
 | Tracklist positions | 15 | The real 81-line list numbered `1 ` to `81 ` without dots, and the `2 Unlimited` guard, with a `w/` line in between |
 | Tracklist warnings | 38 | Each code with its near-miss, and the 10 real out-of-order lists with their suggestions |
@@ -722,8 +722,8 @@ spaced dashes. The checks run last, over the finished entries.
 
 | Language | Package | Status |
 |---|---|---|
-| JavaScript / TypeScript | [`trackparse`](https://www.npmjs.com/package/trackparse) on npm | reference implementation, 13,124 / 13,124 fixtures, tracklists as `trackparse/tracklist` |
-| Python | [`trackparse`](https://pypi.org/project/trackparse/) on PyPI | 13,124 / 13,124 fixtures, output identical to JS, tracklists as `trackparse.tracklist` |
+| JavaScript / TypeScript | [`trackparse`](https://www.npmjs.com/package/trackparse) on npm | reference implementation, 13,130 / 13,130 fixtures, tracklists as `trackparse/tracklist` |
+| Python | [`trackparse`](https://pypi.org/project/trackparse/) on PyPI | 13,130 / 13,130 fixtures, output identical to JS, tracklists as `trackparse.tracklist` |
 | Rust | `trackparse` on crates.io | passes 13,130 / 13,130, output identical to JS, tracklists as `trackparse::tracklist`; publishing to crates.io pending |
 
 Want another language? The porting checklist is in [AGENTS.md](AGENTS.md).

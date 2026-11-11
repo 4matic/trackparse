@@ -1,14 +1,14 @@
 ---
 title: How it's tested
-description: 13,124 shared fixtures, a generator that can't agree with the code by accident, property tests, and a byte-level diff between the ports.
+description: 13,130 shared fixtures, a generator that can't agree with the code by accident, property tests, and a byte-level diff between the ports.
 ---
 
 The fixtures in [`spec/fixtures`](https://github.com/4matic/trackparse/tree/main/spec/fixtures) are
 the source of truth. The spec says what should happen, the fixtures pin it down, and every port has
-to pass all of them. All three ports do: **13,124 of 13,124**, with empty skip lists, in CI on every
+to pass all of them. All three ports do: **13,130 of 13,130**, with empty skip lists, in CI on every
 push.
 
-## Handwritten: 1,197 cases
+## Handwritten: 1,203 cases
 
 Each case cites the spec rules it exercises, and 62 of them spell out the complete output, field by
 field, so nothing drifts unnoticed.
@@ -24,7 +24,7 @@ field, so nothing drifts unnoticed.
 | Modes | 65 | YouTube pipes, `"Title" by Artist`, uploader fallback, file names |
 | Unicode and normalisation | 71 | NFC, zero-width characters, fullwidth brackets, Cyrillic, CJK, Turkish İ |
 | `format`, `parseArtists`, unknown IDs | 94 | Round trips, canonical joiners, `ID - ID` |
-| Tracklist mode | 61 | Real lines that single-line `parse()` gets wrong, real lines with no separator at all, Markdown around names, and names that keep their `*` and `_` |
+| Tracklist mode | 67 | Real lines that single-line `parse()` gets wrong, real lines with no separator at all, Markdown around names, and names that keep their `*` and `_` |
 | Tracklist lines and times | 104 | LF/CRLF/CR, trailing spaces, line kinds, every time form, brackets, gap separators, invalid times, list bullets, Markdown around times, `w/` lines |
 | Tracklist positions | 15 | A real 81-line list numbered without dots, and the `2 Unlimited` guard |
 | Tracklist warnings | 38 | Each code with its near-miss, and real out-of-order lists with their suggestions |

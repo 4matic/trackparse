@@ -11,7 +11,7 @@ Parse music track names into structured metadata: artists, featured artists, rem
 
 This is the JavaScript/TypeScript reference implementation of the
 [trackparse spec](https://github.com/4matic/trackparse/blob/main/spec/SPEC.md). It passes all
-13,124 shared fixtures. Zero dependencies, ESM and CommonJS, TypeScript types included, never
+13,130 shared fixtures. Zero dependencies, ESM and CommonJS, TypeScript types included, never
 throws.
 
 The principle is **extract, don't delete**: everything recognised lands in a field (artists with
