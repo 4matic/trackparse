@@ -128,8 +128,7 @@ Python 3.9+, no dependencies.
 cargo add trackparse
 ```
 
-Rust 1.74+, one dependency (`unicode-normalization`), `serde` as an optional feature. The crate is not on crates.io yet; until it
-is, use `cargo add trackparse --git https://github.com/4matic/trackparse`. See [Ports](#ports).
+Rust 1.74+, one dependency (`unicode-normalization`), `serde` as an optional feature. See [Ports](#ports).
 
 ## Quick start
 
@@ -724,7 +723,7 @@ spaced dashes. The checks run last, over the finished entries.
 |---|---|---|
 | JavaScript / TypeScript | [`trackparse`](https://www.npmjs.com/package/trackparse) on npm | reference implementation, 13,130 / 13,130 fixtures, tracklists as `trackparse/tracklist` |
 | Python | [`trackparse`](https://pypi.org/project/trackparse/) on PyPI | 13,130 / 13,130 fixtures, output identical to JS, tracklists as `trackparse.tracklist` |
-| Rust | `trackparse` on crates.io | passes 13,130 / 13,130, output identical to JS, tracklists as `trackparse::tracklist`; publishing to crates.io pending |
+| Rust | [`trackparse`](https://crates.io/crates/trackparse) on crates.io | passes 13,130 / 13,130, output identical to JS, tracklists as `trackparse::tracklist` |
 
 Want another language? The porting checklist is in [AGENTS.md](AGENTS.md).
 
@@ -763,7 +762,7 @@ Not there yet:
   doesn't yet learn names from its other lines.
 - Warnings for gaps or overlaps between consecutive tracklist times.
 
-Planned next: publishing the Rust crate to crates.io. The browser playground is already live at
+The browser playground is live at
 [4matic.github.io/trackparse/playground](https://4matic.github.io/trackparse/playground/).
 
 ## Contributing

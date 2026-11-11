@@ -79,7 +79,7 @@ python/                   PyPI package `trackparse` (Python 3.9+, zero deps, uv 
                           test_api.py, test_match.py, test_tracklist_api.py,
                           test_tracklist_properties.py, skip.json (only ever shrinks)
 rust/                     crates.io package `trackparse` (Rust 1.74+, one dependency, no unsafe;
-                          a release-please component, first crates.io publish still to do)
+                          a release-please component, on crates.io since 0.4.0)
   src/lib.rs              public API: parse, parse_with, parse_artists(_with), format_track(_with),
                           normalize, all_artists, Parser, SPEC_VERSION; re-exports every type and
                           option at the crate root (`types` and `options` are private modules)
@@ -512,23 +512,21 @@ Version rules:
 - `rust` is **linked** as well: a release-please component (`release-type: rust`) in the same
   `linked-versions` group. The release PR bumps `rust/Cargo.toml` (the line marked
   `x-release-please-version`) and `SPEC_VERSION` in `rust/src/data.rs`, and writes
-  `rust/CHANGELOG.md`. Merging it tags `rust-vX.Y.Z` and creates the GitHub Release. `Cargo.lock`
-  is git-ignored, so there is no lock file to bump.
+  `rust/CHANGELOG.md`. Merging it tags `rust-vX.Y.Z` and creates the GitHub Release. The release PR
+  also bumps the crate's own entry in the committed `rust/Cargo.lock`.
 - **crates.io publishing is gated.** The `publish-crates` job in `release.yml` (environment
   `crates`: version check, `cargo test --all-features`, `cargo package`, `cargo publish` with a
   token from crates.io trusted publishing, the `.crate` file attached to the release) runs only
   when the repository variable `CRATES_PUBLISH` is `true`. crates.io can only configure trusted
-  publishing for a crate that already exists, so the first publish is the maintainer's, by hand:
-  1. from the `rust-vX.Y.Z` tag, `cd rust && cargo publish` with a personal crates.io token;
-  2. on crates.io, add a trusted publisher for `4matic/trackparse`, workflow `release.yml`,
+  publishing for a crate that already exists, so the first publish was done by hand (0.4.0,
+  2026-11-11). Two steps switch the job on:
+  1. on crates.io, add a trusted publisher for `4matic/trackparse`, workflow `release.yml`,
      environment `crates`;
-  3. set the repository variable `CRATES_PUBLISH` to `true`
+  2. set the repository variable `CRATES_PUBLISH` to `true`
      (`gh variable set CRATES_PUBLISH --body true`).
 
-  Until then a release still tags `rust-vX.Y.Z` but skips the crates.io job, and the crate is
-  installed from git (`cargo add trackparse --git https://github.com/4matic/trackparse`; cargo
-  finds the package in `rust/` by name). After step 3, drop the "not on crates.io yet" notes from
-  the READMEs and the site.
+  Until then a release still tags `rust-vX.Y.Z` but skips the crates.io job, and that version
+  has to be published by hand (`cd rust && cargo publish --locked` from the tag).
 - **A publish job failed after the tags were created?** Fix the cause on `main` with a hidden commit
   type (`ci`/`chore`, so no new release), then re-run publishing for the existing tag:
   `gh workflow run release.yml -f python_tag=python-vX.Y.Z` (PyPI). The npm job always republishes
