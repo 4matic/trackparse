@@ -2,7 +2,8 @@
 
 [![crates.io](https://img.shields.io/crates/v/trackparse?logo=rust&logoColor=white)](https://crates.io/crates/trackparse)
 [![docs.rs](https://img.shields.io/docsrs/trackparse?logo=docsdotrs&logoColor=white)](https://docs.rs/trackparse)
-[![rust](https://img.shields.io/github/actions/workflow/status/4matic/trackparse/rust.yml?branch=main&label=tests&logo=github)](https://github.com/4matic/trackparse/actions/workflows/rust.yml)
+[![MSRV](https://img.shields.io/crates/msrv/trackparse?logo=rust&logoColor=white)](https://crates.io/crates/trackparse)
+[![tests](https://img.shields.io/github/actions/workflow/status/4matic/trackparse/rust.yml?branch=main&label=tests&logo=github)](https://github.com/4matic/trackparse/actions/workflows/rust.yml)
 [![license](https://img.shields.io/badge/license-MIT-blue)](https://github.com/4matic/trackparse/blob/main/LICENSE)
 
 **[Documentation](https://4matic.github.io/trackparse/)** · **[Getting started](https://4matic.github.io/trackparse/start/getting-started/)** · **[Playground](https://4matic.github.io/trackparse/playground/)** · **[API on docs.rs](https://docs.rs/trackparse)**
@@ -16,15 +17,15 @@ what's just noise.**
 
 Most title parsers split that into `"Wilkinson ft. Becky Hill & Tom Cane"` and
 `"Afterglow (Sub Focus VIP Remix)"` and stop. Others "clean" it and throw the feat and the remix
-away. trackparse keeps all of it. Everything it recognises goes into a field, and anything it
-doesn't recognise stays in the title, word for word.
+away. trackparse keeps all of it. Everything it recognizes goes into a field, and anything it
+doesn't recognize stays in the title, word for word.
 
 This is the Rust port of [trackparse](https://github.com/4matic/trackparse). Its behaviour is
 defined by a [shared spec](https://github.com/4matic/trackparse/blob/main/spec/SPEC.md) and pinned
 by 13,130 fixtures. It passes all of them, and for every fixture input its output is byte-identical
-to the JavaScript and Python packages.
+to the [JavaScript and Python packages](#other-languages).
 
-- Rust 1.74 or later
+- Rust 1.74 or later (the minimum supported version; CI runs the test suite on 1.74 and on stable)
 - One dependency (`unicode-normalization`); `serde` is optional
 - No `unsafe`, no regular expressions
 - Never panics and never returns an error: any `&str` gives a result
@@ -143,7 +144,7 @@ Every function has a plain form with the default options and a `_with` form that
 
 | Option | Default | |
 |---|---|---|
-| `mode` | `ModeOption::Auto` | `Clean`, `Youtube`, `Filename`, `Tracklist`, or `Auto` to detect from the string |
+| `mode` | `ModeOption::Auto` | `Clean`, `Youtube`, `Filename`, `Tracklist`, or `Auto` to detect from the string. See [Modes](#modes) |
 | `uploader` | `None` | YouTube channel name, used as the artist when there's no separator (`- Topic` and `VEVO` are dropped) |
 | `known_artists` | empty | Names that are never split. There is no built-in list |
 | `split_and` | `SplitAnd::Auto` | `Auto` splits on `and` only after a comma (`A, B and C`), so `Simon and Garfunkel` stays whole. Also `Always`, `Never` |
@@ -192,8 +193,6 @@ assert_eq!(track.junk[0].raw, "Some Label Rip");
 assert_eq!(track.junk[0].kind, JunkKind::Label);
 ```
 
-Parsing is total: any `&str` gives a `ParsedTrack`, including `""`.
-
 ### `ParsedTrack`
 
 **Docs:** [ParsedTrack fields](https://4matic.github.io/trackparse/reference/parse/#parsedtrack)
@@ -205,7 +204,7 @@ Parsing is total: any `&str` gives a `ParsedTrack`, including `""`.
 | `position` | `Option<Position>` | Track number: `Position { raw: "01", number: 1 }` |
 | `timestamp` | `Option<Timestamp>` | Leading cue time: `[12:34]` gives `Timestamp { raw: "12:34", seconds: 754 }` |
 | `artists` | `Vec<Artist>` | Primary, featured and producer credits. Remixers live in `versions` |
-| `title` | `String` | Clean title. Brackets it doesn't recognise stay in |
+| `title` | `String` | Clean title. Brackets it doesn't recognize stay in |
 | `full_title` | `String` | `title` with the versions re-attached |
 | `versions` | `Vec<Version>` | Remixes and other versions, left to right |
 | `year` | `Option<u32>` | From `(2015)` or `- 2015` |
@@ -243,7 +242,8 @@ assert_eq!(version.year, Some(1986));
 
 Version types, junk kinds, warnings, roles and modes are enums (`VersionType`, `JunkKind`,
 `Warning`, `ArtistRole`, `ArtistSource`, `Mode`, `ModeOption`, `VersionDelimiter`), listed in the
-[API reference](https://4matic.github.io/trackparse/reference/parse/). Each has `as_str()` (the name
+[API reference](https://4matic.github.io/trackparse/reference/parse/) and on
+[docs.rs](https://docs.rs/trackparse). Each has `as_str()` (the name
 used in the spec and in JSON), `from_name()`, `ALL`, `Display` and `FromStr`:
 
 ```rust
@@ -260,7 +260,7 @@ warning, so a `match` on them needs a `_` arm.
 
 ### JSON and serde
 
-**Docs:** [JSON and Python objects](https://4matic.github.io/trackparse/reference/parse/#json-and-python-objects)
+**Docs:** [Serializing to JSON](https://4matic.github.io/trackparse/reference/parse/#serializing-to-json)
 
 Every result type has `to_json()`, which writes compact JSON matching
 [`parsed-track.schema.json`](https://github.com/4matic/trackparse/blob/main/spec/schema/parsed-track.schema.json)
@@ -309,9 +309,9 @@ Reading options is strict: a missing key is the default, an unknown name such as
 
 ### `parse_artists`
 
-**Docs:** [parseArtists](https://4matic.github.io/trackparse/reference/functions/#parseartistsinput-options)
+**Docs:** [parseArtists](https://4matic.github.io/trackparse/reference/functions/#parseartistsinput-options) · [Artists and credits](https://4matic.github.io/trackparse/guides/artists/)
 
-Splits a bare artist string. `parse_artists_with` takes the same options as `parse_with`.
+Splits a bare artist string (no title). `parse_artists_with` takes the same options as `parse_with`.
 
 ```rust
 use trackparse::parse_artists;
@@ -331,12 +331,12 @@ Renders a track back to a string.
 
 | Option | Default | |
 |---|---|---|
-| `feat` | `FeatPlacement::Source` | Where featured artists go: `Source` (where they were), `Artist`, `Title` or `Omit` |
-| `feat_marker` | `None` | Marker for featured artists, such as `"feat."` |
-| `joiners` | `JoinerStyle::Original` | `Original` keeps the joiners as written, `Canonical` uses the standard ones |
+| `feat` | `FeatPlacement::Source` | Where featured artists go: `Source` (where they were), `Artist`, `Title` (`(feat. X)` after the title) or `Omit` |
+| `feat_marker` | `None` | Marker for featured artists, such as `"featuring"` |
+| `joiners` | `JoinerStyle::Original` | `Original` keeps the joiners as written. `Canonical` writes `and` as `&`, `vs` as `vs.` and every feat marker as `feat.` |
 | `versions` | `VersionsOption::All` | `All` or `None` |
 | `producers` | `true` | Include `(prod. ...)` credits |
-| `position` | `false` | Include the track number |
+| `position` | `false` | Include the track number (`01. `) |
 
 ```rust
 use trackparse::{
@@ -366,8 +366,9 @@ assert_eq!(
 
 **Docs:** [normalize](https://4matic.github.io/trackparse/reference/functions/#normalizeinput)
 
-The Unicode cleanup every function runs first: NFC, invisible characters, and dash, bracket and
-quote variants.
+The Unicode cleanup every function runs first: NFC, zero-width spaces, BOM and soft hyphens
+removed, fullwidth brackets, smart quotes and dash variants mapped to ASCII, whitespace collapsed.
+Running it twice changes nothing.
 
 ```rust
 use trackparse::normalize;
@@ -411,8 +412,9 @@ assert_eq!(track.versions[0].version_type, VersionType::Rework);
 
 ### `SPEC_VERSION`
 
-The spec version this build implements. The crate, the npm package, the PyPI package and the spec
-are released together and always share one version number.
+The spec version this build implements, `"0.5.0"` in this release. It equals the crate version:
+the crate, the npm package, the PyPI package and the spec are released together and always share
+one version number.
 
 ## Modes
 
@@ -445,9 +447,42 @@ let track = parse_with("Shelter", &youtube.uploader("Porter Robinson"));
 assert_eq!(track.artists[0].name, "Porter Robinson");
 ```
 
+## Warnings
+
+**Docs:** [Warnings](https://4matic.github.io/trackparse/reference/warnings/)
+
+The parser never fails, but it says when it had to guess. `track.warnings` is a `Vec<Warning>`,
+empty when every decision was unambiguous. `as_str()` gives the name used in the spec and in JSON.
+
+| Warning | JSON name | Means |
+|---|---|---|
+| `NoSeparator` | `noSeparator` | No artist/title separator was found. The whole string is the title |
+| `AmbiguousSeparator` | `ambiguousSeparator` | A two-part pipe title with no dash was read as artist and title |
+| `UnspacedDashSplit` | `unspacedDashSplit` | Split at a dash without spaces around it |
+| `AsymmetricDashSplit` | `asymmetricDashSplit` | Split at a dash with a space on one side only |
+| `BySplit` | `bySplit` | Read `"Title" by Artist` |
+| `QuotedTitleSplit` | `quotedTitleSplit` | Took a quoted span as the title and the text before it as the artist |
+| `AmbiguousMixCredit` | `ambiguousMixCredit` | `<Name> Mix` was read as a remix, but the name is long enough to be a style |
+| `UnbalancedBrackets` | `unbalancedBrackets` | A bracket was opened and never closed |
+
+```rust
+use trackparse::{parse, Warning};
+
+let track = parse("Around the World");
+assert!(track.artists.is_empty());
+assert_eq!(track.title, "Around the World");
+assert_eq!(track.warnings, [Warning::NoSeparator]);
+assert_eq!(track.warnings[0].as_str(), "noSeparator");
+
+assert_eq!(parse("Noisia - Stigma (VIP").warnings, [Warning::UnbalancedBrackets]);
+```
+
+Tracklists have their own warnings, with line numbers. They are listed under
+[Tracklists](#tracklists).
+
 ## Tracklists
 
-**Docs:** [Tracklists](https://4matic.github.io/trackparse/guides/tracklists/) · [Editing tracklists](https://4matic.github.io/trackparse/guides/editing-tracklists/) · [Tracklist API](https://4matic.github.io/trackparse/reference/tracklist/) · [Warnings](https://4matic.github.io/trackparse/reference/warnings/)
+**Docs:** [Tracklists](https://4matic.github.io/trackparse/guides/tracklists/) · [Editing tracklists](https://4matic.github.io/trackparse/guides/editing-tracklists/) · [Tracklist API](https://4matic.github.io/trackparse/reference/tracklist/) · [Warnings](https://4matic.github.io/trackparse/reference/warnings/#tracklist-warnings)
 
 `trackparse::tracklist` parses a whole tracklist, one entry per line, and checks it. Each entry
 keeps its line exactly as written plus its own line ending, so joining every `raw` and `eol` is
@@ -528,8 +563,8 @@ assert_eq!(result.warnings[0].code, EditWarningCode::TimeClamped);
 ```
 
 A rewritten time keeps its line's style: `48:20` stays `MM:SS`, and a time that crosses the hour
-gets hours, with a `style-upgraded` warning. A bad edit changes nothing and warns `edit-invalid`.
-Neither function panics.
+gets hours, with a `style-upgraded` warning. A time pushed below zero stops at zero and warns
+`time-clamped`. A bad edit changes nothing and warns `edit-invalid`.
 
 `TracklistOptions` has `mode` (default `ModeOption::Tracklist`), `known_artists`, `split_and`,
 `keywords`, `audio_seconds` (enables `time-after-audio-end`) and `marker_words`:
@@ -568,7 +603,8 @@ Warning codes (`WarningCode`): `time-missing`, `time-out-of-order`, `time-duplic
 `Edit::shift_lines(seconds, lines)`, `Edit::sort_by_time()`, `Edit::set_rest(line, rest)`,
 `Edit::insert(after, text)` (`after: 0` inserts at the top), `Edit::delete(line)`. The
 [Tracklist API reference](https://4matic.github.io/trackparse/reference/tracklist/) explains each
-one.
+one, and the rules are in
+[SPEC R13](https://github.com/4matic/trackparse/blob/main/spec/SPEC.md#r13-tracklists).
 
 Every line is parsed with `ModeOption::Tracklist`, where the first spaced dash always separates
 artist and title. `parse_with` accepts it too:
@@ -584,9 +620,21 @@ let options = ParseOptions::new().mode(ModeOption::Tracklist);
 assert_eq!(parse_with("Electrosoul System - Liquid Metal", &options).title, "Liquid Metal");
 ```
 
+## Errors
+
+No function returns a `Result` and none panics. `parse` gives a complete `ParsedTrack` for any
+`&str`, `""` included, and `parse_tracklist` and `apply_edits` return for any text. Options are
+typed, so a wrong value does not compile. `apply_edits` reports an edit it cannot apply (a line
+that does not exist, non-finite seconds) as an `EditWarningCode::EditInvalid` warning and leaves
+the text alone.
+
+The only fallible calls are conversions from text: `FromStr` on the enums returns `UnknownName`
+for a name the spec does not have, and with the `serde` feature, deserializing options or edits
+from JSON can fail as any `serde` type can.
+
 ## How it is tested
 
-**Docs:** [Testing](https://4matic.github.io/trackparse/project/testing/) · [Ports](https://4matic.github.io/trackparse/project/ports/)
+**Docs:** [How it's tested](https://4matic.github.io/trackparse/project/testing/) · [Ports](https://4matic.github.io/trackparse/project/ports/)
 
 - `cargo test` runs all 13,130 shared fixtures (1,203 written by hand, the rest generated from
   the rules), the spec's invariants for single tracks and for tracklists on generated input (no
@@ -618,14 +666,43 @@ not affected, and every shared fixture gives the same bytes.
 
 ## Performance
 
-There are no regular expressions and no backtracking: each rule makes a bounded number of passes
-over the string. A 10,000-code-point input parses in a few milliseconds in a release build, and
-the test suite checks that hostile repetitions (thousands of duplicate credits, bracket groups or
-junk phrases) take time roughly in proportion to their length, not to its square.
+There are no regular expressions, so there is no regex backtracking. A 10,000-code-point input
+parses in under 20 ms in a release build. The test suite runs hostile repetitions of that
+length (thousands of duplicate credits, bracket groups or junk phrases) under a time ceiling.
 
-## Minimum Rust version
+## Versioning
 
-Rust 1.74. CI runs the test suite on 1.74 and on stable.
+**Changelog:** [rust/CHANGELOG.md](https://github.com/4matic/trackparse/blob/main/rust/CHANGELOG.md)
+
+The crate version is the spec version (`SPEC_VERSION`). While it is 0.x, a release that changes
+the output for some input bumps the minor version, and a patch release only fixes bugs. Cargo's
+default requirement (`trackparse = "0.5"`) already stays within one minor version, so `cargo update`
+will not change your output. Read the changelog before moving to the next minor.
+
+## Other languages
+
+**Docs:** [Ports](https://4matic.github.io/trackparse/project/ports/)
+
+The same parser exists for JavaScript and Python. All three implement one spec, pass the same
+fixtures, are released together under one version number, and return identical JSON for every
+fixture input. You can parse in one language and read the result in another. The one known
+difference is described under [Unicode version](#unicode-version).
+
+| Language | Package | Install |
+|---|---|---|
+| JavaScript / TypeScript | [trackparse on npm](https://www.npmjs.com/package/trackparse) | `npm install trackparse` |
+| Python | [trackparse on PyPI](https://pypi.org/project/trackparse/) | `pip install trackparse` |
+| Rust | [trackparse on crates.io](https://crates.io/crates/trackparse) | `cargo add trackparse` |
+
+## Limitations
+
+**Docs:** [Limitations and roadmap](https://4matic.github.io/trackparse/project/roadmap/)
+
+- `parse` takes one track string. Whole tracklists go through `trackparse::tracklist`, which reads
+  start times only: no durations, trailing times or time ranges.
+- Catalog numbers, key and BPM are not fields. They stay in the title.
+- There is no artist database. Pass `known_artists` for names that contain a joiner
+  (`Earth, Wind & Fire`).
 
 ## Development
 
@@ -647,10 +724,12 @@ same spec rule IDs. Behaviour changes start in the spec, not here: see
 
 ## Links
 
-- [Documentation](https://4matic.github.io/trackparse/), and a
-  [playground](https://4matic.github.io/trackparse/playground/) that runs the parser in your browser
+- [Documentation](https://4matic.github.io/trackparse/), with every example in JavaScript, Python
+  and Rust, and a [playground](https://4matic.github.io/trackparse/playground/) that runs the
+  parser in your browser
 - [API documentation on docs.rs](https://docs.rs/trackparse)
 - [Spec](https://github.com/4matic/trackparse/blob/main/spec/SPEC.md)
+- [Changelog](https://github.com/4matic/trackparse/blob/main/rust/CHANGELOG.md)
 - [Project README](https://github.com/4matic/trackparse#readme)
 - [GitHub repository](https://github.com/4matic/trackparse)
 - [npm package](https://www.npmjs.com/package/trackparse) · [PyPI package](https://pypi.org/project/trackparse/)
