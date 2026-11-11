@@ -7,13 +7,11 @@ description: The JavaScript, Python and Rust implementations, and what it takes 
 |---|---|---|
 | JavaScript / TypeScript | [`trackparse`](https://www.npmjs.com/package/trackparse) on npm | Reference implementation. 13,130 / 13,130 fixtures. Tracklists in `trackparse/tracklist` |
 | Python | [`trackparse`](https://pypi.org/project/trackparse/) on PyPI | 13,130 / 13,130 fixtures, output identical to JS. Tracklists in `trackparse.tracklist` |
-| Rust | `trackparse` on crates.io | Passes 13,130 / 13,130, output identical to JS; publishing to crates.io pending. Tracklists in `trackparse::tracklist` |
+| Rust | [`trackparse`](https://crates.io/crates/trackparse) on crates.io | 13,130 / 13,130 fixtures, output identical to JS. Tracklists in `trackparse::tracklist` |
 
 All three share one version number. The spec, the JavaScript package, the Python package and the
 Rust crate are released together, from one release PR, and CI fails if their versions drift apart.
-Each release tags the crate too (`rust-vX.Y.Z`). Publishing it to crates.io is switched on after
-the first publish, which has to be done by hand; until then the crate installs from the repository
-with `cargo add trackparse --git https://github.com/4matic/trackparse`.
+Each release tags the crate too (`rust-vX.Y.Z`). The crate has been on crates.io since 0.4.0.
 
 ## Adding a language
 
