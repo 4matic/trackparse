@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.1](https://github.com/4matic/trackparse/compare/spec-v0.5.0...spec-v0.5.1) (2026-11-11)
+
+
+### Documentation
+
+* root README for three packages, with crates.io badges, a function-name table and links to every package ([25a615e](https://github.com/4matic/trackparse/commit/25a615e02e7a6aa7e7dd04b6732d4b2f3c047dbf))
+
 ## [0.5.0](https://github.com/4matic/trackparse/compare/spec-v0.4.0...spec-v0.5.0) (2026-11-11)
 
 
