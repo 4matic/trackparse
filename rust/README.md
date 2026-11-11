@@ -1,9 +1,629 @@
-# trackparse (Rust)
+# trackparse
 
-**Status: planned.** The Rust crate will be published to crates.io as `trackparse`. It will depend
-only on `unicode-normalization`, with `serde` behind a feature flag, and it will pass the same shared
-fixtures in [`../spec/fixtures`](../spec/fixtures).
+[![crates.io](https://img.shields.io/crates/v/trackparse?logo=rust&logoColor=white)](https://crates.io/crates/trackparse)
+[![docs.rs](https://img.shields.io/docsrs/trackparse?logo=docsdotrs&logoColor=white)](https://docs.rs/trackparse)
+[![rust](https://img.shields.io/github/actions/workflow/status/4matic/trackparse/rust.yml?branch=main&label=tests&logo=github)](https://github.com/4matic/trackparse/actions/workflows/rust.yml)
+[![license](https://img.shields.io/badge/license-MIT-blue)](https://github.com/4matic/trackparse/blob/main/LICENSE)
 
-Until then, see the [spec](../spec/SPEC.md) and the [JS package](../js).
+**[Documentation](https://4matic.github.io/trackparse/)** · **[Getting started](https://4matic.github.io/trackparse/start/getting-started/)** · **[Playground](https://4matic.github.io/trackparse/playground/)** · **[API on docs.rs](https://docs.rs/trackparse)**
 
-**Docs:** [Ports](https://4matic.github.io/trackparse/project/ports/) · [Adding a language](https://4matic.github.io/trackparse/project/ports/#adding-a-language)
+**Turn messy track names into structured data: who made it, who's featured, who remixed it, and
+what's just noise.**
+
+```text
+01. Wilkinson ft. Becky Hill & Tom Cane - Afterglow (Sub Focus VIP Remix) [Official Video]
+```
+
+Most title parsers split that into `"Wilkinson ft. Becky Hill & Tom Cane"` and
+`"Afterglow (Sub Focus VIP Remix)"` and stop. Others "clean" it and throw the feat and the remix
+away. trackparse keeps all of it. Everything it recognises goes into a field, and anything it
+doesn't recognise stays in the title, word for word.
+
+This is the Rust port of [trackparse](https://github.com/4matic/trackparse). Its behaviour is
+defined by a [shared spec](https://github.com/4matic/trackparse/blob/main/spec/SPEC.md) and pinned
+by 13,130 fixtures. It passes all of them, and for every fixture input its output is byte-identical
+to the JavaScript and Python packages.
+
+- Rust 1.74 or later
+- One dependency (`unicode-normalization`); `serde` is optional
+- No `unsafe`, no regular expressions
+- Never panics and never returns an error: any `&str` gives a result
+
+## Install
+
+```sh
+cargo add trackparse
+# with Serialize / Deserialize on the types
+cargo add trackparse --features serde
+```
+
+## Quick start
+
+**Docs:** [Getting started](https://4matic.github.io/trackparse/start/getting-started/)
+
+```rust
+use trackparse::{format_track_with, parse, FormatOptions, JoinerStyle, JunkKind, Mode, VersionType};
+
+let track = parse(
+    "01. Wilkinson ft. Becky Hill & Tom Cane - Afterglow (Sub Focus VIP Remix) [Official Video]",
+);
+
+let credits: Vec<String> = track.artists.iter().map(|a| format!("{} ({})", a.name, a.role)).collect();
+assert_eq!(credits, ["Wilkinson (primary)", "Becky Hill (featured)", "Tom Cane (featured)"]);
+assert_eq!(track.title, "Afterglow");
+assert_eq!(track.full_title, "Afterglow (Sub Focus VIP Remix)");
+assert_eq!(track.versions[0].version_type, VersionType::Remix);
+assert_eq!(track.versions[0].artists[0].name, "Sub Focus");
+assert_eq!(track.versions[0].modifiers, ["vip"]);
+assert_eq!(track.junk[0].raw, "Official Video");
+assert_eq!(track.junk[0].kind, JunkKind::Video);
+assert_eq!(track.position.as_ref().map(|p| p.number), Some(1));
+assert_eq!(track.mode, Mode::Youtube);
+
+let options = FormatOptions::new().joiners(JoinerStyle::Canonical);
+assert_eq!(
+    format_track_with(&track, &options),
+    "Wilkinson feat. Becky Hill & Tom Cane - Afterglow (Sub Focus VIP Remix)"
+);
+```
+
+`to_json()` returns the spec's JSON form as compact text, with the same camelCase keys the
+JavaScript package uses:
+
+```rust
+let track = trackparse::parse("Wilkinson ft. Becky Hill - Afterglow (Sub Focus VIP Remix) [HD]");
+println!("{}", track.to_json());
+```
+
+<details>
+<summary>Output</summary>
+
+```json
+{
+  "input": "Wilkinson ft. Becky Hill - Afterglow (Sub Focus VIP Remix) [HD]",
+  "mode": "youtube",
+  "position": null,
+  "timestamp": null,
+  "artists": [
+    { "name": "Wilkinson", "role": "primary", "joiner": null, "source": "artist" },
+    { "name": "Becky Hill", "role": "featured", "joiner": "ft.", "source": "artist" }
+  ],
+  "title": "Afterglow",
+  "fullTitle": "Afterglow (Sub Focus VIP Remix)",
+  "versions": [
+    {
+      "type": "remix",
+      "raw": "Sub Focus VIP Remix",
+      "artists": [{ "name": "Sub Focus", "role": "remixer", "joiner": null, "source": "version" }],
+      "modifiers": ["vip"],
+      "descriptor": null,
+      "year": null,
+      "unknownArtist": false,
+      "delimiter": "("
+    }
+  ],
+  "year": null,
+  "flags": { "explicit": false, "clean": false, "unknownArtist": false, "unknownTitle": false },
+  "junk": [{ "raw": "HD", "kind": "quality" }],
+  "warnings": []
+}
+```
+
+(Reformatted for width; the keys and values are exactly what `to_json()` returns.)
+
+</details>
+
+## API
+
+**Docs:** [Other functions](https://4matic.github.io/trackparse/reference/functions/)
+
+```text
+parse(input: &str) -> ParsedTrack
+parse_with(input: &str, options: &ParseOptions) -> ParsedTrack
+parse_artists(input: &str) -> Vec<Artist>
+parse_artists_with(input: &str, options: &ParseOptions) -> Vec<Artist>
+format_track(track: &ParsedTrack) -> String
+format_track_with(track: &ParsedTrack, options: &FormatOptions) -> String
+normalize(input: &str) -> String
+all_artists(track: &ParsedTrack) -> Vec<Artist>
+Parser::new(options: &ParseOptions) -> Parser    // parser.parse(..), parser.parse_artists(..)
+SPEC_VERSION: &str
+
+tracklist::parse_tracklist(text: &str) -> Tracklist
+tracklist::parse_tracklist_with(text: &str, options: &TracklistOptions) -> Tracklist
+tracklist::apply_edits(text: &str, edits: &[Edit]) -> EditResult
+tracklist::apply_edits_with(text: &str, edits: &[Edit], options: &TracklistOptions) -> EditResult
+```
+
+Every function has a plain form with the default options and a `_with` form that takes them.
+
+### `parse` and `ParseOptions`
+
+**Docs:** [parse and ParsedTrack](https://4matic.github.io/trackparse/reference/parse/) · [Options](https://4matic.github.io/trackparse/reference/options/)
+
+| Option | Default | |
+|---|---|---|
+| `mode` | `ModeOption::Auto` | `Clean`, `Youtube`, `Filename`, `Tracklist`, or `Auto` to detect from the string |
+| `uploader` | `None` | YouTube channel name, used as the artist when there's no separator (`- Topic` and `VEVO` are dropped) |
+| `known_artists` | empty | Names that are never split. There is no built-in list |
+| `split_and` | `SplitAnd::Auto` | `Auto` splits on `and` only after a comma (`A, B and C`), so `Simon and Garfunkel` stays whole. Also `Always`, `Never` |
+| `keywords` | `None` | Extra vocabulary, added to the built-in lists (see below) |
+
+Options are built with chained setters. The structs are `#[non_exhaustive]`, so start from
+`ParseOptions::new()` (or `default()`); the fields are public and can also be assigned.
+
+```rust
+use trackparse::{parse, parse_with, ParseOptions, SplitAnd};
+
+let names = |track: &trackparse::ParsedTrack| -> Vec<String> {
+    track.artists.iter().map(|a| a.name.clone()).collect()
+};
+
+assert_eq!(names(&parse("Chase & Status - Baddadan")), ["Chase", "Status"]);
+let options = ParseOptions::new().known_artists(["Chase & Status"]);
+assert_eq!(names(&parse_with("Chase & Status - Baddadan", &options)), ["Chase & Status"]);
+
+let options = ParseOptions::new().split_and(SplitAnd::Always);
+assert_eq!(
+    names(&parse_with("Simon and Garfunkel - Mrs. Robinson", &options)),
+    ["Simon", "Garfunkel"]
+);
+```
+
+`KeywordOptions` adds words to the built-in lists:
+
+| Setter | Field | |
+|---|---|---|
+| `version_head(word, VersionType)` | `version_heads` | Word that sets a version type (`"rerub"` as `VersionType::Rework`) |
+| `descriptor(word)` | `descriptors` | Words kept as a version's `descriptor` |
+| `genre(word)` | `genres` | Genre words |
+| `junk(phrase, JunkKind)` | `junk` | Phrase to junk kind (`"some label rip"` as `JunkKind::Label`) |
+| `feat_marker(marker)` | `feat_markers` | Extra feat markers |
+
+```rust
+use trackparse::{parse, parse_with, JunkKind, KeywordOptions, ParseOptions};
+
+assert_eq!(parse("Artist - Song [Some Label Rip]").title, "Song [Some Label Rip]");
+
+let keywords = KeywordOptions::new().junk("some label rip", JunkKind::Label);
+let track = parse_with("Artist - Song [Some Label Rip]", &ParseOptions::new().keywords(keywords));
+assert_eq!(track.title, "Song");
+assert_eq!(track.junk[0].raw, "Some Label Rip");
+assert_eq!(track.junk[0].kind, JunkKind::Label);
+```
+
+Parsing is total: any `&str` gives a `ParsedTrack`, including `""`.
+
+### `ParsedTrack`
+
+**Docs:** [ParsedTrack fields](https://4matic.github.io/trackparse/reference/parse/#parsedtrack)
+
+| Field | Type | |
+|---|---|---|
+| `input` | `String` | The original string, untouched |
+| `mode` | `Mode` | Resolved mode: `Clean`, `Youtube`, `Filename` or `Tracklist` |
+| `position` | `Option<Position>` | Track number: `Position { raw: "01", number: 1 }` |
+| `timestamp` | `Option<Timestamp>` | Leading cue time: `[12:34]` gives `Timestamp { raw: "12:34", seconds: 754 }` |
+| `artists` | `Vec<Artist>` | Primary, featured and producer credits. Remixers live in `versions` |
+| `title` | `String` | Clean title. Brackets it doesn't recognise stay in |
+| `full_title` | `String` | `title` with the versions re-attached |
+| `versions` | `Vec<Version>` | Remixes and other versions, left to right |
+| `year` | `Option<u32>` | From `(2015)` or `- 2015` |
+| `flags` | `Flags` | `explicit`, `clean`, `unknown_artist`, `unknown_title` |
+| `junk` | `Vec<Junk>` | What was taken out, each with a `kind` |
+| `warnings` | `Vec<Warning>` | Heuristics that fired |
+
+`Artist { name, role, joiner, source }`:
+
+- `role` is `ArtistRole::Primary`, `Featured`, `Remixer` or `Producer`.
+- `joiner` is the text before the name as written (`"&"`, `","`, `"ft."`, `"prod. by"`), or `None`
+  for the first name in a list.
+- `source` is where the credit came from: `ArtistSource::Artist` (left of the dash), `Title`
+  (right of it) or `Version`.
+
+`Version { version_type, raw, artists, modifiers, descriptor, year, unknown_artist, delimiter }`
+(`version_type` is `type` in JSON):
+
+```rust
+use trackparse::{parse, VersionDelimiter, VersionType};
+
+let track = parse("Pendulum - Watercolour (Extended VIP Mix)");
+let version = &track.versions[0];
+assert_eq!(version.version_type, VersionType::Vip);
+assert_eq!(version.raw, "Extended VIP Mix");
+assert_eq!(version.modifiers, ["extended"]);
+assert_eq!(version.delimiter, VersionDelimiter::Paren);
+
+let track = parse("Queen - Bohemian Rhapsody (Live at Wembley 1986)");
+let version = &track.versions[0];
+assert_eq!(version.version_type, VersionType::Live);
+assert_eq!(version.descriptor.as_deref(), Some("at Wembley"));
+assert_eq!(version.year, Some(1986));
+```
+
+Version types, junk kinds, warnings, roles and modes are enums (`VersionType`, `JunkKind`,
+`Warning`, `ArtistRole`, `ArtistSource`, `Mode`, `ModeOption`, `VersionDelimiter`), listed in the
+[API reference](https://4matic.github.io/trackparse/reference/parse/). Each has `as_str()` (the name
+used in the spec and in JSON), `from_name()`, `ALL`, `Display` and `FromStr`:
+
+```rust
+use trackparse::VersionType;
+
+assert_eq!(VersionType::SpedUp.as_str(), "spedUp");
+assert_eq!(VersionType::from_name("remix"), Some(VersionType::Remix));
+assert_eq!("bootleg".parse::<VersionType>(), Ok(VersionType::Bootleg));
+assert_eq!(VersionType::ALL.len(), 27);
+```
+
+Most of these enums are `#[non_exhaustive]`: a later spec version can add a version type or a
+warning, so a `match` on them needs a `_` arm.
+
+### JSON and serde
+
+**Docs:** [JSON and Python objects](https://4matic.github.io/trackparse/reference/parse/#json-and-python-objects)
+
+Every result type has `to_json()`, which writes compact JSON matching
+[`parsed-track.schema.json`](https://github.com/4matic/trackparse/blob/main/spec/schema/parsed-track.schema.json)
+and
+[`tracklist.schema.json`](https://github.com/4matic/trackparse/blob/main/spec/schema/tracklist.schema.json)
+(`fullTitle`, `unknownArtist`, ...). The bytes are the same as `JSON.stringify(parse(s))` in
+JavaScript. It needs no feature and no dependency.
+
+With the `serde` feature, the result types, the options and `Edit` implement `Serialize` and
+`Deserialize` with the same keys, so `serde_json` writes the same text and reads it back:
+
+```rust
+use trackparse::tracklist::Edit;
+use trackparse::{parse, ModeOption, ParseOptions, ParsedTrack};
+
+let track = parse("Noisia - Stigma (2015)");
+let json = serde_json::to_string(&track).unwrap();
+assert_eq!(json, track.to_json());
+assert_eq!(serde_json::from_str::<ParsedTrack>(&json).unwrap(), track);
+
+let options: ParseOptions =
+    serde_json::from_str(r#"{"mode":"youtube","knownArtists":["Chase & Status"]}"#).unwrap();
+assert_eq!(options, ParseOptions::new().mode(ModeOption::Youtube).known_artists(["Chase & Status"]));
+
+let edit: Edit = serde_json::from_str(r#"{"op":"set-time","line":3,"seconds":90}"#).unwrap();
+assert_eq!(edit, Edit::set_time(3, 90.0));
+assert_eq!(serde_json::to_string(&edit).unwrap(), r#"{"op":"set-time","line":3,"seconds":90}"#);
+```
+
+Whole seconds are written as integers (`90`, not `90.0`), as in the other packages. For every
+result the parser can produce the two texts are equal. Only an `Edit` you build yourself with
+seconds between 0.000001 and 0.00001, or a whole value of 2^64 and more, is written in another
+notation by `serde_json` (`1e-6` where `to_json()` writes `0.000001`); the number is the same.
+
+Reading options is strict: a missing key is the default, an unknown name such as
+`"mode":"radio"` is an error.
+
+### `parse_artists`
+
+**Docs:** [parseArtists](https://4matic.github.io/trackparse/reference/functions/#parseartistsinput-options)
+
+Splits a bare artist string. `parse_artists_with` takes the same options as `parse_with`.
+
+```rust
+use trackparse::parse_artists;
+
+let credits: Vec<String> = parse_artists("Sub Focus, Wilkinson & Dimension feat. Kojo")
+    .iter()
+    .map(|a| format!("{}:{}", a.name, a.role))
+    .collect();
+assert_eq!(credits, ["Sub Focus:primary", "Wilkinson:primary", "Dimension:primary", "Kojo:featured"]);
+```
+
+### `format_track` and `FormatOptions`
+
+**Docs:** [format](https://4matic.github.io/trackparse/reference/functions/#formattrack-options) · [Formatting](https://4matic.github.io/trackparse/guides/formatting/)
+
+Renders a track back to a string.
+
+| Option | Default | |
+|---|---|---|
+| `feat` | `FeatPlacement::Source` | Where featured artists go: `Source` (where they were), `Artist`, `Title` or `Omit` |
+| `feat_marker` | `None` | Marker for featured artists, such as `"feat."` |
+| `joiners` | `JoinerStyle::Original` | `Original` keeps the joiners as written, `Canonical` uses the standard ones |
+| `versions` | `VersionsOption::All` | `All` or `None` |
+| `producers` | `true` | Include `(prod. ...)` credits |
+| `position` | `false` | Include the track number |
+
+```rust
+use trackparse::{
+    format_track, format_track_with, parse, FeatPlacement, FormatOptions, JoinerStyle, VersionsOption,
+};
+
+let track = parse("01. Wilkinson ft. Becky Hill - Afterglow (Sub Focus Remix)");
+assert_eq!(format_track(&track), "Wilkinson ft. Becky Hill - Afterglow (Sub Focus Remix)");
+
+let options = FormatOptions::new().feat(FeatPlacement::Title).joiners(JoinerStyle::Canonical);
+assert_eq!(
+    format_track_with(&track, &options),
+    "Wilkinson - Afterglow (feat. Becky Hill) (Sub Focus Remix)"
+);
+
+let options = FormatOptions::new().feat(FeatPlacement::Omit).versions(VersionsOption::None);
+assert_eq!(format_track_with(&track, &options), "Wilkinson - Afterglow");
+
+let options = FormatOptions::new().position(true);
+assert_eq!(
+    format_track_with(&track, &options),
+    "01. Wilkinson ft. Becky Hill - Afterglow (Sub Focus Remix)"
+);
+```
+
+### `normalize`
+
+**Docs:** [normalize](https://4matic.github.io/trackparse/reference/functions/#normalizeinput)
+
+The Unicode cleanup every function runs first: NFC, invisible characters, and dash, bracket and
+quote variants.
+
+```rust
+use trackparse::normalize;
+
+assert_eq!(normalize("Noisia\u{200b} – Stigma （VIP）"), "Noisia - Stigma (VIP)");
+```
+
+### `all_artists`
+
+**Docs:** [allArtists](https://4matic.github.io/trackparse/reference/functions/#allartiststrack)
+
+Credits plus every remixer, deduplicated.
+
+```rust
+use trackparse::{all_artists, parse};
+
+let track = parse("Wilkinson ft. Becky Hill - Afterglow (Sub Focus Remix)");
+let credits: Vec<String> =
+    all_artists(&track).iter().map(|a| format!("{}:{}", a.name, a.role)).collect();
+assert_eq!(credits, ["Wilkinson:primary", "Becky Hill:featured", "Sub Focus:remixer"]);
+```
+
+### `Parser`
+
+**Docs:** [createParser](https://4matic.github.io/trackparse/reference/functions/#createparseroptions)
+
+Resolves the options and builds the word tables once, for many calls. It is `Send + Sync`.
+
+```rust
+use trackparse::{KeywordOptions, ParseOptions, Parser, VersionType};
+
+let options = ParseOptions::new()
+    .known_artists(["Chase & Status", "Camo & Krooked"])
+    .keywords(KeywordOptions::new().version_head("rerub", VersionType::Rework));
+let parser = Parser::new(&options);
+
+let track = parser.parse("Chase & Status x Camo & Krooked - Track (Alix Perez Rerub)");
+assert_eq!(track.artists.len(), 2);
+assert_eq!(track.versions[0].version_type, VersionType::Rework);
+```
+
+### `SPEC_VERSION`
+
+The spec version this build implements. The crate, the npm package, the PyPI package and the spec
+are released together and always share one version number.
+
+## Modes
+
+**Docs:** [Modes](https://4matic.github.io/trackparse/guides/modes/)
+
+| Mode | For | Adds |
+|---|---|---|
+| `Clean` | Store metadata, tags | Only a spaced dash separates artist and title |
+| `Youtube` | Video titles, scrobbles | Pipe segments, `"Title" by Artist`, `Artist: "Title"`, unspaced dashes, trailing junk, uploader fallback |
+| `Filename` | Files | Strips the extension, `_` becomes a space, `01-Track` numbering |
+| `Auto` | Anything | `Filename` for known extensions, `Youtube` when it sees junk, pipes or platform suffixes, `Clean` otherwise |
+| `Tracklist` | One line of a tracklist | The first spaced dash always separates; `_-_` too. Never picked by `Auto` |
+
+```rust
+use trackparse::{parse, parse_with, Mode, ModeOption, ParseOptions, Warning};
+
+let youtube = ParseOptions::new().mode(ModeOption::Youtube);
+let track = parse_with("\"Numb\" by Linkin Park", &youtube);
+assert_eq!(track.artists[0].name, "Linkin Park");
+assert_eq!(track.title, "Numb");
+assert_eq!(track.warnings, [Warning::BySplit]);
+
+let track = parse("07_Burial_-_Archangel.mp3");
+assert_eq!(track.mode, Mode::Filename);
+assert_eq!(track.artists[0].name, "Burial");
+assert_eq!(track.title, "Archangel");
+assert_eq!(track.position.as_ref().map(|p| p.number), Some(7));
+
+let track = parse_with("Shelter", &youtube.uploader("Porter Robinson"));
+assert_eq!(track.artists[0].name, "Porter Robinson");
+```
+
+## Tracklists
+
+**Docs:** [Tracklists](https://4matic.github.io/trackparse/guides/tracklists/) · [Editing tracklists](https://4matic.github.io/trackparse/guides/editing-tracklists/) · [Tracklist API](https://4matic.github.io/trackparse/reference/tracklist/) · [Warnings](https://4matic.github.io/trackparse/reference/warnings/)
+
+`trackparse::tracklist` parses a whole tracklist, one entry per line, and checks it. Each entry
+keeps its line exactly as written plus its own line ending, so joining every `raw` and `eol` is
+always the input, CRLF or not.
+
+```rust
+use trackparse::tracklist::{parse_tracklist, EntryKind, Severity, WarningCode};
+use trackparse::VersionType;
+
+let text = [
+    "Hour 2",
+    "48:20 Noisia - Stigma",
+    "52:47 Mefjus & Kasra - Bandwagon (Phace Remix)",
+    "56:05 Black Sun Empire - ID",
+    "59:31 Alix Perez - Fade Away",
+    "01:03:10 Interview with Hybris",
+    "01:07:44 Imanu - Sacrifice",
+    "00:11:02 Current Value feat. Teddy Killerz - Payload", // typo for 01:11:02
+    "01:15:36 Hybris - Spinning Top",
+]
+.join("\r\n");
+
+let list = parse_tracklist(&text);
+
+let joined: String = list.entries.iter().map(|e| format!("{}{}", e.raw, e.eol)).collect();
+assert_eq!(joined, text);
+
+use EntryKind::{Header, Marker, Track};
+let kinds: Vec<EntryKind> = list.entries.iter().map(|e| e.kind).collect();
+assert_eq!(kinds, [Header, Track, Track, Track, Track, Marker, Track, Track, Track]);
+
+let entry = &list.entries[2];
+let time = entry.time.as_ref().unwrap();
+assert_eq!((time.raw.as_str(), time.seconds), ("52:47", 3167.0));
+assert_eq!(entry.parts.rest, "Mefjus & Kasra - Bandwagon (Phace Remix)");
+let track = entry.track.as_ref().unwrap();
+assert_eq!(track.artists.len(), 2);
+assert_eq!(track.title, "Bandwagon");
+assert_eq!(track.versions[0].version_type, VersionType::Remix);
+assert!(list.entries[3].track.as_ref().unwrap().flags.unknown_title); // the ID
+
+assert_eq!(list.warnings.len(), 2);
+assert_eq!(list.warnings[0].code, WarningCode::NoStartAtZero);
+assert_eq!(list.warnings[0].severity, Severity::Info);
+let warning = &list.warnings[1];
+assert_eq!((warning.code, warning.line), (WarningCode::TimeOutOfOrder, 8));
+let fix = warning.suggestion.as_ref().unwrap();
+assert_eq!((fix.line, fix.raw.as_str(), fix.seconds), (8, "01:11:02", 4262.0));
+
+let stats = &list.stats;
+assert_eq!((stats.lines, stats.tracks, stats.markers, stats.timed), (9, 7, 1, 8));
+assert_eq!((stats.first_time, stats.last_time), (Some(2900.0), Some(4536.0)));
+```
+
+The suggestion exists because exactly one time, one digit away from `00:11:02`, fits between its
+neighbours. With several candidates or none, `suggestion` is `None`.
+
+`apply_edits` takes a slice of `Edit` values and only rewrites the lines they name:
+
+```rust
+use trackparse::tracklist::{apply_edits, Edit, EditWarningCode};
+
+let text = "48:20 Noisia - Stigma\r\n59:31 Alix Perez - Fade Away\r\n00:03:10 Imanu - Sacrifice\r\n";
+
+let edits = [Edit::set_time(3, 3790.0), Edit::shift_from(45.0, 2)];
+let result = apply_edits(text, &edits);
+
+assert_eq!(
+    result.text,
+    "48:20 Noisia - Stigma\r\n01:00:16 Alix Perez - Fade Away\r\n01:03:55 Imanu - Sacrifice\r\n"
+);
+assert_eq!(result.changed, [2, 3]);
+assert_eq!(result.warnings[0].code, EditWarningCode::StyleUpgraded);
+assert_eq!((result.warnings[0].edit, result.warnings[0].line), (1, Some(2)));
+
+let result = apply_edits(text, &[Edit::shift_lines(-3000.0, [1])]);
+assert_eq!(result.warnings[0].code, EditWarningCode::TimeClamped);
+```
+
+A rewritten time keeps its line's style: `48:20` stays `MM:SS`, and a time that crosses the hour
+gets hours, with a `style-upgraded` warning. A bad edit changes nothing and warns `edit-invalid`.
+Neither function panics.
+
+`TracklistOptions` has `mode` (default `ModeOption::Tracklist`), `known_artists`, `split_and`,
+`keywords`, `audio_seconds` (enables `time-after-audio-end`) and `marker_words`:
+
+```rust
+use trackparse::tracklist::{parse_tracklist_with, TracklistOptions, WarningCode};
+
+let options = TracklistOptions::new().audio_seconds(3600.0);
+let list = parse_tracklist_with("00:00 A - B\n1:02:03 C - D", &options);
+assert_eq!(list.warnings[0].code, WarningCode::TimeAfterAudioEnd);
+assert_eq!(list.warnings[0].line, 2);
+```
+
+| Result | Fields |
+|---|---|
+| `Tracklist` | `spec_version`, `entries`, `warnings`, `stats` |
+| `TracklistEntry` | `line` (1-based), `kind` (`EntryKind`: `Track`, `Marker`, `Header`, `Link`, `Note`, `Blank`), `eol`, `raw`, `parts`, `time`, `track` (`Option<ParsedTrack>`), `layered` (the track text after any time starts with `w/`) |
+| `Parts` | `lead`, `time`, `gap`, `rest`, joined they give `raw` |
+| `TracklistWarning` | `code` (`WarningCode`), `line`, `severity` (`Info` or `Warning`), `suggestion` |
+| `TimeValue` | `raw`, `seconds` (`entry.time`, or `None` on untimed lines) |
+| `Suggestion` | `line`, `raw`, `seconds` (`warning.suggestion`, or `None`) |
+| `Stats` | `lines`, `tracks`, `markers`, `timed`, `first_time`, `last_time` |
+| `EditResult` | `text`, `changed`, `warnings` (`EditWarning { code, edit, line }`) |
+
+Lists pasted with list bullets or Markdown emphasis (`* 14:21 Artist - Title`,
+`**[**14:21**] Artist - Title**`) read like plain lines; the decoration stays in `raw` and `parts`.
+A line whose track text (after any time) starts with `w/` is `layered`: a track played over the
+previous one
+([Markdown](https://4matic.github.io/trackparse/guides/tracklists/#markdown),
+[layered tracks](https://4matic.github.io/trackparse/guides/tracklists/#layered-tracks)).
+
+Warning codes (`WarningCode`): `time-missing`, `time-out-of-order`, `time-duplicate`,
+`no-start-at-zero`, `time-after-audio-end` (needs `audio_seconds`), `invalid-time`, `position-gap`,
+`position-duplicate`, `line-unparsed`. Edits: `Edit::set_time(line, seconds)`,
+`Edit::shift(seconds)` (all timed lines), `Edit::shift_from(seconds, from)`,
+`Edit::shift_lines(seconds, lines)`, `Edit::sort_by_time()`, `Edit::set_rest(line, rest)`,
+`Edit::insert(after, text)` (`after: 0` inserts at the top), `Edit::delete(line)`. The
+[Tracklist API reference](https://4matic.github.io/trackparse/reference/tracklist/) explains each
+one.
+
+Every line is parsed with `ModeOption::Tracklist`, where the first spaced dash always separates
+artist and title. `parse_with` accepts it too:
+
+```rust
+use trackparse::{parse, parse_with, JunkKind, ModeOption, ParseOptions};
+
+let track = parse("Electrosoul System - Liquid Metal");
+assert_eq!(track.junk[0].raw, "Liquid Metal");
+assert_eq!(track.junk[0].kind, JunkKind::Genre);
+
+let options = ParseOptions::new().mode(ModeOption::Tracklist);
+assert_eq!(parse_with("Electrosoul System - Liquid Metal", &options).title, "Liquid Metal");
+```
+
+## How it is tested
+
+**Docs:** [Testing](https://4matic.github.io/trackparse/project/testing/) · [Ports](https://4matic.github.io/trackparse/project/ports/)
+
+- `cargo test` runs all 13,130 shared fixtures (1,203 written by hand, the rest generated from
+  the rules), the tracklist invariants on random input, and the API tests. The skip list is empty.
+- `scripts/compare-ports.mjs` in the repository runs every fixture input through the JavaScript
+  package and this crate and compares the complete output, byte for byte. The Python package is
+  checked the same way.
+- The Unicode facts the rules need (letters, uppercase letters, lowercase mapping) are tables
+  generated from the reference implementation and compiled into the crate. The output does not
+  depend on the compiler's Unicode version: Rust 1.74 and current stable give the same bytes.
+- With the `serde` feature, a test asserts that `serde_json::to_string` equals `to_json()` for
+  every fixture input.
+- Clippy denies `unwrap`, `expect`, `panic!` and indexing in the library code, and `unsafe` is
+  forbidden.
+
+## Minimum Rust version
+
+Rust 1.74. CI runs the test suite on 1.74 and on stable.
+
+## Development
+
+From `rust/` in the [repository](https://github.com/4matic/trackparse) (Node 24 is needed for the
+codegen script only):
+
+```sh
+node scripts/gen_data.mjs --check                           # spec/data and Unicode codegen is up to date
+cargo fmt --check
+cargo clippy --all-targets --all-features -- -D warnings
+cargo test                                                  # every shared fixture, properties, API
+cargo test --all-features                                   # the same with serde, and this README's examples
+TRACKPARSE_REPORT=1 cargo test --test fixtures -- --nocapture   # pass rate per fixture file and per rule
+```
+
+Modules mirror the JS reference one to one (`scanner.rs` is `scanner.ts`, and so on) and cite the
+same spec rule IDs. Behaviour changes start in the spec, not here: see
+[AGENTS.md](https://github.com/4matic/trackparse/blob/main/AGENTS.md).
+
+## Links
+
+- [Documentation](https://4matic.github.io/trackparse/), and a
+  [playground](https://4matic.github.io/trackparse/playground/) that runs the parser in your browser
+- [API documentation on docs.rs](https://docs.rs/trackparse)
+- [Spec](https://github.com/4matic/trackparse/blob/main/spec/SPEC.md)
+- [Project README](https://github.com/4matic/trackparse#readme)
+- [GitHub repository](https://github.com/4matic/trackparse)
+- [npm package](https://www.npmjs.com/package/trackparse) · [PyPI package](https://pypi.org/project/trackparse/)
+
+## License
+
+[MIT](https://github.com/4matic/trackparse/blob/main/LICENSE)
