@@ -484,6 +484,17 @@ starlight-tabs [role="tab"] {
 .tp-flag { --tp-c: var(--tp-year); }
 .tp-title { --tp-c: var(--sl-color-gray-2); }
 
+/* A warning name in the parsed fields links to the warnings reference: same colour, quiet rule. */
+.tp-warn a {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, currentColor 40%, transparent);
+  text-underline-offset: 0.2em;
+}
+.tp-warn a:hover {
+  text-decoration-color: currentColor;
+}
+
 /* The playground uses the normal docs layout (sidebar and mobile menu) but needs more width. */
 .main-frame:has(.pg) {
   --sl-content-width: 76rem;

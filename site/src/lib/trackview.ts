@@ -4,6 +4,7 @@
 
 import type { Artist, ParsedTrack, Version } from "trackparse";
 import { icon } from "./icons";
+import type { Lang } from "./lang";
 
 export type Kind =
   | "position"
@@ -141,8 +142,11 @@ function versionLine(v: Version): string {
   return bits.join(" ");
 }
 
-/** The field cards shown under the highlighted string. */
-export function fieldsHtml(t: ParsedTrack): string {
+/**
+ * The field cards shown under the highlighted string. `base` is the site base (`/trackparse`):
+ * with it, each warning links to its row in the warnings reference.
+ */
+export function fieldsHtml(t: ParsedTrack, base?: string): string {
   const rows: [string, string][] = [];
   rows.push([
     "Artists",
@@ -178,7 +182,14 @@ export function fieldsHtml(t: ParsedTrack): string {
   if (t.warnings.length)
     rows.push([
       "Warnings",
-      t.warnings.map((w) => `<span class="tp-warn">${icon.warning}${escapeHtml(w)}</span>`).join(" "),
+      t.warnings
+        .map((w) => {
+          const name = escapeHtml(w);
+          // A text fragment scrolls to the warning's row; without support the section opens.
+          const href = `${base}/reference/warnings/#track-warnings:~:text=${encodeURIComponent(w)}`;
+          return `<span class="tp-warn">${icon.warning}${base === undefined ? name : `<a href="${href}" title="What ${name} means">${name}</a>`}</span>`;
+        })
+        .join(" "),
     ]);
   return `<dl class="tp-fields">${rows
     .map(([k, v]) => `<div class="tp-field"><dt>${k}</dt><dd>${v}</dd></div>`)
@@ -201,7 +212,7 @@ export function jsonHtml(value: unknown): string {
 }
 
 /** The languages of the playground's code panels. */
-export type Lang = "js" | "py" | "rs";
+export type { Lang };
 
 const KEYWORDS: Record<Lang, Set<string>> = {
   js: new Set(["import", "from", "export", "const", "let", "var", "return", "new", "await", "async", "function"]),

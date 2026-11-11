@@ -5,10 +5,16 @@ description: What trackparse is, what it gives you back, and the one rule behind
 
 import { Tabs, TabItem } from "@astrojs/starlight/components";
 
-trackparse reads the names of music tracks the way people actually write them: store metadata,
-YouTube titles, file names, scrobbles, the tracklist under a mix. It gives you back an object with
-the artists and their roles, the clean title, every remix or version with its credits, and the noise
+trackparse reads the names of music tracks the way people write them: store metadata, YouTube
+titles, file names, scrobbles, the tracklist under a mix. It gives you back an object with the
+artists and their roles, the clean title, every remix or version with its credits, and the noise
 that was around it.
+
+It comes as three packages with the same behaviour: `trackparse` on
+[npm](https://www.npmjs.com/package/trackparse) for JavaScript and TypeScript, `trackparse` on
+[PyPI](https://pypi.org/project/trackparse/) for Python, and `trackparse` on
+[crates.io](https://crates.io/crates/trackparse) for Rust. Every example on this site has a tab for
+each language.
 
 ```text
 01. Wilkinson ft. Becky Hill & Tom Cane - Afterglow (Sub Focus VIP Remix) [Official Video]
@@ -21,20 +27,21 @@ that was around it.
 
 ## The one rule
 
-**Extract, don't delete.** Everything trackparse recognises goes into a field. Everything it doesn't
-recognise stays in the title, verbatim.
+**Extract, don't delete.** Everything trackparse recognizes goes into a field. Everything it doesn't
+recognize stays in the title, verbatim.
 
-That sounds obvious until you look at what other parsers do. Some return two strings and leave the
-rest to you. Others strip anything in brackets, which turns `(I Can't Get No) Satisfaction` into
-`Satisfaction` and quietly loses every remix credit. trackparse would rather leave an odd bracket in
-the title than throw away something you needed.
+Other parsers do less, or more than you want. Some return two strings and leave the rest to you.
+Others strip anything in brackets, which turns `(I Can't Get No) Satisfaction` into `Satisfaction`
+and loses every remix credit. trackparse would rather leave an odd bracket in the title than throw
+away something you needed.
 
 The same rule shows up in smaller ways:
 
 - `[Official Video]` leaves the title, but it lands in `junk` as `{ raw: "Official Video", kind: "video" }`.
 - When the parser had to guess (an unspaced dash, a `"Title" by Artist` pattern), `warnings` says
-  which guess it made.
+  which guess it made. The codes are listed under [Warnings](/trackparse/reference/warnings/).
 - Every key of the output is always present, so you never have to check whether a field exists.
+- No string makes it fail. `parse` never throws in JavaScript or Python and never panics in Rust.
 
 ## What you get back
 
@@ -62,7 +69,7 @@ parse("Queen - Bohemian Rhapsody (Live at Wembley 1986)").to_dict()
 ```rust
 use trackparse::parse;
 
-parse("Queen - Bohemian Rhapsody (Live at Wembley 1986)").to_json()
+parse("Queen - Bohemian Rhapsody (Live at Wembley 1986)").to_json();
 ```
 
 </TabItem>
@@ -96,10 +103,30 @@ parse("Queen - Bohemian Rhapsody (Live at Wembley 1986)").to_json()
 }
 ```
 
-All three give the same JSON. In Python the result is a frozen dataclass with snake_case attributes,
-and `to_dict()` turns it into the JSON above. In Rust it is a struct with snake_case fields, and
-`to_json()` writes that JSON as a string. The [`parse` reference](/trackparse/reference/parse/)
-explains every field.
+All three give this JSON: the packages pass the same fixtures and give the same output on every
+fixture input ([Ports](/trackparse/project/ports/#what-the-rust-port-taught) has the one Unicode
+note). In JavaScript the result is a plain object. In Python it is a frozen
+dataclass with snake_case attributes, and `to_dict()` turns it into the JSON above. In Rust it is a
+struct with snake_case fields, and `to_json()` writes that JSON as a string. The
+[`parse` reference](/trackparse/reference/parse/) explains every field, and
+[Serializing to JSON](/trackparse/reference/parse/#serializing-to-json) shows the round trip in each
+language.
+
+## Names in each language
+
+The docs use the JavaScript and JSON names in running text. Python and Rust use snake_case for the
+same things:
+
+| | JavaScript | Python | Rust |
+|---|---|---|---|
+| Parse | `parse(s, options?)` | `parse(s, **options)` | `parse(s)`, `parse_with(s, &options)` |
+| A field | `track.fullTitle` | `track.full_title` | `track.full_title` |
+| An option | `{ knownArtists: […] }` | `known_artists=[…]` | `ParseOptions::new().known_artists([…])` |
+| A value | `"remix"`, `null` | `"remix"`, `None` | `VersionType::Remix`, `None` |
+| Lists | arrays | tuples | `Vec` |
+| JSON | `JSON.stringify(track)` | `track.to_dict()` | `track.to_json()`, or `serde` |
+
+[Other functions](/trackparse/reference/functions/) has the full table of function names.
 
 ## Spec first
 
@@ -107,9 +134,11 @@ Behaviour isn't defined by the JavaScript code. It's defined by a written
 [spec](/trackparse/reference/spec/) with numbered rules, and by 13,130 fixtures that pin those rules
 down. The JavaScript package is the reference implementation. The Python package and the Rust
 crate pass the same fixtures and produce the same JSON, byte for byte.
+[How it's tested](/trackparse/project/testing/) and [Ports](/trackparse/project/ports/) have the
+details.
 
-So if you ever wonder why something parses the way it does, there's a rule ID for it, and a fixture
-that cites that rule.
+If you wonder why something parses the way it does, there's a rule ID for it, and a fixture that
+cites that rule.
 
 ## When not to use it
 
@@ -118,4 +147,12 @@ If all you need is a cleaned-up string to send to a scrobbler,
 scope. trackparse is for when you need to know who did what.
 
 It also has no artist database. `&` is a joiner, so `Chase & Status` comes out as two artists unless
-you pass it in `knownArtists` (`known_artists` in Python and Rust). More on that in [Artists and credits](/trackparse/guides/artists/).
+you pass it in `knownArtists` (`known_artists` in Python and Rust). More on that in
+[Artists and credits](/trackparse/guides/artists/#knownartists). The other gaps are listed under
+[Limitations and roadmap](/trackparse/project/roadmap/).
+
+## Next
+
+- [Getting started](/trackparse/start/getting-started/): install it and parse your first track.
+- [What it understands](/trackparse/guides/what-it-understands/): real inputs and their results.
+- [Playground](/trackparse/playground/): try your own strings in the browser.

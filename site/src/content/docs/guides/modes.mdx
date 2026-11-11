@@ -19,7 +19,8 @@ source can take.
 | `auto` | anything (the default) | Picks `filename`, `youtube` or `clean` from the string. It never picks `tracklist` |
 
 The resolved mode is in `track.mode`, so you can always see which one ran. In Rust the option is
-the enum `ModeOption` and the resolved mode is `Mode`, which has no `Auto`.
+the enum `ModeOption` and the resolved mode is `Mode`, which has no `Auto`. The mode rules are
+[R2](/trackparse/reference/spec/#r2-mode-prelude) in the spec.
 
 ## How auto decides
 
@@ -32,6 +33,8 @@ the enum `ModeOption` and the resolved mode is `Mode`, which has no `Auto`.
 <TabItem label="JavaScript">
 
 ```js
+import { parse } from "trackparse";
+
 parse("07_Burial_-_Archangel.mp3");
 // mode 'filename', position 7, artist 'Burial', title 'Archangel'
 
@@ -43,6 +46,8 @@ parse("Noisia - Stigma | Official Video");
 <TabItem label="Python">
 
 ```python
+from trackparse import parse
+
 parse("07_Burial_-_Archangel.mp3")
 # mode 'filename', position 7, artist 'Burial', title 'Archangel'
 
@@ -54,6 +59,8 @@ parse("Noisia - Stigma | Official Video")
 <TabItem label="Rust">
 
 ```rust
+use trackparse::parse;
+
 parse("07_Burial_-_Archangel.mp3");
 // mode Filename, position 7, artist "Burial", title "Archangel"
 
@@ -66,8 +73,8 @@ parse("Noisia - Stigma | Official Video");
 
 ## youtube mode
 
-Turn it on explicitly when you know the strings are video titles. It takes guesses that `clean`
-won't, and every guess shows up in `warnings`:
+Set it yourself when you know the strings are video titles. It takes guesses that `clean`
+won't, and every guess shows up in [`warnings`](/trackparse/reference/warnings/#track-warnings):
 
 <Tabs syncKey="lang">
 <TabItem label="JavaScript">
@@ -119,11 +126,14 @@ parse_with("Blink-182-All The Small Things", &youtube);
 </Tabs>
 
 In `clean` mode the last one comes back with no artist, the whole string as the title and a
-`noSeparator` warning. That's the safe answer when you can't be sure.
+`noSeparator` warning. That's the safe answer when you can't be sure. Compare the two in the
+playground:
+[youtube](/trackparse/playground/#track=Blink-182-All%20The%20Small%20Things&mode=youtube) and
+[clean](/trackparse/playground/#track=Blink-182-All%20The%20Small%20Things&mode=clean).
 
 ### The uploader fallback
 
-Many music videos are titled with just the song name, and the artist is the channel. Pass the
+Many music videos are titled with only the song name, and the artist is the channel. Pass the
 channel as `uploader` and youtube mode uses it when there's no separator. Auto-generated suffixes
 like `- Topic` and `VEVO` are dropped:
 
@@ -181,7 +191,7 @@ parse("311 - Amber").artists[0].name                   # '311'
 ```rust
 parse("07_Burial_-_Archangel.mp3");                    // position 7, Burial / Archangel
 parse("311 - Amber.mp3").position;                     // Some(Position { raw: "311", number: 311 })
-parse("311 - Amber").artists[0].name;                  // "311"
+&parse("311 - Amber").artists[0].name;                 // "311"
 ```
 
 </TabItem>
@@ -231,5 +241,14 @@ parse_with("Electrosoul System - Liquid Metal", &ParseOptions::new().mode(ModeOp
 </TabItem>
 </Tabs>
 
-[`parseTracklist`](/trackparse/guides/tracklists/) (`parse_tracklist`) uses this mode for every line. You only need to
-set it yourself when you parse tracklist lines one at a time.
+[`parseTracklist`](/trackparse/guides/tracklists/) (`parse_tracklist` in Python and Rust) uses this
+mode for every line. You only need to set it yourself when you parse tracklist lines one at a time.
+[Tracklist mode](/trackparse/guides/tracklists/#tracklist-mode) in the tracklist guide has more
+lines that need it.
+
+## See also
+
+- [Options](/trackparse/reference/options/) for `mode`, `uploader` and the other options.
+- [Warnings](/trackparse/reference/warnings/) for what each guess reports.
+- [How it works](/trackparse/project/how-it-works/#finding-the-separator) for how the separator
+  search differs between modes.

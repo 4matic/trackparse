@@ -6,9 +6,10 @@ description: Parse the tracklist of a mix or podcast line by line, with start ti
 import { Tabs, TabItem } from "@astrojs/starlight/components";
 
 Mixes and podcasts come with a tracklist: a block of text, one track per line, usually with a start
-time in front. `trackparse/tracklist` reads the whole block. Every line gets its kind, its time and
-a full [`ParsedTrack`](/trackparse/reference/parse/). The list as a whole gets checks with line
-numbers.
+time in front. `parseTracklist` (`parse_tracklist` in Python and Rust) reads the whole block. Every
+line gets its kind, its time and a full [`ParsedTrack`](/trackparse/reference/parse/). The list as a
+whole gets checks with line numbers. The rules are [R13](/trackparse/reference/spec/#r13-tracklists)
+in the spec, and every field is listed in the [Tracklist API](/trackparse/reference/tracklist/).
 
 <Tabs syncKey="lang">
 <TabItem label="JavaScript">
@@ -34,11 +35,13 @@ use trackparse::tracklist::parse_tracklist;
 </TabItem>
 </Tabs>
 
-In JavaScript it's a separate entry point, about 8.3 KiB gzipped, so code that only parses single
-tracks never loads it. In Rust it is the module `trackparse::tracklist`.
+In JavaScript it's a separate entry point, `trackparse/tracklist`, about 8.4 KiB gzipped, so code
+that only parses single tracks never loads it. In Python it is the module `trackparse.tracklist`,
+in Rust the module `trackparse::tracklist`.
 
-Rust keeps seconds as `f64`, since a time can carry a fraction, so `Debug` prints `3167.0` where
-JavaScript and Python print `3167`. `to_json()` writes `3167`, like the other two.
+Two things differ in Rust. Seconds are `f64`, since a time can carry a fraction, so `Debug` prints
+`3167.0` where JavaScript and Python print `3167`. `to_json()` writes `3167`, like the other two.
+And `entry.time` and `entry.track` are `Option`s, because a header or a blank line has neither.
 
 ## A first list
 
@@ -129,8 +132,8 @@ list.entries.iter().map(|e| e.kind).collect::<Vec<_>>();
 // [Header, Track, Track, Track, Track, Marker, Track, Track, Track]
 
 let bandwagon = &list.entries[2];
-bandwagon.time;   // Some(TimeValue { raw: "52:47", seconds: 3167.0 })
-bandwagon.parts;  // Parts { lead: "", time: "52:47", gap: " ", rest: "Mefjus & Kasra - Bandwagon (Phace Remix)" }
+&bandwagon.time;   // Some(TimeValue { raw: "52:47", seconds: 3167.0 })
+&bandwagon.parts;  // Parts { lead: "", time: "52:47", gap: " ", rest: "Mefjus & Kasra - Bandwagon (Phace Remix)" }
 let track = bandwagon.track.as_ref().unwrap();
 track.artists.iter().map(|a| &a.name).collect::<Vec<_>>();   // ["Mefjus", "Kasra"]
 track.versions.iter().map(|v| format!("{} by {}", v.version_type, v.artists[0].name)).collect::<Vec<_>>();
@@ -151,7 +154,32 @@ to see the table, the warnings and the fix button.
 
 Every entry keeps its line exactly as written in `raw`, and its own line ending in `eol`. Joining
 `raw + eol` over the entries gives you back the input, byte for byte. CRLF, LF and CR all work, even
-mixed in one text, and trailing spaces survive. A last line without a newline has `eol: ""`.
+mixed in one text, and trailing spaces survive. A last line without a newline has `eol: ""`
+([R13.1](/trackparse/reference/spec/#r131-lines-and-the-lossless-guarantee)).
+
+<Tabs syncKey="lang">
+<TabItem label="JavaScript">
+
+```js
+list.entries.map((e) => e.raw + e.eol).join("") === text;   // true
+```
+
+</TabItem>
+<TabItem label="Python">
+
+```python
+"".join(e.raw + e.eol for e in tl.entries) == text   # True
+```
+
+</TabItem>
+<TabItem label="Rust">
+
+```rust
+list.entries.iter().map(|e| format!("{}{}", e.raw, e.eol)).collect::<String>() == text;   // true
+```
+
+</TabItem>
+</Tabs>
 
 `parts` cuts `raw` into four strings that join back into it:
 
@@ -180,7 +208,8 @@ A list bullet in front is fine too, as in lists pasted from Discord or Reddit:
 bullet goes into `lead`.
 
 Something that looks like a time but can't be one, like `1:75` or `0:61:00`, stays in `rest` and
-raises an `invalid-time` warning.
+raises an `invalid-time` warning. The time forms are
+[R13.2](/trackparse/reference/spec/#r132-times).
 
 ## Markdown
 
@@ -224,12 +253,12 @@ b.track.title                       # 'Stigma'
 let list = parse_tracklist("**[**14:21**] 10. Nitepunk - ID**\n* 18:02 Noisia - _Stigma_");
 let (a, b) = (&list.entries[0], &list.entries[1]);
 
-a.parts;   // Parts { lead: "**[**", time: "14:21", gap: "**] ", rest: "10. Nitepunk - ID**" }
+&a.parts;   // Parts { lead: "**[**", time: "14:21", gap: "**] ", rest: "10. Nitepunk - ID**" }
 let track = a.track.as_ref().unwrap();
 track.artists.iter().map(|x| &x.name).collect::<Vec<_>>();   // ["Nitepunk"]
-track.title;                                                 // "ID"
-track.position;                                              // Some(Position { raw: "10", number: 10 })
-b.track.as_ref().unwrap().title;                             // "Stigma"
+&track.title;                                                // "ID"
+&track.position;                                             // Some(Position { raw: "10", number: 10 })
+&b.track.as_ref().unwrap().title;                            // "Stigma"
 ```
 
 </TabItem>
@@ -239,7 +268,8 @@ Right next to the time, a run of one or two `*` or `_` is read as emphasis by it
 without a partner, so `**14:21 Artist - Title` still has its time. Anywhere else, a `*` or `_` only
 counts when it has a partner on the same line and its outer side is a space, a bracket, another `*`
 or `_`, or the end of the line. So names keep their stars and underscores: `P*nk`, `*NSYNC`, `DJ_Name`, `Noisia_-_Stigma` and a censored `F**k` come out as
-written. Runs of three or more, `~~`, `||` and backticks are never treated as Markdown.
+written. Runs of three or more, `~~`, `||` and backticks are never treated as Markdown
+([R13.12](/trackparse/reference/spec/#r1312-emphasis-markers)).
 
 ## Layered tracks
 
@@ -284,11 +314,11 @@ let list = parse_tracklist("00:00 Noisia - Stigma\nw/ Phace - Psycho (Acapella)\
 let e = &list.entries[1];
 
 e.layered;                                                   // true
-e.time;                                                      // None
+&e.time;                                                     // None
 let track = e.track.as_ref().unwrap();
 track.artists.iter().map(|a| &a.name).collect::<Vec<_>>();   // ["Phace"]
-track.title;                                                 // "Psycho"
-list.warnings;                                               // []
+&track.title;                                                // "Psycho"
+&list.warnings;                                              // []
 ```
 
 </TabItem>
@@ -297,7 +327,8 @@ list.warnings;                                               // []
 Only `w/` (or `W/`) at the start of the track text, after any time or bullet, and followed by
 whitespace and a track counts, so `00:30 w/ Phace - Psycho` is layered too. `w/` inside a line
 (`Noisia w/ Phace - Stigma`), right after a track number (`10. w/ …`) or glued to the name
-(`w/Noisia`) is left alone, and so are `with`, `+` and `x`.
+(`w/Noisia`) is left alone, and so are `with`, `+` and `x`
+([R13.13](/trackparse/reference/spec/#r1313-layered-tracks)).
 
 ## Line kinds
 
@@ -310,10 +341,68 @@ whitespace and a track counts, so `00:30 w/ Phace - Psycho` is layered too. `w/`
 | `note` | any other untimed line |
 | `blank` | empty or only whitespace |
 
-Only `track` and `marker` entries have a `track`. No line is ever dropped. Extra marker words go in
-the `markerWords` option (`marker_words` in Python and Rust): with `["drop"]`, `03:00 Drop` becomes a marker instead of a track.
+Only `track` and `marker` entries have a `track`. No line is ever dropped. In Rust the kind is the
+enum `EntryKind` (`EntryKind::Track`, `EntryKind::Marker` and so on). The kinds are
+[R13.3](/trackparse/reference/spec/#r133-line-kinds).
+
+## Options
+
+`parseTracklist` takes the `parse` options `mode` (default `"tracklist"`), `knownArtists`, `splitAnd`
+and `keywords`, plus two of its own. `audioSeconds` is the length of the audio, and turns on the check for times after the end.
+`markerWords` adds marker words to the built-in ones:
+
+<Tabs syncKey="lang">
+<TabItem label="JavaScript">
+
+```js
+const mix = parseTracklist("00:00 Intro\n03:00 Drop\n1:02:03 Noisia - Stigma", {
+  audioSeconds: 3600,
+  markerWords: ["drop"],
+});
+
+mix.entries.map((e) => e.kind);   // [ 'marker', 'marker', 'track' ]
+mix.warnings;
+// [ { code: 'time-after-audio-end', line: 3, severity: 'warning', suggestion: null } ]
+```
+
+</TabItem>
+<TabItem label="Python">
+
+```python
+mix = parse_tracklist(
+    "00:00 Intro\n03:00 Drop\n1:02:03 Noisia - Stigma",
+    audio_seconds=3600,
+    marker_words=["drop"],
+)
+
+[e.kind for e in mix.entries]   # ['marker', 'marker', 'track']
+mix.warnings
+# (TracklistWarning(code='time-after-audio-end', line=3, severity='warning', suggestion=None),)
+```
+
+</TabItem>
+<TabItem label="Rust">
+
+```rust
+use trackparse::tracklist::{parse_tracklist_with, TracklistOptions};
+
+let options = TracklistOptions::new().audio_seconds(3600.0).marker_words(["drop"]);
+let mix = parse_tracklist_with("00:00 Intro\n03:00 Drop\n1:02:03 Noisia - Stigma", &options);
+
+mix.entries.iter().map(|e| e.kind).collect::<Vec<_>>();   // [Marker, Marker, Track]
+mix.warnings;
+// [TracklistWarning { code: TimeAfterAudioEnd, line: 3, severity: Warning, suggestion: None }]
+```
+
+</TabItem>
+</Tabs>
+
+Without `markerWords`, `03:00 Drop` is a track line with no separator, and it warns `line-unparsed`.
+The options are listed under [Tracklist API](/trackparse/reference/tracklist/#options).
 
 ## Checks
+
+The warnings of the [first list](#a-first-list):
 
 <Tabs syncKey="lang">
 <TabItem label="JavaScript">
@@ -341,7 +430,7 @@ tl.warnings
 <TabItem label="Rust">
 
 ```rust
-list.warnings;
+parse_tracklist(&text).warnings;
 // [TracklistWarning { code: NoStartAtZero, line: 2, severity: Info, suggestion: None },
 //  TracklistWarning { code: TimeOutOfOrder, line: 8, severity: Warning,
 //                     suggestion: Some(Suggestion { line: 8, raw: "01:11:02", seconds: 4262.0 }) }]
@@ -356,19 +445,22 @@ does, `suggestion` is `null` (`None`) and you only get the warning.
 
 Sometimes the typo is on the line before. In `01:22:21` followed by `01:03:55`, the second line is
 flagged, but the suggestion is to change the first one to `01:02:21`. All the codes are listed in
-[Warnings](/trackparse/reference/warnings/#tracklist-warnings).
+[Warnings](/trackparse/reference/warnings/#tracklist-warnings), with an example of handling them in
+each language. To apply a suggestion, see
+[Editing tracklists](/trackparse/guides/editing-tracklists/).
 
 ## Bare track numbers
 
 Some lists number their lines without a dot: `1 Artist - Title`, `2 Artist - Title`. A single
 `parse()` call would read `1 Artist` as the artist's name, and it should, because `2 Unlimited`
 exists. In a list, trackparse looks at the neighbours: a bare number counts as a position when the
-nearest line before or after it carries the next or previous number.
+nearest line before or after it carries the next or previous number
+([R13.5](/trackparse/reference/spec/#r135-bare-positions)).
 
 ## Tracklist mode
 
-Inside a tracklist, the first ` - ` is the separator on practically every line, so each line is
-parsed with `mode: "tracklist"`. These lines all go wrong with a plain `parse()` and right in a list:
+Inside a tracklist, the first ` - ` is the separator on almost every line, so each line is
+parsed with `mode: "tracklist"` ([Modes](/trackparse/guides/modes/#tracklist-mode)). These lines all go wrong with a plain `parse()` and right in a list:
 
 | Line | `parse(line)` | In a tracklist |
 |---|---|---|
@@ -382,4 +474,16 @@ The first three open in the playground in tracklist mode; set the mode back to `
 what a plain `parse()` makes of them. The last two need neighbours: the position needs a 7 or 9 next to it, and the unspaced
 `BTK-Inception` dash only splits on a timed line when at least half the list uses spaced dashes.
 
-Next: [editing tracklists](/trackparse/guides/editing-tracklists/).
+## JSON
+
+A `Tracklist` serializes like a single track: `JSON.stringify(list)` in JavaScript,
+`tl.to_dict()` in Python and `list.to_json()` in Rust give the same JSON, with camelCase keys such
+as `specVersion` and `firstTime`. See
+[Serializing to JSON](/trackparse/reference/parse/#serializing-to-json).
+
+## Next
+
+- [Editing tracklists](/trackparse/guides/editing-tracklists/): fix times, shift, sort, insert and
+  delete lines.
+- [Tracklist API](/trackparse/reference/tracklist/): every field and option.
+- [Warnings](/trackparse/reference/warnings/#tracklist-warnings): every code and what to do with it.

@@ -38,9 +38,10 @@ pub struct Artist {
 </Tabs>
 
 `role` says what the person did. `joiner` is the text that introduced the name, exactly as written
-(`"&"`, `","`, `"ft."`, `"prod. by"`), and `null` for the first name of a list. `source` says where
-the credit was found: left of the dash (`artist`), right of it (`title`), or inside a version
-(`version`).
+(`"&"`, `","`, `"ft."`, `"prod. by"`), and `null` for the first name of a list (`None` in Python and
+Rust). `source` says where the credit was found: left of the dash (`artist`), right of it (`title`),
+or inside a version (`version`). In Rust, `role` and `source` are the enums `ArtistRole` and
+`ArtistSource`; `as_str()` and `Display` give the lowercase names used here.
 
 Remixers live inside `versions`, not in `artists`. Use [`allArtists(track)`](/trackparse/reference/functions/#allartiststrack)
 (`all_artists` in Python and Rust) when you want everyone in one list.
@@ -54,6 +55,8 @@ they produce is still primary.
 <TabItem label="JavaScript">
 
 ```js
+import { parse, parseArtists } from "trackparse";
+
 parse("Skrillex & Diplo x Justin Bieber - Where Are Ü Now").artists;
 // Skrillex (joiner null), Diplo (joiner '&'), Justin Bieber (joiner 'x'), all primary
 
@@ -65,6 +68,8 @@ parse("Kanye West vs. Daft Punk - Stronger").artists.map((a) => a.name);
 <TabItem label="Python">
 
 ```python
+from trackparse import parse, parse_artists
+
 parse("Skrillex & Diplo x Justin Bieber - Where Are Ü Now").artists
 # Skrillex (joiner None), Diplo (joiner '&'), Justin Bieber (joiner 'x'), all primary
 
@@ -76,6 +81,8 @@ parse("Skrillex & Diplo x Justin Bieber - Where Are Ü Now").artists
 <TabItem label="Rust">
 
 ```rust
+use trackparse::{parse, parse_artists, parse_artists_with, parse_with, ParseOptions, SplitAnd};
+
 parse("Skrillex & Diplo x Justin Bieber - Where Are Ü Now").artists;
 // Skrillex (joiner None), Diplo (joiner Some("&")), Justin Bieber (joiner Some("x")), all Primary
 
@@ -93,6 +100,8 @@ Some things look like joiners and aren't:
 - `& Sons`, `& Co.`, `& His Orchestra` and a few others never start a new artist. The list is in
   [`no-split-before.json`](https://github.com/4matic/trackparse/blob/main/spec/data/no-split-before.json).
 - A comma between two digits (`1,000`) is part of the name.
+
+The rules for the artist side are [R7](/trackparse/reference/spec/#r7-artist-side) in the spec.
 
 ### `and` is special
 
@@ -135,8 +144,45 @@ parse_artists("Crosby, Stills, Nash and Young").iter().map(|a| &a.name).collect:
 </TabItem>
 </Tabs>
 
-Set `splitAnd` (Python: `split_and`) to `"always"` or `"never"` to change that. In Rust it is
-`ParseOptions::new().split_and(SplitAnd::Always)`.
+Set `splitAnd` (`split_and` in Python and Rust) to `"always"` or `"never"` to change that:
+
+<Tabs syncKey="lang">
+<TabItem label="JavaScript">
+
+```js
+parse("Simon and Garfunkel - The Boxer", { splitAnd: "always" }).artists.map((a) => a.name);
+// [ 'Simon', 'Garfunkel' ]
+
+parseArtists("Crosby, Stills, Nash and Young", { splitAnd: "never" }).map((a) => a.name);
+// [ 'Crosby', 'Stills', 'Nash and Young' ]
+```
+
+</TabItem>
+<TabItem label="Python">
+
+```python
+[a.name for a in parse("Simon and Garfunkel - The Boxer", split_and="always").artists]
+# ['Simon', 'Garfunkel']
+
+[a.name for a in parse_artists("Crosby, Stills, Nash and Young", split_and="never")]
+# ['Crosby', 'Stills', 'Nash and Young']
+```
+
+</TabItem>
+<TabItem label="Rust">
+
+```rust
+let always = ParseOptions::new().split_and(SplitAnd::Always);
+parse_with("Simon and Garfunkel - The Boxer", &always).artists.iter().map(|a| &a.name).collect::<Vec<_>>();
+// ["Simon", "Garfunkel"]
+
+let never = ParseOptions::new().split_and(SplitAnd::Never);
+parse_artists_with("Crosby, Stills, Nash and Young", &never).iter().map(|a| &a.name).collect::<Vec<_>>();
+// ["Crosby", "Stills", "Nash and Young"]
+```
+
+</TabItem>
+</Tabs>
 
 ## Features
 
@@ -205,7 +251,8 @@ parse("Noisia feat. Foreign Beggars - Shellshock (feat. Foreign Beggars)")
 </Tabs>
 
 Names are compared with full Unicode case folding and accents removed, so `Sigur Rós` and
-`SIGUR ROS` count as the same artist.
+`SIGUR ROS` count as the same artist
+([R9](/trackparse/reference/spec/#r9-assembly-and-dedup)).
 
 ## Producers
 
@@ -232,8 +279,8 @@ t.title       # 'Mask Off'
 
 ```rust
 let t = parse("Future - Mask Off (prod. by Metro Boomin)");
-t.artists[1];  // Artist { name: "Metro Boomin", role: Producer, joiner: Some("prod. by"), source: Title }
-t.title;       // "Mask Off"
+&t.artists[1];  // Artist { name: "Metro Boomin", role: Producer, joiner: Some("prod. by"), source: Title }
+&t.title;       // "Mask Off"
 ```
 
 </TabItem>
@@ -243,8 +290,8 @@ t.title;       // "Mask Off"
 
 *(Python and Rust: `known_artists`)*
 
-trackparse has no artist database, and that's deliberate. A built-in list would be wrong for half
-its users and impossible to keep current. Instead you tell it the names you care about:
+trackparse has no artist database, on purpose. A built-in list would be wrong for half its users
+and out of date within a month. You tell it the names you care about:
 
 <Tabs syncKey="lang">
 <TabItem label="JavaScript">
@@ -285,7 +332,10 @@ parse_with("Chase & Status - Baddadan", &options).artists.iter().map(|a| &a.name
 
 A known name is matched case- and accent-insensitively wherever a credit list starts. It also
 protects names that begin with digits from being read as a track number (`3 Doors Down`). If you
-parse a lot of strings with the same names, put them in [`createParser`](/trackparse/reference/functions/#createparseroptions) (`create_parser` in Python, `Parser::new` in Rust).
+parse a lot of strings with the same names, put them in
+[`createParser`](/trackparse/reference/functions/#createparseroptions) (`create_parser` in Python,
+`Parser::new` in Rust). You can try it in the
+[playground](/trackparse/playground/#track=Chase%20%26%20Status%20-%20Baddadan&known=Chase%20%26%20Status).
 
 ## Unknown artists
 
@@ -327,3 +377,13 @@ t.versions[0].unknown_artist;  // true
 
 </TabItem>
 </Tabs>
+
+## See also
+
+- [`Artist` in the reference](/trackparse/reference/parse/#artist) for the field list.
+- [`parseArtists`](/trackparse/reference/functions/#parseartistsinput-options) splits an artist
+  string that has no title, and [`allArtists`](/trackparse/reference/functions/#allartiststrack)
+  lists the remixers too.
+- [Options](/trackparse/reference/options/) covers `knownArtists`, `splitAnd` and extra feat markers
+  in `keywords`.
+- [Versions and remixes](/trackparse/guides/versions/) is where the remixers go.

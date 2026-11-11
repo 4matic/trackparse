@@ -15,8 +15,9 @@ import { Aside, Steps, Tabs, TabItem } from "@astrojs/starlight/components";
         npm install trackparse   # or: pnpm add / yarn add / bun add trackparse
         ```
 
-        Node 18 or newer, or any runtime with ES2020. ESM and CommonJS both work, and the types
-        are included.
+        Node 18 or newer, or any runtime with ES2020. ESM and CommonJS both work, and the
+        TypeScript types are included. The package is
+        [`trackparse` on npm](https://www.npmjs.com/package/trackparse).
       </TabItem>
       <TabItem label="Python">
         ```sh
@@ -24,15 +25,19 @@ import { Aside, Steps, Tabs, TabItem } from "@astrojs/starlight/components";
         ```
 
         Python 3.9 or newer, no dependencies. The package ships `py.typed` and passes
-        `mypy --strict`.
+        `mypy --strict`. The package is
+        [`trackparse` on PyPI](https://pypi.org/project/trackparse/).
       </TabItem>
       <TabItem label="Rust">
         ```sh
         cargo add trackparse
+        cargo add trackparse --features serde   # with Serialize and Deserialize on the types
         ```
 
-        Rust 1.74 or newer. The only dependency is `unicode-normalization`, `serde` support is an
-        optional feature, and there is no `unsafe` code.
+        Rust 1.74 or newer. The only dependency is `unicode-normalization`, and there is no
+        `unsafe` code. The crate is
+        [`trackparse` on crates.io](https://crates.io/crates/trackparse), and its API docs are on
+        [docs.rs](https://docs.rs/trackparse).
       </TabItem>
     </Tabs>
 
@@ -103,8 +108,8 @@ import { Aside, Steps, Tabs, TabItem } from "@astrojs/starlight/components";
       <TabItem label="Rust">
         ```rust
         let t = parse("Daft Punk - One More Time (Official Music Video) [HD]");
-        t.title;   // "One More Time"
-        t.junk;    // [Junk { raw: "Official Music Video", kind: Video }, Junk { raw: "HD", kind: Quality }]
+        &t.title;  // "One More Time"
+        &t.junk;   // [Junk { raw: "Official Music Video", kind: Video }, Junk { raw: "HD", kind: Quality }]
 
         let r = parse("Dimension - Offshore (Mefjus Remix / Noisia Remix)");
         r.versions.iter().map(|v| format!("{} by {}", v.version_type, v.artists[0].name)).collect::<Vec<_>>();
@@ -148,12 +153,92 @@ import { Aside, Steps, Tabs, TabItem } from "@astrojs/starlight/components";
       </TabItem>
     </Tabs>
 
+5. Write it back, or turn it into JSON.
+
+    <Tabs syncKey="lang">
+      <TabItem label="JavaScript">
+        ```js
+        import { format } from "trackparse";
+
+        format(t);           // 'Daft Punk - One More Time'
+        JSON.stringify(t);   // '{"input":"Daft Punk - One More Time (Official Music Video) [HD]","mode":"youtube",…}'
+        ```
+      </TabItem>
+      <TabItem label="Python">
+        ```python
+        import json
+        from trackparse import format_track
+
+        format_track(t)            # 'Daft Punk - One More Time'
+        json.dumps(t.to_dict())    # '{"input": "Daft Punk - One More Time (Official Music Video) [HD]", "mode": "youtube", …}'
+        ```
+      </TabItem>
+      <TabItem label="Rust">
+        ```rust
+        use trackparse::format_track;
+
+        format_track(&t);   // "Daft Punk - One More Time"
+        t.to_json();        // "{\"input\":\"Daft Punk - One More Time (Official Music Video) [HD]\",\"mode\":\"youtube\",…}"
+        ```
+      </TabItem>
+    </Tabs>
+
+6. Parse a whole tracklist.
+
+    <Tabs syncKey="lang">
+      <TabItem label="JavaScript">
+        ```js
+        import { parseTracklist } from "trackparse/tracklist";
+
+        const list = parseTracklist("00:00 Noisia - Stigma\n04:10 Mefjus - Sleepless (Phace Remix)");
+        list.entries.map((e) => `${e.time.seconds}s ${e.track.title}`);   // [ '0s Stigma', '250s Sleepless' ]
+        list.warnings;                                                    // []
+        ```
+      </TabItem>
+      <TabItem label="Python">
+        ```python
+        from trackparse.tracklist import parse_tracklist
+
+        tl = parse_tracklist("00:00 Noisia - Stigma\n04:10 Mefjus - Sleepless (Phace Remix)")
+        [f"{e.time.seconds}s {e.track.title}" for e in tl.entries]   # ['0s Stigma', '250s Sleepless']
+        tl.warnings                                                  # ()
+        ```
+      </TabItem>
+      <TabItem label="Rust">
+        ```rust
+        use trackparse::tracklist::parse_tracklist;
+
+        let list = parse_tracklist("00:00 Noisia - Stigma\n04:10 Mefjus - Sleepless (Phace Remix)");
+        list.entries.iter()
+            .filter_map(|e| Some(format!("{}s {}", e.time.as_ref()?.seconds, e.track.as_ref()?.title)))
+            .collect::<Vec<_>>();   // ["0s Stigma", "250s Sleepless"]
+        list.warnings;              // []
+        ```
+
+        `time` and `track` are `Option`s in Rust, because a blank line or a note has neither.
+      </TabItem>
+    </Tabs>
+
 </Steps>
 
 <Aside type="tip" title="Parsing a lot of strings?">
 `createParser(options)` (`create_parser` in Python, `Parser::new(&options)` in Rust) compiles your
 options and keywords once. Its `parse` method is the same function with those options already applied. See [Other functions](/trackparse/reference/functions/#createparseroptions).
 </Aside>
+
+## Where each task is explained
+
+| You want to | Read |
+|---|---|
+| see what kinds of input it reads | [What it understands](/trackparse/guides/what-it-understands/) |
+| read every field of the result | [`parse` and `ParsedTrack`](/trackparse/reference/parse/) |
+| pass options or your own keywords | [Options](/trackparse/reference/options/), [Modes](/trackparse/guides/modes/) |
+| split a bare artist string | [`parseArtists`](/trackparse/reference/functions/#parseartistsinput-options), [Artists and credits](/trackparse/guides/artists/) |
+| write a track back as a string | [Formatting](/trackparse/guides/formatting/) |
+| parse and check a tracklist | [Tracklists](/trackparse/guides/tracklists/), [Tracklist API](/trackparse/reference/tracklist/) |
+| fix times and edit a tracklist | [Editing tracklists](/trackparse/guides/editing-tracklists/) |
+| react to warnings | [Warnings](/trackparse/reference/warnings/) |
+| serialize to JSON and read it back | [Serializing to JSON](/trackparse/reference/parse/#serializing-to-json) |
 
 ## Next
 

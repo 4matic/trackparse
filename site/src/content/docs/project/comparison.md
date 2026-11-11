@@ -10,7 +10,7 @@ description: How trackparse differs from get-artist-title, metadata-filter and t
 | Remixers and version types | 27 types | no | removed | raw remix name |
 | Noise | returned with a kind | removed | removed | no |
 | Tracklists | yes | no | no | no |
-| Languages | JS, Python, Rust, one spec | JS | JS | Ruby |
+| Languages | JavaScript, Python and Rust, one spec | JavaScript | JavaScript | Ruby |
 | Last release | 2026 | 2021 | active | 2015 |
 
 These libraries are good at what they set out to do. If you need a clean string to scrobble,
@@ -21,3 +21,10 @@ fixtures (MIT licensed, credited in
 
 trackparse is for when a clean string isn't enough and you need to know who did what: which names
 are features, who remixed it, what kind of version it is, and what was cut out of the title.
+
+## See also
+
+- [Introduction](/trackparse/start/introduction/) for what trackparse returns.
+- [What it understands](/trackparse/guides/what-it-understands/) for results on real inputs.
+- [How it's tested](/trackparse/project/testing/#handwritten-1203-cases): the regression fixtures
+  include the test inputs of the parsers above.

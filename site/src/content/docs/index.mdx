@@ -1,10 +1,10 @@
 ---
-title: trackparse
+title: A parser for track names and tracklists
 description: Turn messy track names into structured data. Artists with roles, remixes and versions, and the noise around them, for JavaScript, Python and Rust.
 template: splash
 hero:
   title: Messy track names in.<br />Structured data out.
-  tagline: trackparse reads track titles the way people actually write them, from store metadata to YouTube uploads to the tracklist under a mix. You get the artists with their roles, the remixes and versions, and the noise, each in its own field.
+  tagline: trackparse reads track titles the way people write them in store metadata, YouTube uploads and the tracklist under a mix. Artists and their roles, remixes and other versions, and the noise around them each get a field of their own. It is one spec with packages for JavaScript, Python and Rust.
   actions:
     - text: Get started
       link: /trackparse/start/getting-started/
@@ -30,9 +30,9 @@ import Stats from "../../components/Stats.astro";
 ## Extract, don't delete
 
 Most title parsers split on the dash and hand you two strings. Others "clean" the title and throw the
-feature and the remix away with the brackets.
+featured artist and the remix away with the brackets.
 
-trackparse keeps everything. What it recognises goes into a labelled field, and what it doesn't stays
+trackparse keeps everything. What it recognizes goes into a labelled field, and what it doesn't stays
 in the title, word for word.
 
 </div>
@@ -47,8 +47,8 @@ in the title, word for word.
     { title: "27 version types", body: "Remix, VIP, bootleg, extended, radio edit, live, remaster, sped up, slowed and the rest, each with its remixers, modifiers and year." },
     { title: "Noise, labelled", body: "<code>[Official Video]</code>, <code>[HD]</code>, <code>- YouTube</code> and <code>[NCS Release]</code> leave the title but land in <code>junk</code> with a kind, instead of disappearing." },
     { title: "Whole tracklists", body: "Paste the tracklist of a mix: every line is parsed, times are checked, and an out-of-order time often comes with the fix. Edits rewrite only the lines you name." },
-    { title: "One spec, three languages", body: "The JavaScript and Python packages and the Rust crate pass the same 13,130 fixtures and return byte-identical JSON." },
-    { title: "Small and total", body: "No dependencies, about 17 kB gzipped, linear time. It never throws on a string, and bad options fall back to defaults." },
+    { title: "One spec, three languages", body: "The npm package, the PyPI package and the Rust crate pass the same 13,130 fixtures and return byte-identical JSON on every fixture input. The <a href=\"/trackparse/project/ports/#what-the-rust-port-taught\">ports page</a> has the one known Unicode difference." },
+    { title: "Small and total", body: "The JavaScript package is about 18 kB gzipped. It and the Python package have no dependencies; the Rust crate has one, <code>unicode-normalization</code>. The scanners are written by hand and no regex backtracks, so a 10,000-code-point input takes tens of milliseconds in JavaScript and Rust, and well under a second in Python. No string makes it throw or panic, and bad options fall back to defaults." },
   ]}
 />
 
@@ -89,8 +89,8 @@ in the title, word for word.
     track.artists.iter().map(|a| format!("{} ({})", a.name, a.role)).collect::<Vec<_>>();
     // ["Noisia (primary)", "Foreign Beggars (featured)"]
 
-    parse("Queen - Bohemian Rhapsody (Live at Wembley 1986)").versions[0];
-    // Version { version_type: Live, descriptor: Some("at Wembley"), year: Some(1986), .. }
+    parse("Queen - Bohemian Rhapsody (Live at Wembley 1986)").versions.first();
+    // Some(Version { version_type: Live, descriptor: Some("at Wembley"), year: Some(1986), .. })
     ```
   </TabItem>
 </Tabs>
@@ -98,8 +98,10 @@ in the title, word for word.
 ## Where to next
 
 <div class="home-next">
-  <LinkCard title="Getting started" description="Install it and parse your first track in two minutes." href="/trackparse/start/getting-started/" />
+  <LinkCard title="Getting started" description="Install it for JavaScript, Python or Rust and parse your first track." href="/trackparse/start/getting-started/" />
   <LinkCard title="What it understands" description="A tour of real inputs and what comes out." href="/trackparse/guides/what-it-understands/" />
   <LinkCard title="Tracklists" description="Parse, check and edit the tracklist of a mix." href="/trackparse/guides/tracklists/" />
+  <LinkCard title="Ports" description="How the JavaScript, Python and Rust packages are kept identical." href="/trackparse/project/ports/" />
+  <LinkCard title="Compared to others" description="What other title parsers do with the same inputs." href="/trackparse/project/comparison/" />
   <LinkCard title="The spec" description="Rules R0 to R13, the contract every port follows." href="/trackparse/reference/spec/" />
 </div>

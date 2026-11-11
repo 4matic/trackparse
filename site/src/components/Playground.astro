@@ -6,6 +6,10 @@ import Redo2 from "@lucide/astro/icons/redo-2";
 import Undo2 from "@lucide/astro/icons/undo-2";
 import "../styles/playground.css";
 
+// Docs links next to the controls they explain.
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+const doc = (path: string) => `${base}/${path}`;
+
 const trackExamples = [
   "01. Wilkinson ft. Becky Hill & Tom Cane - Afterglow (Sub Focus VIP Remix) [Official Video]",
   "Dimension - Offshore (Mefjus Remix / Noisia Remix)",
@@ -71,7 +75,7 @@ const listExamples: { label: string; title: string; text: string }[] = [
 ];
 ---
 
-<div class="pg not-content">
+<div class="pg not-content" data-base={base}>
   <div class="pg-tabs" role="tablist" aria-label="Playground">
     <button type="button" role="tab" id="tab-track" aria-controls="panel-track" aria-selected="true">
       One track
@@ -83,6 +87,13 @@ const listExamples: { label: string; title: string; text: string }[] = [
 
   <!-- Single track -->
   <section class="pg-panel" id="panel-track" role="tabpanel" aria-labelledby="tab-track">
+    <p class="pg-docs">
+      Docs:
+      <a href={doc("guides/what-it-understands/")}>What it understands</a>
+      <a href={doc("reference/parse/")}>parse and ParsedTrack</a>
+      <a href={doc("reference/options/")}>Options</a>
+      <a href={doc("guides/modes/")}>Modes</a>
+    </p>
     <div class="tp-card pg-box">
       <label class="tp-label" for="pg-input">Track string</label>
       <input id="pg-input" class="tp-input" type="text" spellcheck="false" autocomplete="off" />
@@ -118,11 +129,11 @@ const listExamples: { label: string; title: string; text: string }[] = [
         </div>
         <div class="tp-grow">
           <label class="tp-label" for="pg-known">knownArtists (comma-separated)</label>
-          <input id="pg-known" class="tp-input" type="text" placeholder="Chase & Status, Camo & Krooked" />
+          <input id="pg-known" class="tp-input" type="text" spellcheck="false" autocomplete="off" placeholder="Chase & Status, Camo & Krooked" />
         </div>
         <div class="tp-grow">
           <label class="tp-label" for="pg-uploader">uploader (youtube mode)</label>
-          <input id="pg-uploader" class="tp-input" type="text" placeholder="Daft Punk - Topic" />
+          <input id="pg-uploader" class="tp-input" type="text" spellcheck="false" autocomplete="off" placeholder="Daft Punk - Topic" />
         </div>
       </div>
     </div>
@@ -142,7 +153,10 @@ const listExamples: { label: string; title: string; text: string }[] = [
         <pre class="tp-json" id="pg-json"></pre>
       </div>
       <div class="tp-card pg-box">
-        <span class="tp-label tp-mono">format(track, options)</span>
+        <div class="pg-head">
+          <span class="tp-label tp-mono">format(track, options)</span>
+          <a class="pg-doc" href={doc("guides/formatting/")}>Formatting guide</a>
+        </div>
         <div class="tp-row">
           <div>
             <label class="tp-label" for="pg-feat">feat</label>
@@ -178,13 +192,23 @@ const listExamples: { label: string; title: string; text: string }[] = [
           </span>
         </div>
         <pre class="tp-json tp-code" id="pg-code"></pre>
-        <button type="button" class="tp-btn small" data-copy="pg-code"><Copy size={14} aria-hidden="true" /><span>Copy code</span></button>
+        <div class="pg-foot">
+          <button type="button" class="tp-btn small" data-copy="pg-code"><Copy size={14} aria-hidden="true" /><span>Copy code</span></button>
+          <p class="pg-install" data-install></p>
+        </div>
       </div>
     </div>
   </section>
 
   <!-- Tracklist -->
   <section class="pg-panel" id="panel-list" role="tabpanel" aria-labelledby="tab-list" hidden>
+    <p class="pg-docs">
+      Docs:
+      <a href={doc("guides/tracklists/")}>Tracklists</a>
+      <a href={doc("guides/editing-tracklists/")}>Editing tracklists</a>
+      <a href={doc("reference/tracklist/")}>Tracklist API</a>
+      <a href={doc("reference/warnings/#tracklist-warnings")}>Warnings</a>
+    </p>
     <div class="pg-split pg-list">
       <div class="tp-card pg-box">
         <div class="pg-head">
@@ -207,6 +231,10 @@ const listExamples: { label: string; title: string; text: string }[] = [
           <div>
             <label class="tp-label" for="tl-audio">audioSeconds <span class="pg-hint">(length of the mix)</span></label>
             <input id="tl-audio" class="tp-input pg-num" type="number" min="0" placeholder="–" />
+          </div>
+          <div class="tp-grow">
+            <label class="tp-label" for="tl-known">knownArtists (comma-separated)</label>
+            <input id="tl-known" class="tp-input" type="text" spellcheck="false" autocomplete="off" placeholder="Chase & Status, Camo & Krooked" />
           </div>
         </div>
         <fieldset class="pg-edit">
@@ -254,6 +282,7 @@ const listExamples: { label: string; title: string; text: string }[] = [
           </div>
           <pre class="tp-json" id="tl-json" hidden></pre>
           <pre class="tp-json tp-code" id="tl-code" hidden></pre>
+          <p class="pg-install" id="tl-install" data-install hidden></p>
           <div class="pg-tablebox" id="tl-tablebox">
           <table class="tl-table">
             <thead>
@@ -347,6 +376,63 @@ const listExamples: { label: string; title: string; text: string }[] = [
   }
   .pg-head .tp-label {
     margin: 0;
+  }
+  /* Quiet links into the docs: one line per mode, and one beside the format options. */
+  .pg-docs,
+  .pg-install {
+    margin: 0;
+    font-size: 0.82rem;
+    line-height: 1.6;
+    color: var(--sl-color-gray-3);
+  }
+  .pg-docs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.1rem 0.9rem;
+  }
+  .pg-docs a,
+  .pg-doc,
+  .pg-install :global(a) {
+    color: var(--sl-color-gray-2);
+    text-decoration: underline;
+    text-decoration-color: var(--tp-border-strong);
+    text-underline-offset: 0.2em;
+  }
+  .pg-docs a:hover,
+  .pg-doc:hover,
+  .pg-install :global(a:hover) {
+    color: var(--sl-color-white);
+    text-decoration-color: var(--sl-color-accent);
+  }
+  .pg-doc {
+    font-size: 0.78rem;
+  }
+  .pg-foot {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 0.9rem;
+  }
+  .pg-install :global(code) {
+    font: 0.78rem var(--sl-font-mono);
+    color: var(--sl-color-gray-1);
+    background: var(--tp-code-bg);
+    padding: 0.1em 0.35em;
+    border-radius: 4px;
+    white-space: nowrap;
+  }
+  .pg-install {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.1rem 0.7rem;
+    min-width: 0;
+  }
+  .pg-install[hidden] {
+    display: none;
+  }
+  .pg-install :global(a) {
+    white-space: nowrap;
   }
   .pg-options select.tp-input {
     min-width: 8rem;
@@ -513,6 +599,12 @@ const listExamples: { label: string; title: string; text: string }[] = [
   :global(.tl-warning code) {
     font-size: 0.8rem;
   }
+  :global(.tl-warning a.tl-code) {
+    text-decoration-color: var(--tp-border-strong);
+  }
+  :global(.tl-warning a.tl-code:hover) {
+    text-decoration-color: var(--sl-color-accent);
+  }
   :global(.tl-ok) {
     margin: 0.5rem 0 0;
     color: var(--sl-color-gray-3);
@@ -522,11 +614,14 @@ const listExamples: { label: string; title: string; text: string }[] = [
 
 <script>
   import { format, parse, type ParseOptions } from "trackparse";
-  import { applyEdits, parseTracklist, type Edit, type Tracklist, type TracklistEntry } from "trackparse/tracklist";
+  import { applyEdits, parseTracklist, type Edit, type Tracklist, type TracklistEntry, type TracklistOptions } from "trackparse/tracklist";
   import { icon } from "../lib/icons";
-  import { chip, codeHtml, escapeHtml, fieldsHtml, highlight, jsonHtml, KIND_LABEL, roleKind, segmentsHtml, type Kind, type Lang } from "../lib/trackview";
+  import { getLang, PACKAGE, setLang, type Lang } from "../lib/lang";
+  import { chip, codeHtml, escapeHtml, fieldsHtml, highlight, jsonHtml, KIND_LABEL, roleKind, segmentsHtml, type Kind } from "../lib/trackview";
 
   const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
+  /** The site base (`/trackparse`), for links into the docs. */
+  const base = document.querySelector<HTMLElement>(".pg")?.dataset.base ?? "";
 
   // ---- tabs and URL state ------------------------------------------------------------------
   const tabs = { track: $("tab-track"), list: $("tab-list") };
@@ -567,6 +662,7 @@ const listExamples: { label: string; title: string; text: string }[] = [
       } else {
         params.set("list", tl.value);
         if (audio.value !== "") params.set("audioSeconds", audio.value);
+        if (tlKnown.value.trim()) params.set("known", tlKnown.value.trim());
       }
       // encodeURIComponent, not URLSearchParams.toString(): spaces stay %20 and `+` is %2B.
       const hash = `#${[...params].map(([k, v]) => `${k}=${encodeURIComponent(v)}`).join("&")}`;
@@ -597,7 +693,10 @@ const listExamples: { label: string; title: string; text: string }[] = [
       known.value = params.get("known") ?? "";
       uploader.value = params.get("uploader") ?? "";
     }
-    if (l !== null) audio.value = params.get("audioSeconds") ?? "";
+    if (l !== null) {
+      audio.value = params.get("audioSeconds") ?? "";
+      tlKnown.value = params.get("known") ?? "";
+    }
     if (t !== null || l !== null) {
       renderTrack();
       renderList();
@@ -633,7 +732,22 @@ const listExamples: { label: string; title: string; text: string }[] = [
   const feat = $<HTMLSelectElement>("pg-feat");
   const joiners = $<HTMLSelectElement>("pg-joiners");
   const versions = $<HTMLSelectElement>("pg-versions");
-  let lang: Lang = "js";
+  // The language of both code panels: the one last picked here, in the install switch on the
+  // landing page or in any code tab of the docs.
+  let lang: Lang = getLang();
+
+  /** The install line under a code panel, with links to the install guide and the registry. */
+  function showLang() {
+    for (const x of document.querySelectorAll<HTMLElement>("[data-lang]"))
+      x.setAttribute("aria-pressed", String(x.dataset.lang === lang));
+    const p = PACKAGE[lang];
+    const html =
+      `<span>Install: <code>${escapeHtml(p.install)}</code></span>` +
+      `<a href="${base}/start/getting-started/">Getting started</a>` +
+      `<a href="${p.url}">${p.registry}</a>` +
+      (lang === "rs" ? '<a href="https://docs.rs/trackparse">docs.rs</a>' : "");
+    for (const el of document.querySelectorAll<HTMLElement>("[data-install]")) el.innerHTML = html;
+  }
 
   // ---- Rust literals for the generated code -------------------------------------------------
   /** A Rust string literal. Control, invisible and bidi characters are written as `\u{…}`. */
@@ -742,7 +856,7 @@ const listExamples: { label: string; title: string; text: string }[] = [
     $("pg-line").innerHTML = segmentsHtml(segs) || '<span class="tp-gap">type a track name</span>';
     const kinds = [...new Set(segs.map((x) => x.kind).filter(Boolean))] as Kind[];
     $("pg-legend").innerHTML = kinds.map((k) => chip(KIND_LABEL[k], k)).join("");
-    $("pg-fields").innerHTML = fieldsHtml(track);
+    $("pg-fields").innerHTML = fieldsHtml(track, base);
     $("pg-json").innerHTML = jsonHtml(track);
     const f: Record<string, unknown> = {};
     if (feat.value !== "source") f.feat = feat.value;
@@ -769,8 +883,8 @@ const listExamples: { label: string; title: string; text: string }[] = [
   for (const b of document.querySelectorAll<HTMLButtonElement>("[data-lang]")) {
     b.addEventListener("click", () => {
       lang = b.dataset.lang as Lang;
-      for (const x of document.querySelectorAll<HTMLElement>("[data-lang]"))
-        x.setAttribute("aria-pressed", String(x.dataset.lang === lang));
+      setLang(lang);
+      showLang();
       renderTrack();
       renderList();
     });
@@ -779,6 +893,7 @@ const listExamples: { label: string; title: string; text: string }[] = [
   // ---- tracklist ---------------------------------------------------------------------------
   const tl = $<HTMLTextAreaElement>("tl-input");
   const audio = $<HTMLInputElement>("tl-audio");
+  const tlKnown = $<HTMLInputElement>("tl-known");
   const undoBtn = $<HTMLButtonElement>("tl-undo");
   const redoBtn = $<HTMLButtonElement>("tl-redo");
 
@@ -832,9 +947,13 @@ const listExamples: { label: string; title: string; text: string }[] = [
   let changed = new Set<number>();
 
 
-  function listOptions() {
+  function listOptions(): TracklistOptions {
+    const o: TracklistOptions = {};
     const n = Number(audio.value);
-    return audio.value !== "" && Number.isFinite(n) ? { audioSeconds: n } : {};
+    if (audio.value !== "" && Number.isFinite(n)) o.audioSeconds = n;
+    const names = tlKnown.value.split(",").map((s) => s.trim()).filter(Boolean);
+    if (names.length) o.knownArtists = names;
+    return o;
   }
 
   function row(e: TracklistEntry, warn: boolean): string {
@@ -893,17 +1012,21 @@ const listExamples: { label: string; title: string; text: string }[] = [
       text.includes("\r") || lines.length < 2
         ? q(text)
         : `${open}\n${lines.map((l) => `${indent}${q(l)},`).join("\n")}\n${close}`;
-    const audioSeconds = listOptions().audioSeconds;
+    const { audioSeconds, knownArtists } = listOptions();
+    const hasOptions = audioSeconds !== undefined || knownArtists !== undefined;
     const seconds = Number(($("tl-shift") as HTMLInputElement).value) || 0;
     const from = shiftFrom();
     const fix = list.warnings.find((w) => w.suggestion)?.suggestion;
     if (lang === "js") {
+      const jsOpts: string[] = [];
+      if (audioSeconds !== undefined) jsOpts.push(`audioSeconds: ${audioSeconds}`);
+      if (knownArtists) jsOpts.push(`knownArtists: [${knownArtists.map(q).join(", ")}]`);
       const out = [
         'import { applyEdits, parseTracklist } from "trackparse/tracklist";',
         "",
         `const text = ${literal("  ", "[", '].join("\\n")')};`,
         "",
-        `const list = parseTracklist(text${audioSeconds !== undefined ? `, { audioSeconds: ${audioSeconds} }` : ""});`,
+        `const list = parseTracklist(text${hasOptions ? `, { ${jsOpts.join(", ")} }` : ""});`,
         "list.entries;   // one entry per line",
         "list.warnings;  // the checks, with line numbers",
         "",
@@ -917,13 +1040,16 @@ const listExamples: { label: string; title: string; text: string }[] = [
       // A whole program. A list without CR line endings is an array of lines joined into a String.
       const joined = !(text.includes("\r") || lines.length < 2);
       const t = joined ? "&text" : "text";
-      const names = ["apply_edits", "Edit", audioSeconds !== undefined ? "parse_tracklist_with" : "parse_tracklist"];
-      if (audioSeconds !== undefined) names.push("TracklistOptions");
+      const names = ["apply_edits", "Edit", hasOptions ? "parse_tracklist_with" : "parse_tracklist"];
+      if (hasOptions) names.push("TracklistOptions");
+      let rsOpts = "";
+      if (audioSeconds !== undefined) rsOpts += `.audio_seconds(${rsNum(audioSeconds)})`;
+      if (knownArtists) rsOpts += `.known_artists([${knownArtists.map(rsStr).join(", ")}])`;
       const body = [
         joined ? `let text = [\n${lines.map((l) => `        ${rsStr(l)},`).join("\n")}\n    ]\n    .join("\\n");` : `let text = ${rsStr(text)};`,
         "",
-        audioSeconds !== undefined
-          ? `let options = TracklistOptions::new().audio_seconds(${rsNum(audioSeconds)});\n    let list = parse_tracklist_with(${t}, &options);`
+        hasOptions
+          ? `let options = TracklistOptions::new()${rsOpts};\n    let list = parse_tracklist_with(${t}, &options);`
           : `let list = parse_tracklist(${t});`,
         'println!("{:#?}", list.entries);   // one entry per line',
         'println!("{:#?}", list.warnings);  // the checks, with line numbers',
@@ -935,12 +1061,15 @@ const listExamples: { label: string; title: string; text: string }[] = [
       body.push(`println!("{}\\n\\n{}${fix ? "\\n\\n{}" : ""}", shifted.text, sorted.text${fix ? ", fixed.text" : ""});`);
       return `${rsUse("trackparse::tracklist", names)}\n\nfn main() {\n${body.map((l) => (l ? `    ${l}` : "")).join("\n")}\n}`;
     }
+    const pyOpts =
+      (audioSeconds !== undefined ? `, audio_seconds=${audioSeconds}` : "") +
+      (knownArtists ? `, known_artists=[${knownArtists.map(q).join(", ")}]` : "");
     const out = [
       "from trackparse.tracklist import apply_edits, parse_tracklist",
       "",
       `text = ${literal("    ", '"\\n".join([', "])")}`,
       "",
-      `tl = parse_tracklist(text${audioSeconds !== undefined ? `, audio_seconds=${audioSeconds}` : ""})`,
+      `tl = parse_tracklist(text${pyOpts})`,
       "tl.entries   # one entry per line",
       "tl.warnings  # the checks, with line numbers",
       "",
@@ -957,6 +1086,7 @@ const listExamples: { label: string; title: string; text: string }[] = [
     $("tl-json").hidden = view !== "json";
     $("tl-code").hidden = view !== "code";
     $("tl-lang").hidden = view !== "code";
+    $("tl-install").hidden = view !== "code";
     $("tl-copy-out").hidden = view === "table";
   }
 
@@ -989,7 +1119,9 @@ const listExamples: { label: string; title: string; text: string }[] = [
             const fix = w.suggestion
               ? ` <button type="button" class="tp-btn small primary" data-fix="${i}">${icon.fix} Set line ${w.suggestion.line} to ${escapeHtml(w.suggestion.raw)}</button>`
               : "";
-            return `<div class="tl-warning ${w.severity}">${w.severity === "info" ? icon.info : icon.warning}<a href="#tl-line-${w.line}" data-line="${w.line}">line ${w.line}</a> <code>${w.code}</code>${fix}</div>`;
+            // The code links to its row in the warnings reference (a text fragment finds the row).
+            const ref = `${base}/reference/warnings/#tracklist-warnings:~:text=${encodeURIComponent(w.code).replaceAll("-", "%2D")}`;
+            return `<div class="tl-warning ${w.severity}">${w.severity === "info" ? icon.info : icon.warning}<a href="#tl-line-${w.line}" data-line="${w.line}">line ${w.line}</a> <a class="tl-code" href="${ref}" title="What ${w.code} means"><code>${w.code}</code></a>${fix}</div>`;
           })
           .join("")
       :  `<p class="tl-ok">${st.timed > 1 ? "No warnings. Times are in order." : "No warnings."}</p>`;
@@ -1050,6 +1182,7 @@ const listExamples: { label: string; title: string; text: string }[] = [
     else typing = window.setTimeout(renderList, 250);
   });
   audio.addEventListener("input", renderList);
+  tlKnown.addEventListener("input", renderList);
   $("tl-do-shift").addEventListener("click", () => {
     const seconds = Number(($("tl-shift") as HTMLInputElement).value);
     const from = shiftFrom();
@@ -1070,6 +1203,7 @@ const listExamples: { label: string; title: string; text: string }[] = [
   function loadSample(text: string | undefined, label = "example") {
     setText(text ?? "", `Load ${label}`);
     audio.value = "";
+    tlKnown.value = "";
     // Keep "from line" inside the new list, so Shift and the generated code stay valid.
     const fromEl = $<HTMLInputElement>("tl-from");
     if (Number(fromEl.value) > lineCount()) fromEl.value = String(Math.min(2, lineCount()));
@@ -1102,6 +1236,7 @@ const listExamples: { label: string; title: string; text: string }[] = [
   // ---- start -------------------------------------------------------------------------------
   input.value = document.querySelector<HTMLButtonElement>("[data-example]")?.dataset.example ?? "";
   tl.value = tl.dataset.sample ?? "";
+  showLang();
   const params = loadHash();
   if (!params.has("track") && !params.has("list")) {
     renderTrack();

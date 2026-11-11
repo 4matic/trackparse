@@ -110,7 +110,8 @@ site/                     documentation site + playground (Astro + Starlight, Gi
   src/content/docs/       the pages (Markdown/MDX, JS + Python + Rust tabs on every example);
                           reference/spec.md is generated from spec/SPEC.md
   src/components/         HeroDemo, Playground (runs js/ in the browser), Feature, Stats
-  src/lib/                trackview.ts (highlight + field rendering), icons.ts (Lucide SVG strings)
+  src/lib/                trackview.ts (highlight + field rendering), icons.ts (Lucide SVG strings),
+                          lang.ts (one language choice for docs tabs, install switch, playground)
   scripts/sync-spec.mjs   copies spec/SPEC.md into the docs at build time
 scripts/compare-ports.mjs every fixture through js/dist, the Python port and the Rust crate, diffs
                           the full outputs (parseTracklist and applyEdits included);

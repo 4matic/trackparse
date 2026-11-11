@@ -7,6 +7,10 @@ Every row below is a real result of `parse(input)` with default options, except 
 *youtube*. Click an input to open it in the [playground](/trackparse/playground/) and see the full
 output.
 
+The results are the same in JavaScript, Python and Rust, because all three follow one
+[spec](/trackparse/reference/spec/). The values are shown as they appear in JSON: `remix`, `bySplit`.
+In Rust they are enum variants such as `VersionType::Remix` and `Warning::BySplit`.
+
 | Input | Artists | Title | Versions and other fields |
 |---|---|---|---|
 | [`Noisia feat. Foreign Beggars - Shellshock`](/trackparse/playground/#track=Noisia%20feat.%20Foreign%20Beggars%20-%20Shellshock) | Noisia, Foreign Beggars *(feat)* | `Shellshock` |  |
@@ -29,8 +33,8 @@ output.
 | [`01. Aphex Twin - Xtal`](/trackparse/playground/#track=01.%20Aphex%20Twin%20-%20Xtal) | Aphex Twin | `Xtal` | position 1 |
 | [`[12:34] Noisia - Stigma`](/trackparse/playground/#track=%5B12%3A34%5D%20Noisia%20-%20Stigma) | Noisia | `Stigma` | timestamp 754 s |
 | [`07_Burial_-_Archangel.mp3`](/trackparse/playground/#track=07_Burial_-_Archangel.mp3) | Burial | `Archangel` | filename mode, position 7 |
-| [`"Numb" by Linkin Park`](/trackparse/playground/#track=%22Numb%22%20by%20Linkin%20Park&mode=youtube) *(youtube)* | Linkin Park | `Numb` | ⚠ bySplit |
-| [`Blink-182-All The Small Things`](/trackparse/playground/#track=Blink-182-All%20The%20Small%20Things&mode=youtube) *(youtube)* | Blink-182 | `All The Small Things` | ⚠ unspacedDashSplit |
+| [`"Numb" by Linkin Park`](/trackparse/playground/#track=%22Numb%22%20by%20Linkin%20Park&mode=youtube) *(youtube)* | Linkin Park | `Numb` | warning [`bySplit`](/trackparse/reference/warnings/#track-warnings) |
+| [`Blink-182-All The Small Things`](/trackparse/playground/#track=Blink-182-All%20The%20Small%20Things&mode=youtube) *(youtube)* | Blink-182 | `All The Small Things` | warning [`unspacedDashSplit`](/trackparse/reference/warnings/#track-warnings) |
 | [`Кино - Группа крови (Remastered 2019)`](/trackparse/playground/#track=%D0%9A%D0%B8%D0%BD%D0%BE%20-%20%D0%93%D1%80%D1%83%D0%BF%D0%BF%D0%B0%20%D0%BA%D1%80%D0%BE%D0%B2%D0%B8%20%28Remastered%202019%29) | Кино | `Группа крови` | remaster, 2019 |
 | [`ID - ID (ID Remix)`](/trackparse/playground/#track=ID%20-%20ID%20%28ID%20Remix%29) |  | `ID` | unknown artist, title and remixer |
 | [`AC/DC - Back In Black`](/trackparse/playground/#track=AC%2FDC%20-%20Back%20In%20Black) | AC/DC | `Back In Black` |  |
@@ -43,25 +47,29 @@ A few of these deserve a comment.
 **`2 Unlimited` is not track 2.** A leading number only counts as a track number when it's written
 like one: `01.` or `1)`, a zero-padded `01 `, `3 - Artist - Title`, or `07_` in a file name. A plain
 `2 ` in front of a word is part of the name, which is what you want for `2 Unlimited`, `50 Cent` and
-`808 State`.
+`808 State`. The rule is [R4](/trackparse/reference/spec/#r4-prefixes-timestamp-and-position), and
+[Track numbers](/trackparse/guides/junk-and-flags/#track-numbers) has more examples.
 
 **`Mumford & Sons` stays whole.** `&` is a joiner, but `& Sons`, `& Co.` or `& His Orchestra`
-never start a second artist. `& The` does split, on purpose: `Noisia & The Upbeats` really is two
+never start a second artist. `& The` does split, on purpose: `Noisia & The Upbeats` is two
 acts. `Chase & Status` splits too, because nothing in the string tells it apart from two artists.
-Names like that go in `knownArtists`.
+Names like that go in [`knownArtists`](/trackparse/guides/artists/#knownartists) (`known_artists` in
+Python and Rust).
 
 **The Rolling Stones keep their brackets.** `(I Can't Get No)` is not a version, a feat or junk, so
-it stays in the title. That's the rule: anything unrecognised is left alone.
+it stays in the title. That's the rule: anything unrecognized is left alone.
 
 **Two rows needed `mode: "youtube"`.** `"Numb" by Linkin Park` and `Blink-182-All The Small Things`
 are fine guesses on YouTube and bad ones in a music library, so the default `clean` mode won't make
-them. In `youtube` mode it does, and it tells you through `warnings`. See [Modes](/trackparse/guides/modes/).
+them. In `youtube` mode it does, and it tells you through `warnings`. In Python the option is
+`mode="youtube"`, in Rust `ParseOptions::new().mode(ModeOption::Youtube)`. See
+[Modes](/trackparse/guides/modes/#youtube-mode) and [Warnings](/trackparse/reference/warnings/).
 
 ## In a tracklist
 
 Lines of a pasted tracklist go through
-[`parseTracklist`](/trackparse/guides/tracklists/), which also reads list bullets, Markdown
-emphasis and `w/` lines. Each input below is one line; click it to open it in the playground's
+[`parseTracklist`](/trackparse/guides/tracklists/) (`parse_tracklist` in Python and Rust), which
+also reads list bullets, Markdown emphasis and `w/` lines. Each input below is one line; click it to open it in the playground's
 tracklist tab.
 
 | Line | Artists | Title | Other fields |
@@ -77,3 +85,9 @@ tracklist tab.
 - [Artists and credits](/trackparse/guides/artists/): joiners, features, producers, `knownArtists`.
 - [Versions and remixes](/trackparse/guides/versions/): the 27 types and how they're read.
 - [Junk, flags and prefixes](/trackparse/guides/junk-and-flags/): noise, years, track numbers, cue times.
+- [Modes](/trackparse/guides/modes/): what changes for YouTube titles, file names and tracklist lines.
+- [Formatting](/trackparse/guides/formatting/): writing a parsed track back as a string.
+- [Tracklists](/trackparse/guides/tracklists/) and
+  [Editing tracklists](/trackparse/guides/editing-tracklists/): whole lists with times.
+
+For the exact shape of the result, see [`parse` and `ParsedTrack`](/trackparse/reference/parse/).

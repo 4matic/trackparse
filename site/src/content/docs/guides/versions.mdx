@@ -65,7 +65,8 @@ put back, in their original brackets.
 
 In Rust the type is the field `version_type`, because `type` is a reserved word, and its values are
 enum variants (`VersionType::Remix`, `VersionType::SpedUp`). `as_str()` gives the names used on this
-page (`"remix"`, `"spedUp"`), and so does `Display`.
+page (`"remix"`, `"spedUp"`), and so does `Display`. `modifiers` holds those names as strings.
+`delimiter` is the enum `VersionDelimiter`: `Paren`, `Square`, `Curly` or `Dash`.
 
 ## The 27 types
 
@@ -78,10 +79,14 @@ page (`"remix"`, `"spedUp"`), and so does `Display`.
 
 The keywords behind them are in
 [`version-keywords.json`](https://github.com/4matic/trackparse/blob/main/spec/data/version-keywords.json).
+In Rust, `VersionType::ALL` lists the 27 variants and `VersionType::from_name("spedUp")` reads a
+name back.
 
 ## Generic words borrow their meaning
 
-"Mix", "Edit" and "Version" don't say much on their own. trackparse looks at the word in front:
+"Mix", "Edit" and "Version" don't say much on their own. trackparse looks at the word in front
+([R5](/trackparse/reference/spec/#r5-group-classification) in the spec). Click an input to open it
+in the playground:
 
 | Input | `type` | Why |
 |---|---|---|
@@ -95,6 +100,8 @@ The keywords behind them are in
 <TabItem label="JavaScript">
 
 ```js
+import { parse } from "trackparse";
+
 parse("Pendulum - Watercolour (Extended VIP Mix)").versions[0];
 // { type: 'vip', raw: 'Extended VIP Mix', artists: [], modifiers: [ 'extended' ],
 //   descriptor: null, year: null, unknownArtist: false, delimiter: '(' }
@@ -104,6 +111,8 @@ parse("Pendulum - Watercolour (Extended VIP Mix)").versions[0];
 <TabItem label="Python">
 
 ```python
+from trackparse import parse
+
 parse("Pendulum - Watercolour (Extended VIP Mix)").versions[0]
 # Version(type='vip', raw='Extended VIP Mix', artists=(), modifiers=('extended',),
 #         descriptor=None, year=None, unknown_artist=False, delimiter='(')
@@ -113,7 +122,9 @@ parse("Pendulum - Watercolour (Extended VIP Mix)").versions[0]
 <TabItem label="Rust">
 
 ```rust
-parse("Pendulum - Watercolour (Extended VIP Mix)").versions[0];
+use trackparse::parse;
+
+&parse("Pendulum - Watercolour (Extended VIP Mix)").versions[0];
 // Version { version_type: Vip, raw: "Extended VIP Mix", artists: [], modifiers: ["extended"],
 //           descriptor: None, year: None, unknown_artist: false, delimiter: Paren }
 ```
@@ -165,8 +176,8 @@ parse("Dimension - Offshore (Mefjus Remix / Noisia Remix)")
 
 ## Dash suffixes
 
-Streaming services love writing versions after a second dash. Those are read too, and the
-delimiter is `-`:
+Streaming services often write versions after a second dash. Those are read too, and the
+delimiter is `-` (`VersionDelimiter::Dash` in Rust):
 
 <Tabs syncKey="lang">
 <TabItem label="JavaScript">
@@ -191,24 +202,27 @@ t.versions[0]  # Version(type='remaster', raw='Remastered 2015', ..., year=2015,
 
 ```rust
 let t = parse("The Beatles - Hey Jude - Remastered 2015");
-t.title;        // "Hey Jude"
-t.versions[0];  // Version { version_type: Remaster, raw: "Remastered 2015", year: Some(2015), delimiter: Dash, .. }
+&t.title;        // "Hey Jude"
+&t.versions[0];  // Version { version_type: Remaster, raw: "Remastered 2015", year: Some(2015), delimiter: Dash, .. }
 ```
 
 </TabItem>
 </Tabs>
 
-A dash suffix that isn't a version stays in the title. In a [tracklist](/trackparse/guides/tracklists/#tracklist-mode)
-the rule is stricter, because there the first dash is almost always the separator.
+A dash suffix that isn't a version stays in the title. In a
+[tracklist](/trackparse/guides/tracklists/#tracklist-mode) the rule is stricter, because there the
+first dash is almost always the separator. The suffix rules are part of
+[R6](/trackparse/reference/spec/#r6-artisttitle-separator).
 
 ## Unknown remixers
 
 `(ID Remix)` is a remix by someone not yet announced. You get the version with
-`unknownArtist: true` (`unknown_artist`) and no artists, rather than an artist called "ID".
+`unknownArtist: true` (`unknown_artist` in Python and Rust) and no artists. There is no artist
+called "ID". [Unknown artists](/trackparse/guides/artists/#unknown-artists) has an example.
 
 ## Your own words
 
-If your catalogue uses a word trackparse doesn't know, add it with `keywords.versionHeads` (`version_heads` in Python, `KeywordOptions::version_head` in Rust):
+If your catalog uses a word trackparse doesn't know, add it with `keywords.versionHeads` (`version_heads` in Python, `KeywordOptions::version_head` in Rust):
 
 <Tabs syncKey="lang">
 <TabItem label="JavaScript">
@@ -247,4 +261,13 @@ parser.parse("Chase & Status x Camo & Krooked - Track (Alix Perez Rerub)").versi
 </TabItem>
 </Tabs>
 
-Keywords only add to the built-in vocabulary. They can't remove words. See [Options](/trackparse/reference/options/#keywords).
+Keywords only add to the built-in vocabulary. They can't remove words. See
+[Options](/trackparse/reference/options/#keywords).
+
+## See also
+
+- [`Version` in the reference](/trackparse/reference/parse/#version) for the field list.
+- [Artists and credits](/trackparse/guides/artists/) for the credits outside versions.
+- [Formatting](/trackparse/guides/formatting/) to write versions back, or leave them out.
+- [`allArtists`](/trackparse/reference/functions/#allartiststrack) to get artists and remixers in
+  one list.

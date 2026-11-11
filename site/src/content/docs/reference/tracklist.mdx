@@ -30,12 +30,20 @@ use trackparse::tracklist::{apply_edits, parse_tracklist, Edit};
 </TabItem>
 </Tabs>
 
-Neither function throws on string input. In Python the results are frozen dataclasses with
-snake_case attributes (`spec_version`, `first_time`) and a `to_dict()` that returns the spec's JSON;
-edits are plain dicts with the same keys as in JavaScript, `"from"` included. In Rust the results
-are structs with public snake_case fields and `to_json()`, edits are values of the `Edit` enum
-(listed under [Types](#types)), and nothing panics. The guides [Tracklists](/trackparse/guides/tracklists/)
-and [Editing tracklists](/trackparse/guides/editing-tracklists/) walk through examples.
+Neither function fails on string input. What to know for each language:
+
+- **JavaScript.** The functions live in the entry `trackparse/tracklist`, so code that only uses
+  `parse` never loads them. Results are plain objects, and `JSON.stringify` gives the spec's JSON.
+- **Python.** Results are frozen dataclasses with snake_case attributes (`spec_version`,
+  `first_time`) and a `to_dict()` that returns the spec's JSON shape. Edits are plain dicts with the
+  same keys as in JavaScript, `"from"` included. A `text` that isn't a `str` raises `TypeError`.
+- **Rust.** Results are structs with public snake_case fields and `to_json()`. Edits are values of
+  the `Edit` enum (listed under [Types](#types)). Options go through the `_with` functions, and
+  nothing panics.
+
+The guides [Tracklists](/trackparse/guides/tracklists/) and
+[Editing tracklists](/trackparse/guides/editing-tracklists/) walk through examples. The rules are
+[R13](/trackparse/reference/spec/#r13-tracklists) in the spec.
 
 ## parseTracklist(text, options?)
 
@@ -84,15 +92,17 @@ pub struct Tracklist {
 
 ### TracklistEntry
 
-One per line, in order. In Rust, `line` is a `usize`, `kind` and `eol` are the enums `EntryKind` and
-`Eol` (`as_str()` gives the strings below), and `time.seconds` is an `f64`.
+One per line, in order. The table uses the JavaScript and JSON types. Python has `None` for
+`null`. In Rust, `line` is a `usize`, `kind` and `eol` are the enums `EntryKind` and `Eol`
+(`as_str()` gives the strings below), `time` is an `Option<TimeValue>` whose `seconds` is an `f64`,
+and `track` is an `Option<ParsedTrack>`.
 
 | Field | Type | Description |
 |---|---|---|
 | `line` | `number` | 1-based |
 | `kind` | `"track" \| "marker" \| "header" \| "link" \| "note" \| "blank"` | See [line kinds](/trackparse/guides/tracklists/#line-kinds) |
 | `eol` | `"\n" \| "\r\n" \| "\r" \| ""` | The line's own terminator. `""` on a last line without one |
-| `raw` | `string` | The line exactly as written, never normalised |
+| `raw` | `string` | The line exactly as written, never normalized |
 | `parts` | `{ lead, time, gap, rest }` | `raw` cut into four strings that join back into it |
 | `time` | `{ raw, seconds } \| null` | The start time |
 | `track` | `ParsedTrack \| null` | Parsed from `rest` in tracklist mode, without its [Markdown emphasis](/trackparse/guides/tracklists/#markdown), a leading `w/` and a bare track number. Only `track` and `marker` lines have one |
@@ -143,6 +153,9 @@ here.
 | `timed` | entries with a time |
 | `firstTime`, `lastTime` | seconds of the first and last time, or `null` |
 
+Python and Rust call the last two `first_time` and `last_time`. In Rust the counts are `usize` and
+the two times are `Option<f64>`.
+
 ## applyEdits(text, edits, options?)
 
 *(Python: `apply_edits`. Rust: `apply_edits(text, &edits)` and `apply_edits_with(text, &edits, &options)`)*
@@ -155,19 +168,28 @@ Returns `{ text, changed, warnings }` (Python and Rust: an `EditResult`).
 | `changed` | final line numbers of every line an edit wrote, ascending |
 | `warnings` | `{ code, edit, line }[]`: `edit` is the index in `edits`, `line` may be `null` |
 
+In Rust, `changed` is a `Vec<usize>` and each warning is an
+`EditWarning { code: EditWarningCode, edit: usize, line: Option<usize> }`.
+
 ### Edits
 
-| Edit | Effect |
-|---|---|
-| `{ op: "set-time", line, seconds }` | Rewrite the time on that line |
-| `{ op: "shift", seconds, lines?, from? }` | Add `seconds` to the listed lines, to every timed line from `from` on, or to all of them |
-| `{ op: "sort-by-time" }` | Stable sort by time. Untimed lines move with the timed line above them |
-| `{ op: "set-rest", line, rest }` | Replace everything after the time |
-| `{ op: "insert", after, text }` | Insert a line after `after` (`0` = at the top) |
-| `{ op: "delete", line }` | Remove a line |
+| JavaScript and Python | Rust | Effect |
+|---|---|---|
+| `{ op: "set-time", line, seconds }` | `Edit::set_time(line, seconds)` | Rewrite the time on that line |
+| `{ op: "shift", seconds }` | `Edit::shift(seconds)` | Add `seconds` to every timed line |
+| `{ op: "shift", seconds, from }` | `Edit::shift_from(seconds, from)` | Add `seconds` to every timed line from `from` on |
+| `{ op: "shift", seconds, lines }` | `Edit::shift_lines(seconds, lines)` | Add `seconds` to the listed lines |
+| `{ op: "sort-by-time" }` | `Edit::sort_by_time()` | Stable sort by time. Untimed lines move with the timed line above them |
+| `{ op: "set-rest", line, rest }` | `Edit::set_rest(line, rest)` | Replace everything after the time |
+| `{ op: "insert", after, text }` | `Edit::insert(after, text)` | Insert a line after `after` (`0` = at the top) |
+| `{ op: "delete", line }` | `Edit::delete(line)` | Remove a line |
+
+In Python an edit is a dict with quoted keys: `{"op": "shift", "seconds": 45, "from": 5}`. With the
+`serde` feature, the Rust `Edit` reads and writes that same JSON.
 
 Edits run in sequence, each on the result of the one before. Times are written in their line's
 style, up to 100 hours (or 999 minutes for lists that never use hours).
+[Editing tracklists](/trackparse/guides/editing-tracklists/) has examples of each edit.
 
 ### Edit warnings
 
@@ -177,21 +199,25 @@ style, up to 100 hours (or 999 minutes for lists that never use hours).
 | `time-clamped` | a time would go below zero and was set to zero |
 | `edit-invalid` | the edit could not apply and changed nothing |
 
+In Rust the codes are `EditWarningCode::StyleUpgraded`, `TimeClamped` and `EditInvalid`.
+[Warnings](/trackparse/reference/warnings/#edit-warnings) shows how to check them.
+
 ## Options
 
 Both functions take the same options. `applyEdits` accepts them for symmetry; edits don't depend on
 them.
 
-| Option | Default | Description |
-|---|---|---|
-| `mode` | `"tracklist"` | Mode for each line's `parse()` |
-| `knownArtists`, `splitAnd`, `keywords` | | As for [`parse()`](/trackparse/reference/options/) |
-| `audioSeconds` | – | Length of the audio. Enables `time-after-audio-end` |
-| `markerWords` | `[]` | Extra marker words |
+| JavaScript | Python and Rust | Default | Description |
+|---|---|---|---|
+| `mode` | `mode` | `"tracklist"` | Mode for each line's `parse()` |
+| `knownArtists`, `splitAnd`, `keywords` | `known_artists`, `split_and`, `keywords` | as for `parse` | As for [`parse()`](/trackparse/reference/options/) |
+| `audioSeconds` | `audio_seconds` | none | Length of the audio. Enables `time-after-audio-end` |
+| `markerWords` | `marker_words` | empty | Extra marker words |
 
-Python uses keyword arguments: `mode`, `known_artists`, `split_and`, `keywords`, `audio_seconds`,
-`marker_words`. Rust has a setter of the same name for each on `TracklistOptions`, for example
-`TracklistOptions::new().audio_seconds(3600.0).marker_words(["drop"])`.
+Python uses keyword arguments. Rust has a setter of the same name for each on `TracklistOptions`,
+for example `TracklistOptions::new().audio_seconds(3600.0).marker_words(["drop"])`, and passes it
+to `parse_tracklist_with` or `apply_edits_with`.
+[Tracklists](/trackparse/guides/tracklists/#options) has a full example.
 
 ## Types
 
@@ -239,3 +265,14 @@ Each variant has a constructor: `Edit::set_time(line, seconds)`, `Edit::shift(se
 
 The JSON Schema is
 [`tracklist.schema.json`](https://github.com/4matic/trackparse/blob/main/spec/schema/tracklist.schema.json).
+The Rust items are also on
+[docs.rs](https://docs.rs/trackparse/latest/trackparse/tracklist/).
+
+## See also
+
+- [Tracklists](/trackparse/guides/tracklists/) and
+  [Editing tracklists](/trackparse/guides/editing-tracklists/): the guides.
+- [Warnings](/trackparse/reference/warnings/#tracklist-warnings): every code, and suggestions.
+- [`parse` and `ParsedTrack`](/trackparse/reference/parse/): the type of each entry's `track`, and
+  [serializing to JSON](/trackparse/reference/parse/#serializing-to-json).
+- [Options](/trackparse/reference/options/): the options shared with `parse`.

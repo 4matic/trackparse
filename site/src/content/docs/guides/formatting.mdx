@@ -5,9 +5,10 @@ description: Turn a ParsedTrack back into a string, in the style you want.
 
 import { Tabs, TabItem } from "@astrojs/starlight/components";
 
-`format(track, options?)` (`format_track(track, **options)` in Python, `format_track(&track)` and
-`format_track_with(&track, &options)` in Rust) renders a parsed track back to a string. Use it to normalise a messy
-library to one style, or to build a display title without the junk.
+`format(track, options?)` renders a parsed track back to a string. In Python it is
+`format_track(track, **options)`. In Rust it is `format_track(&track)`, or
+`format_track_with(&track, &options)` with options. Use it to bring a messy library to one style,
+or to build a display title without the junk.
 
 <Tabs syncKey="lang">
 <TabItem label="JavaScript">
@@ -62,10 +63,22 @@ Junk is never written back. Everything else is, by default, the way it was writt
 |---|---|---|
 | `feat` | `"source"` keep features where they were, `"artist"` move them left of the dash, `"title"` move them into the title, `"omit"` drop them | `"source"` |
 | `featMarker` | the word to write before features | the one from the input |
-| `joiners` | `"original"` as written, `"canonical"` normalised (`and` → `&`, `;` → `,`, `ft.` → `feat.`) | `"original"` |
+| `joiners` | `"original"` as written, `"canonical"` normalized (`and` → `&`, `;` → `,`, `ft.` → `feat.`) | `"original"` |
 | `versions` | `"all"` or `"none"` | `"all"` |
 | `producers` | write `(prod. by …)` credits | `true` |
 | `position` | write the track number back | `false` |
+
+Python takes the options as keyword arguments, so `featMarker` is `feat_marker`. Rust takes a
+`FormatOptions` value built with one setter per option, and the values are enums:
+
+| Option | Python | Rust |
+|---|---|---|
+| `feat` | `feat="title"` | `.feat(FeatPlacement::Title)`: `Source`, `Artist`, `Title`, `Omit` |
+| `featMarker` | `feat_marker="featuring"` | `.feat_marker("featuring")` |
+| `joiners` | `joiners="canonical"` | `.joiners(JoinerStyle::Canonical)`: `Original`, `Canonical` |
+| `versions` | `versions="none"` | `.versions(VersionsOption::None)`: `All`, `None` |
+| `producers` | `producers=False` | `.producers(false)` |
+| `position` | `position=True` | `.position(true)` |
 
 <Tabs syncKey="lang">
 <TabItem label="JavaScript">
@@ -141,15 +154,12 @@ format_track_with(
 </TabItem>
 </Tabs>
 
-Python takes the options as keyword arguments, so `featMarker` is `feat_marker`. Rust takes a
-`FormatOptions` value built with one setter per option, with enums for the values (`FeatPlacement`,
-`JoinerStyle`, `VersionsOption`).
-
 ## Round trip
 
 Parsing the formatted string gives back the same artist names and roles, the same title and the
 same version types and remixers, as long as the first parse raised no warnings. The spec makes this
-an invariant (R11.6), and the property tests check it on generated input:
+an invariant (R11.6, under [R11](/trackparse/reference/spec/#r11-format)), and the
+[property tests](/trackparse/project/testing/#properties) check it on generated input:
 
 <Tabs syncKey="lang">
 <TabItem label="JavaScript">
@@ -169,11 +179,19 @@ parse(format_track(parse(s)))  # same artists, title and versions as parse(s)
 <TabItem label="Rust">
 
 ```rust
-parse(&format_track(&parse(s)))  // same artists, title and versions as parse(s)
+parse(&format_track(&parse(s)));  // same artists, title and versions as parse(s)
 ```
 
 </TabItem>
 </Tabs>
 
-The [playground](/trackparse/playground/) has a `format()` panel if you want to try the options on
-your own strings.
+The [playground](/trackparse/playground/#track=01.%20Wilkinson%20ft.%20Becky%20Hill%20%26%20Tom%20Cane%20-%20Afterglow%20%28Sub%20Focus%20VIP%20Remix%29%20%5BOfficial%20Video%5D)
+has a `format()` panel if you want to try the options on this track or your own strings.
+
+## See also
+
+- [`format` in the reference](/trackparse/reference/functions/#formattrack-options).
+- [Editing tracklists](/trackparse/guides/editing-tracklists/#the-edits) uses `format` to rewrite
+  the track text of a line.
+- [Artists and credits](/trackparse/guides/artists/) and
+  [Versions and remixes](/trackparse/guides/versions/) explain the parts that get written.
