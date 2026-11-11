@@ -259,8 +259,8 @@ jobs:
       - name: Resolve the release tag
         id: tag
         env:
-          RELEASED_TAG: ${{ steps.tag.outputs.tag }}
-          RELEASED_VERSION: ${{ steps.tag.outputs.version }}
+          RELEASED_TAG: ${{ needs.release-please.outputs.rust_tag_name }}
+          RELEASED_VERSION: ${{ needs.release-please.outputs.rust_version }}
           INPUT_TAG: ${{ inputs.rust_tag }}
         run: |
           if [ -n "$INPUT_TAG" ]; then
