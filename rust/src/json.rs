@@ -153,7 +153,10 @@ impl Reader<'_> {
 
     fn eat(&mut self, word: &str) -> bool {
         let n = word.chars().count();
-        let ok = self.chars.get(self.at..self.at + n).is_some_and(|s| s.iter().copied().eq(word.chars()));
+        let ok = self
+            .chars
+            .get(self.at..self.at + n)
+            .is_some_and(|s| s.iter().copied().eq(word.chars()));
         if ok {
             self.at += n;
         }

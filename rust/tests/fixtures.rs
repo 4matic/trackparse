@@ -19,7 +19,8 @@ fn spec_dir() -> PathBuf {
 }
 
 fn walk(dir: &Path, out: &mut Vec<PathBuf>) {
-    let mut entries: Vec<PathBuf> = std::fs::read_dir(dir).unwrap().map(|e| e.unwrap().path()).collect();
+    let mut entries: Vec<PathBuf> =
+        std::fs::read_dir(dir).unwrap().map(|e| e.unwrap().path()).collect();
     entries.sort();
     for p in entries {
         if p.is_dir() {
@@ -38,16 +39,26 @@ fn show(v: &Value) -> String {
 fn match_partial(expected: &Value, actual: &Value, path: &str) -> Option<String> {
     match expected {
         Value::Array(e) => {
-            let Value::Array(a) = actual else { return Some(format!("{path}: expected an array, got {}", show(actual))) };
+            let Value::Array(a) = actual else {
+                return Some(format!("{path}: expected an array, got {}", show(actual)));
+            };
             if a.len() != e.len() {
-                return Some(format!("{path}: expected {} items, got {}: {}", e.len(), a.len(), show(actual)));
+                return Some(format!(
+                    "{path}: expected {} items, got {}: {}",
+                    e.len(),
+                    a.len(),
+                    show(actual)
+                ));
             }
             for (i, (ev, av)) in e.iter().zip(a).enumerate() {
                 // Rule 4: artist shorthand.
                 if let (Value::String(name), Value::Object(o)) = (ev, av) {
                     if let Some(actual_name) = o.get("name") {
                         if actual_name != ev {
-                            return Some(format!("{path}[{i}].name: expected {name:?}, got {}", show(actual_name)));
+                            return Some(format!(
+                                "{path}[{i}].name: expected {name:?}, got {}",
+                                show(actual_name)
+                            ));
                         }
                         continue;
                     }
@@ -59,7 +70,9 @@ fn match_partial(expected: &Value, actual: &Value, path: &str) -> Option<String>
             None
         }
         Value::Object(e) => {
-            let Value::Object(a) = actual else { return Some(format!("{path}: expected an object, got {}", show(actual))) };
+            let Value::Object(a) = actual else {
+                return Some(format!("{path}: expected an object, got {}", show(actual)));
+            };
             for (k, ev) in e {
                 let Some(av) = a.get(k) else { return Some(format!("{path}.{k}: missing")) };
                 if let Some(d) = match_partial(ev, av, &format!("{path}.{k}")) {
@@ -68,7 +81,8 @@ fn match_partial(expected: &Value, actual: &Value, path: &str) -> Option<String>
             }
             None
         }
-        _ => (!same(expected, actual)).then(|| format!("{path}: expected {}, got {}", show(expected), show(actual))),
+        _ => (!same(expected, actual))
+            .then(|| format!("{path}: expected {}, got {}", show(expected), show(actual))),
     }
 }
 
@@ -83,9 +97,11 @@ fn same(e: &Value, a: &Value) -> bool {
 /// Deep equality of complete values (README rule 5).
 fn match_exact(expected: &Value, actual: &Value, path: &str) -> Option<String> {
     match (expected, actual) {
-        (Value::Array(e), Value::Array(a)) if e.len() == a.len() => {
-            e.iter().zip(a).enumerate().find_map(|(i, (ev, av))| match_exact(ev, av, &format!("{path}[{i}]")))
-        }
+        (Value::Array(e), Value::Array(a)) if e.len() == a.len() => e
+            .iter()
+            .zip(a)
+            .enumerate()
+            .find_map(|(i, (ev, av))| match_exact(ev, av, &format!("{path}[{i}]"))),
         (Value::Object(e), Value::Object(a)) => {
             let mut ek: Vec<&String> = e.keys().collect();
             let mut ak: Vec<&String> = a.keys().collect();
@@ -96,8 +112,11 @@ fn match_exact(expected: &Value, actual: &Value, path: &str) -> Option<String> {
             }
             ek.into_iter().find_map(|k| match_exact(&e[k], &a[k], &format!("{path}.{k}")))
         }
-        (Value::Array(_) | Value::Object(_), _) => Some(format!("{path}: expected {}, got {}", show(expected), show(actual))),
-        _ => (!same(expected, actual)).then(|| format!("{path}: expected {}, got {}", show(expected), show(actual))),
+        (Value::Array(_) | Value::Object(_), _) => {
+            Some(format!("{path}: expected {}, got {}", show(expected), show(actual)))
+        }
+        _ => (!same(expected, actual))
+            .then(|| format!("{path}: expected {}, got {}", show(expected), show(actual))),
     }
 }
 
@@ -115,7 +134,11 @@ fn without_spec_version(v: &Value) -> Value {
 
 fn matches(expected: &Value, actual: &Value, exact: bool) -> Option<String> {
     let (e, a) = (without_spec_version(expected), without_spec_version(actual));
-    if exact { match_exact(&e, &a, "$") } else { match_partial(&e, &a, "$") }
+    if exact {
+        match_exact(&e, &a, "$")
+    } else {
+        match_partial(&e, &a, "$")
+    }
 }
 
 /// serde_json → the crate's own JSON (through text, which also exercises `Json::parse`).
@@ -150,12 +173,19 @@ fn run_case(file: &Value, case: &Value) -> Outcome {
         .and_then(Value::as_str)
         .unwrap_or("parse");
     let options = merged(defaults.and_then(|d| d.get("options")), case.get("options"));
-    let format_options = merged(defaults.and_then(|d| d.get("formatOptions")), case.get("formatOptions"));
+    let format_options =
+        merged(defaults.and_then(|d| d.get("formatOptions")), case.get("formatOptions"));
     let edits = case.get("edits").cloned().unwrap_or(Value::Array(vec![]));
     let input = case.get("input").and_then(Value::as_str).unwrap_or("");
 
     let result = std::panic::catch_unwind(|| {
-        trackparse::wire::call(func, input, &to_crate_json(&options), &to_crate_json(&format_options), &to_crate_json(&edits))
+        trackparse::wire::call(
+            func,
+            input,
+            &to_crate_json(&options),
+            &to_crate_json(&format_options),
+            &to_crate_json(&edits),
+        )
     });
     let actual: Value = match result {
         Ok(json) => serde_json::from_str(&json.write()).expect("the crate wrote invalid JSON"),
@@ -170,7 +200,10 @@ fn run_case(file: &Value, case: &Value) -> Outcome {
         if diffs.iter().any(Option::is_none) {
             None
         } else {
-            Some(format!("no expectedAny entry matched: {:?}", diffs.into_iter().flatten().collect::<Vec<_>>()))
+            Some(format!(
+                "no expectedAny entry matched: {:?}",
+                diffs.into_iter().flatten().collect::<Vec<_>>()
+            ))
         }
     } else {
         matches(case.get("expected").unwrap_or(&Value::Null), &actual, exact)
@@ -186,16 +219,23 @@ fn run_case(file: &Value, case: &Value) -> Outcome {
 /// `1e999` is not valid for serde_json's default number parser; fixtures use it for infinity.
 fn load(path: &Path) -> Value {
     let text = std::fs::read_to_string(path).unwrap();
-    serde_json::from_str(&text.replace("-1e999", "-1.7976931348623157e308").replace("1e999", "1.7976931348623157e308"))
-        .unwrap_or_else(|e| panic!("{}: {e}", path.display()))
+    serde_json::from_str(
+        &text
+            .replace("-1e999", "-1.7976931348623157e308")
+            .replace("1e999", "1.7976931348623157e308"),
+    )
+    .unwrap_or_else(|e| panic!("{}: {e}", path.display()))
 }
 
 #[test]
 fn shared_fixtures() {
     let report = std::env::var("TRACKPARSE_REPORT").is_ok();
     let only = std::env::var("TRACKPARSE_ONLY").ok(); // substring of the file name or case id
-    let skip: BTreeMap<String, String> =
-        serde_json::from_str(&std::fs::read_to_string(Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/skip.json")).unwrap()).unwrap();
+    let skip: BTreeMap<String, String> = serde_json::from_str(
+        &std::fs::read_to_string(Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/skip.json"))
+            .unwrap(),
+    )
+    .unwrap();
 
     let mut files = Vec::new();
     walk(&spec_dir().join("fixtures"), &mut files);
@@ -219,7 +259,9 @@ fn shared_fixtures() {
             let mut problem = run_case(&data, case).failure;
             if let Some(reason) = skip.get(id) {
                 problem = match problem {
-                    None => Some(format!("skip-listed ({reason}) but now passes: remove it from tests/skip.json")),
+                    None => Some(format!(
+                        "skip-listed ({reason}) but now passes: remove it from tests/skip.json"
+                    )),
                     Some(_) => None,
                 };
             }
@@ -228,14 +270,23 @@ fn shared_fixtures() {
             if good {
                 ok += 1;
             }
-            for rule in case.get("rules").and_then(Value::as_array).into_iter().flatten().filter_map(Value::as_str) {
+            for rule in case
+                .get("rules")
+                .and_then(Value::as_array)
+                .into_iter()
+                .flatten()
+                .filter_map(Value::as_str)
+            {
                 let e = per_rule.entry(rule.to_string()).or_default();
                 e.0 += 1;
                 e.1 += usize::from(good);
             }
             if let Some(p) = problem {
                 if failures.len() < 40 {
-                    failures.push(format!("{id}\n  input: {}\n  {p}", case.get("input").map(show).unwrap_or_default()));
+                    failures.push(format!(
+                        "{id}\n  input: {}\n  {p}",
+                        case.get("input").map(show).unwrap_or_default()
+                    ));
                 }
             }
         }
@@ -261,5 +312,11 @@ fn shared_fixtures() {
         return;
     }
     assert!(total > 0, "no fixtures found");
-    assert!(passed == total, "{} of {} fixture cases fail; first ones:\n\n{}", total - passed, total, failures.join("\n\n"));
+    assert!(
+        passed == total,
+        "{} of {} fixture cases fail; first ones:\n\n{}",
+        total - passed,
+        total,
+        failures.join("\n\n")
+    );
 }
