@@ -53,15 +53,18 @@ type timeDigits struct {
 
 // valueWith is the value with changes applied, when it is a valid time inside the bounds.
 func (d *timeDigits) valueWith(changes []digitChange) (float64, bool) {
-	v := slices.Clone(d.values)
+	// A time has at most three fields; the copy stays on the stack (the search calls this up to
+	// about 1,800 times per line).
+	var buf [4]int64
+	v := append(buf[:0], d.values...)
 	for _, c := range changes {
 		if c.slot.field >= 0 && c.slot.field < len(v) {
 			v[c.slot.field] += (c.digit - c.slot.digit) * c.slot.place
 		}
 	}
-	mult := []int64{60, 1}
+	mult := [3]int64{60, 1, 0}
 	if len(v) == 3 {
-		mult = []int64{3600, 60, 1}
+		mult = [3]int64{3600, 60, 1}
 	}
 	var whole int64
 	for f, value := range v {
@@ -143,10 +146,10 @@ func searchTime(rawTime string, lo, hi *float64) (searchOutcome, TracklistTime) 
 			if d == slot.digit {
 				continue
 			}
-			change := []digitChange{{slot, d}}
-			if _, ok := digits.valueWith(change); ok {
+			change := [1]digitChange{{slot, d}}
+			if _, ok := digits.valueWith(change[:]); ok {
 				count++
-				found = change
+				found = slices.Clone(change[:])
 			}
 		}
 	}
@@ -162,10 +165,10 @@ func searchTime(rawTime string, lo, hi *float64) (searchOutcome, TracklistTime) 
 						if db == b.digit {
 							continue
 						}
-						change := []digitChange{{a, da}, {b, db}}
-						if _, ok := digits.valueWith(change); ok {
+						change := [2]digitChange{{a, da}, {b, db}}
+						if _, ok := digits.valueWith(change[:]); ok {
 							count++
-							found = change
+							found = slices.Clone(change[:])
 							if count >= 2 {
 								break pairs
 							}
