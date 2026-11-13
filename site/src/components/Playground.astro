@@ -189,6 +189,7 @@ const listExamples: { label: string; title: string; text: string }[] = [
             <button type="button" class="tp-btn small" data-lang="js" aria-pressed="true">JS</button>
             <button type="button" class="tp-btn small" data-lang="py" aria-pressed="false">Python</button>
             <button type="button" class="tp-btn small" data-lang="rs" aria-pressed="false">Rust</button>
+            <button type="button" class="tp-btn small" data-lang="go" aria-pressed="false">Go</button>
           </span>
         </div>
         <pre class="tp-json tp-code" id="pg-code"></pre>
@@ -277,6 +278,7 @@ const listExamples: { label: string; title: string; text: string }[] = [
               <button type="button" class="tp-btn small" data-lang="js" aria-pressed="true">JS</button>
               <button type="button" class="tp-btn small" data-lang="py" aria-pressed="false">Python</button>
               <button type="button" class="tp-btn small" data-lang="rs" aria-pressed="false">Rust</button>
+              <button type="button" class="tp-btn small" data-lang="go" aria-pressed="false">Go</button>
             </span>
             <button type="button" class="tp-btn small" id="tl-copy-out" hidden><Copy size={14} aria-hidden="true" /><span>Copy</span></button>
           </div>
@@ -407,6 +409,10 @@ const listExamples: { label: string; title: string; text: string }[] = [
   .pg-doc {
     font-size: 0.78rem;
   }
+  /* Generated Go is indented with tabs, as gofmt writes it. */
+  .tp-code {
+    tab-size: 4;
+  }
   .pg-foot {
     display: flex;
     flex-wrap: wrap;
@@ -419,7 +425,8 @@ const listExamples: { label: string; title: string; text: string }[] = [
     background: var(--tp-code-bg);
     padding: 0.1em 0.35em;
     border-radius: 4px;
-    white-space: nowrap;
+    /* The go get line is longer than a phone is wide: it may break anywhere. */
+    overflow-wrap: anywhere;
   }
   .pg-install {
     display: flex;
@@ -782,6 +789,47 @@ const listExamples: { label: string; title: string; text: string }[] = [
     return `use ${path}::${sorted.length === 1 ? sorted[0] : `{${sorted.join(", ")}}`};`;
   }
 
+  // ---- Go literals for the generated code ---------------------------------------------------
+  /** A Go string literal. Control, invisible and bidi characters are written as escapes. */
+  function goStr(s: string): string {
+    let out = '"';
+    for (const ch of s) {
+      const cp = ch.codePointAt(0)!;
+      if (ch === '"' || ch === "\\") out += `\\${ch}`;
+      else if (ch === "\n") out += "\\n";
+      else if (ch === "\r") out += "\\r";
+      else if (ch === "\t") out += "\\t";
+      // A Go string cannot spell a lone surrogate: U+FFFD, as the module reads invalid UTF-8.
+      else if (cp >= 0xd800 && cp <= 0xdfff) out += "\\ufffd";
+      else if (cp < 0x20 || (cp >= 0x7f && cp <= 0x9f) || (cp >= 0x200b && cp <= 0x200f) || (cp >= 0x2028 && cp <= 0x202e) || (cp >= 0x2066 && cp <= 0x2069) || cp === 0xfeff)
+        out += `\\u${cp.toString(16).padStart(4, "0")}`;
+      else out += ch;
+    }
+    return `${out}"`;
+  }
+  /** A float64 constant: `45`, `7.5`, `1e+21`; `math.Inf(1)` and `math.NaN()` need the math import. */
+  function goNum(n: number): string {
+    if (!Number.isFinite(n)) return Number.isNaN(n) ? "math.NaN()" : n > 0 ? "math.Inf(1)" : "math.Inf(-1)";
+    return String(n);
+  }
+  /** The exported constant of an option value: `youtube` → `ModeYouTube`, `never` → `SplitAndNever`. */
+  function goConst(prefix: string, v: unknown): string {
+    const name = String(v) === "youtube" ? "YouTube" : variant(v);
+    return `trackparse.${prefix}${name}`;
+  }
+  /** A struct literal as gofmt writes it: one line for one field, else one aligned field per line. */
+  function goStruct(type: string, fields: [string, string][], indent: string): string {
+    if (fields.length === 0) return `trackparse.${type}{}`;
+    if (fields.length === 1) return `trackparse.${type}{${fields[0][0]}: ${fields[0][1]}}`;
+    const w = Math.max(...fields.map(([k]) => k.length));
+    return `trackparse.${type}{\n${fields.map(([k, v]) => `${indent}\t${`${k}:`.padEnd(w + 2)}${v},`).join("\n")}\n${indent}}`;
+  }
+  /** A Go program around `body` (lines, one tab of indentation added). */
+  function goMain(body: string[], extra: string[] = []): string {
+    const std = ['"fmt"', ...extra].sort();
+    return `package main\n\nimport (\n${std.map((x) => `\t${x}`).join("\n")}\n\n\t"github.com/4matic/trackparse/go"\n)\n\nfunc main() {\n${body.map((l) => (l ? `\t${l}` : "")).join("\n")}\n}`;
+  }
+
   function options(): ParseOptions {
     const o: ParseOptions = {};
     if (mode.value !== "auto") o.mode = mode.value as ParseOptions["mode"];
@@ -839,6 +887,27 @@ const listExamples: { label: string; title: string; text: string }[] = [
         body.push('println!("{}", format_track(&track));');
       }
       return `${rsUse("trackparse", names)}\n\nfn main() {\n${body.map((l) => `    ${l}`).join("\n")}\n}`;
+    }
+    if (lang === "go") {
+      // A whole program: options are structs whose zero value means the default.
+      const popts: [string, string][] = [];
+      if (o.mode) popts.push(["Mode", goConst("Mode", o.mode)]);
+      if (o.uploader) popts.push(["Uploader", goStr(o.uploader)]);
+      if (o.knownArtists) popts.push(["KnownArtists", `[]string{${o.knownArtists.map(goStr).join(", ")}}`]);
+      if (o.splitAnd) popts.push(["SplitAnd", goConst("SplitAnd", o.splitAnd)]);
+      const fopts: [string, string][] = [];
+      if (f.feat) fopts.push(["Feat", goConst("Feat", f.feat)]);
+      if (f.joiners) fopts.push(["Joiners", goConst("Joiners", f.joiners)]);
+      if (f.versions) fopts.push(["Versions", goConst("Versions", f.versions)]);
+      const body = [
+        popts.length
+          ? `track := trackparse.ParseWith(${goStr(s)}, ${goStruct("ParseOptions", popts, "\t")})`
+          : `track := trackparse.Parse(${goStr(s)})`,
+        fopts.length
+          ? `fmt.Println(trackparse.FormatWith(track, ${goStruct("FormatOptions", fopts, "\t")}))`
+          : "fmt.Println(trackparse.Format(track))",
+      ];
+      return goMain(body);
     }
     const snake = (k: string) => k.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`);
     const py = (v: unknown): string =>
@@ -1003,7 +1072,7 @@ const listExamples: { label: string; title: string; text: string }[] = [
   type View = "table" | "json" | "code";
   let view: View = "table";
 
-  /** JS / Python / Rust for the current text, options and edit inputs. */
+  /** JS / Python / Rust / Go for the current text, options and edit inputs. */
   function listCode(text: string, list: Tracklist): string {
     const q = (v: string) => JSON.stringify(v);
     const lines = text.split("\n");
@@ -1060,6 +1129,36 @@ const listExamples: { label: string; title: string; text: string }[] = [
       if (fix) body.push(`let fixed = apply_edits(${t}, &[Edit::set_time(${fix.line}, ${rsNum(fix.seconds)})]);  // the suggested fix`);
       body.push(`println!("{}\\n\\n{}${fix ? "\\n\\n{}" : ""}", shifted.text, sorted.text${fix ? ", fixed.text" : ""});`);
       return `${rsUse("trackparse::tracklist", names)}\n\nfn main() {\n${body.map((l) => (l ? `    ${l}` : "")).join("\n")}\n}`;
+    }
+    if (lang === "go") {
+      // A whole program. A list without CR line endings is a slice of lines joined with "\n".
+      const joined = !(text.includes("\r") || lines.length < 2);
+      const opts: [string, string][] = [];
+      // AudioSeconds 0 means unknown in Go; JavaScript takes 0 as an audio of length 0.
+      if (audioSeconds !== undefined) opts.push(["AudioSeconds", goNum(audioSeconds)]);
+      if (knownArtists) opts.push(["KnownArtists", `[]string{${knownArtists.map(goStr).join(", ")}}`]);
+      const nums = [audioSeconds ?? 0, seconds, fix?.seconds ?? 0];
+      const extra = ['"encoding/json"'];
+      if (joined) extra.push('"strings"');
+      if (nums.some((n) => !Number.isFinite(n))) extra.push('"math"');
+      const body = [
+        joined ? `text := strings.Join([]string{\n${lines.map((l) => `\t${goStr(l)},`).join("\n")}\n}, "\\n")` : `text := ${goStr(text)}`,
+        "",
+        ...(audioSeconds === 0 ? ["// AudioSeconds 0 means unknown in Go; JavaScript reads it as an audio of length 0."] : []),
+        hasOptions
+          ? `list := trackparse.ParseTracklistWith(text, ${goStruct("TracklistOptions", opts, "")})`
+          : "list := trackparse.ParseTracklist(text)",
+        'entries, _ := json.MarshalIndent(list.Entries, "", "  ")   // one entry per line',
+        'warnings, _ := json.MarshalIndent(list.Warnings, "", "  ") // the checks, with line numbers',
+        "fmt.Println(string(entries))",
+        "fmt.Println(string(warnings))",
+        "",
+        `shifted := trackparse.ApplyEdits(text, []trackparse.Edit{trackparse.ShiftFrom(${goNum(seconds)}, ${from})})`,
+        "sorted := trackparse.ApplyEdits(text, []trackparse.Edit{trackparse.SortByTime()})",
+      ];
+      if (fix) body.push(`fixed := trackparse.ApplyEdits(text, []trackparse.Edit{trackparse.SetTime(${fix.line}, ${goNum(fix.seconds)})}) // the suggested fix`);
+      body.push(`fmt.Print(shifted.Text, "\\n\\n", sorted.Text${fix ? ', "\\n\\n", fixed.Text' : ""}, "\\n")`);
+      return goMain(body.flatMap((l) => l.split("\n")), extra);
     }
     const pyOpts =
       (audioSeconds !== undefined ? `, audio_seconds=${audioSeconds}` : "") +

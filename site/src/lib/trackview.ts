@@ -218,8 +218,9 @@ const KEYWORDS: Record<Lang, Set<string>> = {
   js: new Set(["import", "from", "export", "const", "let", "var", "return", "new", "await", "async", "function"]),
   py: new Set(["from", "import", "def", "return", "for", "in", "as", "lambda", "not", "and", "or"]),
   rs: new Set(["use", "let", "mut", "fn", "pub", "struct", "enum", "impl", "for", "in", "if", "else", "match", "return", "as", "ref", "const", "static", "mod", "crate", "self", "where", "while", "loop"]),
+  go: new Set(["package", "import", "func", "var", "const", "type", "struct", "map", "for", "range", "if", "else", "return", "go", "defer"]),
 };
-const CONSTANTS = new Set(["true", "false", "null", "undefined", "True", "False", "None", "Some"]);
+const CONSTANTS = new Set(["true", "false", "null", "undefined", "True", "False", "None", "Some", "nil"]);
 
 /**
  * A small highlighter for the snippets the playground generates (one import, a call or two).
@@ -233,6 +234,9 @@ export function codeHtml(src: string, lang: Lang): string {
       : lang === "rs"
         ? // Rust: `//` comments, double-quoted strings only (a `'` may start a lifetime).
           /(\/\/[^\n]*)|("(?:\\.|[^"\\\n])*")|\b(\d+(?:\.\d+)?)\b|([A-Za-z_][\w]*)|([{}()[\],.;:=&])/g
+        : lang === "go"
+          ? // Go: `//` comments, interpreted and raw (backquoted) strings.
+            /(\/\/[^\n]*)|("(?:\\.|[^"\\\n])*"|`[^`]*`)|\b(\d+(?:\.\d+)?)\b|([A-Za-z_][\w]*)|([{}()[\],.;:=&])/g
         : /(#[^\n]*)|("(?:\\.|[^"\\\n])*"|'(?:\\.|[^'\\\n])*')|\b(\d+(?:\.\d+)?)\b|([A-Za-z_][\w]*)|([{}()[\],.;:=])/g;
   let out = "";
   let last = 0;

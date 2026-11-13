@@ -1,7 +1,7 @@
 ---
-// Starlight's social links (GitHub, npm) plus the other two registries. PyPI has no built-in
-// Starlight icon: its mark is from Simple Icons (CC0 1.0). crates.io has no mark of its own in
-// either set, so it gets the Rust file icon Starlight ships.
+// Starlight's social links (GitHub, npm) plus the other three registries. PyPI has no built-in
+// Starlight icon: its mark is from Simple Icons (CC0 1.0). crates.io and pkg.go.dev have no mark
+// of their own in either set, so they get the Rust and Go file icons Starlight ships.
 import { Icon } from "@astrojs/starlight/components";
 import Default from "@astrojs/starlight/components/SocialIcons.astro";
 ---
@@ -14,6 +14,10 @@ import Default from "@astrojs/starlight/components/SocialIcons.astro";
 <a href="https://crates.io/crates/trackparse" rel="me" class="sl-flex pkg" title="crates.io">
   <span class="sr-only">crates.io</span>
   <Icon name="seti:rust" />
+</a>
+<a href="https://pkg.go.dev/github.com/4matic/trackparse/go" rel="me" class="sl-flex pkg" title="pkg.go.dev">
+  <span class="sr-only">pkg.go.dev</span>
+  <Icon name="seti:go" />
 </a>
 
 <style>

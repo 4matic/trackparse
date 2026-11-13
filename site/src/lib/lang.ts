@@ -1,21 +1,22 @@
 // One language choice for the whole site. The docs' code tabs (`<Tabs syncKey="lang">`) keep
 // theirs in localStorage under Starlight's key, as the tab label. The install switch on the
 // landing page and the playground's code panels read and write the same entry, so picking Rust
-// in one place picks it everywhere.
+// or Go in one place picks it everywhere.
 
-export type Lang = "js" | "py" | "rs";
+export type Lang = "js" | "py" | "rs" | "go";
 
 /** Starlight's key for `syncKey="lang"` (see its Tabs.astro). */
 const KEY = "starlight-synced-tabs__lang";
 
 /** The tab labels used on every docs page. */
-export const LANG_LABEL: Record<Lang, string> = { js: "JavaScript", py: "Python", rs: "Rust" };
+export const LANG_LABEL: Record<Lang, string> = { js: "JavaScript", py: "Python", rs: "Rust", go: "Go" };
 
 /** Where each package lives, and where the docs explain how to install it. */
 export const PACKAGE: Record<Lang, { install: string; registry: string; url: string }> = {
   js: { install: "npm install trackparse", registry: "npm", url: "https://www.npmjs.com/package/trackparse" },
   py: { install: "pip install trackparse", registry: "PyPI", url: "https://pypi.org/project/trackparse/" },
   rs: { install: "cargo add trackparse", registry: "crates.io", url: "https://crates.io/crates/trackparse" },
+  go: { install: "go get github.com/4matic/trackparse/go@latest", registry: "pkg.go.dev", url: "https://pkg.go.dev/github.com/4matic/trackparse/go" },
 };
 
 export function getLang(): Lang {
