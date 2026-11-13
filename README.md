@@ -8,10 +8,12 @@
 [![PyPI](https://img.shields.io/pypi/v/trackparse?color=3775a9&logo=pypi&logoColor=white)](https://pypi.org/project/trackparse/)
 [![crates.io](https://img.shields.io/crates/v/trackparse?color=e6822a&logo=rust&logoColor=white)](https://crates.io/crates/trackparse)
 [![docs.rs](https://img.shields.io/docsrs/trackparse?logo=docsdotrs&logoColor=white)](https://docs.rs/trackparse)
+[![Go Reference](https://pkg.go.dev/badge/github.com/4matic/trackparse/go.svg)](https://pkg.go.dev/github.com/4matic/trackparse/go)
 <br>
 [![js](https://img.shields.io/github/actions/workflow/status/4matic/trackparse/js.yml?branch=main&label=js&logo=github)](https://github.com/4matic/trackparse/actions/workflows/js.yml)
 [![python](https://img.shields.io/github/actions/workflow/status/4matic/trackparse/python.yml?branch=main&label=python&logo=github)](https://github.com/4matic/trackparse/actions/workflows/python.yml)
 [![rust](https://img.shields.io/github/actions/workflow/status/4matic/trackparse/rust.yml?branch=main&label=rust&logo=github)](https://github.com/4matic/trackparse/actions/workflows/rust.yml)
+[![go](https://img.shields.io/github/actions/workflow/status/4matic/trackparse/go.yml?branch=main&label=go&logo=github)](https://github.com/4matic/trackparse/actions/workflows/go.yml)
 [![spec](https://img.shields.io/github/actions/workflow/status/4matic/trackparse/spec.yml?branch=main&label=spec&logo=github)](https://github.com/4matic/trackparse/actions/workflows/spec.yml)
 <br>
 [![fixtures](https://img.shields.io/badge/fixtures-13%2C130%20passing-2ea44f)](#how-its-tested)
@@ -38,11 +40,11 @@ that Becky Hill is featured, that Sub Focus did the remix, or that it's a VIP.
 trackparse keeps all of it. Its one rule is **extract, don't delete**: everything it recognizes
 goes into a field, and anything it doesn't recognize stays in the title, word for word.
 
-It comes as an npm package, a PyPI package and a Rust crate, all named `trackparse`. One
-[spec](spec/SPEC.md) and one set of fixtures define the behaviour. The three pass the same fixtures
-and give the same output on every fixture input. The example below is JavaScript; [Quick start](#quick-start) has the
-same calls in Python and Rust, and you can try any string in the
-[playground](https://4matic.github.io/trackparse/playground/).
+It comes as an npm package, a PyPI package, a Rust crate and a Go module, all named `trackparse`.
+One [spec](spec/SPEC.md) and one set of fixtures define the behaviour. The four pass the same
+fixtures and give the same output on every fixture input. The example below is JavaScript;
+[Quick start](#quick-start) has the same calls in Python, Rust and Go, and you can try any string in
+the [playground](https://4matic.github.io/trackparse/playground/).
 
 ```js
 import { parse } from "trackparse";
@@ -97,7 +99,7 @@ track.position;                     // { raw: '01', number: 1 }
 ```
 
 Every key is always present. When a guess was involved, `warnings` says which one. Python's
-`to_dict()` and Rust's `to_json()` give this same JSON.
+`to_dict()`, Rust's `to_json()` and Go's `MarshalJSON` give this same JSON.
 
 </details>
 
@@ -107,16 +109,17 @@ Every key is always present. When a guess was involved, `warnings` says which on
 
 | Number | What it means |
 |---|---|
-| **13,130** shared fixtures | 1,203 written by hand, 11,927 generated from combinations. 100% pass in JS, Python and Rust, nothing skipped. |
+| **13,130** shared fixtures | 1,203 written by hand, 11,927 generated from combinations. 100% pass in JS, Python, Rust and Go, nothing skipped. |
 | **1,239** of them on tracklists | 303 handwritten, 936 generated. They cover line splitting, times, bullets and Markdown, warnings and edits |
 | **1,352** JS tests | Every fixture, a schema check on every output, property-based tests of the spec invariants, API tests |
 | **27** version types | Remix, VIP, bootleg, extended, radio, original, live, remaster, sped up and more |
-| **0** dependencies in JS and Python | The Rust crate has one, `unicode-normalization`. The JS package is ESM + CJS with TypeScript types, about 18 kB gzipped. `trackparse/tracklist` adds about 8.4 KiB, only if you import it |
+| **0** dependencies in JS, Python and Go | The Rust crate has one, `unicode-normalization`. The JS package is ESM + CJS with TypeScript types, about 18 kB gzipped. `trackparse/tracklist` adds about 8.4 KiB, only if you import it |
 | **Node 18+** | CI runs the full suite on 22 and 24, and every fixture against the built package on 18 and 20 |
 | **Python 3.9+** | 1,342 pytest tests on 3.9 to 3.14, plus every fixture against the built wheel. Output is byte-identical to JS |
 | **Rust 1.74+** | Every fixture, the tracklist invariants and the typed API tests on stable and on 1.74. Output is byte-identical to JS on every fixture and on about 790,000 random inputs |
+| **Go 1.22+** | Every fixture, the spec invariants and the examples with `go test -race` on 1.22 and on the latest stable. Output is byte-identical to JS on every fixture. First release pending |
 | **5,031** real tracklist lines | 117 podcast tracklists the tracklist rules were checked against. Every line round-trips byte for byte |
-| **1** spec | [`spec/SPEC.md`](spec/SPEC.md) defines the behaviour. The three packages share its version (0.5.0 today) and are released together |
+| **1** spec | [`spec/SPEC.md`](spec/SPEC.md) defines the behaviour. The packages share its version (0.5.1 today) and are released together |
 
 ## Install
 
@@ -143,11 +146,20 @@ Rust ([crates.io](https://crates.io/crates/trackparse), [docs.rs](https://docs.r
 cargo add trackparse   # add --features serde for Serialize / Deserialize on the types
 ```
 
+Go ([pkg.go.dev](https://pkg.go.dev/github.com/4matic/trackparse/go),
+[module README](go/README.md)). Go 1.22+, no dependencies. The import path ends in `/go`, the
+package is `trackparse`. The first release of the module is the next release of the project
+(tag `go/vX.Y.Z`); until then `go get` finds no version.
+
+```sh
+go get github.com/4matic/trackparse/go@latest
+```
+
 ## Quick start
 
 **Docs:** [Getting started](https://4matic.github.io/trackparse/start/getting-started/) · [Introduction](https://4matic.github.io/trackparse/start/introduction/)
 
-The three examples parse the same strings. The comments show what each expression evaluates to.
+The four examples parse the same strings. The comments show what each expression evaluates to.
 
 ### JavaScript
 
@@ -234,14 +246,63 @@ Options are builders passed to the `_with` form of a function:
 `parse_with(s, &ParseOptions::new().known_artists(["Chase & Status"]))`. The full Rust API is in
 [`rust/README.md`](rust/README.md) and on [docs.rs](https://docs.rs/trackparse).
 
+### Go
+
+Results are structs with exported fields; fields that can be `null` are pointers. Roles, version
+types and junk kinds are typed strings with constants (`trackparse.RoleFeatured`). `json.Marshal`
+gives the spec's JSON.
+
+```go
+import (
+	"encoding/json"
+	"fmt"
+
+	trackparse "github.com/4matic/trackparse/go"
+)
+
+track := trackparse.Parse("Noisia feat. Foreign Beggars - Shellshock")
+for _, a := range track.Artists {
+	fmt.Println(a.Name, a.Role)
+}
+// Noisia primary
+// Foreign Beggars featured
+
+v := trackparse.Parse("Queen - Bohemian Rhapsody (Live at Wembley 1986)").Versions[0]
+fmt.Println(v.Type, v.Raw, *v.Descriptor, *v.Year)
+// live Live at Wembley 1986 at Wembley 1986
+
+var credits []string
+for _, a := range trackparse.ParseArtists("Sub Focus, Wilkinson & Dimension feat. Kojo") {
+	credits = append(credits, fmt.Sprintf("%s:%s", a.Name, a.Role))
+}
+fmt.Println(credits)
+// [Sub Focus:primary Wilkinson:primary Dimension:primary Kojo:featured]
+
+fmt.Println(trackparse.FormatWith(
+	trackparse.Parse("Wilkinson ft. Becky Hill - Afterglow (Sub Focus Remix)"),
+	trackparse.FormatOptions{Feat: trackparse.FeatTitle, Joiners: trackparse.JoinersCanonical},
+))
+// Wilkinson - Afterglow (feat. Becky Hill) (Sub Focus Remix)
+
+b, _ := json.Marshal(track.Artists[1])
+fmt.Println(string(b))
+// {"name":"Foreign Beggars","role":"featured","joiner":"feat.","source":"artist"}
+```
+
+Options are plain structs whose zero value is the default, passed to the `With` form of a
+function: `trackparse.ParseWith(s, trackparse.ParseOptions{KnownArtists: []string{"Chase & Status"}})`.
+The full Go API is in [`go/README.md`](go/README.md) and on
+[pkg.go.dev](https://pkg.go.dev/github.com/4matic/trackparse/go).
+
 Every example on the [documentation site](https://4matic.github.io/trackparse/) has JavaScript,
-Python and Rust tabs.
+Python, Rust and Go tabs.
 
 > [!TIP]
 > `&` is a joiner, so `Chase & Status` comes out as two artists. There's no built-in artist
 > database. Pass the names you know instead: `parse(s, { knownArtists: ["Chase & Status"] })` in
 > JS, `parse(s, known_artists=["Chase & Status"])` in Python,
-> `parse_with(s, &ParseOptions::new().known_artists(["Chase & Status"]))` in Rust.
+> `parse_with(s, &ParseOptions::new().known_artists(["Chase & Status"]))` in Rust,
+> `ParseWith(s, ParseOptions{KnownArtists: []string{"Chase & Status"}})` in Go.
 > See [knownArtists](https://4matic.github.io/trackparse/guides/artists/#knownartists).
 
 ## What it understands
@@ -249,7 +310,7 @@ Python and Rust tabs.
 **Docs:** [What it understands](https://4matic.github.io/trackparse/guides/what-it-understands/) · [Artists and credits](https://4matic.github.io/trackparse/guides/artists/) · [Versions and remixes](https://4matic.github.io/trackparse/guides/versions/) · [Junk, flags and prefixes](https://4matic.github.io/trackparse/guides/junk-and-flags/)
 
 These are real outputs of `parse(input)` with default options, unless noted. They are the same in
-all three languages. To try your own strings, use the
+all four languages. To try your own strings, use the
 [playground](https://4matic.github.io/trackparse/playground/).
 
 | Input | Artists | Title | Versions / other |
@@ -289,7 +350,8 @@ all three languages. To try your own strings, use the
 
 Mixes and podcasts come with a tracklist: a block of text, one track per line, usually with a start
 time in front. The tracklist module reads the whole block: `trackparse/tracklist` in JavaScript,
-`trackparse.tracklist` in Python, `trackparse::tracklist` in Rust. Each line gets its kind, its time
+`trackparse.tracklist` in Python, `trackparse::tracklist` in Rust, and `ParseTracklist` in the
+main Go package. Each line gets its kind, its time
 and a full `ParsedTrack`. The list as a whole gets checks with line numbers, and edits rewrite only
 the lines you name.
 
@@ -368,7 +430,7 @@ hour, so it became `01:00:16` to match the list's other hour times, and the edit
 (missing line, line without a time, `NaN`) changes nothing and warns `edit-invalid`. Neither
 function throws.
 
-Python and Rust have the same two functions. Here `text` is the tracklist from the JavaScript
+Python, Rust and Go have the same two functions. Here `text` is the tracklist from the JavaScript
 example. In Python an edit is a plain dict with the same keys as in JS:
 
 ```python
@@ -398,6 +460,21 @@ result.changed;   // [5, 6, 7, 8, 9]
 result.warnings;  // [EditWarning { code: StyleUpgraded, edit: 1, line: Some(5) }]
 ```
 
+In Go an edit is an `Edit` value built by a constructor, and seconds are `float64`:
+
+```go
+fmt.Println(*trackparse.ParseTracklist(text).Warnings[1].Suggestion)
+// {8 01:11:02 4262}
+
+result := trackparse.ApplyEdits(text, []trackparse.Edit{
+	trackparse.SetTime(8, 4262),
+	trackparse.ShiftFrom(45, 5),
+})
+fmt.Println(result.Changed)                // [5 6 7 8 9]
+w := result.Warnings[0]
+fmt.Println(w.Code, w.Edit, *w.Line)       // style-upgraded 1 5
+```
+
 Lists pasted from Discord, Reddit, Telegram or YouTube comments often keep their list bullets and
 Markdown. `* 14:21 Artist - Title`, `**[**14:21**] 10. Artist - Title**` and
 `[14:21] **Artist** - _Title_` all read like the plain line; the decoration stays in `raw` and
@@ -415,7 +492,7 @@ Inside a tracklist the first ` - ` is the artist/title separator on practically 
 track string doesn't get that benefit of the doubt, so `parse()` sometimes reads the part after the
 dash as a version or a genre. `parseTracklist` parses each line with `mode: "tracklist"`, which
 trusts the first spaced dash. You can ask `parse()` for it too (`mode="tracklist"` in Python,
-`ModeOption::Tracklist` in Rust). These are real lines from a podcast archive:
+`ModeOption::Tracklist` in Rust, `ModeTracklist` in Go). These are real lines from a podcast archive:
 
 | Line | `parse(line)` | In a tracklist |
 |---|---|---|
@@ -438,12 +515,13 @@ of the list uses spaced dashes.
 
 The fixtures in [`spec/fixtures`](spec/fixtures) are the source of truth
 ([format and matching rules](spec/fixtures/README.md)). The spec says what should happen, the
-fixtures pin it down, and every port has to pass all of them. The JS and Python packages and the
-Rust crate all do: **13,130 of 13,130**, with empty skip lists, in CI on every push.
+fixtures pin it down, and every port has to pass all of them. The JS and Python packages, the
+Rust crate and the Go module all do: **13,130 of 13,130**, with empty skip lists, in CI on every
+push.
 
 Passing a fixture only checks the fields the case asserts, so
 [`scripts/compare-ports.mjs`](scripts/compare-ports.mjs) also runs every fixture input through all
-three ports and diffs the complete outputs, tracklists and edits included. Result: 0 differences,
+four ports and diffs the complete outputs, tracklists and edits included. Result: 0 differences,
 byte for byte. The Rust crate was also compared with JS on about 500,000 random single-track cases
 and 290,000 random tracklists with edits: 0 differences.
 
@@ -495,8 +573,9 @@ line; the expected tracks are the plain lines' tracks.
 
 Each port also checks the invariants from the spec on thousands of random strings. The JS suite
 uses [fast-check](https://github.com/dubzzz/fast-check), the Python suite
-[Hypothesis](https://hypothesis.works), and the Rust crate a small seeded generator of its own, so
-it needs no extra dev dependency. The invariants:
+[Hypothesis](https://hypothesis.works), and the Rust crate and the Go module small seeded
+generators of their own, so they need no extra dev dependency. The Go module also has fuzz
+targets for `go test -fuzz`. The invariants:
 
 - it never throws or panics, on any input;
 - 10,000-code-point inputs built from repeated blocks finish inside a time limit (one second in the
@@ -504,7 +583,7 @@ it needs no extra dev dependency. The invariants:
 - `normalize` is idempotent;
 - whitespace, dash and zero-width noise don't change the result;
 - every output validates against the schema;
-- no word of the input goes missing (the Rust suite);
+- no word of the input goes missing (the Rust and Go suites);
 - `parse(format(parse(s)))` round-trips.
 
 For tracklists, on random multi-line text and random edit lists:
@@ -545,9 +624,10 @@ pnpm conformance                # pass rate per fixture file and per spec rule
 
 (cd python && uv run pytest)    # the same fixtures and invariants in Python
 (cd rust && cargo test)         # and in Rust
+(cd go && go test ./...)        # and in Go
 
 pnpm --filter trackparse build
-node scripts/compare-ports.mjs  # all three ports on every fixture; must print "differences: 0"
+node scripts/compare-ports.mjs  # all four ports on every fixture; must print "differences: 0"
 node scripts/corpus-check.mjs spec/corpus/<file>.jsonl   # only if you have the corpus
 ```
 
@@ -557,26 +637,30 @@ Every other command is in [AGENTS.md](AGENTS.md#commands).
 
 **Docs:** [parse and ParsedTrack](https://4matic.github.io/trackparse/reference/parse/) · [Options](https://4matic.github.io/trackparse/reference/options/) · [Other functions](https://4matic.github.io/trackparse/reference/functions/) · [Tracklist API](https://4matic.github.io/trackparse/reference/tracklist/) · [Warnings](https://4matic.github.io/trackparse/reference/warnings/)
 
-The three packages have the same functions:
+The four packages have the same functions:
 
-| JavaScript | Python | Rust |
-|---|---|---|
-| `parse(input, options?)` | `parse(input, **options)` | `parse(input)`, `parse_with(input, &options)` |
-| `parseArtists(input, options?)` | `parse_artists(input, **options)` | `parse_artists(input)`, `parse_artists_with(input, &options)` |
-| `format(track, options?)` | `format_track(track, **options)` | `format_track(&track)`, `format_track_with(&track, &options)` |
-| `normalize(input)` | `normalize(input)` | `normalize(input)` |
-| `allArtists(track)` | `all_artists(track)` | `all_artists(&track)` |
-| `createParser(options)` | `create_parser(**options)` | `Parser::new(&options)` |
-| `SPEC_VERSION` | `SPEC_VERSION` | `SPEC_VERSION` |
-| `parseTracklist`, `applyEdits` from `trackparse/tracklist` | `parse_tracklist`, `apply_edits` from `trackparse.tracklist` | `parse_tracklist(_with)`, `apply_edits(_with)` from `trackparse::tracklist` |
+| JavaScript | Python | Rust | Go |
+|---|---|---|---|
+| `parse(input, options?)` | `parse(input, **options)` | `parse(input)`, `parse_with(input, &options)` | `Parse(input)`, `ParseWith(input, options)` |
+| `parseArtists(input, options?)` | `parse_artists(input, **options)` | `parse_artists(input)`, `parse_artists_with(input, &options)` | `ParseArtists(input)`, `ParseArtistsWith(input, options)` |
+| `format(track, options?)` | `format_track(track, **options)` | `format_track(&track)`, `format_track_with(&track, &options)` | `Format(track)`, `FormatWith(track, options)` |
+| `normalize(input)` | `normalize(input)` | `normalize(input)` | `Normalize(input)` |
+| `allArtists(track)` | `all_artists(track)` | `all_artists(&track)` | `AllArtists(track)` |
+| `createParser(options)` | `create_parser(**options)` | `Parser::new(&options)` | `NewParser(options)` |
+| `SPEC_VERSION` | `SPEC_VERSION` | `SPEC_VERSION` | `SpecVersion` |
+| `parseTracklist`, `applyEdits` from `trackparse/tracklist` | `parse_tracklist`, `apply_edits` from `trackparse.tracklist` | `parse_tracklist(_with)`, `apply_edits(_with)` from `trackparse::tracklist` | `ParseTracklist(With)`, `ApplyEdits(With)` in the same package |
 
 The tables below use the JavaScript names, which are also the keys of the JSON output. In Python
 and Rust, options and fields are snake_case (`knownArtists` is `known_artists`, `fullTitle` is
 `full_title`). Python results are frozen dataclasses with tuples and `None`. Rust results are
 structs with `Vec` and `Option`, the fixed sets of names are enums (`VersionType::Remix`,
-`JunkKind::Video`), and `Version.type` is the field `version_type`. Each package README lists its
-own signatures and types: [JavaScript](js/README.md#api), [Python](python/README.md#api),
-[Rust](rust/README.md#api). The Rust items are also on [docs.rs](https://docs.rs/trackparse).
+`JunkKind::Video`), and `Version.type` is the field `version_type`. Go results are structs with
+exported CamelCase fields (`FullTitle`, `Version.Type`), pointers where the JSON has `null`, and
+typed string constants for the fixed sets (`trackparse.VersionTypeRemix`). Each package README
+lists its own signatures and types: [JavaScript](js/README.md#api), [Python](python/README.md#api),
+[Rust](rust/README.md#api), [Go](go/README.md#api). The Rust items are also on
+[docs.rs](https://docs.rs/trackparse), the Go ones on
+[pkg.go.dev](https://pkg.go.dev/github.com/4matic/trackparse/go).
 
 No function throws or panics on any string, and bad options fall back to the defaults. The one
 exception is Python, which raises `TypeError` when the input is not a `str`.
@@ -644,8 +728,10 @@ The JSON shape is fixed by [`spec/schema/parsed-track.schema.json`](spec/schema/
 | `keywords` | – | Extra vocabulary: `versionHeads`, `descriptors`, `genres`, `junk`, `featMarkers` |
 
 JavaScript takes an options object, Python takes keyword arguments
-(`parse(s, mode="youtube", uploader="Daft Punk")`), and Rust takes a builder
-(`parse_with(s, &ParseOptions::new().mode(ModeOption::Youtube).uploader("Daft Punk"))`).
+(`parse(s, mode="youtube", uploader="Daft Punk")`), Rust takes a builder
+(`parse_with(s, &ParseOptions::new().mode(ModeOption::Youtube).uploader("Daft Punk"))`), and Go
+takes a struct whose zero value is the default
+(`ParseWith(s, ParseOptions{Mode: ModeYouTube, Uploader: "Daft Punk"})`).
 
 ### Other functions
 
@@ -693,6 +779,17 @@ let parser = Parser::new(
 parser.parse("Chase & Status x Camo & Krooked - Track (Alix Perez Rerub)").versions[0].version_type; // Rework
 ```
 
+```go
+parser := trackparse.NewParser(trackparse.ParseOptions{
+	KnownArtists: []string{"Chase & Status", "Camo & Krooked"},
+	Keywords: trackparse.Keywords{
+		VersionHeads: []trackparse.VersionHead{{Key: "rerub", Type: trackparse.VersionTypeRework}},
+	},
+})
+
+fmt.Println(parser.Parse("Chase & Status x Camo & Krooked - Track (Alix Perez Rerub)").Versions[0].Type) // rework
+```
+
 ### Modes
 
 **Docs:** [Modes](https://4matic.github.io/trackparse/guides/modes/)
@@ -709,7 +806,8 @@ parser.parse("Chase & Status x Camo & Krooked - Track (Alix Perez Rerub)").versi
 
 **Docs:** [Tracklist API](https://4matic.github.io/trackparse/reference/tracklist/) · [Warnings](https://4matic.github.io/trackparse/reference/warnings/) · [Editing tracklists](https://4matic.github.io/trackparse/guides/editing-tracklists/)
 
-Import from `trackparse/tracklist` (Python: `trackparse.tracklist`, Rust: `trackparse::tracklist`).
+Import from `trackparse/tracklist` (Python: `trackparse.tracklist`, Rust: `trackparse::tracklist`,
+Go: the main package).
 In JavaScript it's a separate entry, so code that only parses single tracks never loads it. The
 JSON shape is fixed by [`spec/schema/tracklist.schema.json`](spec/schema/tracklist.schema.json).
 
@@ -800,6 +898,14 @@ constructors on `Edit`: `set_time(line, seconds)`, `shift(seconds)`, `shift_from
 `shift_lines(seconds, lines)`, `sort_by_time()`, `set_rest(line, rest)`, `insert(after, text)` and
 `delete(line)`.
 
+Go has `ParseTracklistWith` and `ApplyEditsWith`, which take
+`TracklistOptions{AudioSeconds: 3600, MarkerWords: []string{"drop"}}`. Edits are built with
+`SetTime(line, seconds)`, `Shift(seconds)`, `ShiftFrom(seconds, from)`,
+`ShiftLines(seconds, lines...)`, `SortByTime()`, `SetRest(line, rest)`, `Insert(after, text)` and
+`Delete(line)`. Because a zero value means the default, `AudioSeconds: 0` means unknown, and auto
+mode for the lines is `Mode: trackparse.Mode("auto")`
+([details](go/README.md#what-a-zero-value-cannot-say)).
+
 More on the options: [Tracklist options](https://4matic.github.io/trackparse/reference/options/#tracklist-options).
 
 ## How it works
@@ -809,7 +915,7 @@ More on the options: [Tracklist options](https://4matic.github.io/trackparse/ref
 The parser is a fixed pipeline of hand-written scanners over code points. It uses no regexes with
 lookaround or backreferences and nothing backtracks, so long input can't make it hang: each port's
 tests parse 10,000-code-point inputs under a time limit. Writing it this way is also what lets the
-Python and Rust ports give the same output as JavaScript.
+Python, Rust and Go ports give the same output as JavaScript.
 
 ```mermaid
 flowchart LR
@@ -844,19 +950,22 @@ spaced dashes. The checks run last, over the finished entries.
 | JavaScript / TypeScript | [`trackparse`](https://www.npmjs.com/package/trackparse) on npm | Node 18+ or any ES2020 runtime, no dependencies | [js/README.md](js/README.md) | [js/CHANGELOG.md](js/CHANGELOG.md) |
 | Python | [`trackparse`](https://pypi.org/project/trackparse/) on PyPI | Python 3.9+, no dependencies | [python/README.md](python/README.md) | [python/CHANGELOG.md](python/CHANGELOG.md) |
 | Rust | [`trackparse`](https://crates.io/crates/trackparse) on crates.io ([docs.rs](https://docs.rs/trackparse)) | Rust 1.74+, `unicode-normalization`, optional `serde` feature | [rust/README.md](rust/README.md) | [rust/CHANGELOG.md](rust/CHANGELOG.md) |
+| Go | [`github.com/4matic/trackparse/go`](https://pkg.go.dev/github.com/4matic/trackparse/go) on pkg.go.dev | Go 1.22+, no dependencies | [go/README.md](go/README.md) | first release pending |
 
-The JavaScript package is the reference implementation. All three pass 13,130 of 13,130 fixtures,
-and the Python and Rust output is byte-identical to JavaScript on every fixture input.
+The JavaScript package is the reference implementation. All four pass 13,130 of 13,130 fixtures,
+and the Python, Rust and Go output is byte-identical to JavaScript on every fixture input. The Go
+module is not released yet: its first version comes with the next release, tagged `go/vX.Y.Z`,
+and that release also starts `go/CHANGELOG.md`.
 
-The spec and the three packages share one version number and are released together, so the same
+The spec and the packages share one version number and are released together, so the same
 version means the same spec and the same fixtures in every language. The one known difference
 outside the fixtures is a
 [Unicode version note](https://4matic.github.io/trackparse/project/ports/#what-the-rust-port-taught) for the Rust crate. Changes to the rules and the fixtures are in
 [spec/CHANGELOG.md](spec/CHANGELOG.md).
 
 Want another language? The porting checklist is in
-[AGENTS.md](AGENTS.md#porting-guide-rust-others), along with the problems the Python and Rust ports
-ran into.
+[AGENTS.md](AGENTS.md#porting-guide-rust-others), along with the problems the earlier ports ran
+into.
 
 ## Compared to other libraries
 
@@ -893,7 +1002,7 @@ Not there yet:
   doesn't yet learn names from its other lines.
 - Warnings for gaps or overlaps between consecutive tracklist times.
 
-These limits are the same in all three packages, since they come from the spec. To see what the
+These limits are the same in all four packages, since they come from the spec. To see what the
 parser does with a string today, paste it into the
 [playground](https://4matic.github.io/trackparse/playground/).
 
@@ -905,14 +1014,14 @@ The most useful bug report is an input string plus the output you expected, file
 [issue](https://github.com/4matic/trackparse/issues). It usually becomes a fixture as is.
 
 Behaviour changes start in the spec: a rule in [SPEC.md](spec/SPEC.md), a fixture that pins it
-([fixture format](spec/fixtures/README.md)), then the code in all three ports (`js/`, `python/`,
-`rust/`). A change is done when every port passes every fixture and
+([fixture format](spec/fixtures/README.md)), then the code in all four ports (`js/`, `python/`,
+`rust/`, `go/`). A change is done when every port passes every fixture and
 `node scripts/compare-ports.mjs` prints `differences: 0`. [AGENTS.md](AGENTS.md) has the repo map,
 the workflow and every command.
 
 The documentation site lives in [`site/`](site) (Astro + Starlight, `pnpm docs` to run it locally)
-and deploys to GitHub Pages on every push to `main`. Its examples have JavaScript, Python and Rust
-tabs, and a change to behaviour updates them in the same pull request.
+and deploys to GitHub Pages on every push to `main`. Its examples have JavaScript, Python, Rust and
+Go tabs, and a change to behaviour updates them in the same pull request.
 
 ## License
 
