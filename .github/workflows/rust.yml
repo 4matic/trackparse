@@ -10,6 +10,7 @@ on:
       # The compare job diffs the crate against the built JS package.
       - "js/src/**"
       - "scripts/compare-ports.mjs"
+      - "scripts/lib/ports.mjs"
       - ".github/workflows/rust.yml"
 
 permissions:
