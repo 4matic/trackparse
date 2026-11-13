@@ -23,7 +23,7 @@ doesn't recognize stays in the title, word for word.
 This is the Rust port of [trackparse](https://github.com/4matic/trackparse). Its behaviour is
 defined by a [shared spec](https://github.com/4matic/trackparse/blob/main/spec/SPEC.md) and pinned
 by 13,130 fixtures. It passes all of them, and for every fixture input its output is byte-identical
-to the [JavaScript and Python packages](#other-languages).
+to the [JavaScript, Python and Go packages](#other-languages).
 
 - Rust 1.74 or later (the minimum supported version; CI runs the test suite on 1.74 and on stable)
 - One dependency (`unicode-normalization`); `serde` is optional
@@ -413,8 +413,8 @@ assert_eq!(track.versions[0].version_type, VersionType::Rework);
 ### `SPEC_VERSION`
 
 The spec version this build implements, `"0.5.0"` in this release. It equals the crate version:
-the crate, the npm package, the PyPI package and the spec are released together and always share
-one version number.
+the crate, the npm package, the PyPI package, the Go module and the spec are released together and
+always share one version number.
 
 ## Modes
 
@@ -642,7 +642,7 @@ from JSON can fail as any `serde` type can.
   API tests. The skip list is empty.
 - `scripts/compare-ports.mjs` in the repository runs every fixture input through the JavaScript
   package and this crate and compares the complete JSON output, every field of it, not only the
-  ones a fixture asserts. The Python package is checked the same way.
+  ones a fixture asserts. The Python package and the Go module are checked the same way.
 - The Unicode facts the rules need (letters, uppercase letters, lowercase mapping) are tables
   generated from the reference implementation and compiled into the crate. The output does not
   depend on the compiler's Unicode version: Rust 1.74 and current stable give the same bytes.
@@ -661,8 +661,9 @@ for some strings, so Cargo will not select them.
 
 The JavaScript package normalizes with its runtime's tables, which are Unicode 17 on Node 24.
 Unicode 18 added 32 combining marks, so a string that contains one of them can come out with its
-marks in another order here than in JavaScript on that runtime. Strings without those marks are
-not affected, and every shared fixture gives the same bytes.
+marks in another order here than in JavaScript on that runtime, and than in the Go module, whose
+NFC and NFD tables are generated from Node 24. Strings without those marks are not affected, and
+every shared fixture gives the same bytes.
 
 ## Performance
 
@@ -683,7 +684,7 @@ will not change your output. Read the changelog before moving to the next minor.
 
 **Docs:** [Ports](https://4matic.github.io/trackparse/project/ports/)
 
-The same parser exists for JavaScript and Python. All three implement one spec, pass the same
+The same parser exists for JavaScript, Python and Go. All four implement one spec, pass the same
 fixtures, are released together under one version number, and return identical JSON for every
 fixture input. You can parse in one language and read the result in another. The one known
 difference is described under [Unicode version](#unicode-version).
@@ -693,6 +694,10 @@ difference is described under [Unicode version](#unicode-version).
 | JavaScript / TypeScript | [trackparse on npm](https://www.npmjs.com/package/trackparse) | `npm install trackparse` |
 | Python | [trackparse on PyPI](https://pypi.org/project/trackparse/) | `pip install trackparse` |
 | Rust | [trackparse on crates.io](https://crates.io/crates/trackparse) | `cargo add trackparse` |
+| Go | [github.com/4matic/trackparse/go](https://pkg.go.dev/github.com/4matic/trackparse/go) | `go get github.com/4matic/trackparse/go` |
+
+The Go module's first version comes with the next release (tag `go/vX.Y.Z`); until then the
+pkg.go.dev page and `go get` find nothing.
 
 ## Limitations
 
@@ -724,15 +729,15 @@ same spec rule IDs. Behaviour changes start in the spec, not here: see
 
 ## Links
 
-- [Documentation](https://4matic.github.io/trackparse/), with every example in JavaScript, Python
-  and Rust, and a [playground](https://4matic.github.io/trackparse/playground/) that runs the
+- [Documentation](https://4matic.github.io/trackparse/), with every example in JavaScript, Python,
+  Rust and Go, and a [playground](https://4matic.github.io/trackparse/playground/) that runs the
   parser in your browser
 - [API documentation on docs.rs](https://docs.rs/trackparse)
 - [Spec](https://github.com/4matic/trackparse/blob/main/spec/SPEC.md)
 - [Changelog](https://github.com/4matic/trackparse/blob/main/rust/CHANGELOG.md)
 - [Project README](https://github.com/4matic/trackparse#readme)
 - [GitHub repository](https://github.com/4matic/trackparse)
-- [npm package](https://www.npmjs.com/package/trackparse) · [PyPI package](https://pypi.org/project/trackparse/)
+- [npm package](https://www.npmjs.com/package/trackparse) · [PyPI package](https://pypi.org/project/trackparse/) · [Go module](https://pkg.go.dev/github.com/4matic/trackparse/go)
 
 ## License
 
