@@ -4,7 +4,7 @@ description: What trackparse doesn't do yet, and what comes next.
 ---
 
 The limits below come from the [spec](/trackparse/reference/spec/), so they are the same in the
-JavaScript, Python and Rust packages. A new feature starts in the spec and lands in all three at
+JavaScript, Python, Rust and Go packages. A new feature starts in the spec and lands in all four at
 once.
 
 ## Not there yet
@@ -18,7 +18,7 @@ once.
   Only known label phrases (`[NCS Release]`) go to `junk` as `label`.
 - Key and BPM (`8A`, `174 BPM`) stay in the title too.
 - An artist database. `Earth, Wind & Fire` splits unless you pass it in
-  [`knownArtists`](/trackparse/guides/artists/#knownartists) (`known_artists` in Python and Rust),
+  [`knownArtists`](/trackparse/guides/artists/#knownartists) (`known_artists` in Python and Rust, `KnownArtists` in Go),
   and a tracklist doesn't learn names from its other lines yet.
 - Gap and overlap checks between consecutive tracklist times.
 

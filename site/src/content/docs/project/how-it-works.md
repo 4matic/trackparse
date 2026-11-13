@@ -5,9 +5,9 @@ description: The parsing pipeline, why it has no regex lookaround, and how track
 
 trackparse is a fixed pipeline of small hand-written scanners. There are no regexes with lookaround
 or backreferences, so nothing backtracks. A 10,000-code-point input takes tens of milliseconds in
-JavaScript and Rust, and well under a second in Python.
-The same design is what lets the JavaScript, Python and Rust packages give the same output: each
-step is a short function that reads the same way in all three languages.
+JavaScript, Rust and Go, and well under a second in Python.
+The same design is what lets the JavaScript, Python, Rust and Go packages give the same output: each
+step is a short function that reads the same way in all four languages.
 
 Each step below is a rule group in the [spec](/trackparse/reference/spec/):
 
@@ -25,8 +25,9 @@ input
 
 Every port keeps one source file per step, with the same rule IDs in the comments:
 [`js/src`](https://github.com/4matic/trackparse/tree/main/js/src),
-[`python/src/trackparse`](https://github.com/4matic/trackparse/tree/main/python/src/trackparse) and
-[`rust/src`](https://github.com/4matic/trackparse/tree/main/rust/src).
+[`python/src/trackparse`](https://github.com/4matic/trackparse/tree/main/python/src/trackparse),
+[`rust/src`](https://github.com/4matic/trackparse/tree/main/rust/src) and
+[`go`](https://github.com/4matic/trackparse/tree/main/go).
 
 ## Brackets first
 
@@ -91,4 +92,4 @@ The tracklist rules are [R13](/trackparse/reference/spec/#r13-tracklists).
 
 - [The spec](/trackparse/reference/spec/) for the full rules.
 - [How it's tested](/trackparse/project/testing/) for the fixtures and the cross-port diff.
-- [Ports](/trackparse/project/ports/) for the three implementations.
+- [Ports](/trackparse/project/ports/) for the four implementations.
