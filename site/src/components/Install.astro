@@ -1,5 +1,5 @@
 ---
-// One install line under the hero, switchable between npm, pip and cargo, with a copy button.
+// One install line under the hero, switchable between npm, pip, cargo and go, with a copy button.
 // The switch shares its choice with the docs' language tabs and the playground (lib/lang.ts).
 import Check from "@lucide/astro/icons/check";
 import Copy from "@lucide/astro/icons/copy";
@@ -9,6 +9,7 @@ const pms = [
   { lang: "js", label: "npm" },
   { lang: "py", label: "pip" },
   { lang: "rs", label: "cargo" },
+  { lang: "go", label: "go" },
 ] as const;
 ---
 
@@ -29,6 +30,7 @@ const pms = [
   <p class="pkgs">
     Published on <a href={PACKAGE.js.url}>npm</a>, <a href={PACKAGE.py.url}>PyPI</a> and{" "}
     <a href={PACKAGE.rs.url}>crates.io</a>. The Rust API docs are on <a href="https://docs.rs/trackparse">docs.rs</a>.
+    The Go module is published from the next release, with its docs on <a href={PACKAGE.go.url}>pkg.go.dev</a>.
   </p>
 </div>
 
@@ -115,7 +117,7 @@ const pms = [
     color: var(--sl-color-white);
     text-decoration-color: var(--sl-color-accent);
   }
-  /* Three package managers and a command don't fit one row on a phone: the switch gets its own. */
+  /* Four package managers and a command don't fit one row on a phone: the switch gets its own. */
   @media (max-width: 26rem) {
     .install {
       flex-wrap: wrap;
