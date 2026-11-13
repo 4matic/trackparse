@@ -1,8 +1,10 @@
 name: release
 
 # release-please keeps a "chore: release" PR up to date from conventional commits on main.
-# Merging that PR tags js-vX.Y.Z / spec-vX.Y.Z / python-vX.Y.Z / rust-vX.Y.Z, creates the GitHub
-# Releases, and publishes to npm, PyPI and (once enabled) crates.io.
+# Merging that PR tags js-vX.Y.Z / spec-vX.Y.Z / python-vX.Y.Z / rust-vX.Y.Z / go/vX.Y.Z, creates
+# the GitHub Releases, and publishes to npm, PyPI and (once enabled) crates.io. The Go module has
+# no registry upload: the go/vX.Y.Z tag is the release, and publish-go only checks it through the
+# Go module proxy.
 
 on:
   push:
@@ -15,6 +17,10 @@ on:
         default: ""
       rust_tag:
         description: "Re-publish an existing rust release tag to crates.io (e.g. rust-v0.5.0). Leave empty for a normal release-please run."
+        required: false
+        default: ""
+      go_tag:
+        description: "Re-run the Go module checks for an existing go release tag (e.g. go/v0.6.0). Leave empty for a normal release-please run."
         required: false
         default: ""
 
@@ -40,6 +46,10 @@ jobs:
       rust_release_created: ${{ steps.release.outputs['rust--release_created'] }}
       rust_tag_name: ${{ steps.release.outputs['rust--tag_name'] }}
       rust_version: ${{ steps.release.outputs['rust--version'] }}
+      # The path is "go", so the keys are go--*; the tag itself is go/vX.Y.Z (tag-separator "/").
+      go_release_created: ${{ steps.release.outputs['go--release_created'] }}
+      go_tag_name: ${{ steps.release.outputs['go--tag_name'] }}
+      go_version: ${{ steps.release.outputs['go--version'] }}
     steps:
       - uses: googleapis/release-please-action@v4
         id: release
@@ -325,3 +335,150 @@ jobs:
             echo "crates.io: https://crates.io/crates/trackparse/${VERSION} · docs: https://docs.rs/trackparse/${VERSION}"
           } > notes.md
           gh release edit "$TAG" --notes-file notes.md
+
+  # The Go module is published by its tag: there is no upload and no token. The proxy
+  # (proxy.golang.org) and the checksum database (sum.golang.org) fetch go/vX.Y.Z on the first
+  # request and keep that content forever; a bad version can only be retracted in go/go.mod and
+  # replaced by a new one. This job tests the tagged tree, makes that first request, installs the
+  # module from a clean module through the proxy, and adds install notes to the GitHub Release.
+  publish-go:
+    needs: release-please
+    if: needs.release-please.outputs.go_release_created == 'true' || (github.event_name == 'workflow_dispatch' && inputs.go_tag != '')
+    runs-on: ubuntu-latest
+    environment:
+      name: go
+      url: https://pkg.go.dev/github.com/4matic/trackparse/go
+    permissions:
+      contents: write # edit the GitHub Release notes
+    env:
+      # Test with the toolchain set up below, never an automatic download.
+      GOTOOLCHAIN: local
+      MODULE: github.com/4matic/trackparse/go
+    steps:
+      - name: Resolve the release tag
+        id: tag
+        env:
+          RELEASED_TAG: ${{ needs.release-please.outputs.go_tag_name }}
+          RELEASED_VERSION: ${{ needs.release-please.outputs.go_version }}
+          INPUT_TAG: ${{ inputs.go_tag }}
+        run: |
+          if [ -n "$INPUT_TAG" ]; then
+            tag="$INPUT_TAG"
+          else
+            tag="$RELEASED_TAG"
+          fi
+          # The go command only finds a module in go/ under tags named go/vX.Y.Z.
+          if ! printf '%s' "$tag" | grep -Eq '^go/v[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "the go tag must look like go/vX.Y.Z, got '$tag'" >&2
+            exit 1
+          fi
+          version="${tag#go/v}"
+          if [ -z "$INPUT_TAG" ] && [ "$version" != "$RELEASED_VERSION" ]; then
+            echo "tag $tag does not match the released version $RELEASED_VERSION" >&2
+            exit 1
+          fi
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: ${{ steps.tag.outputs.tag }}
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5.6.0
+        with:
+          go-version: stable
+          # No cache in the publishing job: nothing restored from a cache ends up in the release.
+          cache: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24
+
+      - name: Verify versions are in sync
+        env:
+          TAG_VERSION: ${{ steps.tag.outputs.version }}
+        run: |
+          go_version=$(sed -n 's/^const SpecVersion = "\([^"]*\)".*/\1/p' go/data_gen.go)
+          spec_version=$(cat spec/VERSION)
+          echo "go=$go_version spec=$spec_version tag=$TAG_VERSION"
+          test "$go_version" = "$TAG_VERSION"
+          test "$spec_version" = "$TAG_VERSION"
+          node go/scripts/gen_data.mjs --check
+
+      - name: Test
+        working-directory: go
+        run: |
+          go vet ./...
+          go test ./...
+
+      # The first request makes the proxy fetch the tag and the checksum database record it.
+      # A fresh tag can take a moment to become visible, so retry.
+      - name: Fetch the version through the module proxy
+        env:
+          VERSION: ${{ steps.tag.outputs.version }}
+        run: |
+          cd "$RUNNER_TEMP"
+          for attempt in 1 2 3 4 5 6 7 8 9 10; do
+            if GOPROXY=https://proxy.golang.org go list -m "$MODULE@v$VERSION"; then
+              exit 0
+            fi
+            echo "attempt $attempt: the proxy does not serve v$VERSION yet" >&2
+            sleep $((attempt * 15))
+          done
+          exit 1
+
+      # Install from a clean module, with the default GOPROXY and GOSUMDB, as a user would.
+      - name: go get from a clean module
+        env:
+          VERSION: ${{ steps.tag.outputs.version }}
+        run: |
+          dir="$RUNNER_TEMP/go-get-check"
+          mkdir -p "$dir"
+          cd "$dir"
+          go mod init example.com/check
+          go get "$MODULE@v$VERSION"
+          cat > main.go <<'EOF'
+          package main
+
+          import (
+          	"fmt"
+
+          	trackparse "github.com/4matic/trackparse/go"
+          )
+
+          func main() {
+          	t := trackparse.Parse("Noisia - Stigma (2015)")
+          	fmt.Println(trackparse.SpecVersion, t.Artists[0].Name, t.Title, *t.Year)
+          }
+          EOF
+          got=$(go run .)
+          want="$VERSION Noisia Stigma 2015"
+          echo "got:  $got"
+          echo "want: $want"
+          test "$got" = "$want"
+
+      # pkg.go.dev adds a version on any proxy request for it (https://pkg.go.dev/about); the
+      # steps above made one. The page can take a few minutes to appear.
+      - name: Request the version on pkg.go.dev
+        env:
+          VERSION: ${{ steps.tag.outputs.version }}
+        run: curl -fsS -o /dev/null "https://proxy.golang.org/$MODULE/@v/v$VERSION.info"
+
+      - name: Add install notes to the GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.tag.outputs.tag }}
+          VERSION: ${{ steps.tag.outputs.version }}
+        run: |
+          highlights=".github/release-notes/${VERSION}.md"
+          {
+            if [ -f "$highlights" ]; then cat "$highlights"; echo; fi
+            gh release view "$TAG" --json body --jq .body
+            echo
+            echo "### Install"
+            echo
+            echo '```sh'
+            echo "go get ${MODULE}@v${VERSION}"
+            echo '```'
+            echo
+            echo "pkg.go.dev: https://pkg.go.dev/${MODULE}@v${VERSION} · implements spec ${VERSION} ([SPEC.md](https://github.com/${GITHUB_REPOSITORY}/blob/${TAG}/spec/SPEC.md))"
+          } > "$RUNNER_TEMP/notes.md"
+          # The npm release (js-vX.Y.Z) stays "Latest"; don't touch that flag here.
+          gh release edit "$TAG" --notes-file "$RUNNER_TEMP/notes.md"
