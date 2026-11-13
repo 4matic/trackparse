@@ -87,14 +87,18 @@ func parseTracklist(text string, o resolvedTracklist) Tracklist {
 		if flagAt(confirmed, i) {
 			bare = r.bare
 		}
-		input, probe := r.text, r.probe
+		// The probe already ran R1, R2 and R4; finish completes the parse from it. A line that
+		// loses a bare position is probed again on the stripped text, so each probe is finished
+		// exactly once.
+		input, probe := r.text, &r.probe
 		if bare != nil {
 			input = bare.stripped
-			probe = e.probe(input)
+			stripped := e.probe(input)
+			probe = &stripped
 		}
 		r.marker = hasMarkerWord(input, markers)
 		// R13.4.2: the R6.10 tight dash only on timed lines without a marker word.
-		track := e.run(input, listContext && r.scan.time != nil && !r.marker)
+		track := probe.finish(listContext && r.scan.time != nil && !r.marker)
 		if bare != nil {
 			track.Position = &Position{Raw: bare.raw, Number: bare.number}
 		}
