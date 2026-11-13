@@ -5,8 +5,8 @@ description: Fix times, shift whole sections, sort, insert and delete lines, and
 
 import { Tabs, TabItem } from "@astrojs/starlight/components";
 
-`applyEdits(text, edits)` (`apply_edits` in Python and Rust) takes a tracklist as text and returns
-new text. It's built for editors: you get back the lines it changed, and every other line keeps its
+`applyEdits(text, edits)` (`apply_edits` in Python and Rust, `ApplyEdits` in Go) takes a
+tracklist as text and returns new text. It's built for editors: you get back the lines it changed, and every other line keeps its
 bytes and its line ending. The rules are [R13.9](/trackparse/reference/spec/#r139-edits) in the
 spec.
 
@@ -29,6 +29,17 @@ from trackparse.tracklist import apply_edits, parse_tracklist
 
 ```rust
 use trackparse::tracklist::{apply_edits, parse_tracklist, Edit};
+```
+
+</TabItem>
+<TabItem label="Go">
+
+```go
+import (
+    "fmt"
+
+    "github.com/4matic/trackparse/go"
+)
 ```
 
 </TabItem>
@@ -103,11 +114,50 @@ result.text.split("\r\n").skip(4).collect::<Vec<_>>();
 ```
 
 </TabItem>
+<TabItem label="Go">
+
+```go
+import "strings"
+
+// text is the list from the previous page.
+text := strings.Join([]string{
+    "Hour 2", "48:20 Noisia - Stigma", "52:47 Mefjus & Kasra - Bandwagon (Phace Remix)",
+    "56:05 Black Sun Empire - ID", "59:31 Alix Perez - Fade Away", "01:03:10 Interview with Hybris",
+    "01:07:44 Imanu - Sacrifice", "00:11:02 Current Value feat. Teddy Killerz - Payload",
+    "01:15:36 Hybris - Spinning Top",
+}, "\r\n")
+
+fix := *trackparse.ParseTracklist(text).Warnings[1].Suggestion
+fmt.Printf("%+v\n", fix)   // {Line:8 Raw:01:11:02 Seconds:4262}
+
+result := trackparse.ApplyEdits(text, []trackparse.Edit{
+    trackparse.SetTime(fix.Line, fix.Seconds),
+    trackparse.ShiftFrom(45, 5),
+})
+
+fmt.Println(result.Changed)   // [5 6 7 8 9]
+for _, w := range result.Warnings {
+    fmt.Println(w.Code, w.Edit, *w.Line)
+}
+// style-upgraded 1 5
+for _, line := range strings.Split(result.Text, "\r\n")[4:] {
+    fmt.Println(line)
+}
+// 01:00:16 Alix Perez - Fade Away
+// 01:03:55 Interview with Hybris
+// 01:08:29 Imanu - Sacrifice
+// 01:11:47 Current Value feat. Teddy Killerz - Payload
+// 01:16:21 Hybris - Spinning Top
+```
+
+</TabItem>
 </Tabs>
 
 In JavaScript an edit is an object with an `op`. In Python it is a plain dict with the same keys,
 `"from"` included. In Rust it is a value of the `Edit` enum, made with a function per edit:
-`Edit::set_time(line, seconds)`, `Edit::shift_from(seconds, from)`.
+`Edit::set_time(line, seconds)`, `Edit::shift_from(seconds, from)`. In Go it is an `Edit` struct,
+made with a function per edit as well: `trackparse.SetTime(line, seconds)`,
+`trackparse.ShiftFrom(seconds, from)`.
 
 Lines 1 to 4 are untouched, CRLF included. Edits run in order, each on the text the previous one
 produced, with line numbers as that text has them.
@@ -115,18 +165,18 @@ produced, with line numbers as that text has them.
 ## The edits
 
 There are six edits. JavaScript and Python write them the same way, as an object or a dict. Rust
-has a constructor for each:
+and Go have a constructor for each:
 
-| JavaScript and Python | Rust | Effect |
-|---|---|---|
-| `{ op: "set-time", line, seconds }` | `Edit::set_time(line, seconds)` | Rewrite the time on that line |
-| `{ op: "shift", seconds }` | `Edit::shift(seconds)` | Add `seconds` (negative to go back) to every timed line |
-| `{ op: "shift", seconds, from }` | `Edit::shift_from(seconds, from)` | The same, for every timed line from line `from` on |
-| `{ op: "shift", seconds, lines }` | `Edit::shift_lines(seconds, lines)` | The same, for the listed lines only |
-| `{ op: "sort-by-time" }` | `Edit::sort_by_time()` | Reorder by time. Untimed lines move with the timed line above them, and lines before the first time stay on top |
-| `{ op: "set-rest", line, rest }` | `Edit::set_rest(line, rest)` | Replace everything after the time, for example with `format(track)` (`format_track`) |
-| `{ op: "insert", after, text }` | `Edit::insert(after, text)` | Insert a line after line `after` (`0` puts it at the top). It gets the text's usual line ending |
-| `{ op: "delete", line }` | `Edit::delete(line)` | Remove a line |
+| JavaScript and Python | Rust | Go | Effect |
+|---|---|---|---|
+| `{ op: "set-time", line, seconds }` | `Edit::set_time(line, seconds)` | `SetTime(line, seconds)` | Rewrite the time on that line |
+| `{ op: "shift", seconds }` | `Edit::shift(seconds)` | `Shift(seconds)` | Add `seconds` (negative to go back) to every timed line |
+| `{ op: "shift", seconds, from }` | `Edit::shift_from(seconds, from)` | `ShiftFrom(seconds, from)` | The same, for every timed line from line `from` on |
+| `{ op: "shift", seconds, lines }` | `Edit::shift_lines(seconds, lines)` | `ShiftLines(seconds, lines...)` | The same, for the listed lines only |
+| `{ op: "sort-by-time" }` | `Edit::sort_by_time()` | `SortByTime()` | Reorder by time. Untimed lines move with the timed line above them, and lines before the first time stay on top |
+| `{ op: "set-rest", line, rest }` | `Edit::set_rest(line, rest)` | `SetRest(line, rest)` | Replace everything after the time, for example with `format(track)` (`format_track`) |
+| `{ op: "insert", after, text }` | `Edit::insert(after, text)` | `Insert(after, text)` | Insert a line after line `after` (`0` puts it at the top). It gets the text's usual line ending |
+| `{ op: "delete", line }` | `Edit::delete(line)` | `Delete(line)` | Remove a line |
 
 In Python the dict keys are quoted: `{"op": "set-time", "line": 3, "seconds": 90}`. Line numbers
 start at 1.
@@ -200,6 +250,26 @@ tidy.changed;   // [1, 2, 3]
 ```
 
 </TabItem>
+<TabItem label="Go">
+
+```go
+messy := "04:10 Mefjus ft. Phace - Sleepless\n00:00 Noisia - Stigma\n09:30 Outro"
+track := *trackparse.ParseTracklist(messy).Entries[0].Track
+rest := trackparse.FormatWith(track, trackparse.FormatOptions{Joiners: trackparse.JoinersCanonical})
+fmt.Printf("%q\n", rest)   // "Mefjus feat. Phace - Sleepless"
+
+tidy := trackparse.ApplyEdits(messy, []trackparse.Edit{
+    trackparse.SortByTime(),
+    trackparse.SetRest(2, rest),
+    trackparse.Insert(2, "06:45 Phace - Psycho"),
+    trackparse.Delete(4),
+})
+
+fmt.Printf("%q\n", tidy.Text)   // "00:00 Noisia - Stigma\n04:10 Mefjus feat. Phace - Sleepless\n06:45 Phace - Psycho"
+fmt.Println(tidy.Changed)       // [1 2 3]
+```
+
+</TabItem>
 </Tabs>
 
 Each edit sees the text the one before it produced. After the sort, the Mefjus line is line 2, and
@@ -256,6 +326,21 @@ result.warnings;  // [EditWarning { code: StyleUpgraded, edit: 0, line: Some(2) 
 ```
 
 </TabItem>
+<TabItem label="Go">
+
+```go
+text = "**[**52:47**] Mefjus - Bandwagon**\n**[**59:31**] Alix Perez - Fade Away**"
+result = trackparse.ApplyEdits(text, []trackparse.Edit{trackparse.Shift(45)})
+
+fmt.Printf("%q\n", result.Text)
+// "**[**53:32**] Mefjus - Bandwagon**\n**[**01:00:16**] Alix Perez - Fade Away**"
+for _, w := range result.Warnings {
+    fmt.Println(w.Code, w.Edit, *w.Line)
+}
+// style-upgraded 0 2
+```
+
+</TabItem>
 </Tabs>
 
 `set-rest` replaces everything after the gap, including a closing `**` at the end of the line. The
@@ -265,7 +350,8 @@ time is still read afterwards, because emphasis next to a time doesn't need a pa
 ## When an edit can't apply
 
 Edits never throw or panic. A bad one changes nothing and reports why. In Rust the codes are the
-enum `EditWarningCode` (`EditInvalid`, `TimeClamped`, `StyleUpgraded`):
+enum `EditWarningCode` (`EditInvalid`, `TimeClamped`, `StyleUpgraded`), in Go the string type
+`EditWarningCode` (`trackparse.EditWarningCodeEditInvalid` and so on):
 
 | Code | When |
 |---|---|
@@ -274,7 +360,7 @@ enum `EditWarningCode` (`EditInvalid`, `TimeClamped`, `StyleUpgraded`):
 | `style-upgraded` | a time gained hours (see above) |
 
 Each edit warning is `{ code, edit, line }`, where `edit` is the index in your `edits` array and
-`line` is `null` (`None` in Python and Rust) when the edit doesn't name a line.
+`line` is `null` (`None` in Python and Rust, a `nil` `*int` in Go) when the edit doesn't name a line.
 [Warnings](/trackparse/reference/warnings/#edit-warnings) shows how to check them in each language.
 
 ## Guarantees

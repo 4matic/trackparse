@@ -7,9 +7,11 @@ Every row below is a real result of `parse(input)` with default options, except 
 *youtube*. Click an input to open it in the [playground](/trackparse/playground/) and see the full
 output.
 
-The results are the same in JavaScript, Python and Rust, because all three follow one
+The results are the same in JavaScript, Python, Rust and Go, because all four follow one
 [spec](/trackparse/reference/spec/). The values are shown as they appear in JSON: `remix`, `bySplit`.
-In Rust they are enum variants such as `VersionType::Remix` and `Warning::BySplit`.
+In Rust they are enum variants such as `VersionType::Remix` and `Warning::BySplit`. In Go they are
+typed string constants such as `trackparse.VersionTypeRemix` and `trackparse.WarningBySplit`, whose
+values are these same names.
 
 | Input | Artists | Title | Versions and other fields |
 |---|---|---|---|
@@ -54,7 +56,7 @@ like one: `01.` or `1)`, a zero-padded `01 `, `3 - Artist - Title`, or `07_` in 
 never start a second artist. `& The` does split, on purpose: `Noisia & The Upbeats` is two
 acts. `Chase & Status` splits too, because nothing in the string tells it apart from two artists.
 Names like that go in [`knownArtists`](/trackparse/guides/artists/#knownartists) (`known_artists` in
-Python and Rust).
+Python and Rust, `KnownArtists` in Go).
 
 **The Rolling Stones keep their brackets.** `(I Can't Get No)` is not a version, a feat or junk, so
 it stays in the title. That's the rule: anything unrecognized is left alone.
@@ -62,13 +64,14 @@ it stays in the title. That's the rule: anything unrecognized is left alone.
 **Two rows needed `mode: "youtube"`.** `"Numb" by Linkin Park` and `Blink-182-All The Small Things`
 are fine guesses on YouTube and bad ones in a music library, so the default `clean` mode won't make
 them. In `youtube` mode it does, and it tells you through `warnings`. In Python the option is
-`mode="youtube"`, in Rust `ParseOptions::new().mode(ModeOption::Youtube)`. See
+`mode="youtube"`, in Rust `ParseOptions::new().mode(ModeOption::Youtube)`, in Go
+`trackparse.ParseOptions{Mode: trackparse.ModeYouTube}`. See
 [Modes](/trackparse/guides/modes/#youtube-mode) and [Warnings](/trackparse/reference/warnings/).
 
 ## In a tracklist
 
 Lines of a pasted tracklist go through
-[`parseTracklist`](/trackparse/guides/tracklists/) (`parse_tracklist` in Python and Rust), which
+[`parseTracklist`](/trackparse/guides/tracklists/) (`parse_tracklist` in Python and Rust, `ParseTracklist` in Go), which
 also reads list bullets, Markdown emphasis and `w/` lines. Each input below is one line; click it to open it in the playground's
 tracklist tab.
 

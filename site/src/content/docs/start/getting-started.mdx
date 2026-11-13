@@ -1,6 +1,6 @@
 ---
 title: Getting started
-description: Install trackparse for JavaScript, Python or Rust and parse your first track.
+description: Install trackparse for JavaScript, Python, Rust or Go and parse your first track.
 ---
 
 import { Aside, Steps, Tabs, TabItem } from "@astrojs/starlight/components";
@@ -38,6 +38,16 @@ import { Aside, Steps, Tabs, TabItem } from "@astrojs/starlight/components";
         `unsafe` code. The crate is
         [`trackparse` on crates.io](https://crates.io/crates/trackparse), and its API docs are on
         [docs.rs](https://docs.rs/trackparse).
+      </TabItem>
+      <TabItem label="Go">
+        ```sh
+        go get github.com/4matic/trackparse/go@latest
+        ```
+
+        Go 1.22 or newer, no dependencies. The package name is `trackparse`. The module is not
+        published yet: `go get` finds it from the next release, which tags `go/vX.Y.Z`. Its API
+        docs will then be on
+        [pkg.go.dev](https://pkg.go.dev/github.com/4matic/trackparse/go).
       </TabItem>
     </Tabs>
 
@@ -78,6 +88,25 @@ import { Aside, Steps, Tabs, TabItem } from "@astrojs/starlight/components";
         track.artists[1].role;                                       // Featured
         ```
       </TabItem>
+      <TabItem label="Go">
+        ```go
+        import (
+            "fmt"
+
+            "github.com/4matic/trackparse/go"
+        )
+
+        track := trackparse.Parse("Noisia feat. Foreign Beggars - Shellshock")
+
+        fmt.Printf("%q\n", track.Title)   // "Shellshock"
+        names := []string{}
+        for _, a := range track.Artists {
+            names = append(names, a.Name)
+        }
+        fmt.Printf("%q\n", names)                 // ["Noisia" "Foreign Beggars"]
+        fmt.Println(track.Artists[1].Role)       // featured
+        ```
+      </TabItem>
     </Tabs>
 
 3. Look at the versions and the noise.
@@ -116,6 +145,20 @@ import { Aside, Steps, Tabs, TabItem } from "@astrojs/starlight/components";
         // ["remix by Mefjus", "remix by Noisia"]
         ```
       </TabItem>
+      <TabItem label="Go">
+        ```go
+        t := trackparse.Parse("Daft Punk - One More Time (Official Music Video) [HD]")
+        fmt.Printf("%q\n", t.Title)   // "One More Time"
+        fmt.Printf("%+v\n", t.Junk)   // [{Raw:Official Music Video Kind:video} {Raw:HD Kind:quality}]
+
+        r := trackparse.Parse("Dimension - Offshore (Mefjus Remix / Noisia Remix)")
+        for _, v := range r.Versions {
+            fmt.Println(v.Type, "by", v.Artists[0].Name)
+        }
+        // remix by Mefjus
+        // remix by Noisia
+        ```
+      </TabItem>
     </Tabs>
 
 4. Tell it about names that contain a joiner.
@@ -151,6 +194,22 @@ import { Aside, Steps, Tabs, TabItem } from "@astrojs/starlight/components";
         // ["Chase & Status"]
         ```
       </TabItem>
+      <TabItem label="Go">
+        ```go
+        names = nil
+        for _, a := range trackparse.Parse("Chase & Status - Baddadan").Artists {
+            names = append(names, a.Name)
+        }
+        fmt.Printf("%q\n", names)   // ["Chase" "Status"]
+
+        options := trackparse.ParseOptions{KnownArtists: []string{"Chase & Status"}}
+        names = nil
+        for _, a := range trackparse.ParseWith("Chase & Status - Baddadan", options).Artists {
+            names = append(names, a.Name)
+        }
+        fmt.Printf("%q\n", names)   // ["Chase & Status"]
+        ```
+      </TabItem>
     </Tabs>
 
 5. Write it back, or turn it into JSON.
@@ -179,6 +238,15 @@ import { Aside, Steps, Tabs, TabItem } from "@astrojs/starlight/components";
 
         format_track(&t);   // "Daft Punk - One More Time"
         t.to_json();        // "{\"input\":\"Daft Punk - One More Time (Official Music Video) [HD]\",\"mode\":\"youtube\",…}"
+        ```
+      </TabItem>
+      <TabItem label="Go">
+        ```go
+        import "encoding/json"
+
+        fmt.Println(trackparse.Format(t))   // Daft Punk - One More Time
+        data, _ := json.Marshal(t)
+        fmt.Println(string(data))           // {"input":"Daft Punk - One More Time (Official Music Video) [HD]","mode":"youtube",…}
         ```
       </TabItem>
     </Tabs>
@@ -217,13 +285,28 @@ import { Aside, Steps, Tabs, TabItem } from "@astrojs/starlight/components";
 
         `time` and `track` are `Option`s in Rust, because a blank line or a note has neither.
       </TabItem>
+      <TabItem label="Go">
+        ```go
+        list := trackparse.ParseTracklist("00:00 Noisia - Stigma\n04:10 Mefjus - Sleepless (Phace Remix)")
+        for _, e := range list.Entries {
+            if e.Time != nil && e.Track != nil {
+                fmt.Printf("%vs %s\n", e.Time.Seconds, e.Track.Title)
+            }
+        }
+        // 0s Stigma
+        // 250s Sleepless
+        fmt.Println(len(list.Warnings))   // 0
+        ```
+
+        `Time` and `Track` are pointers in Go, `nil` on a blank line or a note.
+      </TabItem>
     </Tabs>
 
 </Steps>
 
 <Aside type="tip" title="Parsing a lot of strings?">
-`createParser(options)` (`create_parser` in Python, `Parser::new(&options)` in Rust) compiles your
-options and keywords once. Its `parse` method is the same function with those options already applied. See [Other functions](/trackparse/reference/functions/#createparseroptions).
+`createParser(options)` (`create_parser` in Python, `Parser::new(&options)` in Rust,
+`trackparse.NewParser(options)` in Go) compiles your options and keywords once. Its `parse` method is the same function with those options already applied. See [Other functions](/trackparse/reference/functions/#createparseroptions).
 </Aside>
 
 ## Where each task is explained

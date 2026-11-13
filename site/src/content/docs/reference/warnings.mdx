@@ -9,23 +9,24 @@ trackparse never fails, but it does tell you when it had to guess. Warnings are 
 three kinds: on a single track, on a tracklist, and on an edit.
 
 In JavaScript and Python a warning code is a string. In Rust it is an enum variant, and `as_str()`
-or `Display` gives the same string. The tables below list both.
+or `Display` gives the same string. In Go it is a constant of a string type, whose value is the
+string. The tables below list all three.
 
 ## Track warnings
 
 `ParsedTrack.warnings` is a list of codes: an array of strings in JavaScript, a tuple of strings in
-Python, a `Vec<Warning>` in Rust. An empty list means every decision was unambiguous.
+Python, a `Vec<Warning>` in Rust, a `[]Warning` in Go. An empty list means every decision was unambiguous.
 
-| Warning | Rust | Means | Example |
-|---|---|---|---|
-| `noSeparator` | `Warning::NoSeparator` | No artist/title separator was found. The whole string is the title | `Around the World` |
-| `ambiguousSeparator` | `Warning::AmbiguousSeparator` | A pipe-separated YouTube title had two parts and no dash, so they were read as artist and title | `Noisia \| Stigma` |
-| `unspacedDashSplit` | `Warning::UnspacedDashSplit` | Split at a dash without spaces around it (youtube and filename modes, and timed tracklist lines) | `Blink-182-All The Small Things` |
-| `asymmetricDashSplit` | `Warning::AsymmetricDashSplit` | Split at a dash with a space on one side only | `Artist -Title` |
-| `bySplit` | `Warning::BySplit` | Read `"Title" by Artist` (youtube mode) | `"Numb" by Linkin Park` |
-| `quotedTitleSplit` | `Warning::QuotedTitleSplit` | Took a quoted span as the title and what came before it as the artist (youtube mode) | `Linkin Park: "Numb"` |
-| `ambiguousMixCredit` | `Warning::AmbiguousMixCredit` | `<Name> Mix` was read as a remix, but the name is long enough that it might be a style | `(Fonetick Lee & Sonic Art Space Drums Mix)` |
-| `unbalancedBrackets` | `Warning::UnbalancedBrackets` | A bracket was opened and never closed | `Noisia - Stigma (VIP` |
+| Warning | Rust | Go | Means | Example |
+|---|---|---|---|---|
+| `noSeparator` | `Warning::NoSeparator` | `WarningNoSeparator` | No artist/title separator was found. The whole string is the title | `Around the World` |
+| `ambiguousSeparator` | `Warning::AmbiguousSeparator` | `WarningAmbiguousSeparator` | A pipe-separated YouTube title had two parts and no dash, so they were read as artist and title | `Noisia \| Stigma` |
+| `unspacedDashSplit` | `Warning::UnspacedDashSplit` | `WarningUnspacedDashSplit` | Split at a dash without spaces around it (youtube and filename modes, and timed tracklist lines) | `Blink-182-All The Small Things` |
+| `asymmetricDashSplit` | `Warning::AsymmetricDashSplit` | `WarningAsymmetricDashSplit` | Split at a dash with a space on one side only | `Artist -Title` |
+| `bySplit` | `Warning::BySplit` | `WarningBySplit` | Read `"Title" by Artist` (youtube mode) | `"Numb" by Linkin Park` |
+| `quotedTitleSplit` | `Warning::QuotedTitleSplit` | `WarningQuotedTitleSplit` | Took a quoted span as the title and what came before it as the artist (youtube mode) | `Linkin Park: "Numb"` |
+| `ambiguousMixCredit` | `Warning::AmbiguousMixCredit` | `WarningAmbiguousMixCredit` | `<Name> Mix` was read as a remix, but the name is long enough that it might be a style | `(Fonetick Lee & Sonic Art Space Drums Mix)` |
+| `unbalancedBrackets` | `Warning::UnbalancedBrackets` | `WarningUnbalancedBrackets` | A bracket was opened and never closed | `Noisia - Stigma (VIP` |
 
 What to do with them depends on your data. For a music library, a track with any warning is a good
 candidate for a human to look at. For scrobbling, most of them are fine to accept.
@@ -88,24 +89,61 @@ for warning in &track.warnings {
 a warning. `Warning::ALL` lists the variants, and `Warning::from_name("bySplit")` reads a code back.
 
 </TabItem>
+<TabItem label="Go">
+
+```go
+import (
+    "fmt"
+    "slices"
+    "strings"
+
+    "github.com/4matic/trackparse/go"
+)
+
+track := trackparse.ParseWith("Blink-182-All The Small Things", trackparse.ParseOptions{Mode: trackparse.ModeYouTube})
+
+fmt.Println(track.Warnings)                                                         // [unspacedDashSplit]
+fmt.Println(slices.Contains(track.Warnings, trackparse.WarningUnspacedDashSplit))   // true
+fmt.Println(len(track.Warnings) == 0)                                               // false
+
+for _, warning := range track.Warnings {
+    switch warning {
+    case trackparse.WarningNoSeparator:
+        fmt.Println("no artist")
+    case trackparse.WarningUnspacedDashSplit, trackparse.WarningAsymmetricDashSplit:
+        fmt.Println("check the dash")
+    default:
+        fmt.Println(warning)   // the code itself, such as bySplit
+    }
+}
+// check the dash
+```
+
+`Warning` is a string type, so a warning prints as its code and compares with the constants
+(`trackparse.WarningBySplit`). Keep a `default` case: a later spec version can add a warning.
+`trackparse.AllWarnings` lists the codes.
+
+</TabItem>
 </Tabs>
 
 ## Tracklist warnings
 
 `Tracklist.warnings` holds objects: `{ code, line, severity, suggestion }`. They are sorted by line.
 In Rust the code is a `WarningCode` and the severity is `Severity::Info` or `Severity::Warning`.
+In Go they are a `WarningCode` and `SeverityInfo` or `SeverityWarning`, and `Suggestion` is a
+pointer.
 
-| Code | Rust | Severity | When |
-|---|---|---|---|
-| `time-missing` | `WarningCode::TimeMissing` | warning | A track line has no time while other lines do (not raised on a `w/` line, which plays at the previous track's time) |
-| `time-out-of-order` | `WarningCode::TimeOutOfOrder` | warning | Earlier than the previous timed line. May carry a `suggestion` |
-| `time-duplicate` | `WarningCode::TimeDuplicate` | warning | Same time as the previous timed line |
-| `no-start-at-zero` | `WarningCode::NoStartAtZero` | info | The first time isn't `0:00` |
-| `time-after-audio-end` | `WarningCode::TimeAfterAudioEnd` | warning | Later than `audioSeconds` (`audio_seconds`) |
-| `invalid-time` | `WarningCode::InvalidTime` | warning | Looks like a time but isn't one (`1:75`, `0:61:00`). The line keeps it in `rest` |
-| `position-gap` | `WarningCode::PositionGap` | warning | A track number isn't the previous one plus 1 |
-| `position-duplicate` | `WarningCode::PositionDuplicate` | warning | Same track number as the previous one |
-| `line-unparsed` | `WarningCode::LineUnparsed` | warning | A track line with no artist/title separator, or nothing after the time |
+| Code | Rust | Go | Severity | When |
+|---|---|---|---|---|
+| `time-missing` | `WarningCode::TimeMissing` | `WarningCodeTimeMissing` | warning | A track line has no time while other lines do (not raised on a `w/` line, which plays at the previous track's time) |
+| `time-out-of-order` | `WarningCode::TimeOutOfOrder` | `WarningCodeTimeOutOfOrder` | warning | Earlier than the previous timed line. May carry a `suggestion` |
+| `time-duplicate` | `WarningCode::TimeDuplicate` | `WarningCodeTimeDuplicate` | warning | Same time as the previous timed line |
+| `no-start-at-zero` | `WarningCode::NoStartAtZero` | `WarningCodeNoStartAtZero` | info | The first time isn't `0:00` |
+| `time-after-audio-end` | `WarningCode::TimeAfterAudioEnd` | `WarningCodeTimeAfterAudioEnd` | warning | Later than `audioSeconds` (`audio_seconds`, `AudioSeconds`) |
+| `invalid-time` | `WarningCode::InvalidTime` | `WarningCodeInvalidTime` | warning | Looks like a time but isn't one (`1:75`, `0:61:00`). The line keeps it in `rest` |
+| `position-gap` | `WarningCode::PositionGap` | `WarningCodePositionGap` | warning | A track number isn't the previous one plus 1 |
+| `position-duplicate` | `WarningCode::PositionDuplicate` | `WarningCodePositionDuplicate` | warning | Same track number as the previous one |
+| `line-unparsed` | `WarningCode::LineUnparsed` | `WarningCodeLineUnparsed` | warning | A track line with no artist/title separator, or nothing after the time |
 
 Warnings of each line's own track stay on `entries[i].track.warnings`. They are the
 [track warnings](#track-warnings) above and are not repeated in the list's `warnings`.
@@ -173,6 +211,34 @@ list.warnings.iter().any(|w| w.code == WarningCode::TimeOutOfOrder);   // true
 `WarningCode` is `#[non_exhaustive]` too, so keep a `_` arm when you `match` on it.
 
 </TabItem>
+<TabItem label="Go">
+
+```go
+text := "00:00 Noisia - Stigma\n04:10 Mefjus - Sleepless\n03:55 Phace - Psycho\n09:30 Imanu"
+list := trackparse.ParseTracklist(text)
+
+for _, w := range list.Warnings {
+    fmt.Println(w.Code, w.Line, w.Severity, w.Suggestion == nil)
+}
+// time-out-of-order 3 warning true
+// line-unparsed 4 warning true
+
+for _, w := range list.Warnings {
+    if w.Severity == trackparse.SeverityWarning {
+        fmt.Printf("line %d: %s\n", w.Line, w.Code)
+    }
+}
+// line 3: time-out-of-order
+// line 4: line-unparsed
+
+fmt.Println(slices.ContainsFunc(list.Warnings, func(w trackparse.TracklistWarning) bool {
+    return w.Code == trackparse.WarningCodeTimeOutOfOrder
+}))   // true
+```
+
+`WarningCode` is a string type too; keep a `default` case when you `switch` on it.
+
+</TabItem>
 </Tabs>
 
 Here line 3 has no suggestion, because more than one time would fit between its neighbours. The
@@ -188,7 +254,7 @@ written, that puts the list back in order. It's written in the same style as the
 The search runs in two steps. First it tries the flagged line itself. If no time fits there, it
 tries the previous timed line, since sometimes that's where the typo is:
 `01:22:21` followed by `01:03:55` suggests changing the first line to `01:02:21`. If more than one
-candidate fits, or none does, `suggestion` is `null` (`None` in Python and Rust). A wrong
+candidate fits, or none does, `suggestion` is `null` (`None` in Python and Rust, `nil` in Go). A wrong
 suggestion would be worse than none.
 
 To apply one, pass its `line` and `seconds` to a `set-time` edit. See
@@ -196,14 +262,16 @@ To apply one, pass its `line` and `seconds` to a `set-time` edit. See
 
 ## Edit warnings
 
-`applyEdits` (`apply_edits` in Python and Rust) returns `{ code, edit, line }` objects. `edit` is
-the index in your list of edits, and `line` is `null` (`None`) when the edit names no line.
+`applyEdits` (`apply_edits` in Python and Rust, `ApplyEdits` in Go) returns `{ code, edit, line }`
+objects. `edit` is
+the index in your list of edits, and `line` is `null` (`None`, `nil` in Go) when the edit names no
+line.
 
-| Code | Rust | When |
-|---|---|---|
-| `style-upgraded` | `EditWarningCode::StyleUpgraded` | a time without hours passed one hour and gained them |
-| `time-clamped` | `EditWarningCode::TimeClamped` | a time would go below zero and was set to zero |
-| `edit-invalid` | `EditWarningCode::EditInvalid` | the edit could not apply and changed nothing |
+| Code | Rust | Go | When |
+|---|---|---|---|
+| `style-upgraded` | `EditWarningCode::StyleUpgraded` | `EditWarningCodeStyleUpgraded` | a time without hours passed one hour and gained them |
+| `time-clamped` | `EditWarningCode::TimeClamped` | `EditWarningCodeTimeClamped` | a time would go below zero and was set to zero |
+| `edit-invalid` | `EditWarningCode::EditInvalid` | `EditWarningCodeEditInvalid` | the edit could not apply and changed nothing |
 
 <Tabs syncKey="lang">
 <TabItem label="JavaScript">
@@ -257,6 +325,30 @@ result.text.split('\n').nth(1);  // Some("00:00 Mefjus - Sleepless")
 
 result.warnings.iter().any(|w| w.code == EditWarningCode::EditInvalid);   // true
 ```
+
+</TabItem>
+<TabItem label="Go">
+
+```go
+result := trackparse.ApplyEdits(text, []trackparse.Edit{
+    trackparse.SetTime(9, 60),           // there is no line 9
+    trackparse.ShiftLines(-300, 2),      // 04:10 minus five minutes
+})
+
+for _, w := range result.Warnings {
+    fmt.Println(w.Code, w.Edit, *w.Line)
+}
+// edit-invalid 0 9
+// time-clamped 1 2
+fmt.Println(result.Changed)                                // [2]
+fmt.Printf("%q\n", strings.Split(result.Text, "\n")[1])   // "00:00 Mefjus - Sleepless"
+
+fmt.Println(slices.ContainsFunc(result.Warnings, func(w trackparse.EditWarning) bool {
+    return w.Code == trackparse.EditWarningCodeEditInvalid
+}))   // true
+```
+
+`Line` is an `*int`, `nil` when the edit names no line, so check it before you read it.
 
 </TabItem>
 </Tabs>
