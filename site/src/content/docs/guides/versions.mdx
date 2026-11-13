@@ -58,15 +58,36 @@ pub struct Version {
 ```
 
 </TabItem>
+<TabItem label="Go">
+
+```go
+type Version struct {
+    Type          VersionType  // VersionTypeRemix, VersionTypeVIP, VersionTypeRadio, …
+    Raw           string       // the text as written, without brackets: "Sub Focus VIP Remix"
+    Artists       []Artist     // remixers, role RoleRemixer
+    Modifiers     []string     // other type words that didn't win: ["extended"]
+    Descriptor    *string      // leftover words: "Taylor's", "at Wembley"
+    Year          *int
+    UnknownArtist bool         // "ID Remix"
+    Delimiter     Delimiter    // DelimiterParen | DelimiterSquare | DelimiterCurly | DelimiterDash
+}
+```
+
+</TabItem>
 </Tabs>
 
-`title` never includes versions. `fullTitle` (`full_title` in Python and Rust) is the title with them
+`title` never includes versions. `fullTitle` (`full_title` in Python and Rust, `FullTitle` in Go) is the title with them
 put back, in their original brackets.
 
 In Rust the type is the field `version_type`, because `type` is a reserved word, and its values are
 enum variants (`VersionType::Remix`, `VersionType::SpedUp`). `as_str()` gives the names used on this
 page (`"remix"`, `"spedUp"`), and so does `Display`. `modifiers` holds those names as strings.
 `delimiter` is the enum `VersionDelimiter`: `Paren`, `Square`, `Curly` or `Dash`.
+
+In Go the field is `Type`, of the string type `VersionType`. Its constants
+(`trackparse.VersionTypeRemix`, `trackparse.VersionTypeSpedUp`) hold the names used on this page, so
+they print as `remix` and `spedUp`. `Delimiter` is a string type too, holding the delimiter itself:
+`trackparse.DelimiterParen` is `"("`. `Descriptor` and `Year` are pointers, `nil` when absent.
 
 ## The 27 types
 
@@ -80,7 +101,8 @@ page (`"remix"`, `"spedUp"`), and so does `Display`. `modifiers` holds those nam
 The keywords behind them are in
 [`version-keywords.json`](https://github.com/4matic/trackparse/blob/main/spec/data/version-keywords.json).
 In Rust, `VersionType::ALL` lists the 27 variants and `VersionType::from_name("spedUp")` reads a
-name back.
+name back. In Go, `trackparse.AllVersionTypes` lists them, and since the type is a string,
+`trackparse.VersionType("spedUp")` is a conversion.
 
 ## Generic words borrow their meaning
 
@@ -130,6 +152,25 @@ use trackparse::parse;
 ```
 
 </TabItem>
+<TabItem label="Go">
+
+```go
+import (
+    "fmt"
+
+    "github.com/4matic/trackparse/go"
+)
+
+v := trackparse.Parse("Pendulum - Watercolour (Extended VIP Mix)").Versions[0]
+fmt.Println(v.Type)                         // vip
+fmt.Printf("%q\n", v.Raw)                   // "Extended VIP Mix"
+fmt.Println(len(v.Artists))                 // 0
+fmt.Printf("%q\n", v.Modifiers)             // ["extended"]
+fmt.Println(v.Descriptor == nil, v.Year == nil, v.UnknownArtist)   // true true false
+fmt.Println(v.Delimiter)                    // (
+```
+
+</TabItem>
 </Tabs>
 
 ## Several versions
@@ -172,12 +213,29 @@ parse("Dimension - Offshore (Mefjus Remix / Noisia Remix)")
 ```
 
 </TabItem>
+<TabItem label="Go">
+
+```go
+for _, v := range trackparse.Parse("Avicii - Levels (Skrillex Remix) [Radio Edit]").Versions {
+    fmt.Println(v.Type)
+}
+// remix
+// radio
+
+for _, v := range trackparse.Parse("Dimension - Offshore (Mefjus Remix / Noisia Remix)").Versions {
+    fmt.Println(v.Artists[0].Name)
+}
+// Mefjus
+// Noisia
+```
+
+</TabItem>
 </Tabs>
 
 ## Dash suffixes
 
 Streaming services often write versions after a second dash. Those are read too, and the
-delimiter is `-` (`VersionDelimiter::Dash` in Rust):
+delimiter is `-` (`VersionDelimiter::Dash` in Rust, `trackparse.DelimiterDash` in Go):
 
 <Tabs syncKey="lang">
 <TabItem label="JavaScript">
@@ -207,6 +265,17 @@ let t = parse("The Beatles - Hey Jude - Remastered 2015");
 ```
 
 </TabItem>
+<TabItem label="Go">
+
+```go
+t := trackparse.Parse("The Beatles - Hey Jude - Remastered 2015")
+fmt.Printf("%q\n", t.Title)            // "Hey Jude"
+v = t.Versions[0]
+fmt.Println(v.Type, *v.Year, v.Delimiter)   // remaster 2015 -
+fmt.Printf("%q\n", v.Raw)              // "Remastered 2015"
+```
+
+</TabItem>
 </Tabs>
 
 A dash suffix that isn't a version stays in the title. In a
@@ -217,12 +286,12 @@ first dash is almost always the separator. The suffix rules are part of
 ## Unknown remixers
 
 `(ID Remix)` is a remix by someone not yet announced. You get the version with
-`unknownArtist: true` (`unknown_artist` in Python and Rust) and no artists. There is no artist
+`unknownArtist: true` (`unknown_artist` in Python and Rust, `UnknownArtist` in Go) and no artists. There is no artist
 called "ID". [Unknown artists](/trackparse/guides/artists/#unknown-artists) has an example.
 
 ## Your own words
 
-If your catalog uses a word trackparse doesn't know, add it with `keywords.versionHeads` (`version_heads` in Python, `KeywordOptions::version_head` in Rust):
+If your catalog uses a word trackparse doesn't know, add it with `keywords.versionHeads` (`version_heads` in Python, `KeywordOptions::version_head` in Rust, `Keywords.VersionHeads` in Go):
 
 <Tabs syncKey="lang">
 <TabItem label="JavaScript">
@@ -256,6 +325,19 @@ let keywords = KeywordOptions::new().version_head("rerub", VersionType::Rework);
 let parser = Parser::new(&ParseOptions::new().keywords(keywords));
 parser.parse("Chase & Status x Camo & Krooked - Track (Alix Perez Rerub)").versions[0].version_type;
 // Rework
+```
+
+</TabItem>
+<TabItem label="Go">
+
+```go
+parser := trackparse.NewParser(trackparse.ParseOptions{
+    Keywords: trackparse.Keywords{
+        VersionHeads: []trackparse.VersionHead{{Key: "rerub", Type: trackparse.VersionTypeRework}},
+    },
+})
+fmt.Println(parser.Parse("Chase & Status x Camo & Krooked - Track (Alix Perez Rerub)").Versions[0].Type)
+// rework
 ```
 
 </TabItem>

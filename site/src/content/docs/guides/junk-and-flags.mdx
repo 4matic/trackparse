@@ -45,6 +45,21 @@ t.junk;   // [Junk { raw: "Official Music Video", kind: Video }, Junk { raw: "HD
 ```
 
 </TabItem>
+<TabItem label="Go">
+
+```go
+import (
+    "fmt"
+
+    "github.com/4matic/trackparse/go"
+)
+
+t := trackparse.Parse("Daft Punk - One More Time (Official Music Video) [HD]")
+fmt.Printf("%q\n", t.Title)   // "One More Time"
+fmt.Printf("%+v\n", t.Junk)   // [{Raw:Official Music Video Kind:video} {Raw:HD Kind:quality}]
+```
+
+</TabItem>
 </Tabs>
 
 | Kind | Examples |
@@ -65,7 +80,8 @@ Seeing junk is also one of the ways `mode: "auto"` decides a string came from Yo
 (see [Modes](/trackparse/guides/modes/#how-auto-decides)).
 
 In Rust the kind is the enum `JunkKind` (`JunkKind::Video`, `JunkKind::Quality` and so on). Its
-`as_str()` gives the lowercase names in the table.
+`as_str()` gives the lowercase names in the table. In Go the kind is the string type `JunkKind`,
+and its constants (`trackparse.JunkKindVideo`, `trackparse.JunkKindQuality`) hold those names.
 
 <Tabs syncKey="lang">
 <TabItem label="JavaScript">
@@ -89,6 +105,14 @@ parse("Elektronomia - Sky High [NCS Release]").junk # (Junk(raw='NCS Release', k
 ```rust
 parse("Porter Robinson - Shelter - YouTube").junk;   // [Junk { raw: "YouTube", kind: Platform }]
 parse("Elektronomia - Sky High [NCS Release]").junk; // [Junk { raw: "NCS Release", kind: Label }]
+```
+
+</TabItem>
+<TabItem label="Go">
+
+```go
+fmt.Printf("%+v\n", trackparse.Parse("Porter Robinson - Shelter - YouTube").Junk)     // [{Raw:YouTube Kind:platform}]
+fmt.Printf("%+v\n", trackparse.Parse("Elektronomia - Sky High [NCS Release]").Junk)   // [{Raw:NCS Release Kind:label}]
 ```
 
 </TabItem>
@@ -127,10 +151,19 @@ parse("Eminem - Without Me (Explicit)").flags;
 ```
 
 </TabItem>
+<TabItem label="Go">
+
+```go
+fmt.Printf("%+v\n", trackparse.Parse("Eminem - Without Me (Explicit)").Flags)
+// {Explicit:true Clean:false UnknownArtist:false UnknownTitle:false}
+```
+
+</TabItem>
 </Tabs>
 
 `explicit` and `clean` come from `(Explicit)`, `[Clean]` and the like. `unknownArtist` and
-`unknownTitle` (`unknown_artist` and `unknown_title` in Python and Rust) are set when the artist
+`unknownTitle` (`unknown_artist` and `unknown_title` in Python and Rust, `UnknownArtist` and `UnknownTitle` in
+Go) are set when the artist
 or title is a placeholder such as `ID`. See
 [Unknown artists](/trackparse/guides/artists/#unknown-artists).
 
@@ -166,10 +199,19 @@ t.year;   // Some(2015)
 ```
 
 </TabItem>
+<TabItem label="Go">
+
+```go
+t = trackparse.Parse("Noisia - Stigma (2015)")
+fmt.Printf("%q\n", t.Title)   // "Stigma"
+fmt.Println(*t.Year)          // 2015
+```
+
+</TabItem>
 </Tabs>
 
 A year inside a version (`Remastered 2015`) belongs to that version instead, in `versions[i].year`.
-In Rust both are `Option<u32>`.
+In Rust both are `Option<u32>`; in Go both are `*int`, `nil` when there is no year.
 
 ## Track numbers
 
@@ -195,6 +237,14 @@ parse("2 Unlimited - No Limit").position  # None
 ```rust
 parse("01. Aphex Twin - Xtal").position;   // Some(Position { raw: "01", number: 1 })
 parse("2 Unlimited - No Limit").position;  // None
+```
+
+</TabItem>
+<TabItem label="Go">
+
+```go
+fmt.Printf("%+v\n", *trackparse.Parse("01. Aphex Twin - Xtal").Position)   // {Raw:01 Number:1}
+fmt.Println(trackparse.Parse("2 Unlimited - No Limit").Position == nil)    // true
 ```
 
 </TabItem>
@@ -241,10 +291,18 @@ parse("1:02:03 Noisia - Stigma").timestamp;   // Some(Timestamp { raw: "1:02:03"
 ```
 
 </TabItem>
+<TabItem label="Go">
+
+```go
+fmt.Printf("%+v\n", *trackparse.Parse("[12:34] Noisia - Stigma").Timestamp)   // {Raw:12:34 Seconds:754}
+fmt.Printf("%+v\n", *trackparse.Parse("1:02:03 Noisia - Stigma").Timestamp)   // {Raw:1:02:03 Seconds:3723}
+```
+
+</TabItem>
 </Tabs>
 
 For whole tracklists with a time on every line, use [`parseTracklist`](/trackparse/guides/tracklists/)
-(`parse_tracklist` in Python and Rust) instead. It reads more time formats and checks the order.
+(`parse_tracklist` in Python and Rust, `ParseTracklist` in Go) instead. It reads more time formats and checks the order.
 
 ## See also
 

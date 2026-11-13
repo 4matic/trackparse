@@ -6,7 +6,7 @@ description: Parse the tracklist of a mix or podcast line by line, with start ti
 import { Tabs, TabItem } from "@astrojs/starlight/components";
 
 Mixes and podcasts come with a tracklist: a block of text, one track per line, usually with a start
-time in front. `parseTracklist` (`parse_tracklist` in Python and Rust) reads the whole block. Every
+time in front. `parseTracklist` (`parse_tracklist` in Python and Rust, `ParseTracklist` in Go) reads the whole block. Every
 line gets its kind, its time and a full [`ParsedTrack`](/trackparse/reference/parse/). The list as a
 whole gets checks with line numbers. The rules are [R13](/trackparse/reference/spec/#r13-tracklists)
 in the spec, and every field is listed in the [Tracklist API](/trackparse/reference/tracklist/).
@@ -33,15 +33,30 @@ use trackparse::tracklist::parse_tracklist;
 ```
 
 </TabItem>
+<TabItem label="Go">
+
+```go
+import (
+    "fmt"
+
+    "github.com/4matic/trackparse/go"
+)
+```
+
+</TabItem>
 </Tabs>
 
 In JavaScript it's a separate entry point, `trackparse/tracklist`, about 8.4 KiB gzipped, so code
 that only parses single tracks never loads it. In Python it is the module `trackparse.tracklist`,
-in Rust the module `trackparse::tracklist`.
+in Rust the module `trackparse::tracklist`. Go has no separate entry: `trackparse.ParseTracklist`
+and `trackparse.ApplyEdits` are in the one package.
 
 Two things differ in Rust. Seconds are `f64`, since a time can carry a fraction, so `Debug` prints
 `3167.0` where JavaScript and Python print `3167`. `to_json()` writes `3167`, like the other two.
 And `entry.time` and `entry.track` are `Option`s, because a header or a blank line has neither.
+
+Go is like Rust here. `Seconds` is a `float64`, which `fmt` prints as `3167`, and `json.Marshal`
+writes `3167`. `Time` and `Track` are pointers, `nil` on a header or a blank line.
 
 ## A first list
 
@@ -145,6 +160,51 @@ list.stats;
 ```
 
 </TabItem>
+<TabItem label="Go">
+
+```go
+import "strings"
+
+text := strings.Join([]string{
+    "Hour 2",
+    "48:20 Noisia - Stigma",
+    "52:47 Mefjus & Kasra - Bandwagon (Phace Remix)",
+    "56:05 Black Sun Empire - ID",
+    "59:31 Alix Perez - Fade Away",
+    "01:03:10 Interview with Hybris",
+    "01:07:44 Imanu - Sacrifice",
+    "00:11:02 Current Value feat. Teddy Killerz - Payload", // typo: should be 01:11:02
+    "01:15:36 Hybris - Spinning Top",
+}, "\r\n")
+
+list := trackparse.ParseTracklist(text)
+
+kinds := []trackparse.EntryKind{}
+for _, e := range list.Entries {
+    kinds = append(kinds, e.Kind)
+}
+fmt.Println(kinds)   // [header track track track track marker track track track]
+
+bandwagon := list.Entries[2]
+fmt.Printf("%+v\n", *bandwagon.Time)   // {Raw:52:47 Seconds:3167}
+fmt.Printf("%#v\n", bandwagon.Parts)
+// trackparse.Parts{Lead:"", Time:"52:47", Gap:" ", Rest:"Mefjus & Kasra - Bandwagon (Phace Remix)"}
+names := []string{}
+for _, a := range bandwagon.Track.Artists {
+    names = append(names, a.Name)
+}
+fmt.Printf("%q\n", names)   // ["Mefjus" "Kasra"]
+for _, v := range bandwagon.Track.Versions {
+    fmt.Println(v.Type, "by", v.Artists[0].Name)
+}
+// remix by Phace
+fmt.Println(list.Entries[3].Track.Flags.UnknownTitle)   // true
+
+s := list.Stats
+fmt.Println(s.Lines, s.Tracks, s.Markers, s.Timed, *s.FirstTime, *s.LastTime)   // 9 7 1 8 2900 4536
+```
+
+</TabItem>
 </Tabs>
 
 Paste it into the [playground](/trackparse/playground/#list=Hour%202%0A48%3A20%20Noisia%20-%20Stigma%0A52%3A47%20Mefjus%20%26%20Kasra%20-%20Bandwagon%20(Phace%20Remix)%0A56%3A05%20Black%20Sun%20Empire%20-%20ID%0A59%3A31%20Alix%20Perez%20-%20Fade%20Away%0A01%3A03%3A10%20Interview%20with%20Hybris%0A01%3A07%3A44%20Imanu%20-%20Sacrifice%0A00%3A11%3A02%20Current%20Value%20feat.%20Teddy%20Killerz%20-%20Payload%0A01%3A15%3A36%20Hybris%20-%20Spinning%20Top)
@@ -176,6 +236,17 @@ list.entries.map((e) => e.raw + e.eol).join("") === text;   // true
 
 ```rust
 list.entries.iter().map(|e| format!("{}{}", e.raw, e.eol)).collect::<String>() == text;   // true
+```
+
+</TabItem>
+<TabItem label="Go">
+
+```go
+var joined strings.Builder
+for _, e := range list.Entries {
+    joined.WriteString(e.Raw + string(e.Eol))
+}
+fmt.Println(joined.String() == text)   // true
 ```
 
 </TabItem>
@@ -262,6 +333,25 @@ track.artists.iter().map(|x| &x.name).collect::<Vec<_>>();   // ["Nitepunk"]
 ```
 
 </TabItem>
+<TabItem label="Go">
+
+```go
+md := trackparse.ParseTracklist("**[**14:21**] 10. Nitepunk - ID**\n* 18:02 Noisia - _Stigma_")
+a, b := md.Entries[0], md.Entries[1]
+
+fmt.Printf("%#v\n", a.Parts)
+// trackparse.Parts{Lead:"**[**", Time:"14:21", Gap:"**] ", Rest:"10. Nitepunk - ID**"}
+names = nil
+for _, x := range a.Track.Artists {
+    names = append(names, x.Name)
+}
+fmt.Printf("%q\n", names)                // ["Nitepunk"]
+fmt.Printf("%q\n", a.Track.Title)        // "ID"
+fmt.Printf("%+v\n", *a.Track.Position)   // {Raw:10 Number:10}
+fmt.Printf("%q\n", b.Track.Title)        // "Stigma"
+```
+
+</TabItem>
 </Tabs>
 
 Right next to the time, a run of one or two `*` or `_` is read as emphasis by its position, with or
@@ -322,6 +412,24 @@ track.artists.iter().map(|a| &a.name).collect::<Vec<_>>();   // ["Phace"]
 ```
 
 </TabItem>
+<TabItem label="Go">
+
+```go
+layers := trackparse.ParseTracklist("00:00 Noisia - Stigma\nw/ Phace - Psycho (Acapella)\n03:10 Mefjus - Sleepless")
+e := layers.Entries[1]
+
+fmt.Println(e.Layered)        // true
+fmt.Println(e.Time == nil)    // true
+names = nil
+for _, a := range e.Track.Artists {
+    names = append(names, a.Name)
+}
+fmt.Printf("%q\n", names)           // ["Phace"]
+fmt.Printf("%q\n", e.Track.Title)   // "Psycho"
+fmt.Println(len(layers.Warnings))   // 0
+```
+
+</TabItem>
 </Tabs>
 
 Only `w/` (or `W/`) at the start of the track text, after any time or bullet, and followed by
@@ -342,7 +450,8 @@ whitespace and a track counts, so `00:30 w/ Phace - Psycho` is layered too. `w/`
 | `blank` | empty or only whitespace |
 
 Only `track` and `marker` entries have a `track`. No line is ever dropped. In Rust the kind is the
-enum `EntryKind` (`EntryKind::Track`, `EntryKind::Marker` and so on). The kinds are
+enum `EntryKind` (`EntryKind::Track`, `EntryKind::Marker` and so on), in Go the string type
+`EntryKind` (`trackparse.EntryKindTrack`, `trackparse.EntryKindMarker`). The kinds are
 [R13.3](/trackparse/reference/spec/#r133-line-kinds).
 
 ## Options
@@ -395,6 +504,24 @@ mix.warnings;
 ```
 
 </TabItem>
+<TabItem label="Go">
+
+```go
+options := trackparse.TracklistOptions{AudioSeconds: 3600, MarkerWords: []string{"drop"}}
+mix := trackparse.ParseTracklistWith("00:00 Intro\n03:00 Drop\n1:02:03 Noisia - Stigma", options)
+
+kinds = nil
+for _, e := range mix.Entries {
+    kinds = append(kinds, e.Kind)
+}
+fmt.Println(kinds)   // [marker marker track]
+for _, w := range mix.Warnings {
+    fmt.Println(w.Code, w.Line, w.Severity, w.Suggestion == nil)
+}
+// time-after-audio-end 3 warning true
+```
+
+</TabItem>
 </Tabs>
 
 Without `markerWords`, `03:00 Drop` is a track line with no separator, and it warns `line-unparsed`.
@@ -437,11 +564,26 @@ parse_tracklist(&text).warnings;
 ```
 
 </TabItem>
+<TabItem label="Go">
+
+```go
+for _, w := range list.Warnings {
+    fmt.Println(w.Code, w.Line, w.Severity)
+    if w.Suggestion != nil {
+        fmt.Printf("%+v\n", *w.Suggestion)
+    }
+}
+// no-start-at-zero 2 info
+// time-out-of-order 8 warning
+// {Line:8 Raw:01:11:02 Seconds:4262}
+```
+
+</TabItem>
 </Tabs>
 
 `00:11:02` sits between `01:07:44` and `01:15:36`. Changing one digit gives exactly one time that
 fits, `01:11:02`, so the warning carries it as a suggestion. When several fixes would fit, or none
-does, `suggestion` is `null` (`None`) and you only get the warning.
+does, `suggestion` is `null` (`None`, `nil` in Go) and you only get the warning.
 
 Sometimes the typo is on the line before. In `01:22:21` followed by `01:03:55`, the second line is
 flagged, but the suggestion is to change the first one to `01:02:21`. All the codes are listed in
@@ -477,7 +619,7 @@ what a plain `parse()` makes of them. The last two need neighbours: the position
 ## JSON
 
 A `Tracklist` serializes like a single track: `JSON.stringify(list)` in JavaScript,
-`tl.to_dict()` in Python and `list.to_json()` in Rust give the same JSON, with camelCase keys such
+`tl.to_dict()` in Python, `list.to_json()` in Rust and `json.Marshal(list)` in Go give the same JSON, with camelCase keys such
 as `specVersion` and `firstTime`. See
 [Serializing to JSON](/trackparse/reference/parse/#serializing-to-json).
 

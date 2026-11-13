@@ -34,6 +34,16 @@ pub fn parse_with(input: &str, options: &ParseOptions) -> ParsedTrack
 ```
 
 </TabItem>
+<TabItem label="Go">
+
+```go
+import "github.com/4matic/trackparse/go"
+
+func Parse(input string) Track
+func ParseWith(input string, options ParseOptions) Track
+```
+
+</TabItem>
 </Tabs>
 
 `parse` never fails on a string. Any string gives a `ParsedTrack`, the empty string included, and
@@ -44,6 +54,10 @@ unknown or malformed options fall back to their defaults. What differs between t
   nothing else.
 - Rust: takes `&str`, returns the value itself (no `Result`), and never panics. Use `parse` for the
   defaults and `parse_with` to pass options.
+- Go: takes a `string`, returns the `Track` itself (no `error`), and never panics. Use `Parse` for
+  the defaults and `ParseWith` to pass options. Bytes that are not valid UTF-8 are read as U+FFFD,
+  one per maximal invalid sequence, as Rust's `String::from_utf8_lossy` and the browser's
+  `TextDecoder` do.
 
 The options are on the [Options](/trackparse/reference/options/) page. The other functions
 (`parseArtists`, `format`, `createParser`) are under
@@ -115,13 +129,35 @@ pub struct ParsedTrack {
 ```
 
 </TabItem>
+<TabItem label="Go">
+
+```go
+type Track struct {
+    Input     string
+    Mode      Mode
+    Position  *Position    // Position{Raw string; Number int}
+    Timestamp *Timestamp   // Timestamp{Raw string; Seconds int}
+    Artists   []Artist
+    Title     string
+    FullTitle string
+    Versions  []Version
+    Year      *int
+    Flags     Flags        // Flags{Explicit, Clean, UnknownArtist, UnknownTitle bool}
+    Junk      []Junk       // Junk{Raw string; Kind JunkKind}
+    Warnings  []Warning
+}
+```
+
+</TabItem>
 </Tabs>
 
 The table below uses the JavaScript and JSON names. Python has the same fields as attributes of a
 frozen dataclass, in snake_case (`full_title`, `flags.unknown_artist`), with tuples instead of
 arrays and `None` instead of `null`. Rust has a struct with the same snake_case names as public
 fields: `Vec<T>` for arrays, `Option<T>` where the table says `null`, and enums for `mode`, roles,
-kinds and warnings.
+kinds and warnings. Go has a `Track` struct with exported CamelCase fields (`FullTitle`,
+`Flags.UnknownArtist`): slices for arrays, pointers where the table says `null`, and typed strings
+for `mode`, roles, kinds and warnings.
 
 | Field | Type | Description |
 |---|---|---|
@@ -167,6 +203,13 @@ pub struct Artist { pub name: String, pub role: ArtistRole, pub joiner: Option<S
 ```
 
 </TabItem>
+<TabItem label="Go">
+
+```go
+type Artist struct { Name string; Role Role; Joiner *string; Source Source }
+```
+
+</TabItem>
 </Tabs>
 
 | Field | Values |
@@ -176,7 +219,8 @@ pub struct Artist { pub name: String, pub role: ArtistRole, pub joiner: Option<S
 | `source` | `artist` (left of the dash), `title` (right of it), `version` (inside a version) |
 
 `&`, `x` and `vs.` are joiners, not roles. Everyone they join is `primary`. In Rust, `role` and
-`source` are `ArtistRole::Primary`, `ArtistSource::Artist` and so on.
+`source` are `ArtistRole::Primary`, `ArtistSource::Artist` and so on; in Go they are
+`trackparse.RolePrimary`, `trackparse.SourceArtist` and so on.
 [Artists and credits](/trackparse/guides/artists/) has examples.
 
 ## Version
@@ -230,6 +274,22 @@ pub struct Version {
 ```
 
 </TabItem>
+<TabItem label="Go">
+
+```go
+type Version struct {
+    Type          VersionType
+    Raw           string
+    Artists       []Artist
+    Modifiers     []string
+    Descriptor    *string
+    Year          *int
+    UnknownArtist bool
+    Delimiter     Delimiter
+}
+```
+
+</TabItem>
 </Tabs>
 
 | Field | |
@@ -244,7 +304,9 @@ pub struct Version {
 | `delimiter` | the bracket it was in, or `-` for a dash suffix |
 
 Python uses `unknown_artist`. Rust uses `unknown_artist` and `version_type`, because `type` is a
-reserved word, and `delimiter` is `VersionDelimiter::Paren`, `Square`, `Curly` or `Dash`.
+reserved word, and `delimiter` is `VersionDelimiter::Paren`, `Square`, `Curly` or `Dash`. Go uses
+`Type`, `UnknownArtist` and the `Delimiter` constants `DelimiterParen`, `DelimiterSquare`,
+`DelimiterCurly` and `DelimiterDash`.
 [Versions and remixes](/trackparse/guides/versions/) explains how the type is chosen.
 
 ## Junk kinds
@@ -252,15 +314,16 @@ reserved word, and `delimiter` is `VersionDelimiter::Paren`, `Square`, `Curly` o
 `video`, `audio`, `lyrics`, `quality`, `promo`, `platform`, `label`, `genre`, `other`. Examples are
 in [Junk, flags and prefixes](/trackparse/guides/junk-and-flags/#junk). The vocabulary is in
 [`spec/data`](https://github.com/4matic/trackparse/tree/main/spec/data). In Rust the kind is the
-enum `JunkKind` (`JunkKind::Video` and so on).
+enum `JunkKind` (`JunkKind::Video` and so on), in Go the typed string `JunkKind`
+(`trackparse.JunkKindVideo` and so on).
 
 <a id="json-and-python-objects"></a>
 <a id="serialising-to-json"></a>
 
 ## Serializing to JSON
 
-All three packages write the same JSON, byte for byte, on every fixture input. The keys are the
-camelCase ones of the spec (`fullTitle`, `unknownArtist`), also in Python and Rust.
+All four packages write the same JSON, byte for byte, on every fixture input. The keys are the
+camelCase ones of the spec (`fullTitle`, `unknownArtist`), also in Python, Rust and Go.
 
 <Tabs syncKey="lang">
 <TabItem label="JavaScript">
@@ -322,10 +385,39 @@ types, the options and the tracklist `Edit` implement `Serialize` and `Deseriali
 keys, so `serde_json` writes the same text and reads it back.
 
 </TabItem>
+<TabItem label="Go">
+
+```go
+import (
+    "encoding/json"
+    "fmt"
+    "reflect"
+
+    "github.com/4matic/trackparse/go"
+)
+
+track := trackparse.Parse("Noisia - Stigma (2015)")
+
+data, _ := json.Marshal(track)
+fmt.Println(string(data))
+// {"input":"Noisia - Stigma (2015)","mode":"clean","position":null,"timestamp":null,"artists":[{"name":"Noisia","role":"primary","joiner":null,"source":"artist"}],"title":"Stigma","fullTitle":"Stigma","versions":[],"year":2015,"flags":{"explicit":false,"clean":false,"unknownArtist":false,"unknownTitle":false},"junk":[],"warnings":[]}
+
+var back trackparse.Track
+err := json.Unmarshal(data, &back)
+fmt.Println(err, reflect.DeepEqual(back, track))   // <nil> true
+```
+
+The results are plain structs with exported fields. Every result type has a `MarshalJSON` method
+that writes the spec's JSON, the same bytes as `JSON.stringify` in JavaScript, so
+`encoding/json` needs no struct tags or options. `Track` also has `UnmarshalJSON`, which reads
+that JSON back. Nullable fields are pointers (`*Position`, `*int`), and `json.Marshal` writes them
+as `null` when they are `nil`.
+
+</TabItem>
 </Tabs>
 
-Tracklist results serialize the same way: `JSON.stringify(list)`, `tl.to_dict()` and
-`list.to_json()`. See the [Tracklist API](/trackparse/reference/tracklist/).
+Tracklist results serialize the same way: `JSON.stringify(list)`, `tl.to_dict()`,
+`list.to_json()` and `json.Marshal(list)`. See the [Tracklist API](/trackparse/reference/tracklist/).
 
 ## Types
 
@@ -375,6 +467,32 @@ VersionType::ALL.len();                  // 27
 Most of these enums are `#[non_exhaustive]`, because a later spec version can add a version type or
 a warning. A `match` on them needs a `_` arm. The full API is on
 [docs.rs](https://docs.rs/trackparse).
+
+</TabItem>
+<TabItem label="Go">
+
+All of these are exported from the package (`import "github.com/4matic/trackparse/go"`, package
+name `trackparse`):
+
+- structs with exported fields: `Track`, `Artist`, `Version`, `Junk`, `Flags`, `Position`,
+  `Timestamp`;
+- typed strings: `Role`, `Source`, `VersionType`, `Delimiter`, `JunkKind`, `Warning`, `Mode`. Each
+  has a constant per value (`trackparse.RolePrimary`, `trackparse.VersionTypeSpedUp`) and a slice
+  of all values in the spec's order (`AllRoles`, `AllVersionTypes`). The value is the spec's name,
+  so `fmt` prints it as is and a plain conversion reads one;
+- options: `ParseOptions`, `Keywords` (with `VersionHead` and `JunkPhrase`), `FormatOptions`,
+  with the typed strings `SplitAnd`, `FeatPlacement`, `JoinerStyle` and `VersionsOption`;
+- `Parser`, the type `NewParser` returns. Every result type has `MarshalJSON`.
+
+```go
+fmt.Println(trackparse.VersionTypeSpedUp)              // spedUp
+fmt.Println(trackparse.VersionType("remix") == trackparse.VersionTypeRemix)   // true
+fmt.Println(len(trackparse.AllVersionTypes))           // 27
+```
+
+A later spec version can add a version type or a warning, so a `switch` on these needs a
+`default` case. The full API will be on
+[pkg.go.dev](https://pkg.go.dev/github.com/4matic/trackparse/go) once the module is published.
 
 </TabItem>
 </Tabs>

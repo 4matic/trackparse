@@ -7,7 +7,8 @@ import { Tabs, TabItem } from "@astrojs/starlight/components";
 
 `format(track, options?)` renders a parsed track back to a string. In Python it is
 `format_track(track, **options)`. In Rust it is `format_track(&track)`, or
-`format_track_with(&track, &options)` with options. Use it to bring a messy library to one style,
+`format_track_with(&track, &options)` with options. In Go it is `trackparse.Format(track)`, or
+`trackparse.FormatWith(track, options)`. Use it to bring a messy library to one style,
 or to build a display title without the junk.
 
 <Tabs syncKey="lang">
@@ -53,6 +54,24 @@ format_track(&t);
 ```
 
 </TabItem>
+<TabItem label="Go">
+
+```go
+import (
+    "fmt"
+
+    "github.com/4matic/trackparse/go"
+)
+
+t := trackparse.Parse(
+    "01. Wilkinson ft. Becky Hill & Tom Cane - Afterglow (Sub Focus VIP Remix) [Official Video]",
+)
+
+fmt.Printf("%q\n", trackparse.Format(t))
+// "Wilkinson ft. Becky Hill & Tom Cane - Afterglow (Sub Focus VIP Remix)"
+```
+
+</TabItem>
 </Tabs>
 
 Junk is never written back. Everything else is, by default, the way it was written.
@@ -69,16 +88,18 @@ Junk is never written back. Everything else is, by default, the way it was writt
 | `position` | write the track number back | `false` |
 
 Python takes the options as keyword arguments, so `featMarker` is `feat_marker`. Rust takes a
-`FormatOptions` value built with one setter per option, and the values are enums:
+`FormatOptions` value built with one setter per option, and the values are enums. Go takes a
+`FormatOptions` struct whose zero value is the default, and the values are typed string constants.
+Since a Go `bool` field defaults to `false`, `producers` becomes `OmitProducers`:
 
-| Option | Python | Rust |
-|---|---|---|
-| `feat` | `feat="title"` | `.feat(FeatPlacement::Title)`: `Source`, `Artist`, `Title`, `Omit` |
-| `featMarker` | `feat_marker="featuring"` | `.feat_marker("featuring")` |
-| `joiners` | `joiners="canonical"` | `.joiners(JoinerStyle::Canonical)`: `Original`, `Canonical` |
-| `versions` | `versions="none"` | `.versions(VersionsOption::None)`: `All`, `None` |
-| `producers` | `producers=False` | `.producers(false)` |
-| `position` | `position=True` | `.position(true)` |
+| Option | Python | Rust | Go |
+|---|---|---|---|
+| `feat` | `feat="title"` | `.feat(FeatPlacement::Title)`: `Source`, `Artist`, `Title`, `Omit` | `Feat: trackparse.FeatTitle`: `FeatSource`, `FeatArtist`, `FeatTitle`, `FeatOmit` |
+| `featMarker` | `feat_marker="featuring"` | `.feat_marker("featuring")` | `FeatMarker: "featuring"` |
+| `joiners` | `joiners="canonical"` | `.joiners(JoinerStyle::Canonical)`: `Original`, `Canonical` | `Joiners: trackparse.JoinersCanonical`: `JoinersOriginal`, `JoinersCanonical` |
+| `versions` | `versions="none"` | `.versions(VersionsOption::None)`: `All`, `None` | `Versions: trackparse.VersionsNone`: `VersionsAll`, `VersionsNone` |
+| `producers` | `producers=False` | `.producers(false)` | `OmitProducers: true` |
+| `position` | `position=True` | `.position(true)` | `Position: true` |
 
 <Tabs syncKey="lang">
 <TabItem label="JavaScript">
@@ -152,6 +173,36 @@ format_track_with(
 ```
 
 </TabItem>
+<TabItem label="Go">
+
+```go
+fmt.Printf("%q\n", trackparse.FormatWith(t, trackparse.FormatOptions{Feat: trackparse.FeatTitle}))
+// "Wilkinson - Afterglow (ft. Becky Hill & Tom Cane) (Sub Focus VIP Remix)"
+
+fmt.Printf("%q\n", trackparse.FormatWith(t, trackparse.FormatOptions{
+    Feat:    trackparse.FeatTitle,
+    Joiners: trackparse.JoinersCanonical,
+}))
+// "Wilkinson - Afterglow (feat. Becky Hill & Tom Cane) (Sub Focus VIP Remix)"
+
+fmt.Printf("%q\n", trackparse.FormatWith(t, trackparse.FormatOptions{Feat: trackparse.FeatArtist, FeatMarker: "featuring"}))
+// "Wilkinson featuring Becky Hill & Tom Cane - Afterglow (Sub Focus VIP Remix)"
+
+fmt.Printf("%q\n", trackparse.FormatWith(t, trackparse.FormatOptions{Feat: trackparse.FeatOmit}))
+// "Wilkinson - Afterglow (Sub Focus VIP Remix)"
+fmt.Printf("%q\n", trackparse.FormatWith(t, trackparse.FormatOptions{Versions: trackparse.VersionsNone}))
+// "Wilkinson ft. Becky Hill & Tom Cane - Afterglow"
+fmt.Printf("%q\n", trackparse.FormatWith(t, trackparse.FormatOptions{Position: true}))
+// "01. Wilkinson ft. Becky Hill & Tom Cane - Afterglow (Sub Focus VIP Remix)"
+
+fmt.Printf("%q\n", trackparse.FormatWith(
+    trackparse.Parse("Future - Mask Off (prod. by Metro Boomin)"),
+    trackparse.FormatOptions{OmitProducers: true},
+))
+// "Future - Mask Off"
+```
+
+</TabItem>
 </Tabs>
 
 ## Round trip
@@ -180,6 +231,15 @@ parse(format_track(parse(s)))  # same artists, title and versions as parse(s)
 
 ```rust
 parse(&format_track(&parse(s)));  // same artists, title and versions as parse(s)
+```
+
+</TabItem>
+<TabItem label="Go">
+
+```go
+s := "Noisia feat. Foreign Beggars - Shellshock (Phace Remix)"
+again := trackparse.Parse(trackparse.Format(trackparse.Parse(s)))   // same artists, title and versions as Parse(s)
+fmt.Printf("%q\n", again.FullTitle)   // "Shellshock (Phace Remix)"
 ```
 
 </TabItem>

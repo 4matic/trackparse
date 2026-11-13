@@ -6,19 +6,19 @@ description: parseArtists, format, normalize, allArtists, createParser and SPEC_
 import { Tabs, TabItem } from "@astrojs/starlight/components";
 
 All of these are exported from `trackparse`. The Python package and the Rust crate have the same
-functions in snake_case. [`parse`](/trackparse/reference/parse/) and the
+functions in snake_case, and the Go package in CamelCase. [`parse`](/trackparse/reference/parse/) and the
 [tracklist functions](/trackparse/reference/tracklist/) have pages of their own.
 
-| JavaScript | Python | Rust |
-|---|---|---|
-| `parse` | `parse` | `parse`, `parse_with` |
-| `parseArtists` | `parse_artists` | `parse_artists`, `parse_artists_with` |
-| `format` | `format_track` | `format_track`, `format_track_with` |
-| `normalize` | `normalize` | `normalize` |
-| `allArtists` | `all_artists` | `all_artists` |
-| `createParser` | `create_parser` | `Parser::new` |
-| `SPEC_VERSION` | `SPEC_VERSION` | `SPEC_VERSION` |
-| `parseTracklist`, `applyEdits` (from `trackparse/tracklist`) | `parse_tracklist`, `apply_edits` (from `trackparse.tracklist`) | `parse_tracklist`, `parse_tracklist_with`, `apply_edits`, `apply_edits_with` (from `trackparse::tracklist`) |
+| JavaScript | Python | Rust | Go |
+|---|---|---|---|
+| `parse` | `parse` | `parse`, `parse_with` | `Parse`, `ParseWith` |
+| `parseArtists` | `parse_artists` | `parse_artists`, `parse_artists_with` | `ParseArtists`, `ParseArtistsWith` |
+| `format` | `format_track` | `format_track`, `format_track_with` | `Format`, `FormatWith` |
+| `normalize` | `normalize` | `normalize` | `Normalize` |
+| `allArtists` | `all_artists` | `all_artists` | `AllArtists` |
+| `createParser` | `create_parser` | `Parser::new` | `NewParser` |
+| `SPEC_VERSION` | `SPEC_VERSION` | `SPEC_VERSION` | `SpecVersion` |
+| `parseTracklist`, `applyEdits` (from `trackparse/tracklist`) | `parse_tracklist`, `apply_edits` (from `trackparse.tracklist`) | `parse_tracklist`, `parse_tracklist_with`, `apply_edits`, `apply_edits_with` (from `trackparse::tracklist`) | `ParseTracklist`, `ParseTracklistWith`, `ApplyEdits`, `ApplyEditsWith` (same package) |
 
 What to know for each language:
 
@@ -33,12 +33,18 @@ What to know for each language:
   struct (`parse_with(input, &options)`). Inputs are `&str`, fields are snake_case, results are
   returned by value with no `Result`, and no function panics. The signatures are on
   [docs.rs](https://docs.rs/trackparse).
+- **Go.** Like Rust, each function that takes options comes in two forms: `Parse(input)` and
+  `ParseWith(input, options)`. Options are structs passed by value, and their zero value means the
+  defaults. Fields are exported CamelCase (`FullTitle`, `UnknownArtist`), nullable fields are
+  pointers, and results are returned by value with no `error`. No function panics, and input that
+  is not valid UTF-8 is read with U+FFFD in place of each bad sequence. The tracklist functions
+  are in the same package.
 
 The options themselves are on the [Options](/trackparse/reference/options/) page.
 
 ## parseArtists(input, options?)
 
-*(Python and Rust: `parse_artists`)*
+*(Python and Rust: `parse_artists`, Go: `ParseArtists`)*
 
 Splits a bare artist string, with no title, into credits.
 
@@ -75,10 +81,29 @@ parse_artists("Sub Focus, Wilkinson & Dimension feat. Kojo")
 ```
 
 </TabItem>
+<TabItem label="Go">
+
+```go
+import (
+    "fmt"
+
+    "github.com/4matic/trackparse/go"
+)
+
+for _, a := range trackparse.ParseArtists("Sub Focus, Wilkinson & Dimension feat. Kojo") {
+    fmt.Printf("%s:%s\n", a.Name, a.Role)
+}
+// Sub Focus:primary
+// Wilkinson:primary
+// Dimension:primary
+// Kojo:featured
+```
+
+</TabItem>
 </Tabs>
 
 Takes `knownArtists`, `splitAnd` and `keywords` (`known_artists`, `split_and`, `keywords`; in Rust
-through `parse_artists_with`). Use it for the artist field of ID3 tags or a streaming API, where
+through `parse_artists_with`, in Go through `ParseArtistsWith`). Use it for the artist field of ID3 tags or a streaming API, where
 the title is already separate. The result is a list of
 [`Artist`](/trackparse/reference/parse/#artist) values, and the splitting rules are explained in
 [Artists and credits](/trackparse/guides/artists/). In the spec this is
@@ -86,7 +111,7 @@ the title is already separate. The result is a list of
 
 ## format(track, options?)
 
-*(Python and Rust: `format_track`)*
+*(Python and Rust: `format_track`, Go: `Format`)*
 
 Renders a `ParsedTrack` back to a string. Junk is left out.
 
@@ -116,10 +141,20 @@ format_track_with(&parse("Wilkinson ft. Becky Hill - Afterglow (Sub Focus Remix)
 ```
 
 </TabItem>
+<TabItem label="Go">
+
+```go
+options := trackparse.FormatOptions{Feat: trackparse.FeatTitle, Joiners: trackparse.JoinersCanonical}
+fmt.Printf("%q\n", trackparse.FormatWith(trackparse.Parse("Wilkinson ft. Becky Hill - Afterglow (Sub Focus Remix)"), options))
+// "Wilkinson - Afterglow (feat. Becky Hill) (Sub Focus Remix)"
+```
+
+</TabItem>
 </Tabs>
 
 The options are `feat`, `featMarker` (`feat_marker`), `joiners`, `versions`, `producers` and
-`position`. [Formatting](/trackparse/guides/formatting/) has the table and an example of each. In
+`position`. In Go they are the fields of `FormatOptions`, where `OmitProducers: true` stands for
+`producers: false`. [Formatting](/trackparse/guides/formatting/) has the table and an example of each. In
 the spec this is [R11](/trackparse/reference/spec/#r11-format).
 
 ## normalize(input)
@@ -150,6 +185,13 @@ normalize("Noisia\u{200b} — “Stigma”");   // "Noisia - \"Stigma\""
 ```
 
 </TabItem>
+<TabItem label="Go">
+
+```go
+fmt.Printf("%q\n", trackparse.Normalize("Noisia\u200b — “Stigma”"))   // "Noisia - \"Stigma\""
+```
+
+</TabItem>
 </Tabs>
 
 You don't need to call it before `parse`. It's exported because it helps when you build lookup
@@ -157,7 +199,7 @@ keys. The steps are [R1](/trackparse/reference/spec/#r1-normalization) in the sp
 
 ## allArtists(track)
 
-*(Python and Rust: `all_artists`)*
+*(Python and Rust: `all_artists`, Go: `AllArtists`)*
 
 Every credit of a track in one list: the artists, then every remixer, with duplicates removed.
 
@@ -187,11 +229,23 @@ all_artists(&parse("Wilkinson ft. Becky Hill - Afterglow (Sub Focus Remix)"))
 ```
 
 </TabItem>
+<TabItem label="Go">
+
+```go
+for _, a := range trackparse.AllArtists(trackparse.Parse("Wilkinson ft. Becky Hill - Afterglow (Sub Focus Remix)")) {
+    fmt.Printf("%s:%s\n", a.Name, a.Role)
+}
+// Wilkinson:primary
+// Becky Hill:featured
+// Sub Focus:remixer
+```
+
+</TabItem>
 </Tabs>
 
 ## createParser(options)
 
-*(Python: `create_parser`, Rust: `Parser::new`)*
+*(Python: `create_parser`, Rust: `Parser::new`, Go: `NewParser`)*
 
 Compiles options and keywords once and returns an object with `parse` and `parseArtists`
 (`parse_artists`). Use it when you parse many strings with the same `knownArtists` or `keywords`.
@@ -199,7 +253,9 @@ Compiles options and keywords once and returns an object with `parse` and `parse
 In JavaScript and Python the two methods still accept options, and per-call options are merged
 over the compiled ones: `parser.parse(s, { mode: "youtube" })`, `parser.parse(s, mode="youtube")`.
 The Rust `Parser` takes its options once, in `Parser::new(&options)`. Its `parse` and
-`parse_artists` take only the input, and it is `Send + Sync`, so one parser can serve many threads.
+`parse_artists` take only the input, and it is `Send + Sync`, so one parser can serve many threads. The Go `NewParser(options)` works
+the same way: its `Parse` and `ParseArtists` methods take only the input, and a `*Parser` is safe
+for concurrent use by many goroutines.
 
 <Tabs syncKey="lang">
 <TabItem label="JavaScript">
@@ -247,12 +303,27 @@ parser.parse("Chase & Status x Camo & Krooked - Track (Alix Perez Rerub)").versi
 ```
 
 </TabItem>
+<TabItem label="Go">
+
+```go
+parser := trackparse.NewParser(trackparse.ParseOptions{
+    KnownArtists: []string{"Chase & Status", "Camo & Krooked"},
+    Keywords: trackparse.Keywords{
+        VersionHeads: []trackparse.VersionHead{{Key: "rerub", Type: trackparse.VersionTypeRework}},
+    },
+})
+
+fmt.Println(parser.Parse("Chase & Status x Camo & Krooked - Track (Alix Perez Rerub)").Versions[0].Type)
+// rework
+```
+
+</TabItem>
 </Tabs>
 
 ## SPEC_VERSION
 
 The version of the [spec](/trackparse/reference/spec/) the package implements, as a string (`&str`
-in Rust). The packages and the spec are released together, so it's the same as the package version.
+in Rust, the constant `SpecVersion` in Go). The packages and the spec are released together, so it's the same as the package version.
 A parsed tracklist carries it too, as `specVersion` (`spec_version`).
 
 ## See also
@@ -261,4 +332,4 @@ A parsed tracklist carries it too, as `specVersion` (`spec_version`).
   [Options](/trackparse/reference/options/).
 - [Tracklist API](/trackparse/reference/tracklist/) for `parseTracklist` and `applyEdits`.
 - [Warnings](/trackparse/reference/warnings/) for the codes these functions report.
-- [Ports](/trackparse/project/ports/) for how the three packages are kept identical.
+- [Ports](/trackparse/project/ports/) for how the four packages are kept identical.

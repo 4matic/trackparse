@@ -6,7 +6,8 @@ description: Every option of parse, parseArtists and createParser, including cus
 import { Tabs, TabItem } from "@astrojs/starlight/components";
 
 `parse`, `parseArtists` and `createParser` take the same options. JavaScript takes an object,
-Python takes keyword arguments, and Rust takes a `ParseOptions` value through the `_with` functions.
+Python takes keyword arguments, Rust takes a `ParseOptions` value through the `_with` functions,
+and Go takes a `ParseOptions` struct through the `With` functions.
 
 <Tabs syncKey="lang">
 <TabItem label="JavaScript">
@@ -65,24 +66,62 @@ parse_with(input, &options);
 ```
 
 </TabItem>
+<TabItem label="Go">
+
+```go
+type ParseOptions struct {
+    Mode         Mode       // ModeAuto ("") | ModeClean | ModeYouTube | ModeFilename | ModeTracklist
+    Uploader     string     // empty means none
+    KnownArtists []string
+    SplitAnd     SplitAnd   // SplitAndAuto | SplitAndAlways | SplitAndNever; "" means auto
+    Keywords     Keywords
+}
+```
+
+Set the fields you need. The others keep their zero value, which is the default:
+
+```go
+import (
+    "fmt"
+
+    "github.com/4matic/trackparse/go"
+)
+
+input := "Chase & Status - Baddadan"
+options := trackparse.ParseOptions{
+    Mode:         trackparse.ModeYouTube,
+    KnownArtists: []string{"Chase & Status"},
+    Uploader:     "Daft Punk - Topic",
+    SplitAnd:     trackparse.SplitAndNever,
+}
+fmt.Printf("%q\n", trackparse.ParseWith(input, options).Artists[0].Name)   // "Chase & Status"
+```
+
+</TabItem>
 </Tabs>
 
-| JavaScript | Python and Rust | Default | |
-|---|---|---|---|
-| `mode` | `mode` | `"auto"` | Which [mode](/trackparse/guides/modes/) to use. `auto` picks `filename`, `youtube` or `clean` from the string |
-| `knownArtists` | `known_artists` | empty | Names that are never split, like `Chase & Status` or `Earth, Wind & Fire`. Matched case- and accent-insensitively. See [knownArtists](/trackparse/guides/artists/#knownartists) |
-| `uploader` | `uploader` | none | The YouTube channel. In youtube mode it becomes the artist when there's no separator. `- Topic` and `VEVO` are dropped. See [the uploader fallback](/trackparse/guides/modes/#the-uploader-fallback) |
-| `splitAnd` | `split_and` | `"auto"` | `auto` splits on `and` only after a comma (`A, B and C`), so `Simon and Garfunkel` stays whole. `always` and `never` do what they say. See [`and` is special](/trackparse/guides/artists/#and-is-special) |
-| `keywords` | `keywords` | none | Extra vocabulary, see below |
+| JavaScript | Python and Rust | Go | Default | |
+|---|---|---|---|---|
+| `mode` | `mode` | `Mode` | `"auto"` | Which [mode](/trackparse/guides/modes/) to use. `auto` picks `filename`, `youtube` or `clean` from the string |
+| `knownArtists` | `known_artists` | `KnownArtists` | empty | Names that are never split, like `Chase & Status` or `Earth, Wind & Fire`. Matched case- and accent-insensitively. See [knownArtists](/trackparse/guides/artists/#knownartists) |
+| `uploader` | `uploader` | `Uploader` | none | The YouTube channel. In youtube mode it becomes the artist when there's no separator. `- Topic` and `VEVO` are dropped. See [the uploader fallback](/trackparse/guides/modes/#the-uploader-fallback) |
+| `splitAnd` | `split_and` | `SplitAnd` | `"auto"` | `auto` splits on `and` only after a comma (`A, B and C`), so `Simon and Garfunkel` stays whole. `always` and `never` do what they say. See [`and` is special](/trackparse/guides/artists/#and-is-special) |
+| `keywords` | `keywords` | `Keywords` | none | Extra vocabulary, see below |
 
 In Rust the values are enums: `ModeOption::Auto`, `Clean`, `Youtube`, `Filename` or `Tracklist`,
 and `SplitAnd::Auto`, `Always` or `Never`. The option structs are `#[non_exhaustive]`, so start
 from `ParseOptions::new()` (or `default()`) and chain setters. The fields are public and can also
 be assigned.
 
+In Go the values are typed strings with constants: `trackparse.ModeClean`, `ModeYouTube`,
+`ModeFilename` or `ModeTracklist`, and `SplitAndAuto`, `SplitAndAlways` or `SplitAndNever`. The zero
+value of `ParseOptions` is the defaults: an empty `Mode` is auto, an empty `SplitAnd` is auto and an
+empty `Uploader` is none. A string that is not one of the constants behaves as an unknown value does
+in JavaScript.
+
 Options never cause an error. An unknown mode, a `knownArtists` that isn't a list or a keyword of
-the wrong type is ignored and the default is used. In Rust the options are typed, so those values
-can't be written at all. The option rules are
+the wrong type is ignored and the default is used. In Rust and Go the options are typed, so most of
+those values can't be written at all. The option rules are
 [R12](/trackparse/reference/spec/#r12-options) in the spec.
 
 In Python the options can also travel as a dict, typed as the `ParseOptions` `TypedDict`:
@@ -94,7 +133,10 @@ a missing key is the default, an unknown name such as `"mode":"radio"` is an err
 
 `keywords` adds words to the built-in vocabulary. It can't take any away. In Python its keys are
 snake_case too: `version_heads`, `feat_markers`. In Rust, `KeywordOptions` has one setter per word,
-and each call adds one entry. The built-in lists are JSON files in
+and each call adds one entry. In Go, `Keywords` holds slices: the two maps of the JavaScript options
+are ordered slices of `VersionHead` and `JunkPhrase`, because a Go map has no insertion order. They
+are read as JavaScript reads an object: a repeated key keeps its first place and takes the last
+value, and integer-like keys come first, in ascending order. The built-in lists are JSON files in
 [`spec/data`](https://github.com/4matic/trackparse/tree/main/spec/data).
 
 <Tabs syncKey="lang">
@@ -133,6 +175,19 @@ pub struct KeywordOptions {
     pub genres: Vec<String>,                         // .genre(…): extra genre names (junk kind Genre)
     pub junk: Vec<(String, JunkKind)>,               // .junk("live stream", JunkKind::Other)
     pub feat_markers: Vec<String>,                   // .feat_marker(…): extra feat markers
+}
+```
+
+</TabItem>
+<TabItem label="Go">
+
+```go
+type Keywords struct {
+    VersionHeads []VersionHead   // {Key: "rerub", Type: VersionTypeRework}
+    Descriptors  []string        // extra style words, like the built-in "D'n'B"
+    Genres       []string        // extra genre names (junk kind genre)
+    Junk         []JunkPhrase    // {Phrase: "live stream", Kind: JunkKindOther}
+    FeatMarkers  []string        // extra feat markers
 }
 ```
 
@@ -191,6 +246,22 @@ t.versions[0].version_type;                              // Rework
 ```
 
 </TabItem>
+<TabItem label="Go">
+
+```go
+parser := trackparse.NewParser(trackparse.ParseOptions{
+    KnownArtists: []string{"Chase & Status", "Camo & Krooked"},
+    Keywords: trackparse.Keywords{
+        VersionHeads: []trackparse.VersionHead{{Key: "rerub", Type: trackparse.VersionTypeRework}},
+    },
+})
+
+t := parser.Parse("Chase & Status x Camo & Krooked - Track (Alix Perez Rerub)")
+fmt.Printf("%q\n", []string{t.Artists[0].Name, t.Artists[1].Name})   // ["Chase & Status" "Camo & Krooked"]
+fmt.Println(t.Versions[0].Type)                                       // rework
+```
+
+</TabItem>
 </Tabs>
 
 A junk phrase works the same way. Without the keyword the bracket stays in the title, because
@@ -237,6 +308,20 @@ r.junk;    // [Junk { raw: "Some Label Rip", kind: Label }]
 ```
 
 </TabItem>
+<TabItem label="Go">
+
+```go
+fmt.Printf("%q\n", trackparse.Parse("Artist - Song [Some Label Rip]").Title)   // "Song [Some Label Rip]"
+
+keywords := trackparse.Keywords{
+    Junk: []trackparse.JunkPhrase{{Phrase: "some label rip", Kind: trackparse.JunkKindLabel}},
+}
+r := trackparse.ParseWith("Artist - Song [Some Label Rip]", trackparse.ParseOptions{Keywords: keywords})
+fmt.Printf("%q\n", r.Title)   // "Song"
+fmt.Printf("%+v\n", r.Junk)   // [{Raw:Some Label Rip Kind:label}]
+```
+
+</TabItem>
 </Tabs>
 
 ## Tracklist options
@@ -244,12 +329,17 @@ r.junk;    // [Junk { raw: "Some Label Rip", kind: Label }]
 `parseTracklist` and `applyEdits` (`parse_tracklist` and `apply_edits` in Python and Rust) take
 `mode` (default `"tracklist"`), `knownArtists`, `splitAnd` and `keywords`, plus two of their own.
 In Rust they are the setters of `TracklistOptions`, passed to `parse_tracklist_with` and
-`apply_edits_with`:
+`apply_edits_with`. In Go they are the fields of the `TracklistOptions` struct, passed to
+`ParseTracklistWith` and `ApplyEditsWith`:
 
-| JavaScript | Python and Rust | Default | Description |
-|---|---|---|---|
-| `audioSeconds` | `audio_seconds` | none | Length of the audio. Turns on the `time-after-audio-end` check |
-| `markerWords` | `marker_words` | empty | Extra marker words. With `["drop"]`, `03:00 Drop` is a marker, not a track |
+| JavaScript | Python and Rust | Go | Default | Description |
+|---|---|---|---|---|
+| `audioSeconds` | `audio_seconds` | `AudioSeconds` | none | Length of the audio. Turns on the `time-after-audio-end` check |
+| `markerWords` | `marker_words` | `MarkerWords` | empty | Extra marker words. With `["drop"]`, `03:00 Drop` is a marker, not a track |
+
+In Go the zero value of `TracklistOptions` is the defaults too, which leaves two cases it can't
+express. An empty `Mode` means `tracklist`, so auto needs the string `Mode("auto")`. An
+`AudioSeconds` of 0 means unknown, where JavaScript takes `audioSeconds: 0` as audio of length 0.
 
 [Tracklists](/trackparse/guides/tracklists/#options) has an example in each language, and the
 [Tracklist API](/trackparse/reference/tracklist/#options) lists them again with the functions.
@@ -257,7 +347,9 @@ In Rust they are the setters of `TracklistOptions`, passed to `parse_tracklist_w
 ## Format options
 
 `format` has its own options (`feat`, `featMarker`, `joiners`, `versions`, `producers`, `position`).
-They are listed under [Formatting](/trackparse/guides/formatting/#options).
+They are listed under [Formatting](/trackparse/guides/formatting/#options). In Go they are the
+fields of `FormatOptions`; `producers: false` is `OmitProducers: true` there, so the zero value
+keeps the producers.
 
 ## See also
 

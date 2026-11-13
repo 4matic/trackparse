@@ -35,16 +35,30 @@ pub struct Artist {
 ```
 
 </TabItem>
+<TabItem label="Go">
+
+```go
+type Artist struct {
+    Name   string
+    Role   Role     // RolePrimary | RoleFeatured | RoleRemixer | RoleProducer
+    Joiner *string  // nil for the first name of a list
+    Source Source   // SourceArtist | SourceTitle | SourceVersion
+}
+```
+
+</TabItem>
 </Tabs>
 
 `role` says what the person did. `joiner` is the text that introduced the name, exactly as written
 (`"&"`, `","`, `"ft."`, `"prod. by"`), and `null` for the first name of a list (`None` in Python and
-Rust). `source` says where the credit was found: left of the dash (`artist`), right of it (`title`),
+Rust, `nil` in Go, where `Joiner` is a `*string`). `source` says where the credit was found: left of the dash (`artist`), right of it (`title`),
 or inside a version (`version`). In Rust, `role` and `source` are the enums `ArtistRole` and
-`ArtistSource`; `as_str()` and `Display` give the lowercase names used here.
+`ArtistSource`; `as_str()` and `Display` give the lowercase names used here. In Go they are the
+string types `Role` and `Source`, with constants such as `trackparse.RolePrimary` and
+`trackparse.SourceTitle` whose values are those names.
 
 Remixers live inside `versions`, not in `artists`. Use [`allArtists(track)`](/trackparse/reference/functions/#allartiststrack)
-(`all_artists` in Python and Rust) when you want everyone in one list.
+(`all_artists` in Python and Rust, `AllArtists` in Go) when you want everyone in one list.
 
 ## Joiners
 
@@ -88,6 +102,39 @@ parse("Skrillex & Diplo x Justin Bieber - Where Are Ü Now").artists;
 
 parse("Kanye West vs. Daft Punk - Stronger").artists.iter().map(|a| &a.name).collect::<Vec<_>>();
 // ["Kanye West", "Daft Punk"]
+```
+
+</TabItem>
+<TabItem label="Go">
+
+```go
+import (
+    "fmt"
+
+    "github.com/4matic/trackparse/go"
+)
+
+names := func(artists []trackparse.Artist) []string {
+    out := []string{}
+    for _, a := range artists {
+        out = append(out, a.Name)
+    }
+    return out
+}
+
+for _, a := range trackparse.Parse("Skrillex & Diplo x Justin Bieber - Where Are Ü Now").Artists {
+    if a.Joiner == nil {
+        fmt.Println(a.Name, "(joiner nil),", a.Role)
+    } else {
+        fmt.Printf("%s (joiner %q), %s\n", a.Name, *a.Joiner, a.Role)
+    }
+}
+// Skrillex (joiner nil), primary
+// Diplo (joiner "&"), primary
+// Justin Bieber (joiner "x"), primary
+
+fmt.Printf("%q\n", names(trackparse.Parse("Kanye West vs. Daft Punk - Stronger").Artists))
+// ["Kanye West" "Daft Punk"]
 ```
 
 </TabItem>
@@ -142,9 +189,20 @@ parse_artists("Crosby, Stills, Nash and Young").iter().map(|a| &a.name).collect:
 ```
 
 </TabItem>
+<TabItem label="Go">
+
+```go
+fmt.Printf("%q\n", names(trackparse.Parse("Simon and Garfunkel - The Boxer").Artists))
+// ["Simon and Garfunkel"]
+
+fmt.Printf("%q\n", names(trackparse.ParseArtists("Crosby, Stills, Nash and Young")))
+// ["Crosby" "Stills" "Nash" "Young"]
+```
+
+</TabItem>
 </Tabs>
 
-Set `splitAnd` (`split_and` in Python and Rust) to `"always"` or `"never"` to change that:
+Set `splitAnd` (`split_and` in Python and Rust, `SplitAnd` in Go) to `"always"` or `"never"` to change that:
 
 <Tabs syncKey="lang">
 <TabItem label="JavaScript">
@@ -179,6 +237,19 @@ parse_with("Simon and Garfunkel - The Boxer", &always).artists.iter().map(|a| &a
 let never = ParseOptions::new().split_and(SplitAnd::Never);
 parse_artists_with("Crosby, Stills, Nash and Young", &never).iter().map(|a| &a.name).collect::<Vec<_>>();
 // ["Crosby", "Stills", "Nash and Young"]
+```
+
+</TabItem>
+<TabItem label="Go">
+
+```go
+always := trackparse.ParseOptions{SplitAnd: trackparse.SplitAndAlways}
+fmt.Printf("%q\n", names(trackparse.ParseWith("Simon and Garfunkel - The Boxer", always).Artists))
+// ["Simon" "Garfunkel"]
+
+never := trackparse.ParseOptions{SplitAnd: trackparse.SplitAndNever}
+fmt.Printf("%q\n", names(trackparse.ParseArtistsWith("Crosby, Stills, Nash and Young", never)))
+// ["Crosby" "Stills" "Nash and Young"]
 ```
 
 </TabItem>
@@ -218,6 +289,15 @@ parse("Silk City - Electricity (with Dua Lipa)");       // source Title
 ```
 
 </TabItem>
+<TabItem label="Go">
+
+```go
+fmt.Println(trackparse.Parse("Noisia feat. Foreign Beggars - Shellshock").Artists[1].Source)   // artist
+fmt.Println(trackparse.Parse("Noisia - Shellshock ft. Foreign Beggars").Artists[1].Source)     // title
+fmt.Println(trackparse.Parse("Silk City - Electricity (with Dua Lipa)").Artists[1].Source)     // title
+```
+
+</TabItem>
 </Tabs>
 
 If the same person is credited twice, they appear once:
@@ -245,6 +325,14 @@ parse("Noisia feat. Foreign Beggars - Shellshock (feat. Foreign Beggars)").artis
 parse("Noisia feat. Foreign Beggars - Shellshock (feat. Foreign Beggars)")
     .artists.iter().map(|a| &a.name).collect::<Vec<_>>();
 // ["Noisia", "Foreign Beggars"]
+```
+
+</TabItem>
+<TabItem label="Go">
+
+```go
+fmt.Printf("%q\n", names(trackparse.Parse("Noisia feat. Foreign Beggars - Shellshock (feat. Foreign Beggars)").Artists))
+// ["Noisia" "Foreign Beggars"]
 ```
 
 </TabItem>
@@ -284,11 +372,21 @@ let t = parse("Future - Mask Off (prod. by Metro Boomin)");
 ```
 
 </TabItem>
+<TabItem label="Go">
+
+```go
+t := trackparse.Parse("Future - Mask Off (prod. by Metro Boomin)")
+a := t.Artists[1]
+fmt.Printf("%q %s %q %s\n", a.Name, a.Role, *a.Joiner, a.Source)   // "Metro Boomin" producer "prod. by" title
+fmt.Printf("%q\n", t.Title)                                         // "Mask Off"
+```
+
+</TabItem>
 </Tabs>
 
 ## knownArtists
 
-*(Python and Rust: `known_artists`)*
+*(Python and Rust: `known_artists`; Go: `KnownArtists`)*
 
 trackparse has no artist database, on purpose. A built-in list would be wrong for half its users
 and out of date within a month. You tell it the names you care about:
@@ -328,19 +426,31 @@ parse_with("Chase & Status - Baddadan", &options).artists.iter().map(|a| &a.name
 ```
 
 </TabItem>
+<TabItem label="Go">
+
+```go
+fmt.Printf("%q\n", names(trackparse.Parse("Chase & Status - Baddadan").Artists))
+// ["Chase" "Status"]
+
+options := trackparse.ParseOptions{KnownArtists: []string{"Chase & Status"}}
+fmt.Printf("%q\n", names(trackparse.ParseWith("Chase & Status - Baddadan", options).Artists))
+// ["Chase & Status"]
+```
+
+</TabItem>
 </Tabs>
 
 A known name is matched case- and accent-insensitively wherever a credit list starts. It also
 protects names that begin with digits from being read as a track number (`3 Doors Down`). If you
 parse a lot of strings with the same names, put them in
 [`createParser`](/trackparse/reference/functions/#createparseroptions) (`create_parser` in Python,
-`Parser::new` in Rust). You can try it in the
+`Parser::new` in Rust, `NewParser` in Go). You can try it in the
 [playground](/trackparse/playground/#track=Chase%20%26%20Status%20-%20Baddadan&known=Chase%20%26%20Status).
 
 ## Unknown artists
 
 `ID` (and `Unknown`, `Untitled`, `?`, `???`) means the track hasn't been announced yet. It doesn't become a name.
-The track gets `flags.unknownArtist: true` (`flags.unknown_artist` in Python and Rust) instead, and the same goes for titles:
+The track gets `flags.unknownArtist: true` (`flags.unknown_artist` in Python and Rust, `Flags.UnknownArtist` in Go) instead, and the same goes for titles:
 
 <Tabs syncKey="lang">
 <TabItem label="JavaScript">
@@ -373,6 +483,17 @@ t.artists;                     // []
 t.flags.unknown_artist;        // true
 t.flags.unknown_title;         // true
 t.versions[0].unknown_artist;  // true
+```
+
+</TabItem>
+<TabItem label="Go">
+
+```go
+t = trackparse.Parse("ID - ID (ID Remix)")
+fmt.Println(len(t.Artists))                  // 0
+fmt.Println(t.Flags.UnknownArtist)           // true
+fmt.Println(t.Flags.UnknownTitle)            // true
+fmt.Println(t.Versions[0].UnknownArtist)     // true
 ```
 
 </TabItem>

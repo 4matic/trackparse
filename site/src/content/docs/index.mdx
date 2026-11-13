@@ -1,10 +1,10 @@
 ---
 title: A parser for track names and tracklists
-description: Turn messy track names into structured data. Artists with roles, remixes and versions, and the noise around them, for JavaScript, Python and Rust.
+description: Turn messy track names into structured data. Artists with roles, remixes and versions, and the noise around them, for JavaScript, Python, Rust and Go.
 template: splash
 hero:
   title: Messy track names in.<br />Structured data out.
-  tagline: trackparse reads track titles the way people write them in store metadata, YouTube uploads and the tracklist under a mix. Artists and their roles, remixes and other versions, and the noise around them each get a field of their own. It is one spec with packages for JavaScript, Python and Rust.
+  tagline: trackparse reads track titles the way people write them in store metadata, YouTube uploads and the tracklist under a mix. Artists and their roles, remixes and other versions, and the noise around them each get a field of their own. It is one spec with packages for JavaScript, Python, Rust and Go.
   actions:
     - text: Get started
       link: /trackparse/start/getting-started/
@@ -47,8 +47,8 @@ in the title, word for word.
     { title: "27 version types", body: "Remix, VIP, bootleg, extended, radio edit, live, remaster, sped up, slowed and the rest, each with its remixers, modifiers and year." },
     { title: "Noise, labelled", body: "<code>[Official Video]</code>, <code>[HD]</code>, <code>- YouTube</code> and <code>[NCS Release]</code> leave the title but land in <code>junk</code> with a kind, instead of disappearing." },
     { title: "Whole tracklists", body: "Paste the tracklist of a mix: every line is parsed, times are checked, and an out-of-order time often comes with the fix. Edits rewrite only the lines you name." },
-    { title: "One spec, three languages", body: "The npm package, the PyPI package and the Rust crate pass the same 13,130 fixtures and return byte-identical JSON on every fixture input. The <a href=\"/trackparse/project/ports/#what-the-rust-port-taught\">ports page</a> has the one known Unicode difference." },
-    { title: "Small and total", body: "The JavaScript package is about 18 kB gzipped. It and the Python package have no dependencies; the Rust crate has one, <code>unicode-normalization</code>. The scanners are written by hand and no regex backtracks, so a 10,000-code-point input takes tens of milliseconds in JavaScript and Rust, and well under a second in Python. No string makes it throw or panic, and bad options fall back to defaults." },
+    { title: "One spec, four languages", body: "The npm package, the PyPI package, the Rust crate and the Go module pass the same 13,130 fixtures and return byte-identical JSON on every fixture input. The <a href=\"/trackparse/project/ports/#what-the-rust-port-taught\">ports page</a> has the one known Unicode difference." },
+    { title: "Small and total", body: "The JavaScript package is about 18 kB gzipped. It, the Python package and the Go module have no dependencies; the Rust crate has one, <code>unicode-normalization</code>. The scanners are written by hand and no regex backtracks, so a 10,000-code-point input takes tens of milliseconds in JavaScript, Rust and Go, and well under a second in Python. No string makes it throw or panic, and bad options fall back to defaults." },
   ]}
 />
 
@@ -93,15 +93,35 @@ in the title, word for word.
     // Some(Version { version_type: Live, descriptor: Some("at Wembley"), year: Some(1986), .. })
     ```
   </TabItem>
+  <TabItem label="Go">
+    ```go
+    import (
+        "fmt"
+
+        "github.com/4matic/trackparse/go"
+    )
+
+    track := trackparse.Parse("Noisia feat. Foreign Beggars - Shellshock")
+    for _, a := range track.Artists {
+        fmt.Printf("%s (%s)\n", a.Name, a.Role)
+    }
+    // Noisia (primary)
+    // Foreign Beggars (featured)
+
+    v := trackparse.Parse("Queen - Bohemian Rhapsody (Live at Wembley 1986)").Versions[0]
+    fmt.Println(v.Type, *v.Descriptor, *v.Year)
+    // live at Wembley 1986
+    ```
+  </TabItem>
 </Tabs>
 
 ## Where to next
 
 <div class="home-next">
-  <LinkCard title="Getting started" description="Install it for JavaScript, Python or Rust and parse your first track." href="/trackparse/start/getting-started/" />
+  <LinkCard title="Getting started" description="Install it for JavaScript, Python, Rust or Go and parse your first track." href="/trackparse/start/getting-started/" />
   <LinkCard title="What it understands" description="A tour of real inputs and what comes out." href="/trackparse/guides/what-it-understands/" />
   <LinkCard title="Tracklists" description="Parse, check and edit the tracklist of a mix." href="/trackparse/guides/tracklists/" />
-  <LinkCard title="Ports" description="How the JavaScript, Python and Rust packages are kept identical." href="/trackparse/project/ports/" />
+  <LinkCard title="Ports" description="How the JavaScript, Python, Rust and Go packages are kept identical." href="/trackparse/project/ports/" />
   <LinkCard title="Compared to others" description="What other title parsers do with the same inputs." href="/trackparse/project/comparison/" />
   <LinkCard title="The spec" description="Rules R0 to R13, the contract every port follows." href="/trackparse/reference/spec/" />
 </div>

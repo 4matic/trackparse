@@ -28,6 +28,18 @@ use trackparse::tracklist::{apply_edits, parse_tracklist, Edit};
 ```
 
 </TabItem>
+<TabItem label="Go">
+
+```go
+import "github.com/4matic/trackparse/go"
+
+func ParseTracklist(text string) Tracklist
+func ParseTracklistWith(text string, options TracklistOptions) Tracklist
+func ApplyEdits(text string, edits []Edit) EditResult
+func ApplyEditsWith(text string, edits []Edit, options TracklistOptions) EditResult
+```
+
+</TabItem>
 </Tabs>
 
 Neither function fails on string input. What to know for each language:
@@ -40,6 +52,10 @@ Neither function fails on string input. What to know for each language:
 - **Rust.** Results are structs with public snake_case fields and `to_json()`. Edits are values of
   the `Edit` enum (listed under [Types](#types)). Options go through the `_with` functions, and
   nothing panics.
+- **Go.** The functions are in the package `trackparse` itself, with no separate import. Results
+  are structs with exported fields (`SpecVersion`, `FirstTime`) whose `MarshalJSON` writes the
+  spec's JSON. Edits are `Edit` structs made with a constructor per edit (listed under
+  [Types](#types)). Options go through the `With` functions, and nothing panics.
 
 The guides [Tracklists](/trackparse/guides/tracklists/) and
 [Editing tracklists](/trackparse/guides/editing-tracklists/) walk through examples. The rules are
@@ -47,7 +63,8 @@ The guides [Tracklists](/trackparse/guides/tracklists/) and
 
 ## parseTracklist(text, options?)
 
-*(Python: `parse_tracklist`. Rust: `parse_tracklist(text)` and `parse_tracklist_with(text, &options)`)*
+*(Python: `parse_tracklist`. Rust: `parse_tracklist(text)` and `parse_tracklist_with(text, &options)`.
+Go: `ParseTracklist(text)` and `ParseTracklistWith(text, options)`)*
 
 Returns a `Tracklist`. Every key is always present.
 
@@ -88,6 +105,18 @@ pub struct Tracklist {
 ```
 
 </TabItem>
+<TabItem label="Go">
+
+```go
+type Tracklist struct {
+    SpecVersion string
+    Entries     []Entry
+    Warnings    []TracklistWarning
+    Stats       Stats   // Lines, Tracks, Markers, Timed, FirstTime, LastTime
+}
+```
+
+</TabItem>
 </Tabs>
 
 ### TracklistEntry
@@ -95,7 +124,9 @@ pub struct Tracklist {
 One per line, in order. The table uses the JavaScript and JSON types. Python has `None` for
 `null`. In Rust, `line` is a `usize`, `kind` and `eol` are the enums `EntryKind` and `Eol`
 (`as_str()` gives the strings below), `time` is an `Option<TimeValue>` whose `seconds` is an `f64`,
-and `track` is an `Option<ParsedTrack>`.
+and `track` is an `Option<ParsedTrack>`. Go calls the type `Entry`: `Kind` and `Eol` are string
+types whose values are the strings below, `Time` is a `*TracklistTime` whose `Seconds` is a
+`float64`, and `Track` is a `*Track`, `nil` where the table says `null`.
 
 | Field | Type | Description |
 |---|---|---|
@@ -138,6 +169,18 @@ pub struct TracklistWarning {
 ```
 
 </TabItem>
+<TabItem label="Go">
+
+```go
+type TracklistWarning struct {
+    Code       WarningCode
+    Line       int
+    Severity   Severity      // SeverityInfo | SeverityWarning
+    Suggestion *Suggestion   // Suggestion{Line int, Raw string, Seconds float64}
+}
+```
+
+</TabItem>
 </Tabs>
 
 Sorted by line. The codes are listed under [Warnings](/trackparse/reference/warnings/#tracklist-warnings).
@@ -154,13 +197,15 @@ here.
 | `firstTime`, `lastTime` | seconds of the first and last time, or `null` |
 
 Python and Rust call the last two `first_time` and `last_time`. In Rust the counts are `usize` and
-the two times are `Option<f64>`.
+the two times are `Option<f64>`. In Go the fields are `FirstTime` and `LastTime`, of type
+`*float64`.
 
 ## applyEdits(text, edits, options?)
 
-*(Python: `apply_edits`. Rust: `apply_edits(text, &edits)` and `apply_edits_with(text, &edits, &options)`)*
+*(Python: `apply_edits`. Rust: `apply_edits(text, &edits)` and `apply_edits_with(text, &edits, &options)`.
+Go: `ApplyEdits(text, edits)` and `ApplyEditsWith(text, edits, options)`)*
 
-Returns `{ text, changed, warnings }` (Python and Rust: an `EditResult`).
+Returns `{ text, changed, warnings }` (Python, Rust and Go: an `EditResult`).
 
 | Field | |
 |---|---|
@@ -169,23 +214,25 @@ Returns `{ text, changed, warnings }` (Python and Rust: an `EditResult`).
 | `warnings` | `{ code, edit, line }[]`: `edit` is the index in `edits`, `line` may be `null` |
 
 In Rust, `changed` is a `Vec<usize>` and each warning is an
-`EditWarning { code: EditWarningCode, edit: usize, line: Option<usize> }`.
+`EditWarning { code: EditWarningCode, edit: usize, line: Option<usize> }`. In Go, `Changed` is an
+`[]int` and each warning is an `EditWarning{Code EditWarningCode, Edit int, Line *int}`.
 
 ### Edits
 
-| JavaScript and Python | Rust | Effect |
-|---|---|---|
-| `{ op: "set-time", line, seconds }` | `Edit::set_time(line, seconds)` | Rewrite the time on that line |
-| `{ op: "shift", seconds }` | `Edit::shift(seconds)` | Add `seconds` to every timed line |
-| `{ op: "shift", seconds, from }` | `Edit::shift_from(seconds, from)` | Add `seconds` to every timed line from `from` on |
-| `{ op: "shift", seconds, lines }` | `Edit::shift_lines(seconds, lines)` | Add `seconds` to the listed lines |
-| `{ op: "sort-by-time" }` | `Edit::sort_by_time()` | Stable sort by time. Untimed lines move with the timed line above them |
-| `{ op: "set-rest", line, rest }` | `Edit::set_rest(line, rest)` | Replace everything after the time |
-| `{ op: "insert", after, text }` | `Edit::insert(after, text)` | Insert a line after `after` (`0` = at the top) |
-| `{ op: "delete", line }` | `Edit::delete(line)` | Remove a line |
+| JavaScript and Python | Rust | Go | Effect |
+|---|---|---|---|
+| `{ op: "set-time", line, seconds }` | `Edit::set_time(line, seconds)` | `SetTime(line, seconds)` | Rewrite the time on that line |
+| `{ op: "shift", seconds }` | `Edit::shift(seconds)` | `Shift(seconds)` | Add `seconds` to every timed line |
+| `{ op: "shift", seconds, from }` | `Edit::shift_from(seconds, from)` | `ShiftFrom(seconds, from)` | Add `seconds` to every timed line from `from` on |
+| `{ op: "shift", seconds, lines }` | `Edit::shift_lines(seconds, lines)` | `ShiftLines(seconds, lines...)` | Add `seconds` to the listed lines |
+| `{ op: "sort-by-time" }` | `Edit::sort_by_time()` | `SortByTime()` | Stable sort by time. Untimed lines move with the timed line above them |
+| `{ op: "set-rest", line, rest }` | `Edit::set_rest(line, rest)` | `SetRest(line, rest)` | Replace everything after the time |
+| `{ op: "insert", after, text }` | `Edit::insert(after, text)` | `Insert(after, text)` | Insert a line after `after` (`0` = at the top) |
+| `{ op: "delete", line }` | `Edit::delete(line)` | `Delete(line)` | Remove a line |
 
 In Python an edit is a dict with quoted keys: `{"op": "shift", "seconds": 45, "from": 5}`. With the
-`serde` feature, the Rust `Edit` reads and writes that same JSON.
+`serde` feature, the Rust `Edit` reads and writes that same JSON. The Go `Edit` writes it with
+`json.Marshal`.
 
 Edits run in sequence, each on the result of the one before. Times are written in their line's
 style, up to 100 hours (or 999 minutes for lists that never use hours).
@@ -199,7 +246,9 @@ style, up to 100 hours (or 999 minutes for lists that never use hours).
 | `time-clamped` | a time would go below zero and was set to zero |
 | `edit-invalid` | the edit could not apply and changed nothing |
 
-In Rust the codes are `EditWarningCode::StyleUpgraded`, `TimeClamped` and `EditInvalid`.
+In Rust the codes are `EditWarningCode::StyleUpgraded`, `TimeClamped` and `EditInvalid`. In Go
+they are `EditWarningCodeStyleUpgraded`, `EditWarningCodeTimeClamped` and
+`EditWarningCodeEditInvalid`.
 [Warnings](/trackparse/reference/warnings/#edit-warnings) shows how to check them.
 
 ## Options
@@ -207,16 +256,20 @@ In Rust the codes are `EditWarningCode::StyleUpgraded`, `TimeClamped` and `EditI
 Both functions take the same options. `applyEdits` accepts them for symmetry; edits don't depend on
 them.
 
-| JavaScript | Python and Rust | Default | Description |
-|---|---|---|---|
-| `mode` | `mode` | `"tracklist"` | Mode for each line's `parse()` |
-| `knownArtists`, `splitAnd`, `keywords` | `known_artists`, `split_and`, `keywords` | as for `parse` | As for [`parse()`](/trackparse/reference/options/) |
-| `audioSeconds` | `audio_seconds` | none | Length of the audio. Enables `time-after-audio-end` |
-| `markerWords` | `marker_words` | empty | Extra marker words |
+| JavaScript | Python and Rust | Go | Default | Description |
+|---|---|---|---|---|
+| `mode` | `mode` | `Mode` | `"tracklist"` | Mode for each line's `parse()` |
+| `knownArtists`, `splitAnd`, `keywords` | `known_artists`, `split_and`, `keywords` | `KnownArtists`, `SplitAnd`, `Keywords` | as for `parse` | As for [`parse()`](/trackparse/reference/options/) |
+| `audioSeconds` | `audio_seconds` | `AudioSeconds` | none | Length of the audio. Enables `time-after-audio-end` |
+| `markerWords` | `marker_words` | `MarkerWords` | empty | Extra marker words |
 
 Python uses keyword arguments. Rust has a setter of the same name for each on `TracklistOptions`,
 for example `TracklistOptions::new().audio_seconds(3600.0).marker_words(["drop"])`, and passes it
-to `parse_tracklist_with` or `apply_edits_with`.
+to `parse_tracklist_with` or `apply_edits_with`. Go takes a `TracklistOptions` struct, for example
+`trackparse.TracklistOptions{AudioSeconds: 3600, MarkerWords: []string{"drop"}}`, in
+`ParseTracklistWith` or `ApplyEditsWith`. Its zero value is the defaults, which leaves two
+differences: an empty `Mode` means `"tracklist"`, so automatic mode is `Mode("auto")`, and an
+`AudioSeconds` of zero or less means no length, so an audio of length 0 can't be given.
 [Tracklists](/trackparse/guides/tracklists/#options) has a full example.
 
 ## Types
@@ -261,12 +314,40 @@ Each variant has a constructor: `Edit::set_time(line, seconds)`, `Edit::shift(se
 `Edit::set_rest(line, rest)`, `Edit::insert(after, text)` and `Edit::delete(line)`.
 
 </TabItem>
+<TabItem label="Go">
+
+Everything is in the package `trackparse`: the structs `Tracklist`, `Entry`, `Parts`,
+`TracklistTime`, `Suggestion`, `Stats`, `TracklistWarning`, `TracklistOptions`, `EditResult`,
+`EditWarning` and `Edit`, and the string types `EntryKind`, `Eol`, `Severity`, `WarningCode`,
+`EditWarningCode` and `EditOp`, each with its constants (`EntryKindTrack`, `EolCRLF`,
+`WarningCodeTimeOutOfOrder`). An edit is a struct whose `Op` says which fields it reads:
+
+```go
+type Edit struct {
+    Op      EditOp    // EditOpSetTime, EditOpShift, EditOpSortByTime, EditOpSetRest, EditOpInsert, EditOpDelete
+    Line    int       // set-time, set-rest, delete
+    Seconds float64   // set-time, shift
+    Lines   []int     // shift: nil means not given
+    From    *int      // shift: nil means not given
+    Rest    string    // set-rest
+    After   int       // insert
+    Text    string    // insert
+}
+```
+
+Build one with a constructor: `trackparse.SetTime(line, seconds)`, `trackparse.Shift(seconds)`,
+`trackparse.ShiftFrom(seconds, from)`, `trackparse.ShiftLines(seconds, lines...)`,
+`trackparse.SortByTime()`, `trackparse.SetRest(line, rest)`, `trackparse.Insert(after, text)` and
+`trackparse.Delete(line)`. `json.Marshal` writes an edit in the spec's JSON form.
+
+</TabItem>
 </Tabs>
 
 The JSON Schema is
 [`tracklist.schema.json`](https://github.com/4matic/trackparse/blob/main/spec/schema/tracklist.schema.json).
 The Rust items are also on
-[docs.rs](https://docs.rs/trackparse/latest/trackparse/tracklist/).
+[docs.rs](https://docs.rs/trackparse/latest/trackparse/tracklist/), and the Go items will be on
+[pkg.go.dev](https://pkg.go.dev/github.com/4matic/trackparse/go) once the Go module is released.
 
 ## See also
 

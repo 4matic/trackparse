@@ -19,7 +19,8 @@ source can take.
 | `auto` | anything (the default) | Picks `filename`, `youtube` or `clean` from the string. It never picks `tracklist` |
 
 The resolved mode is in `track.mode`, so you can always see which one ran. In Rust the option is
-the enum `ModeOption` and the resolved mode is `Mode`, which has no `Auto`. The mode rules are
+the enum `ModeOption` and the resolved mode is `Mode`, which has no `Auto`. In Go both are the string type `Mode`: the zero value `trackparse.ModeAuto`
+(the empty string) asks for auto in `ParseOptions`, and `Track.Mode` is never empty. The mode rules are
 [R2](/trackparse/reference/spec/#r2-mode-prelude) in the spec.
 
 ## How auto decides
@@ -66,6 +67,25 @@ parse("07_Burial_-_Archangel.mp3");
 
 parse("Noisia - Stigma | Official Video");
 // mode Youtube, title "Stigma", junk [Junk { raw: "Official Video", kind: Video }]
+```
+
+</TabItem>
+<TabItem label="Go">
+
+```go
+import (
+    "fmt"
+
+    "github.com/4matic/trackparse/go"
+)
+
+t := trackparse.Parse("07_Burial_-_Archangel.mp3")
+fmt.Println(t.Mode, t.Position.Number, t.Artists[0].Name, "/", t.Title)
+// filename 7 Burial / Archangel
+
+t = trackparse.Parse("Noisia - Stigma | Official Video")
+fmt.Printf("%s %q %+v\n", t.Mode, t.Title, t.Junk)
+// youtube "Stigma" [{Raw:Official Video Kind:video}]
 ```
 
 </TabItem>
@@ -123,6 +143,25 @@ parse_with("Blink-182-All The Small Things", &youtube);
 ```
 
 </TabItem>
+<TabItem label="Go">
+
+```go
+youtube := trackparse.ParseOptions{Mode: trackparse.ModeYouTube}
+
+t = trackparse.ParseWith(`"Numb" by Linkin Park`, youtube)
+fmt.Printf("%q %q %v\n", t.Artists[0].Name, t.Title, t.Warnings)
+// "Linkin Park" "Numb" [bySplit]
+
+t = trackparse.ParseWith(`Linkin Park: "Numb"`, youtube)
+fmt.Printf("%q %q %v\n", t.Artists[0].Name, t.Title, t.Warnings)
+// "Linkin Park" "Numb" [quotedTitleSplit]
+
+t = trackparse.ParseWith("Blink-182-All The Small Things", youtube)
+fmt.Printf("%q %q %v\n", t.Artists[0].Name, t.Title, t.Warnings)
+// "Blink-182" "All The Small Things" [unspacedDashSplit]
+```
+
+</TabItem>
 </Tabs>
 
 In `clean` mode the last one comes back with no artist, the whole string as the title and a
@@ -163,6 +202,16 @@ parse_with("Around the World", &options);
 ```
 
 </TabItem>
+<TabItem label="Go">
+
+```go
+options := trackparse.ParseOptions{Mode: trackparse.ModeYouTube, Uploader: "Daft Punk - Topic"}
+t = trackparse.ParseWith("Around the World", options)
+fmt.Printf("%q %q\n", t.Artists[0].Name, t.Title)
+// "Daft Punk" "Around the World"
+```
+
+</TabItem>
 </Tabs>
 
 ## filename mode
@@ -192,6 +241,16 @@ parse("311 - Amber").artists[0].name                   # '311'
 parse("07_Burial_-_Archangel.mp3");                    // position 7, Burial / Archangel
 parse("311 - Amber.mp3").position;                     // Some(Position { raw: "311", number: 311 })
 &parse("311 - Amber").artists[0].name;                 // "311"
+```
+
+</TabItem>
+<TabItem label="Go">
+
+```go
+t = trackparse.Parse("07_Burial_-_Archangel.mp3")
+fmt.Println(t.Position.Number, t.Artists[0].Name, "/", t.Title)                  // 7 Burial / Archangel
+fmt.Printf("%+v\n", *trackparse.Parse("311 - Amber.mp3").Position)             // {Raw:311 Number:311}
+fmt.Printf("%q\n", trackparse.Parse("311 - Amber").Artists[0].Name)            // "311"
 ```
 
 </TabItem>
@@ -239,9 +298,22 @@ parse_with("Electrosoul System - Liquid Metal", &ParseOptions::new().mode(ModeOp
 ```
 
 </TabItem>
+<TabItem label="Go">
+
+```go
+t = trackparse.Parse("Electrosoul System - Liquid Metal")
+fmt.Printf("%q %+v\n", t.Title, t.Junk)
+// "Electrosoul System" [{Raw:Liquid Metal Kind:genre}]
+
+t = trackparse.ParseWith("Electrosoul System - Liquid Metal", trackparse.ParseOptions{Mode: trackparse.ModeTracklist})
+fmt.Printf("%q %q\n", t.Artists[0].Name, t.Title)
+// "Electrosoul System" "Liquid Metal"
+```
+
+</TabItem>
 </Tabs>
 
-[`parseTracklist`](/trackparse/guides/tracklists/) (`parse_tracklist` in Python and Rust) uses this
+[`parseTracklist`](/trackparse/guides/tracklists/) (`parse_tracklist` in Python and Rust, `ParseTracklist` in Go) uses this
 mode for every line. You only need to set it yourself when you parse tracklist lines one at a time.
 [Tracklist mode](/trackparse/guides/tracklists/#tracklist-mode) in the tracklist guide has more
 lines that need it.
