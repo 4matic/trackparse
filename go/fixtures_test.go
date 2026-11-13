@@ -10,8 +10,8 @@ package trackparse
 //   - TRACKPARSE_REPORT=1 prints the pass rate per file and per rule instead of failing (the
 //     conformance report): TRACKPARSE_REPORT=1 go test -run TestFixtures -v
 //   - TRACKPARSE_ONLY=<text> runs the cases whose file name or id contains the text.
-//   - TRACKPARSE_ALLOW_FAIL=1 logs the failures but keeps the test green, while the port is in
-//     progress.
+//   - TRACKPARSE_ALLOW_FAIL=1 logs the failures but keeps the test green (a local opt-in for
+//     work in progress; CI never sets it, so by default any failing case fails the test).
 //
 // The test is skipped when ../spec is absent (the module zip has no spec).
 
