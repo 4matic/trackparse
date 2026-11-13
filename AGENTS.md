@@ -138,8 +138,8 @@ go/                       Go module `github.com/4matic/trackparse/go`, package `
                           when ../spec is absent, as in the module zip), match_test.go, schema_test.go,
                           primitives_test.go (R0 values from rust/tests/data/primitives.json),
                           unicode_test.go, properties_test.go (SPEC invariants and R13.11),
-                          example_test.go (the pkg.go.dev examples, checked by go test), fuzz targets,
-                          unit tests per area
+                          example_test.go (the pkg.go.dev examples, checked by go test),
+                          fuzz_test.go (fuzz targets seeded from the fixture inputs), unit tests per area
   testdata/               skip.json (only ever shrinks), unicode/ (cases dumped from Node),
                           artist_cases.json (from dump_artist_cases.mjs)
 site/                     documentation site + playground (Astro + Starlight, GitHub Pages)
@@ -302,7 +302,7 @@ Go (run inside `go/`; Go 1.22 or newer, Node for the codegen):
 | `TRACKPARSE_REPORT=1 go test -run TestFixtures -v` | Pass rate per fixture file and per rule ID |
 | `node scripts/gen_data.mjs` · `node scripts/gen_unicode.mjs` | Regenerate `data_gen.go` / `unicode_gen.go` (and `testdata/unicode/`); `--check` fails if stale |
 | `gofmt -l .` · `go vet ./...` · `go run honnef.co/go/tools/cmd/staticcheck@2026.2.2 ./...` | Format check (must print nothing) and lint |
-| `go test -run '^$' -fuzz FuzzRun -fuzztime 60s` | Fuzz one target (`go test -list Fuzz` lists them); a failing input lands in `testdata/fuzz/` |
+| `go test -run '^$' -fuzz '^FuzzParse$' -fuzztime 60s` | Fuzz one target (`go test -list Fuzz` lists them: Parse, ParseArtists, Format, ParseTracklist, ApplyEdits, Run); a failing input lands in `testdata/fuzz/` |
 | `TRACKPARSE_UNICODE_FULL=1 go test -run TestUnicodeFull` | The full NFC/NFD and lowercase sweep against Node (slow) |
 
 Cross-port check, from the repo root (needs `uv`, `cargo` and `go`):
