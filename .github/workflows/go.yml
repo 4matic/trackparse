@@ -61,17 +61,10 @@ jobs:
         run: "! grep -q '^require' go.mod"
       # Every shared fixture, the primitives and the API tests.
       - run: go test -race ./...
-        env:
-          # While the pipeline is being ported the fixtures are logged, not failed. Remove this
-          # line when the conformance report reads 100%.
-          TRACKPARSE_ALLOW_FAIL: "1"
 
   # Every fixture input through the built JS package and the Go module: full outputs must match.
   compare:
     runs-on: ubuntu-latest
-    # While the pipeline is being ported this reports differences without failing. Remove when
-    # compare-ports reads 0 differences for Go.
-    continue-on-error: true
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
       - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5.6.0
