@@ -3,6 +3,10 @@ name: go
 on:
   push:
     branches: [main]
+  # The fuzz job: weekly, or by hand.
+  schedule:
+    - cron: "17 3 * * 1"
+  workflow_dispatch:
   pull_request:
     paths:
       - "go/**"
@@ -12,6 +16,7 @@ on:
       # The compare job diffs the module against the built JS package.
       - "js/src/**"
       - "scripts/compare-ports.mjs"
+      - "scripts/lib/ports.mjs"
       - ".github/workflows/go.yml"
 
 permissions:
@@ -23,6 +28,7 @@ env:
 
 jobs:
   test:
+    if: github.event_name != 'schedule'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -64,6 +70,7 @@ jobs:
 
   # Every fixture input through the built JS package and the Go module: full outputs must match.
   compare:
+    if: github.event_name != 'schedule'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
@@ -79,3 +86,57 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter trackparse build
       - run: node scripts/compare-ports.mjs --only=go
+
+  # The module as the Go proxy will serve it: only what `git archive` puts under go/, without
+  # ../spec or ../rust. The fixture and primitive tests must skip; everything else must pass.
+  module-zip:
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5.6.0
+        with:
+          go-version: stable
+          cache: false
+      - name: Build and test go/ alone
+        run: |
+          dir="$(mktemp -d)"
+          git archive HEAD go/ | tar -x -C "$dir"
+          cd "$dir/go"
+          test -z "$(find .. -maxdepth 1 -mindepth 1 ! -name go)"
+          if grep -q '^require' go.mod; then echo "go.mod has dependencies"; exit 1; fi
+          go vet ./...
+          go test -count=1 ./...
+
+  # Each fuzz target for a fixed time, seeded with every fixture input. Weekly and by hand.
+  fuzz:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # FuzzParse checks every mode per input and spends its first minute or so on the seeds.
+        include:
+          - { target: FuzzParse, time: 5m }
+          - { target: FuzzParseArtists, time: 3m }
+          - { target: FuzzFormat, time: 3m }
+          - { target: FuzzParseTracklist, time: 3m }
+          - { target: FuzzApplyEdits, time: 3m }
+          - { target: FuzzRun, time: 3m }
+    defaults:
+      run:
+        working-directory: go
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5.6.0
+        with:
+          go-version: stable
+          cache: false
+      - run: go test -run '^$' -fuzz '^${{ matrix.target }}$' -fuzztime ${{ matrix.time }} .
+      - if: failure()
+        name: Keep the failing input
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: fuzz-${{ matrix.target }}
+          path: go/testdata/fuzz
+          if-no-files-found: ignore
