@@ -732,7 +732,10 @@ func checkInsertDelete(tb testing.TB, text string, r *rng) {
 	tb.Helper()
 	text = sanitize(text)
 	before := raws(text)
-	if len(before) == 0 {
+	if len(before) == 0 || hasBareCR(text) {
+		// R13.9.5: after an edit the lines are re-read, so a line ending in a bare "\r" next
+		// to an empty "\n" line merges with it. The simple expectation below does not model
+		// that.
 		return
 	}
 	at := r.below(len(before) + 1)
@@ -757,6 +760,16 @@ func checkInsertDelete(tb testing.TB, text string, r *rng) {
 	if !slices.Equal(got, kept) {
 		tb.Fatalf("delete %d in %q: %q, want %q", line, text, got, kept)
 	}
+}
+
+// hasBareCR reports whether text has a "\r" that is not part of a "\r\n".
+func hasBareCR(text string) bool {
+	for i := 0; i < len(text); i++ {
+		if text[i] == '\r' && (i+1 >= len(text) || text[i+1] != '\n') {
+			return true
+		}
+	}
+	return false
 }
 
 func timeWidths(text string) []int {
