@@ -19,8 +19,10 @@ import (
 
 // appendJSString appends s as JSON.stringify writes a string: only ", \ and the code points
 // below U+0020 are escaped, with the short forms \b \f \n \r \t. Bytes that are not valid
-// UTF-8 are written as U+FFFD.
+// UTF-8 are replaced as the API replaces them (sanitize: one U+FFFD per maximal ill-formed
+// subpart), so a typed Edit with bad bytes reads as the same text as a bad input string.
 func appendJSString(b []byte, s string) []byte {
+	s = sanitize(s)
 	b = append(b, '"')
 	for _, r := range s {
 		switch r {
