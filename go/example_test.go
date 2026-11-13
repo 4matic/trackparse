@@ -140,7 +140,7 @@ func ExampleFormatWith() {
 }
 
 func ExampleNormalize() {
-	fmt.Println(trackparse.Normalize("Noisia​ – Stigma （VIP）"))
+	fmt.Println(trackparse.Normalize("Noisia\u200b – Stigma （VIP）"))
 	// Output:
 	// Noisia - Stigma (VIP)
 }
