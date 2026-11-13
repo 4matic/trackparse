@@ -12,8 +12,8 @@ it belongs to.
 
 Open an issue on [GitHub](https://github.com/4matic/trackparse/issues). You can paste a
 [playground](/trackparse/playground/) link: the URL contains the input. It doesn't matter which
-language you use. The three packages share the rules, so a wrong result in one is a wrong result in
-all of them. If JavaScript, Python and Rust ever disagree with each other, that is a bug of its own,
+language you use. The four packages share the rules, so a wrong result in one is a wrong result in
+all of them. If JavaScript, Python, Rust and Go ever disagree with each other, that is a bug of its own,
 and worth reporting with the two outputs.
 
 ## Change a rule
@@ -26,8 +26,8 @@ Behaviour starts in the spec, not in the code:
    trigger, and one exact case if the rule touches many fields.
 3. If the rule is combinatorial (a new joiner, a new version word), teach the generator the atom
    and regenerate.
-4. Change every port, JavaScript, Python and Rust, and cite the rule ID in a comment.
-5. Check that every fixture passes in all three ports and that the cross-port diff reports zero
+4. Change every port, JavaScript, Python, Rust and Go, and cite the rule ID in a comment.
+5. Check that every fixture passes in all four ports and that the cross-port diff reports zero
    differences.
 6. Update the pages of this site that describe the rule, with an example in each language.
 
@@ -44,6 +44,7 @@ spec/        SPEC.md, word lists, JSON Schemas, fixtures, the fixture generator
 js/          the npm package (reference implementation)
 python/      the PyPI package
 rust/        the crates.io package
+go/          the Go module
 site/        this website
 scripts/     cross-port diff and other tools
 ```
@@ -91,20 +92,34 @@ cargo clippy --all-targets --all-features -- -D warnings
 node scripts/gen_data.mjs                                          # regenerate src/data.rs and src/unicode_tables.rs
 ```
 
+## Working on the Go module
+
+Go 1.22 or newer, and Node 24 for the codegen: as in Rust, the Unicode tables come from Node, not
+from the Go toolchain.
+
+```sh
+cd go
+go test ./...                                         # fixtures, invariants, unit tests
+TRACKPARSE_REPORT=1 go test -run TestFixtures -v .    # pass rate per file and per rule
+gofmt -l . && go vet ./...
+node scripts/gen_data.mjs                             # regenerate data_gen.go from spec/data
+node scripts/gen_unicode.mjs                          # regenerate unicode_gen.go
+```
+
 ## Comparing the ports
 
 After a change in any port, build the JavaScript package and run the cross-port diff from the
-repository root. It runs every fixture through all three ports and compares the complete output.
+repository root. It runs every fixture through all four ports and compares the complete output.
 
 ```sh
 pnpm build
 node scripts/compare-ports.mjs                # must print "differences: 0"
-node scripts/compare-ports.mjs --only=rust    # one port against JavaScript (or --only=python)
+node scripts/compare-ports.mjs --only=rust    # one port against JavaScript (or --only=python, --only=go)
 ```
 
 ## This website
 
-The site lives in `site/`. Every code example has a JavaScript, a Python and a Rust tab, and every
+The site lives in `site/`. Every code example has a JavaScript, a Python, a Rust and a Go tab, and every
 output in it comes from running the code.
 
 ```sh
@@ -115,7 +130,7 @@ pnpm docs:build    # build it; fails on broken pages
 [AGENTS.md](https://github.com/4matic/trackparse/blob/main/AGENTS.md) has the full repository map,
 every command and the release process. Commits follow
 [Conventional Commits](https://www.conventionalcommits.org/), because the changelog is generated
-from them. The three packages and the spec are released together under one version number.
+from them. The four packages and the spec are released together under one version number.
 
 ## License
 

@@ -5,7 +5,7 @@ description: 13,130 shared fixtures, a generator that can't agree with the code 
 
 The fixtures in [`spec/fixtures`](https://github.com/4matic/trackparse/tree/main/spec/fixtures) are
 the source of truth. The [spec](/trackparse/reference/spec/) says what should happen, the fixtures
-pin it down, and every port has to pass all of them. The JavaScript, Python and Rust ports all do:
+pin it down, and every port has to pass all of them. The JavaScript, Python, Rust and Go ports all do:
 **13,130 of 13,130**, with empty skip lists, in CI on every push.
 
 ## Handwritten: 1,203 cases
@@ -52,19 +52,22 @@ don't model are rejected instead of guessed.
 Each port throws thousands of random strings at the parser to check the
 [invariants](/trackparse/reference/spec/#invariants) from the spec. The JavaScript suite uses
 [fast-check](https://github.com/dubzzz/fast-check) and the Python suite uses
-[Hypothesis](https://hypothesis.works). The Rust suite has a small seeded generator of its own, so
-the crate needs no extra test dependency.
+[Hypothesis](https://hypothesis.works). The Rust and Go suites each have a small seeded generator
+of their own, so neither needs an extra test dependency. The Go module also has fuzz targets for
+`Parse`, `ParseArtists`, `Format`, `ParseTracklist` and `ApplyEdits` (`go test -fuzz`) that run the
+same checks on whatever the fuzzer finds.
 
 - it never throws or panics, on any input, in any mode;
-- a 10,000-code-point input finishes inside a ceiling: 1 s in JavaScript and Python, 2 s in Rust.
+- a 10,000-code-point input finishes inside a ceiling: 1 s in JavaScript and Python, 2 s in Rust
+  and Go.
   It normally takes tens of milliseconds in JavaScript and Rust and well under a second in Python;
   the ceiling is loose so that a busy CI machine doesn't
   fail the run but a blowup does;
 - `normalize` is idempotent;
 - whitespace, dash and zero-width noise don't change the result;
-- every output validates against the JSON Schema (JavaScript and Python; the Rust output is
+- every output validates against the JSON Schema (JavaScript, Python and Go; the Rust output is
   compared with JavaScript byte for byte instead, see below);
-- no word of the input goes missing from the output (the Rust suite);
+- no word of the input goes missing from the output (the Rust and Go suites);
 - `parse(format(parse(s)))` round-trips.
 
 For tracklists, on random multi-line text and random edit lists:
@@ -73,7 +76,7 @@ For tracklists, on random multi-line text and random edit lists:
 - `applyEdits(t, [])` returns `t`, and an edit never touches a line it doesn't name;
 - shifting forward and back restores the text, unless something was clamped or upgraded;
 - 10,000 lines parse inside a ceiling each suite sets for itself: 3 s in JavaScript (it takes
-  about 0.6 s), 15 s in Python, 3 s in an optimised Rust build;
+  about 0.6 s), 15 s in Python, 3 s in an optimized Rust build, 3 s in Go;
 - Markdown emphasis around a time or a track line gives the same kind, time and track as the plain
   line.
 
@@ -81,7 +84,7 @@ For tracklists, on random multi-line text and random edit lists:
 
 A fixture only checks the fields it asserts. So
 [`compare-ports.mjs`](https://github.com/4matic/trackparse/blob/main/scripts/compare-ports.mjs) runs
-every fixture input through all three ports, JavaScript, Python and Rust, and diffs the complete
+every fixture input through all four ports, JavaScript, Python, Rust and Go, and diffs the complete
 JSON output, tracklists and edits included. The difference count is zero.
 
 The Rust crate was also run against JavaScript on random input, which reaches places no fixture
@@ -103,6 +106,7 @@ Every push runs one workflow per port, plus one for the spec:
 | [`js.yml`](https://github.com/4matic/trackparse/blob/main/.github/workflows/js.yml) | The full suite on Node 22 and 24, and every fixture against the built package on Node 18 and 20 |
 | [`python.yml`](https://github.com/4matic/trackparse/blob/main/.github/workflows/python.yml) | ruff, `mypy --strict` and pytest on Python 3.9 to 3.14, and every fixture against the installed wheel |
 | [`rust.yml`](https://github.com/4matic/trackparse/blob/main/.github/workflows/rust.yml) | `cargo test --locked` on stable and on Rust 1.74. On stable only: rustfmt, clippy, the tests with `--all-features` and a publish dry run. Also the Rust output against the built JavaScript package on every fixture |
+| [`go.yml`](https://github.com/4matic/trackparse/blob/main/.github/workflows/go.yml) | `go vet` and `go test -race` on Go 1.22 and on stable. On stable only: gofmt and staticcheck. Also checks that the generated data and Unicode tables are current, that `go.mod` has no dependencies and that no unstable `sort.Slice` is used, and compares the Go output with the built JavaScript package on every fixture |
 | [`spec.yml`](https://github.com/4matic/trackparse/blob/main/.github/workflows/spec.yml) | Fixture validation, stale generated files, the generator's own tests, and that the four version numbers match |
 
 ## Run it yourself
@@ -123,7 +127,12 @@ cd ../rust
 cargo test                                                      # the same fixtures and invariants
 TRACKPARSE_REPORT=1 cargo test --test fixtures -- --nocapture   # pass rate per file and per rule
 
-# All three against each other (from the root)
+# Go (1.22 or newer)
+cd ../go
+go test ./...                                        # the same fixtures, invariants and unit tests
+TRACKPARSE_REPORT=1 go test -run TestFixtures -v .   # pass rate per file and per rule
+
+# All four against each other (from the root)
 cd ..
 pnpm build
 node scripts/compare-ports.mjs   # must print "differences: 0"
@@ -133,5 +142,5 @@ node scripts/compare-ports.mjs   # must print "differences: 0"
 
 - [Ports](/trackparse/project/ports/) for what each port had to get right.
 - [Contributing](/trackparse/project/contributing/) for how a rule change goes through the spec,
-  the fixtures and the three ports.
+  the fixtures and the four ports.
 - [How it works](/trackparse/project/how-it-works/) for the pipeline the fixtures exercise.
