@@ -49,22 +49,22 @@ func TestScan(t *testing.T) {
 	if string(sk.text) != "A "+string(ph)+" d "+string(ph) {
 		t.Fatalf("skeleton %q", string(sk.text))
 	}
-	gs := groupsOf(sk)
+	gs := groupsOf(&sk)
 	if len(gs) != 2 {
 		t.Fatalf("groups %d", len(gs))
 	}
-	if g := gs[0].g; g.inner != "b [c]" || g.raw != "(b [c])" || g.pos != 12 || g.open != DelimiterParen {
+	if g := gs[0].group; g.inner != "b [c]" || g.raw != "(b [c])" || g.pos != 12 || g.open != DelimiterParen {
 		t.Errorf("first group %+v", *g)
 	}
-	if g := gs[1].g; g.inner != "e" || g.raw != "[e" || g.pos != 22 || g.open != DelimiterSquare {
+	if g := gs[1].group; g.inner != "e" || g.raw != "[e" || g.pos != 22 || g.open != DelimiterSquare {
 		t.Errorf("second group %+v", *g)
 	}
-	if got := renderSkel(sk); got != "A (b [c]) d [e" {
+	if got := renderSkel(&sk); got != "A (b [c]) d [e" {
 		t.Errorf("render %q", got)
 	}
 	// R3.2: a non-matching closer is literal text inside the group.
 	sk, unbalanced = scan([]rune("x (a]b) y"), 0)
-	if unbalanced || len(groupsOf(sk)) != 1 || groupsOf(sk)[0].g.inner != "a]b" {
+	if unbalanced || len(groupsOf(&sk)) != 1 || groupsOf(&sk)[0].group.inner != "a]b" {
 		t.Errorf("non-matching closer: %q %v", string(sk.text), unbalanced)
 	}
 	// Offsets are UTF-16 units.
@@ -81,34 +81,35 @@ func TestScan(t *testing.T) {
 
 func TestSkelOps(t *testing.T) {
 	sk, _ := scan([]rune("  a (x) b  "), 0)
-	tr := trimSkel(sk)
-	if renderSkel(tr) != "a (x) b" || startPos(tr, -1) != 2 {
-		t.Errorf("trim %q %d", renderSkel(tr), startPos(tr, -1))
+	tr := trimSkel(&sk)
+	if renderSkel(&tr) != "a (x) b" || startPos(&tr, -1) != 2 {
+		t.Errorf("trim %q %d", renderSkel(&tr), startPos(&tr, -1))
 	}
-	if s := sliceSkel(sk, 50, 60); !s.isEmpty() {
+	if s := sliceSkel(&sk, 50, 60); !s.isEmpty() {
 		t.Error("out-of-range slice should be empty")
 	}
-	if s := sliceSkel(sk, 5, 2); !s.isEmpty() {
+	if s := sliceSkel(&sk, 5, 2); !s.isEmpty() {
 		t.Error("reversed slice should be empty")
 	}
-	if startPos(sliceSkel(sk, 0, 0), 7) != 7 {
+	if empty := sliceSkel(&sk, 0, 0); startPos(&empty, 7) != 7 {
 		t.Error("startPos fallback")
 	}
-	g := groupsOf(tr)[0].g
-	without := removeGroups(tr, map[int]bool{g.pos: true})
-	if renderSkel(without) != "a  b" {
-		t.Errorf("removeGroups %q", renderSkel(without))
+	g := groupsOf(&tr)[0].group
+	without := removeGroups(&tr, map[int]struct{}{g.pos: {}})
+	if renderSkel(&without) != "a  b" {
+		t.Errorf("removeGroups %q", renderSkel(&without))
 	}
-	cat := concatSkel(sliceSkel(tr, 0, 1), sliceSkel(tr, 2, 5))
-	if renderSkel(cat) != "a(x) b" {
-		t.Errorf("concat %q", renderSkel(cat))
+	head, rest := sliceSkel(&tr, 0, 1), sliceSkel(&tr, 2, 5)
+	cat := concatSkel(&head, &rest)
+	if renderSkel(&cat) != "a(x) b" {
+		t.Errorf("concat %q", renderSkel(&cat))
 	}
 }
 
 func segTexts(segs []segment) []string {
 	out := make([]string, len(segs))
 	for i, s := range segs {
-		out[i] = renderSkel(s.skel)
+		out[i] = renderSkel(&s.skel)
 	}
 	return out
 }
@@ -130,7 +131,7 @@ func TestSplitAtSpacedDashes(t *testing.T) {
 	}
 	for _, c := range cases {
 		sk, _ := scan([]rune(c.in), 0)
-		got := strings.Join(segTexts(splitAtSpacedDashes(sk, c.leading)), "|")
+		got := strings.Join(segTexts(splitAtSpacedDashes(&sk, c.leading)), "|")
 		if got != c.want {
 			t.Errorf("split(%q, %v) = %q, want %q", c.in, c.leading, got, c.want)
 		}
@@ -149,7 +150,7 @@ func TestSplitPipes(t *testing.T) {
 		sk, _ := scan([]rune(c.in), 0)
 		got := strings.Join(segTexts(splitPipes(sk)), "|")
 		if c.in == "A|B" {
-			got = renderSkel(sk) // one segment
+			got = renderSkel(&sk) // one segment
 		}
 		if got != c.want {
 			t.Errorf("splitPipes(%q) = %q, want %q", c.in, got, c.want)
@@ -280,8 +281,8 @@ func TestSeparatorHelpers(t *testing.T) {
 	}
 	sk, _ = scan([]rune(`Taylor Swift: "Shake It Off" (Official Video)`), 0)
 	parts, ok := quotedTitle(sk)
-	if !ok || parts.artist == nil || renderSkel(*parts.artist) != "Taylor Swift" ||
-		renderSkel(parts.title) != "Shake It Off (Official Video)" {
+	if !ok || parts.artist == nil || renderSkel(parts.artist) != "Taylor Swift" ||
+		renderSkel(&parts.title) != "Shake It Off (Official Video)" {
 		t.Errorf("quotedTitle %v", ok)
 	}
 	sk, _ = scan([]rune(`"Shake It Off"`), 0)
@@ -297,9 +298,9 @@ func TestFindSeparator(t *testing.T) {
 		r := findSeparator(separatorInput{skel: sk, mode: mode, listContext: list}, c)
 		artist := "<nil>"
 		if r.artist != nil {
-			artist = renderSkel(*r.artist)
+			artist = renderSkel(r.artist)
 		}
-		return artist, renderSkel(r.title), c.warnings
+		return artist, renderSkel(&r.title), c.warnings
 	}
 	cases := []struct {
 		in        string

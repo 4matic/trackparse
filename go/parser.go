@@ -19,7 +19,7 @@ func skelOf(p piece, c *ctx) skel {
 	if unbalanced {
 		c.warn(WarningUnbalancedBrackets)
 	}
-	return trimSkel(sk)
+	return trimSkel(&sk)
 }
 
 // uploaderSkel is R6.8: the uploader minus a trailing " - Topic" and "VEVO", or nil.
@@ -97,7 +97,7 @@ func (e *engine) runArtists(input string) []Artist {
 		return []Artist{}
 	}
 	sk, _ := scan([]rune(norm), 0)
-	side := parseArtistSide(sk, c)
+	side := parseArtistSide(&sk, c)
 	artists := dedupArtists(side.credits)
 	for i := range artists {
 		artists[i].Source = SourceArtist
@@ -127,7 +127,7 @@ func (e *engine) probe(input string) lineProbe {
 	return lineProbe{
 		position: st.track.Position != nil,
 		spacedDash: st.pre.pipeTitle == nil && st.working != nil &&
-			len(splitAtSpacedDashes(*st.working, true)) >= 2,
+			len(splitAtSpacedDashes(st.working, true)) >= 2,
 		empty:  st.working == nil,
 		staged: st,
 	}
@@ -179,7 +179,7 @@ func finish(st staged, listContext bool) Track {
 
 	var artistSide artistSideResult
 	if artistSkel != nil {
-		artistSide = parseArtistSide(*artistSkel, c)
+		artistSide = parseArtistSide(artistSkel, c)
 	}
 	titleSide := parseTitleSide(titleSkel, relaxed, pre.mode == ModeYouTube, &out, c)
 
@@ -219,7 +219,7 @@ func finish(st staged, listContext bool) Track {
 	junk = byPos(junk, func(j *positionedJunk) int { return j.pos })
 	track.Junk = make([]Junk, 0, len(junk))
 	for _, j := range junk {
-		track.Junk = append(track.Junk, Junk{Raw: j.raw, Kind: JunkKind(j.kind)})
+		track.Junk = append(track.Junk, Junk{Raw: j.raw, Kind: j.kind})
 	}
 	track.Warnings = append([]Warning{}, c.warnings...)
 	return track

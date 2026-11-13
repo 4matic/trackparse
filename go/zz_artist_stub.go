@@ -9,7 +9,7 @@ package trackparse
 // versionDraft mirrors rust/src/classify.rs VersionDraft.
 type versionDraft struct {
 	// vtype is a version type name; keywords.versionHeads values pass through as given.
-	vtype         string
+	vtype         VersionType
 	raw           string
 	artists       []credit
 	modifiers     []string
@@ -49,7 +49,7 @@ const (
 type classification struct {
 	kind classKind
 	// junk is the junk kind (classJunk).
-	junk string
+	junk JunkKind
 	// list is the credit list (classFeat, classProducer).
 	list listResult
 	// flag is set for classFlag.
@@ -114,7 +114,7 @@ type listResult struct {
 }
 
 // splitCredits mirrors rust/src/credits.rs split_credits. Stand-in: the whole list is one name.
-func splitCredits(input skel, opts listOptions, c *ctx) listResult {
+func splitCredits(input *skel, opts *listOptions, c *ctx) listResult {
 	name := collapseSpaces(renderSkel(input))
 	if name == "" {
 		return listResult{}
@@ -137,8 +137,8 @@ type artistSideResult struct {
 }
 
 // parseArtistSide mirrors rust/src/artists.rs parse_artist_side. Stand-in: one primary credit.
-func parseArtistSide(side skel, c *ctx) artistSideResult {
-	r := splitCredits(side, listOptions{role: RolePrimary, source: SourceArtist, splitWith: true}, c)
+func parseArtistSide(side *skel, c *ctx) artistSideResult {
+	r := splitCredits(side, &listOptions{role: RolePrimary, source: SourceArtist, splitWith: true}, c)
 	return artistSideResult{credits: r.credits}
 }
 
@@ -155,7 +155,7 @@ func dedupArtists(credits []credit) []Artist {
 // whose Type is already a string).
 func toVersion(v versionDraft) Version {
 	return Version{
-		Type: VersionType(v.vtype), Raw: v.raw, Artists: dedupArtists(v.artists),
+		Type: v.vtype, Raw: v.raw, Artists: dedupArtists(v.artists),
 		Modifiers: v.modifiers, Descriptor: v.descriptor, Year: v.year,
 		UnknownArtist: v.unknownArtist, Delimiter: v.delimiter,
 	}

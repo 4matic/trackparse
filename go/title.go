@@ -52,31 +52,31 @@ func parseTitleSide(input skel, relaxed, youtube bool, out *extracted, c *ctx) t
 	removed := extractGroups(input, out, c) // R8.1
 
 	// R8.2
-	segments := splitAtSpacedDashes(input, false)
+	segments := splitAtSpacedDashes(&input, false)
 	remaining, p := peelSuffixes(segments, relaxed, c)
 	addPeeled(out, p)
 	lastKeptEnd := 0
 	if len(remaining) > 0 {
 		lastKeptEnd = remaining[len(remaining)-1].end
 	}
-	sk := sliceSkel(input, 0, lastKeptEnd)
+	sk := sliceSkel(&input, 0, lastKeptEnd)
 
 	sk = extractUnbracketedCredits(sk, out, c) // R8.3
-	sk = removeGroups(sk, removed)
+	sk = removeGroups(&sk, removed)
 	if youtube {
 		sk = stripTrailingJunk(sk, out, c) // R8.4
 	}
 
-	title := cleanupTitle(renderSkel(sk))                     // R8.5
+	title := cleanupTitle(renderSkel(&sk))                    // R8.5
 	unknownTitle := title != "" && isUnknownToken(title, c.t) // R8.6
 	return titleSideResult{title: title, unknownTitle: unknownTitle}
 }
 
 // extractGroups is R8.1: classify every group. It gives the offsets of the groups to remove.
-func extractGroups(sk skel, out *extracted, c *ctx) map[int]bool {
-	removed := map[int]bool{}
-	for _, ig := range groupsOf(sk) {
-		g := ig.g
+func extractGroups(sk skel, out *extracted, c *ctx) map[int]struct{} {
+	removed := map[int]struct{}{}
+	for _, ig := range groupsOf(&sk) {
+		g := ig.group
 		cls := classify(g.inner, site{source: SourceTitle, delimiter: g.open, pos: g.pos}, c)
 		switch cls.kind {
 		case classVersions:
@@ -96,7 +96,7 @@ func extractGroups(sk skel, out *extracted, c *ctx) map[int]bool {
 		default:
 			continue
 		}
-		removed[g.pos] = true
+		removed[g.pos] = struct{}{}
 	}
 	return removed
 }
@@ -192,10 +192,11 @@ func extractUnbracketedCredits(input skel, out *extracted, c *ctx) skel {
 				break
 			}
 		}
-		list := trimSkel(sliceSkel(input, hit.end, listEnd))
+		part := sliceSkel(&input, hit.end, listEnd)
+		list := trimSkel(&part)
 		if !list.isEmpty() {
 			marker := hit.marker
-			r := splitCredits(list, listOptions{
+			r := splitCredits(&list, &listOptions{
 				role:            hit.role,
 				source:          SourceTitle,
 				lead:            &marker,
@@ -234,7 +235,7 @@ func extractUnbracketedCredits(input skel, out *extracted, c *ctx) skel {
 // "-" or "|"). Word spans are computed once and walked backwards, so repeated junk stays linear
 // (R0.8).
 func stripTrailingJunk(input skel, out *extracted, c *ctx) skel {
-	sk := trimSkel(input)
+	sk := trimSkel(&input)
 	spans := wordSpans(sk.text)
 	words := spanTexts(spans)
 	end := len(spans) // words still in the title
@@ -265,7 +266,7 @@ func stripTrailingJunk(input skel, out *extracted, c *ctx) skel {
 		}
 		out.junk = append(out.junk, positionedJunk{
 			raw:  collapseRunes(sub(sk.text, from, to)),
-			kind: m.value,
+			kind: JunkKind(m.value),
 			pos:  p,
 		})
 		end = keep
@@ -277,7 +278,8 @@ func stripTrailingJunk(input skel, out *extracted, c *ctx) skel {
 	if end >= 1 && end-1 < len(spans) {
 		cutAt = spans[end-1].end
 	}
-	return trimSkel(sliceSkel(sk, 0, cutAt))
+	kept := sliceSkel(&sk, 0, cutAt)
+	return trimSkel(&kept)
 }
 
 // isLoneEdge reports whether a word is a lone "-" or "|".

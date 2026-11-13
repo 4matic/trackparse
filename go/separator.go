@@ -14,11 +14,11 @@ type peeled struct {
 // classifySegment is the R6.2 classification of a bare dash segment: placeholders make it
 // Unknown.
 func classifySegment(seg skel, c *ctx) classification {
-	if hasGroup(seg) {
+	if hasGroup(&seg) {
 		return classification{kind: classUnknown}
 	}
 	text := collapseRunes(seg.text)
-	s := site{source: SourceTitle, delimiter: DelimiterDash, pos: startPos(seg, 0)}
+	s := site{source: SourceTitle, delimiter: DelimiterDash, pos: startPos(&seg, 0)}
 	return classify(text, s, c)
 }
 
@@ -70,7 +70,7 @@ func peelSuffixes(segments []segment, relaxed bool, c *ctx) ([]segment, []peeled
 		if !ok {
 			break
 		}
-		out = append(out, peeled{cls: cls, raw: collapseRunes(last.skel.text), pos: startPos(last.skel, 0)})
+		out = append(out, peeled{cls: cls, raw: collapseRunes(last.skel.text), pos: startPos(&last.skel, 0)})
 		remaining = remaining[:len(remaining)-1]
 	}
 	// Left to right.
@@ -108,7 +108,7 @@ type splitParts struct {
 
 // nonEmpty is the trimmed skeleton, or nil when it is empty.
 func nonEmpty(s skel) *skel {
-	t := trimSkel(s)
+	t := trimSkel(&s)
 	if t.isEmpty() {
 		return nil
 	}
@@ -117,7 +117,8 @@ func nonEmpty(s skel) *skel {
 
 // splitAt cuts s around [cutStart, cutEnd).
 func splitAt(s skel, cutStart, cutEnd int) splitParts {
-	return splitParts{artist: nonEmpty(sliceSkel(s, 0, cutStart)), title: trimSkel(sliceFrom(s, cutEnd))}
+	right := sliceFrom(&s, cutEnd)
+	return splitParts{artist: nonEmpty(sliceSkel(&s, 0, cutStart)), title: trimSkel(&right)}
 }
 
 // resultOf is a separator result for split parts.
@@ -137,14 +138,14 @@ func firstDashSplit(sk skel, segments []segment) (splitParts, bool) {
 		a := first.skel
 		artist = &a
 	}
-	return splitParts{artist: artist, title: sliceSkel(sk, second.start, last.end)}, true
+	return splitParts{artist: artist, title: sliceSkel(&sk, second.start, last.end)}, true
 }
 
 // findSeparator is R6.
 func findSeparator(in separatorInput, c *ctx) separatorResult {
 	sk := in.skel
 	mode := in.mode
-	segments := splitAtSpacedDashes(sk, true)
+	segments := splitAtSpacedDashes(&sk, true)
 	if mode == ModeTracklist {
 		return tracklistSeparator(sk, segments, in.listContext, c)
 	}
@@ -155,7 +156,7 @@ func findSeparator(in separatorInput, c *ctx) separatorResult {
 		return resultOf(parts, p)
 	}
 
-	rest := sliceSkel(sk, 0, 0)
+	rest := sliceSkel(&sk, 0, 0)
 	if len(remaining) > 0 {
 		rest = remaining[0].skel
 	}
@@ -182,7 +183,7 @@ func tracklistSeparator(sk skel, segments []segment, listContext bool, c *ctx) s
 	if parts, ok := firstDashSplit(sk, segments); ok {
 		return resultOf(parts, nil)
 	}
-	rest := sliceSkel(sk, 0, 0)
+	rest := sliceSkel(&sk, 0, 0)
 	if len(segments) > 0 {
 		rest = segments[0].skel
 	}
@@ -284,11 +285,15 @@ func quotedTitle(s skel) (splitParts, bool) {
 		return splitParts{}, false
 	}
 	closeAt := rel + open + 1
-	artist := trimSkel(sliceSkel(s, 0, open))
+	left := sliceSkel(&s, 0, open)
+	artist := trimSkel(&left)
 	if last := at(artist.text, artist.len()-1); last == ':' || last == '-' {
-		artist = trimSkel(sliceSkel(artist, 0, artist.len()-1))
+		shorter := sliceSkel(&artist, 0, artist.len()-1)
+		artist = trimSkel(&shorter)
 	}
-	title := trimSkel(concatSkel(sliceSkel(s, open+1, closeAt), sliceFrom(s, closeAt+1)))
+	quoted, after := sliceSkel(&s, open+1, closeAt), sliceFrom(&s, closeAt+1)
+	joined := concatSkel(&quoted, &after)
+	title := trimSkel(&joined)
 	var a *skel
 	if !artist.isEmpty() {
 		a = &artist
@@ -332,10 +337,16 @@ func unspacedDash(s skel, c *ctx) (int, bool) {
 		if !(at(t, i+1) == '"' || isLetterAt(t, i+1)) {
 			continue
 		}
-		if len(c.knownKeys) > 0 && isKnownArtist(renderSkel(sliceSkel(s, 0, i)), c) {
+		if len(c.knownKeys) > 0 && isKnownArtist(renderPrefix(&s, i), c) {
 			return i, true
 		}
 		last, found = i, true
 	}
 	return last, found
+}
+
+// renderPrefix is the rendered text of s[:end].
+func renderPrefix(s *skel, end int) string {
+	head := sliceSkel(s, 0, end)
+	return renderSkel(&head)
 }

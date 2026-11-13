@@ -6,8 +6,8 @@ package trackparse
 // positionedJunk is a junk fragment with its absolute offset (R9 orders junk by it).
 type positionedJunk struct {
 	raw string
-	// kind is a junk kind name; keywords.junk values pass through as given.
-	kind string
+	// kind is a junk kind; keywords.junk values pass through as given.
+	kind JunkKind
 	pos  int
 }
 
@@ -88,7 +88,7 @@ func stripPlatformSuffixes(s []rune, c *ctx, junk *[]positionedJunk) []rune {
 			start := len(text) - len(suffixLower)
 			*junk = append(*junk, positionedJunk{
 				raw:  string(tail(text, start+3)),
-				kind: "platform",
+				kind: JunkKindPlatform,
 				pos:  utf16Len(sub(text, 0, start)) + 3,
 			})
 			text = sub(text, 0, start)
@@ -137,7 +137,7 @@ func splitPipes(sk skel) []segment {
 		for e > s && before(t, e) == ' ' {
 			e--
 		}
-		segments = append(segments, segment{skel: sliceSkel(sk, s, e), start: s, end: e})
+		segments = append(segments, segment{skel: sliceSkel(&sk, s, e), start: s, end: e})
 		start = k.b
 	}
 	return segments
@@ -173,8 +173,8 @@ func looksLikeYoutube(sk skel, c *ctx) bool {
 	if len(splitPipes(sk)) > 1 {
 		return true
 	}
-	for _, ig := range groupsOf(sk) {
-		if kind, ok := junkTextKind(ig.g.inner, c); ok && kind != "genre" {
+	for _, ig := range groupsOf(&sk) {
+		if kind, ok := junkTextKind(ig.group.inner, c); ok && kind != "genre" {
 			return true
 		}
 	}
@@ -236,19 +236,19 @@ func prelude(normalized string, requested requestedMode, c *ctx) preludeResult {
 
 // pieceOf is the rendered text of a segment with its absolute offset.
 func pieceOf(seg segment) piece {
-	return piece{text: []rune(renderSkel(seg.skel)), base: startPos(seg.skel, 0)}
+	return piece{text: []rune(renderSkel(&seg.skel)), base: startPos(&seg.skel, 0)}
 }
 
 // splitYoutubePipes is R2.4.
 func splitYoutubePipes(sk skel, c *ctx, junk *[]positionedJunk) (piece, *piece) {
 	segments := splitPipes(sk)
 	if len(segments) <= 1 {
-		return piece{text: []rune(renderSkel(sk)), base: 0}, nil
+		return piece{text: []rune(renderSkel(&sk)), base: 0}, nil
 	}
 
 	var remaining []segment
 	for _, seg := range segments {
-		text := collapseSpaces(renderSkel(seg.skel))
+		text := collapseSpaces(renderSkel(&seg.skel))
 		// R2.4 step 1: a segment with a spaced dash is an artist/title candidate, never junk.
 		kind, isJunk := "", false
 		if !hasSpacedDash(seg.skel.text) {
@@ -256,7 +256,7 @@ func splitYoutubePipes(sk skel, c *ctx, junk *[]positionedJunk) (piece, *piece) 
 		}
 		switch {
 		case isJunk && kind != "":
-			*junk = append(*junk, positionedJunk{raw: text, kind: kind, pos: startPos(seg.skel, 0)})
+			*junk = append(*junk, positionedJunk{raw: text, kind: JunkKind(kind), pos: startPos(&seg.skel, 0)})
 		case text != "":
 			remaining = append(remaining, seg)
 		}
@@ -267,9 +267,9 @@ func splitYoutubePipes(sk skel, c *ctx, junk *[]positionedJunk) (piece, *piece) 
 				continue
 			}
 			*junk = append(*junk, positionedJunk{
-				raw:  collapseSpaces(renderSkel(seg.skel)),
-				kind: "other",
-				pos:  startPos(seg.skel, 0),
+				raw:  collapseSpaces(renderSkel(&seg.skel)),
+				kind: JunkKindOther,
+				pos:  startPos(&seg.skel, 0),
 			})
 		}
 	}

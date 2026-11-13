@@ -159,7 +159,7 @@ func (s skel) len() int { return len(s.text) }
 func (s skel) isEmpty() bool { return len(s.text) == 0 }
 
 // sliceSkel is s[start:end], clamped. The text and offsets are copied, the groups shared.
-func sliceSkel(s skel, start, end int) skel {
+func sliceSkel(s *skel, start, end int) skel {
 	return skel{
 		text:   append([]rune(nil), clamped(s.text, start, end)...),
 		pos:    append([]int(nil), clamped(s.pos, start, end)...),
@@ -168,12 +168,12 @@ func sliceSkel(s skel, start, end int) skel {
 }
 
 // sliceFrom is s[start:].
-func sliceFrom(s skel, start int) skel {
+func sliceFrom(s *skel, start int) skel {
 	return sliceSkel(s, start, len(s.text))
 }
 
 // trimSkel removes R0.2 whitespace at both ends.
-func trimSkel(s skel) skel {
+func trimSkel(s *skel) skel {
 	a, b := 0, len(s.text)
 	for a < b && isWhitespace(at(s.text, a)) {
 		a++
@@ -185,7 +185,7 @@ func trimSkel(s skel) skel {
 }
 
 // concatSkel is a followed by b (the groups of a).
-func concatSkel(a, b skel) skel {
+func concatSkel(a, b *skel) skel {
 	text := make([]rune, 0, len(a.text)+len(b.text))
 	text = append(append(text, a.text...), b.text...)
 	pos := make([]int, 0, len(a.pos)+len(b.pos))
@@ -194,7 +194,7 @@ func concatSkel(a, b skel) skel {
 }
 
 // groupAt is the group behind the placeholder at index, or nil.
-func groupAt(s skel, index int) *group {
+func groupAt(s *skel, index int) *group {
 	if at(s.text, index) != ph || index < 0 || index >= len(s.pos) {
 		return nil
 	}
@@ -204,22 +204,22 @@ func groupAt(s skel, index int) *group {
 // indexedGroup is a group with the index of its placeholder.
 type indexedGroup struct {
 	index int
-	g     *group
+	group *group
 }
 
 // groupsOf is the groups of the skeleton, left to right.
-func groupsOf(s skel) []indexedGroup {
+func groupsOf(s *skel) []indexedGroup {
 	var out []indexedGroup
 	for i := range s.text {
 		if g := groupAt(s, i); g != nil {
-			out = append(out, indexedGroup{index: i, g: g})
+			out = append(out, indexedGroup{index: i, group: g})
 		}
 	}
 	return out
 }
 
 // hasGroup reports whether the skeleton holds a placeholder.
-func hasGroup(s skel) bool {
+func hasGroup(s *skel) bool {
 	for _, r := range s.text {
 		if r == ph {
 			return true
@@ -229,7 +229,7 @@ func hasGroup(s skel) bool {
 }
 
 // renderSkel substitutes the groups back (R3.4 reassembly). Whitespace is not touched.
-func renderSkel(s skel) string {
+func renderSkel(s *skel) string {
 	out := make([]rune, 0, len(s.text))
 	for i, r := range s.text {
 		if g := groupAt(s, i); g != nil {
@@ -242,7 +242,7 @@ func renderSkel(s skel) string {
 }
 
 // startPos is the absolute offset of the first code point, or fallback for an empty skeleton.
-func startPos(s skel, fallback int) int {
+func startPos(s *skel, fallback int) int {
 	if len(s.pos) == 0 {
 		return fallback
 	}
@@ -250,9 +250,9 @@ func startPos(s skel, fallback int) int {
 }
 
 // removeGroups removes the placeholders of the groups at the given offsets.
-func removeGroups(s skel, remove map[int]bool) skel {
+func removeGroups(s *skel, remove map[int]struct{}) skel {
 	if len(remove) == 0 {
-		return s
+		return *s
 	}
 	text := make([]rune, 0, len(s.text))
 	pos := make([]int, 0, len(s.pos))
@@ -261,7 +261,7 @@ func removeGroups(s skel, remove map[int]bool) skel {
 			break
 		}
 		p := s.pos[i]
-		if r == ph && remove[p] {
+		if _, gone := remove[p]; r == ph && gone {
 			continue
 		}
 		text = append(text, r)
@@ -293,7 +293,7 @@ type segment struct {
 }
 
 // trimmedSegment is s[start:end] trimmed of R0.2 whitespace.
-func trimmedSegment(s skel, start, end int) segment {
+func trimmedSegment(s *skel, start, end int) segment {
 	a := start
 	b := end
 	if b < start {
@@ -310,7 +310,7 @@ func trimmedSegment(s skel, start, end int) segment {
 
 // splitAtSpacedDashes is R6.1 / R8.2: split a skeleton at every spaced dash into trimmed
 // segments. With allowLeading, a string starting with "- " yields an empty first segment (R6.3).
-func splitAtSpacedDashes(s skel, allowLeading bool) []segment {
+func splitAtSpacedDashes(s *skel, allowLeading bool) []segment {
 	var segments []segment
 	t := s.text
 	start := 0
