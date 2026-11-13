@@ -4,7 +4,7 @@
   "tag-separator": "-",
   "bump-minor-pre-major": true,
   "bump-patch-for-minor-pre-major": false,
-  "pull-request-header": ":robot: Merging this PR tags the release, publishes a GitHub Release with these notes and publishes to npm, PyPI and crates.io.",
+  "pull-request-header": ":robot: Merging this PR tags the release, publishes a GitHub Release with these notes and publishes to npm, PyPI and crates.io. The Go module is published by its tag (go/vX.Y.Z) through the Go module proxy.",
   "changelog-sections": [
     {
       "type": "feat",
@@ -107,6 +107,21 @@
         }
       ],
       "initial-version": "0.1.0"
+    },
+    "go": {
+      "release-type": "go",
+      "component": "go",
+      "package-name": "github.com/4matic/trackparse/go",
+      "tag-separator": "/",
+      "include-v-in-tag": true,
+      "changelog-path": "CHANGELOG.md",
+      "extra-files": [
+        {
+          "type": "generic",
+          "path": "data_gen.go"
+        }
+      ],
+      "initial-version": "0.1.0"
     }
   },
   "plugins": [
@@ -117,7 +132,8 @@
         "js",
         "spec",
         "python",
-        "rust"
+        "rust",
+        "go"
       ]
     }
   ]
