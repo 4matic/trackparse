@@ -1,0 +1,88 @@
+name: go
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    paths:
+      - "go/**"
+      - "spec/**"
+      # The tests read the R0 primitives dumped from JS there.
+      - "rust/tests/data/**"
+      # The compare job diffs the module against the built JS package.
+      - "js/src/**"
+      - "scripts/compare-ports.mjs"
+      - ".github/workflows/go.yml"
+
+permissions:
+  contents: read
+
+env:
+  # Test with the toolchain of the matrix, never an automatic download.
+  GOTOOLCHAIN: local
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # stable, and the floor from go/go.mod (the `go` line).
+        go: [stable, "1.22.x"]
+    defaults:
+      run:
+        working-directory: go
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5.6.0
+        with:
+          go-version: ${{ matrix.go }}
+          cache: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24
+      - name: Data codegen is up to date
+        run: node scripts/gen_data.mjs --check
+      - name: Unicode codegen is up to date
+        run: node scripts/gen_unicode.mjs --check
+      - if: matrix.go == 'stable'
+        name: gofmt
+        run: test -z "$(gofmt -l .)" || { gofmt -l .; exit 1; }
+      - run: go vet ./...
+      - if: matrix.go == 'stable'
+        name: staticcheck
+        env:
+          GOTOOLCHAIN: auto
+        run: go run honnef.co/go/tools/cmd/staticcheck@2026.2.2 ./...
+      - name: No unstable sorts
+        # JS sorts are stable; sort.Slice is not. Use slices.SortStableFunc.
+        run: "! grep -n 'sort\\.Slice(' --include='*.go' -r ."
+      - name: go.mod has no dependencies
+        run: "! grep -q '^require' go.mod"
+      # Every shared fixture, the primitives and the API tests.
+      - run: go test -race ./...
+        env:
+          # While the pipeline is being ported the fixtures are logged, not failed. Remove this
+          # line when the conformance report reads 100%.
+          TRACKPARSE_ALLOW_FAIL: "1"
+
+  # Every fixture input through the built JS package and the Go module: full outputs must match.
+  compare:
+    runs-on: ubuntu-latest
+    # While the pipeline is being ported this reports differences without failing. Remove when
+    # compare-ports reads 0 differences for Go.
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5.6.0
+        with:
+          go-version: stable
+          cache: false
+      - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter trackparse build
+      - run: node scripts/compare-ports.mjs --only=go
