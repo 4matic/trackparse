@@ -964,7 +964,7 @@ outside the fixtures is a
 [spec/CHANGELOG.md](spec/CHANGELOG.md).
 
 Want another language? The porting checklist is in
-[AGENTS.md](AGENTS.md#porting-guide-rust-others), along with the problems the earlier ports ran
+[AGENTS.md](AGENTS.md#porting-guide-rust-go-others), along with the problems the earlier ports ran
 into.
 
 ## Compared to other libraries
