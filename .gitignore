@@ -19,6 +19,9 @@ python/dist/
 # Rust
 target/
 
+# Go (test binaries from -cpuprofile / -c, fuzz caches)
+*.test
+
 # Editors / OS
 .DS_Store
 .idea/
