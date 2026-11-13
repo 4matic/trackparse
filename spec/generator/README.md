@@ -2,7 +2,7 @@
 
 Combinatorial fixture generator for the trackparse spec. It writes
 `spec/fixtures/generated/*.json`: 11,927 cases, about 7.7 MB (`test/generated.test.ts` caps the
-size at 7.8 MB). Every port (JavaScript, Python and Rust) runs these files next to the 1,203
+size at 7.8 MB). Every port (JavaScript, Python, Rust and Go) runs these files next to the 1,203
 handwritten fixtures.
 
 **Docs:** [How it's tested: generated cases](https://4matic.github.io/trackparse/project/testing/#generated-11927-cases)
@@ -25,7 +25,7 @@ the side of rejecting.
 
 When the SPEC changes, update the atom expectations and `problem()` in the same change. Then run
 `gen`, and every port must pass the result: JavaScript first, since it is the reference, then
-Python and Rust.
+Python, Rust and Go.
 
 ## Scenarios
 
@@ -90,6 +90,6 @@ pnpm --filter @trackparse/fixture-gen typecheck
 4. Run `gen`, then the JS suite (`pnpm --filter trackparse test`). A failure means either the
    atom's expectation is wrong or the reference implementation disagrees with the spec. Fix the
    one that is wrong. Never edit generated files by hand.
-5. Run the other ports on the new files (`cd python && uv run pytest`, `cd rust && cargo test`),
-   then `node scripts/compare-ports.mjs` from the repository root. It must print
+5. Run the other ports on the new files (`cd python && uv run pytest`, `cd rust && cargo test`,
+   `cd go && go test ./...`), then `node scripts/compare-ports.mjs` from the repository root. It must print
    `differences: 0`.
