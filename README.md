@@ -117,9 +117,9 @@ Every key is always present. When a guess was involved, `warnings` says which on
 | **Node 18+** | CI runs the full suite on 22 and 24, and every fixture against the built package on 18 and 20 |
 | **Python 3.9+** | 1,342 pytest tests on 3.9 to 3.14, plus every fixture against the built wheel. Output is byte-identical to JS |
 | **Rust 1.74+** | Every fixture, the tracklist invariants and the typed API tests on stable and on 1.74. Output is byte-identical to JS on every fixture and on about 790,000 random inputs |
-| **Go 1.22+** | Every fixture, the spec invariants and the examples with `go test -race` on 1.22 and on the latest stable. Output is byte-identical to JS on every fixture |
+| **Go 1.22+** | Every fixture, the spec invariants and the examples with `go test -race` on 1.22 and on the latest stable. Output is byte-identical to JS on every fixture and on about 790,000 random inputs |
 | **5,031** real tracklist lines | 117 podcast tracklists the tracklist rules were checked against. Every line round-trips byte for byte |
-| **1** spec | [`spec/SPEC.md`](spec/SPEC.md) defines the behaviour. The packages share its version (0.5.1 today) and are released together |
+| **1** spec | [`spec/SPEC.md`](spec/SPEC.md) defines the behaviour. The packages share its version and are released together; the Go module's first release is 0.6.0 |
 
 ## Install
 
@@ -249,7 +249,8 @@ Options are builders passed to the `_with` form of a function:
 
 Results are structs with exported fields; fields that can be `null` are pointers. Roles, version
 types and junk kinds are typed strings with constants (`trackparse.RoleFeatured`). `json.Marshal`
-gives the spec's JSON.
+gives the spec's JSON, with `&`, `<` and `>` escaped as `&`, `<` and `>`: the same
+values in different bytes. For the exact bytes of `JSON.stringify`, call `MarshalJSON` directly.
 
 ```go
 import (
@@ -522,8 +523,9 @@ push.
 Passing a fixture only checks the fields the case asserts, so
 [`scripts/compare-ports.mjs`](scripts/compare-ports.mjs) also runs every fixture input through all
 four ports and diffs the complete outputs, tracklists and edits included. Result: 0 differences,
-byte for byte. The Rust crate was also compared with JS on about 500,000 random single-track cases
-and 290,000 random tracklists with edits: 0 differences.
+byte for byte. [`scripts/fuzz-ports.mjs`](scripts/fuzz-ports.mjs) does the same with random input.
+The Rust crate and the Go module were each compared with JS on about 500,000 random single-track
+cases and 290,000 random tracklists with edits: 0 differences.
 
 ### Handwritten: 1,203 cases in 27 files
 
@@ -579,7 +581,7 @@ targets for `go test -fuzz`. The invariants:
 
 - it never throws or panics, on any input;
 - 10,000-code-point inputs built from repeated blocks finish inside a time limit (one second in the
-  JS and Python suites), which catches anything that blows up on long input;
+  JS and Python suites, two in Rust and Go), which catches anything that blows up on long input;
 - `normalize` is idempotent;
 - whitespace, dash and zero-width noise don't change the result;
 - every output validates against the schema;
@@ -591,7 +593,7 @@ For tracklists, on random multi-line text and random edit lists:
 - `raw + eol` over all entries gives the input back, and `lead + time + gap + rest` gives `raw`;
 - `applyEdits(t, [])` returns `t`, and an edit never touches a line it doesn't name;
 - `shift(+s)` then `shift(-s)` restores the text when nothing was clamped or upgraded;
-- 10,000 lines parse inside each suite's ceiling (3 s in JS);
+- 10,000 lines parse inside each suite's ceiling (3 s in JS and Go);
 - a one-line list gives the same track as `parse()` in tracklist mode on its text without Markdown
   emphasis or a leading `w/`;
 - Markdown emphasis around a time or a track line gives the same kind, time and track as the plain
@@ -628,6 +630,7 @@ pnpm conformance                # pass rate per fixture file and per spec rule
 
 pnpm --filter trackparse build
 node scripts/compare-ports.mjs  # all four ports on every fixture; must print "differences: 0"
+node scripts/fuzz-ports.mjs     # the same diff on random tracks and tracklists with edits
 node scripts/corpus-check.mjs spec/corpus/<file>.jsonl   # only if you have the corpus
 ```
 
@@ -959,12 +962,15 @@ releases are the tags `go/vX.Y.Z`, which the Go module proxy serves.
 The spec and the packages share one version number and are released together, so the same
 version means the same spec and the same fixtures in every language. The one known difference
 outside the fixtures is a
-[Unicode version note](https://4matic.github.io/trackparse/project/ports/#what-the-rust-port-taught) for the Rust crate. Changes to the rules and the fixtures are in
-[spec/CHANGELOG.md](spec/CHANGELOG.md).
+[Unicode version note](https://4matic.github.io/trackparse/project/ports/#what-the-rust-port-taught)
+for the Rust crate. The Go module generates its Unicode tables from Node, so it doesn't have that
+difference ([what the Go port taught](https://4matic.github.io/trackparse/project/ports/#what-the-go-port-taught)).
+Changes to the rules and the fixtures are in [spec/CHANGELOG.md](spec/CHANGELOG.md).
 
-Want another language? The porting checklist is in
-[AGENTS.md](AGENTS.md#porting-guide-rust-go-others), along with the problems the earlier ports ran
-into.
+Want another language? Start with
+[Adding a language](https://4matic.github.io/trackparse/project/ports/#adding-a-language). The
+full porting checklist is in [AGENTS.md](AGENTS.md#porting-guide-rust-go-others), along with the
+problems the earlier ports ran into.
 
 ## Compared to other libraries
 
