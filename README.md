@@ -117,7 +117,7 @@ Every key is always present. When a guess was involved, `warnings` says which on
 | **Node 18+** | CI runs the full suite on 22 and 24, and every fixture against the built package on 18 and 20 |
 | **Python 3.9+** | 1,342 pytest tests on 3.9 to 3.14, plus every fixture against the built wheel. Output is byte-identical to JS |
 | **Rust 1.74+** | Every fixture, the tracklist invariants and the typed API tests on stable and on 1.74. Output is byte-identical to JS on every fixture and on about 790,000 random inputs |
-| **Go 1.22+** | Every fixture, the spec invariants and the examples with `go test -race` on 1.22 and on the latest stable. Output is byte-identical to JS on every fixture. First release pending |
+| **Go 1.22+** | Every fixture, the spec invariants and the examples with `go test -race` on 1.22 and on the latest stable. Output is byte-identical to JS on every fixture |
 | **5,031** real tracklist lines | 117 podcast tracklists the tracklist rules were checked against. Every line round-trips byte for byte |
 | **1** spec | [`spec/SPEC.md`](spec/SPEC.md) defines the behaviour. The packages share its version (0.5.1 today) and are released together |
 
@@ -148,8 +148,7 @@ cargo add trackparse   # add --features serde for Serialize / Deserialize on the
 
 Go ([pkg.go.dev](https://pkg.go.dev/github.com/4matic/trackparse/go),
 [module README](go/README.md)). Go 1.22+, no dependencies. The import path ends in `/go`, the
-package is `trackparse`. The first release of the module is the next release of the project
-(tag `go/vX.Y.Z`); until then `go get` finds no version.
+package is `trackparse`.
 
 ```sh
 go get github.com/4matic/trackparse/go@latest
@@ -951,12 +950,11 @@ spaced dashes. The checks run last, over the finished entries.
 | JavaScript / TypeScript | [`trackparse`](https://www.npmjs.com/package/trackparse) on npm | Node 18+ or any ES2020 runtime, no dependencies | [js/README.md](js/README.md) | [js/CHANGELOG.md](js/CHANGELOG.md) |
 | Python | [`trackparse`](https://pypi.org/project/trackparse/) on PyPI | Python 3.9+, no dependencies | [python/README.md](python/README.md) | [python/CHANGELOG.md](python/CHANGELOG.md) |
 | Rust | [`trackparse`](https://crates.io/crates/trackparse) on crates.io ([docs.rs](https://docs.rs/trackparse)) | Rust 1.74+, `unicode-normalization`, optional `serde` feature | [rust/README.md](rust/README.md) | [rust/CHANGELOG.md](rust/CHANGELOG.md) |
-| Go | [`github.com/4matic/trackparse/go`](https://pkg.go.dev/github.com/4matic/trackparse/go) on pkg.go.dev | Go 1.22+, no dependencies | [go/README.md](go/README.md) | first release pending |
+| Go | [`github.com/4matic/trackparse/go`](https://pkg.go.dev/github.com/4matic/trackparse/go) on pkg.go.dev | Go 1.22+, no dependencies | [go/README.md](go/README.md) | [go/CHANGELOG.md](go/CHANGELOG.md) |
 
 The JavaScript package is the reference implementation. All four pass 13,130 of 13,130 fixtures,
-and the Python, Rust and Go output is byte-identical to JavaScript on every fixture input. The Go
-module is not released yet: its first version comes with the next release, tagged `go/vX.Y.Z`,
-and that release also starts `go/CHANGELOG.md`.
+and the Python, Rust and Go output is byte-identical to JavaScript on every fixture input. Go
+releases are the tags `go/vX.Y.Z`, which the Go module proxy serves.
 
 The spec and the packages share one version number and are released together, so the same
 version means the same spec and the same fixtures in every language. The one known difference

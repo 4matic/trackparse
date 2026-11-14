@@ -8,14 +8,14 @@ description: The JavaScript, Python, Rust and Go implementations, and what it ta
 | JavaScript / TypeScript | [`trackparse`](https://www.npmjs.com/package/trackparse) on npm | Reference implementation. 13,130 / 13,130 fixtures. Tracklists in `trackparse/tracklist` |
 | Python | [`trackparse`](https://pypi.org/project/trackparse/) on PyPI | 13,130 / 13,130 fixtures, output identical to JS. Tracklists in `trackparse.tracklist` |
 | Rust | [`trackparse`](https://crates.io/crates/trackparse) on crates.io, API docs on [docs.rs](https://docs.rs/trackparse) | 13,130 / 13,130 fixtures, output identical to JS. Tracklists in `trackparse::tracklist` |
-| Go | `github.com/4matic/trackparse/go`, from the next release (tag `go/vX.Y.Z`); API docs will be on [pkg.go.dev](https://pkg.go.dev/github.com/4matic/trackparse/go) | 13,130 / 13,130 fixtures, output identical to JS. Tracklists in the same package (`trackparse.ParseTracklist`) |
+| Go | [`github.com/4matic/trackparse/go`](https://pkg.go.dev/github.com/4matic/trackparse/go), API docs on pkg.go.dev | 13,130 / 13,130 fixtures, output identical to JS. Tracklists in the same package (`trackparse.ParseTracklist`) |
 
 | | JavaScript | Python | Rust | Go |
 |---|---|---|---|---|
 | Install | `npm install trackparse` | `pip install trackparse` | `cargo add trackparse` | `go get github.com/4matic/trackparse/go@latest` |
 | Needs | Node 18 or newer, or any ES2020 runtime | Python 3.9 or newer | Rust 1.74 or newer | Go 1.22 or newer |
 | Dependencies | none | none | `unicode-normalization`; `serde` is optional | none |
-| Types | TypeScript types included | `py.typed`, passes `mypy --strict` | structs and typed string constants, no `unsafe`, no cgo |
+| Types | TypeScript types included | `py.typed`, passes `mypy --strict` | structs and enums, no `unsafe` | structs and typed string constants, no `unsafe`, no cgo |
 | Names | `parseArtists`, `fullTitle` | `parse_artists`, `full_title` | `parse_artists`, `full_title` | `ParseArtists`, `FullTitle` |
 | Options | one object | keyword arguments | `_with` functions and option builders | `With` functions and option structs |
 | On bad input | never throws on a string | `TypeError` if the input isn't a `str` | never panics, no `Result` | never panics, no `error` |
@@ -24,10 +24,10 @@ description: The JavaScript, Python, Rust and Go implementations, and what it ta
 [Getting started](/trackparse/start/getting-started/) has the install steps, and
 [Other functions](/trackparse/reference/functions/) has the full table of names.
 
-All of them share one version number. The spec, the JavaScript package, the Python package and the
-Rust crate are released together, from one release PR, and CI fails if their versions drift apart.
-The crate has been on crates.io since 0.4.0. The Go module joins the same release PR and is
-published with the next release, as the tag `go/vX.Y.Z` that the Go module proxy reads.
+All of them share one version number. The spec, the JavaScript package, the Python package, the
+Rust crate and the Go module are released together, from one release PR, and CI fails if their
+versions drift apart. The crate has been on crates.io since 0.4.0. A Go release is the tag
+`go/vX.Y.Z`, which the Go module proxy reads.
 
 ## Adding a language
 
@@ -93,7 +93,9 @@ typing questions. What was new:
   x/text even picks its normalization tables by Go version. Two users of the same trackparse
   version would get different output. The module generates its letter, uppercase, lowercase and
   NFC/NFD tables from Node instead, so its Unicode version is the reference engine's and it has no
-  dependency. This is also why the Go output has no Unicode difference with JavaScript.
+  dependency. This is also why the Go output has no Unicode difference with JavaScript on
+  Node 24, whose Unicode 17 the tables come from. A Node release with a newer Unicode version can
+  differ until the tables are regenerated with it.
 - **Typed strings instead of enums.** Roles, version types, junk kinds and warning codes are typed
   strings (`type Role string`, `trackparse.RolePrimary`). A keyword option can bring in any version
   type or junk kind, and a typed string carries it to the output unchanged, so the Go port needs no
