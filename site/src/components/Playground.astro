@@ -1143,7 +1143,7 @@ const listExamples: { label: string; title: string; text: string }[] = [
       if (audioSeconds !== undefined) opts.push(["AudioSeconds", `trackparse.Ptr(${goFloat(audioSeconds)})`]);
       if (knownArtists) opts.push(["KnownArtists", `[]string{${knownArtists.map(goStr).join(", ")}}`]);
       const nums = [audioSeconds ?? 0, seconds, fix?.seconds ?? 0];
-      const extra = ['"encoding/json"'];
+      const extra = ['"encoding/json"', '"os"'];
       if (joined) extra.push('"strings"');
       if (nums.some((n) => !Number.isFinite(n))) extra.push('"math"');
       const body = [
@@ -1152,10 +1152,11 @@ const listExamples: { label: string; title: string; text: string }[] = [
         hasOptions
           ? `list := trackparse.ParseTracklistWith(text, ${goStruct("TracklistOptions", opts, "")})`
           : "list := trackparse.ParseTracklist(text)",
-        'entries, _ := json.MarshalIndent(list.Entries, "", "  ")   // one entry per line',
-        'warnings, _ := json.MarshalIndent(list.Warnings, "", "  ") // the checks, with line numbers',
-        "fmt.Println(string(entries))",
-        "fmt.Println(string(warnings))",
+        "enc := json.NewEncoder(os.Stdout)",
+        'enc.SetIndent("", "  ")',
+        "enc.SetEscapeHTML(false)  // & < > as written, as JSON.stringify does",
+        "enc.Encode(list.Entries)  // one entry per line",
+        "enc.Encode(list.Warnings) // the checks, with line numbers",
         "",
         `shifted := trackparse.ApplyEdits(text, []trackparse.Edit{trackparse.ShiftFrom(${goNum(seconds)}, ${from})})`,
         "sorted := trackparse.ApplyEdits(text, []trackparse.Edit{trackparse.SortByTime()})",
