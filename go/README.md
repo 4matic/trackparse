@@ -3,9 +3,9 @@
 [![Go Reference](https://pkg.go.dev/badge/github.com/4matic/trackparse/go.svg)](https://pkg.go.dev/github.com/4matic/trackparse/go)
 [![Go version](https://img.shields.io/github/go-mod/go-version/4matic/trackparse?filename=go%2Fgo.mod&logo=go&logoColor=white)](https://github.com/4matic/trackparse/blob/main/go/go.mod)
 [![tests](https://img.shields.io/github/actions/workflow/status/4matic/trackparse/go.yml?branch=main&label=tests&logo=github)](https://github.com/4matic/trackparse/actions/workflows/go.yml)
-[![license](https://img.shields.io/badge/license-MIT-blue)](https://github.com/4matic/trackparse/blob/main/LICENSE)
+[![license](https://img.shields.io/badge/license-MIT-blue)](https://github.com/4matic/trackparse/blob/main/go/LICENSE)
 
-**[Documentation](https://4matic.github.io/trackparse/)** · **[Getting started](https://4matic.github.io/trackparse/start/getting-started/)** · **[Playground](https://4matic.github.io/trackparse/playground/)** · **[API on pkg.go.dev](https://pkg.go.dev/github.com/4matic/trackparse/go)**
+**[Documentation](https://4matic.github.io/trackparse/)** · **[Getting started](https://4matic.github.io/trackparse/start/getting-started/)** · **[Playground](https://4matic.github.io/trackparse/playground/)** · **[API on pkg.go.dev](https://pkg.go.dev/github.com/4matic/trackparse/go)** · **[Changelog](https://github.com/4matic/trackparse/blob/main/go/CHANGELOG.md)**
 
 **Turn messy track names into structured data: who made it, who's featured, who remixed it, and
 what's just noise.**
@@ -17,17 +17,18 @@ what's just noise.**
 Most title parsers split that into `"Wilkinson ft. Becky Hill & Tom Cane"` and
 `"Afterglow (Sub Focus VIP Remix)"` and stop. Others "clean" it and throw the feat and the remix
 away. trackparse keeps all of it. Everything it recognizes goes into a field, and anything it
-doesn't recognize stays in the title, word for word.
+doesn't recognize stays in the title, word for word
+([try it in the playground](https://4matic.github.io/trackparse/playground/#track=01.%20Wilkinson%20ft.%20Becky%20Hill%20%26%20Tom%20Cane%20-%20Afterglow%20%28Sub%20Focus%20VIP%20Remix%29%20%5BOfficial%20Video%5D)).
 
 This is the Go port of [trackparse](https://github.com/4matic/trackparse). Its behaviour is defined
-by a [shared spec](https://github.com/4matic/trackparse/blob/main/spec/SPEC.md) and pinned by
-13,130 fixtures. It passes all of them, and for every fixture input its output is byte-identical
+by a [shared spec](https://4matic.github.io/trackparse/reference/spec/) and pinned by
+[13,130 fixtures](https://4matic.github.io/trackparse/project/testing/). It passes all of them, and for every fixture input its output is byte-identical
 to the [JavaScript, Python and Rust packages](#other-languages).
 
 - Go 1.22 or later (the `go` line of `go.mod`; CI runs the tests on 1.22 and on the latest stable)
 - No dependencies: `go.mod` has no `require` line
 - No `unsafe`, no cgo, no regular expressions
-- Never panics and never returns an error: any string gives a result
+- Never panics and never returns an error: any string gives a result ([Errors](#errors))
 
 ## Install
 
@@ -72,7 +73,8 @@ fmt.Println(trackparse.FormatWith(track, trackparse.FormatOptions{
 // Wilkinson feat. Becky Hill & Tom Cane - Afterglow (Sub Focus VIP Remix)
 ```
 
-`json.Marshal` gives the spec's JSON, with the same camelCase keys the JavaScript package uses:
+`json.Marshal` gives the spec's JSON, with the same camelCase keys the JavaScript package uses
+([JSON](#json) has the details):
 
 ```go
 track := trackparse.Parse("Wilkinson ft. Becky Hill - Afterglow (Sub Focus VIP Remix) [HD]")
@@ -146,19 +148,24 @@ ApplyEditsWith(text string, edits []Edit, options TracklistOptions) EditResult
 ```
 
 Every function has a plain form with the default options and a `With` form that takes them.
-Tracklists are in the same package; there is no subpackage.
+Tracklists are in the same package; there is no subpackage. Each function has a section below, an
+entry on [pkg.go.dev](https://pkg.go.dev/github.com/4matic/trackparse/go#pkg-index) and a page in the [API reference](https://4matic.github.io/trackparse/reference/functions/),
+where every example has a Go tab.
 
 ### `Parse` and `ParseOptions`
 
-**Docs:** [parse and ParsedTrack](https://4matic.github.io/trackparse/reference/parse/) · [Options](https://4matic.github.io/trackparse/reference/options/)
+**Docs:** [parse and ParsedTrack](https://4matic.github.io/trackparse/reference/parse/) · [Options](https://4matic.github.io/trackparse/reference/options/) · [`Parse`](https://pkg.go.dev/github.com/4matic/trackparse/go#Parse), [`ParseWith`](https://pkg.go.dev/github.com/4matic/trackparse/go#ParseWith) and [`ParseOptions`](https://pkg.go.dev/github.com/4matic/trackparse/go#ParseOptions) on pkg.go.dev
+
+Parses one track string, running [rules R1 to R9](https://4matic.github.io/trackparse/reference/spec/#r1-normalization) of the
+spec in order.
 
 | Field | Zero value means | |
 |---|---|---|
-| `Mode` | `ModeAuto` | `ModeClean`, `ModeYouTube`, `ModeFilename`, `ModeTracklist`, or `ModeAuto` to detect from the string. See [Modes](#modes) |
-| `Uploader` | none | YouTube channel name, used as the artist when there's no separator (`- Topic` and `VEVO` are dropped) |
-| `KnownArtists` | none | Names that are never split. There is no built-in list |
-| `SplitAnd` | `SplitAndAuto` | `SplitAndAuto` splits on `and` only after a comma (`A, B and C`), so `Simon and Garfunkel` stays whole. Also `SplitAndAlways`, `SplitAndNever` |
-| `Keywords` | none | Extra vocabulary, added to the built-in lists (see below) |
+| [`Mode`](https://4matic.github.io/trackparse/guides/modes/) | `ModeAuto` | `ModeClean`, `ModeYouTube`, `ModeFilename`, `ModeTracklist`, or `ModeAuto` to detect from the string. See [Modes](#modes) |
+| [`Uploader`](https://4matic.github.io/trackparse/guides/modes/#the-uploader-fallback) | none | YouTube channel name, used as the artist when there's no separator (`- Topic` and `VEVO` are dropped) |
+| [`KnownArtists`](https://4matic.github.io/trackparse/guides/artists/#knownartists) | none | Names that are never split. There is no built-in list |
+| [`SplitAnd`](https://4matic.github.io/trackparse/guides/artists/#and-is-special) | `SplitAndAuto` | `SplitAndAuto` splits on `and` only after a comma (`A, B and C`), so `Simon and Garfunkel` stays whole. Also `SplitAndAlways`, `SplitAndNever` |
+| [`Keywords`](https://4matic.github.io/trackparse/reference/options/#keywords) | none | Extra vocabulary, added to the built-in lists (see below) |
 
 Options are plain structs, and the zero value of every struct is the default: `Parse(s)` is
 `ParseWith(s, ParseOptions{})`. Set only the fields you need.
@@ -181,7 +188,8 @@ fmt.Println(names(trackparse.ParseWith("Simon and Garfunkel - Mrs. Robinson", tr
 }))) // [Simon Garfunkel]
 ```
 
-`Keywords` adds words to the built-in lists:
+[`Keywords`](https://pkg.go.dev/github.com/4matic/trackparse/go#Keywords) adds words to the built-in lists
+([your own words](https://4matic.github.io/trackparse/guides/versions/#your-own-words)):
 
 | Field | Type | |
 |---|---|---|
@@ -216,7 +224,7 @@ a value someone may want to pass, the field is a pointer, and `nil` means "not s
 - `TracklistOptions.AudioSeconds` is a `*float64`. `nil` means the length is unknown; a pointer to
   `0` is an audio of length 0, which flags every time after `0:00`.
 
-`trackparse.Ptr(v)` returns a pointer to a copy of `v`, so a literal fits in one expression:
+[`trackparse.Ptr(v)`](https://pkg.go.dev/github.com/4matic/trackparse/go#Ptr) returns a pointer to a copy of `v`, so a literal fits in one expression:
 `FormatOptions{FeatMarker: trackparse.Ptr("featuring")}`,
 `TracklistOptions{AudioSeconds: trackparse.Ptr(3600.0)}`.
 
@@ -231,7 +239,7 @@ on. Nothing panics.
 
 ### `Track`
 
-**Docs:** [ParsedTrack fields](https://4matic.github.io/trackparse/reference/parse/#parsedtrack)
+**Docs:** [ParsedTrack fields](https://4matic.github.io/trackparse/reference/parse/#parsedtrack) · [`Track`](https://pkg.go.dev/github.com/4matic/trackparse/go#Track) on pkg.go.dev
 
 | Field | Type | |
 |---|---|---|
@@ -272,8 +280,10 @@ fmt.Println(v.Type, *v.Descriptor, *v.Year) // live at Wembley 1986
 ```
 
 Version types, junk kinds, warnings, roles, modes and the tracklist codes are typed strings
-(`type VersionType string`) with one constant per spec name: `VersionTypeRemix`,
-`JunkKindVideo`, `WarningNoSeparator`, `WarningCodeTimeOutOfOrder`. The value is the name used in
+(`type VersionType string`) with one constant per spec name: [`VersionTypeRemix`](https://pkg.go.dev/github.com/4matic/trackparse/go#VersionType),
+[`JunkKindVideo`](https://pkg.go.dev/github.com/4matic/trackparse/go#JunkKind), [`WarningNoSeparator`](https://pkg.go.dev/github.com/4matic/trackparse/go#Warning),
+[`WarningCodeTimeOutOfOrder`](https://pkg.go.dev/github.com/4matic/trackparse/go#WarningCode) ([the 27 version types](https://4matic.github.io/trackparse/guides/versions/#the-27-types),
+[junk kinds](https://4matic.github.io/trackparse/reference/parse/#junk-kinds)). The value is the name used in
 the spec and in JSON, so `string(v.Type)` is `"remix"` and a `switch` on the constants works. A
 function per type returns every constant in the spec's order, as a new slice each time
 (`AllVersionTypes()`, `AllJunkKinds()`, `AllWarnings()`, ...):
@@ -292,13 +302,13 @@ its type or kind, and the result keeps that string as given.
 
 **Docs:** [Serializing to JSON](https://4matic.github.io/trackparse/reference/parse/#serializing-to-json)
 
-Every result type has `MarshalJSON`, which writes compact JSON matching
+Every result type has [`MarshalJSON`](https://pkg.go.dev/github.com/4matic/trackparse/go#Track.MarshalJSON), which writes compact JSON matching
 [`parsed-track.schema.json`](https://github.com/4matic/trackparse/blob/main/spec/schema/parsed-track.schema.json)
 and
 [`tracklist.schema.json`](https://github.com/4matic/trackparse/blob/main/spec/schema/tracklist.schema.json):
 camelCase keys in the schema's order, every key present, whole seconds as integers (`3167`, not
 `3167.0`). Its bytes are those of `JSON.stringify(parse(s))` in JavaScript. `Track` also has
-`UnmarshalJSON`, which reads that form back; `Edit` marshals as the spec writes an edit
+[`UnmarshalJSON`](https://pkg.go.dev/github.com/4matic/trackparse/go#Track.UnmarshalJSON), which reads that form back; `Edit` marshals as the spec writes an edit
 (`{"op":"set-time","line":3,"seconds":90}`).
 
 `encoding/json` changes some bytes of what `MarshalJSON` returns, not the values:
@@ -328,7 +338,8 @@ methods.
 
 **Docs:** [parseArtists](https://4matic.github.io/trackparse/reference/functions/#parseartistsinput-options) · [Artists and credits](https://4matic.github.io/trackparse/guides/artists/)
 
-Splits a bare artist string (no title). `ParseArtistsWith` takes the same options as `ParseWith`.
+Splits a bare artist string (no title) ([R10](https://4matic.github.io/trackparse/reference/spec/#r10-parseartists)).
+[`ParseArtistsWith`](https://pkg.go.dev/github.com/4matic/trackparse/go#ParseArtistsWith) takes the same options as `ParseWith`.
 
 ```go
 for _, a := range trackparse.ParseArtists("Sub Focus, Wilkinson & Dimension feat. Kojo") {
@@ -344,7 +355,9 @@ for _, a := range trackparse.ParseArtists("Sub Focus, Wilkinson & Dimension feat
 
 **Docs:** [format](https://4matic.github.io/trackparse/reference/functions/#formattrack-options) · [Formatting](https://4matic.github.io/trackparse/guides/formatting/)
 
-Renders a track back to a string.
+Renders a track back to a string ([format options](https://4matic.github.io/trackparse/reference/options/#format-options),
+[R11](https://4matic.github.io/trackparse/reference/spec/#r11-format)): [`Format`](https://pkg.go.dev/github.com/4matic/trackparse/go#Format), [`FormatWith`](https://pkg.go.dev/github.com/4matic/trackparse/go#FormatWith),
+[`FormatOptions`](https://pkg.go.dev/github.com/4matic/trackparse/go#FormatOptions).
 
 | Field | Zero value means | |
 |---|---|---|
@@ -381,8 +394,8 @@ fmt.Println(trackparse.FormatWith(track, trackparse.FormatOptions{FeatMarker: tr
 **Docs:** [normalize](https://4matic.github.io/trackparse/reference/functions/#normalizeinput)
 
 The Unicode cleanup every function runs first: NFC, zero-width spaces, BOM and soft hyphens
-removed, fullwidth brackets, smart quotes and dash variants mapped to ASCII, whitespace collapsed.
-Running it twice changes nothing.
+removed, fullwidth brackets, smart quotes and dash variants mapped to ASCII, whitespace collapsed
+([R1](https://4matic.github.io/trackparse/reference/spec/#r1-normalization)). Running it twice changes nothing ([`Normalize`](https://pkg.go.dev/github.com/4matic/trackparse/go#Normalize)).
 
 ```go
 fmt.Println(trackparse.Normalize("Noisia\u200b – Stigma （VIP）")) // Noisia - Stigma (VIP)
@@ -392,7 +405,8 @@ fmt.Println(trackparse.Normalize("Noisia\u200b – Stigma （VIP）")) // Noisia
 
 **Docs:** [allArtists](https://4matic.github.io/trackparse/reference/functions/#allartiststrack)
 
-Credits plus every remixer, deduplicated.
+Credits plus every remixer, deduplicated ([R9](https://4matic.github.io/trackparse/reference/spec/#r9-assembly-and-dedup),
+[`AllArtists`](https://pkg.go.dev/github.com/4matic/trackparse/go#AllArtists)).
 
 ```go
 track := trackparse.Parse("Wilkinson ft. Becky Hill - Afterglow (Sub Focus Remix)")
@@ -408,8 +422,8 @@ for _, a := range trackparse.AllArtists(track) {
 
 **Docs:** [createParser](https://4matic.github.io/trackparse/reference/functions/#createparseroptions)
 
-Resolves the options and builds the word tables once, for many calls. `ParseWith` builds them on
-every call, so use a `Parser` when the options are the same each time.
+A [`Parser`](https://pkg.go.dev/github.com/4matic/trackparse/go#Parser) resolves the options and builds the word tables once, for many calls.
+`ParseWith` builds them on every call, so use a `Parser` when the options are the same each time.
 
 ```go
 parser := trackparse.NewParser(trackparse.ParseOptions{
@@ -431,21 +445,23 @@ default tables are built once, on first use.
 
 ### `SpecVersion`
 
-The spec version this module implements. It equals the module version: the Go module, the npm
+**Docs:** [SPEC_VERSION](https://4matic.github.io/trackparse/reference/functions/#spec_version) · [`SpecVersion`](https://pkg.go.dev/github.com/4matic/trackparse/go#SpecVersion) on pkg.go.dev
+
+The [spec](https://4matic.github.io/trackparse/reference/spec/) version this module implements. It equals the module version: the Go module, the npm
 package, the PyPI package, the Rust crate and the spec are released together and always share one
 version number.
 
 ## Modes
 
-**Docs:** [Modes](https://4matic.github.io/trackparse/guides/modes/)
+**Docs:** [Modes](https://4matic.github.io/trackparse/guides/modes/) · [R2 in the spec](https://4matic.github.io/trackparse/reference/spec/#r2-mode-prelude) · [`Mode`](https://pkg.go.dev/github.com/4matic/trackparse/go#Mode) on pkg.go.dev
 
 | Mode | For | Adds |
 |---|---|---|
 | `ModeClean` | Store metadata, tags | Only a spaced dash separates artist and title |
-| `ModeYouTube` | Video titles, scrobbles | Pipe segments, `"Title" by Artist`, `Artist: "Title"`, unspaced dashes, trailing junk, uploader fallback |
-| `ModeFilename` | Files | Strips the extension, `_` becomes a space, `01-Track` numbering |
-| `ModeAuto` | Anything | `ModeFilename` for known extensions, `ModeYouTube` when it sees junk, pipes or platform suffixes, `ModeClean` otherwise |
-| `ModeTracklist` | One line of a tracklist | The first spaced dash always separates; `_-_` too. Never picked by `ModeAuto` |
+| [`ModeYouTube`](https://4matic.github.io/trackparse/guides/modes/#youtube-mode) | Video titles, scrobbles | Pipe segments, `"Title" by Artist`, `Artist: "Title"`, unspaced dashes, trailing junk, uploader fallback |
+| [`ModeFilename`](https://4matic.github.io/trackparse/guides/modes/#filename-mode) | Files | Strips the extension, `_` becomes a space, `01-Track` numbering |
+| [`ModeAuto`](https://4matic.github.io/trackparse/guides/modes/#how-auto-decides) | Anything | `ModeFilename` for known extensions, `ModeYouTube` when it sees junk, pipes or platform suffixes, `ModeClean` otherwise |
+| [`ModeTracklist`](https://4matic.github.io/trackparse/guides/modes/#tracklist-mode) | One line of a tracklist | The first spaced dash always separates; `_-_` too. Never picked by `ModeAuto` |
 
 ```go
 youtube := trackparse.ParseOptions{Mode: trackparse.ModeYouTube}
@@ -459,23 +475,26 @@ youtube.Uploader = "Porter Robinson"
 fmt.Println(trackparse.ParseWith("Shelter", youtube).Artists[0].Name) // Porter Robinson
 ```
 
+Try [`"Numb" by Linkin Park` in youtube mode](https://4matic.github.io/trackparse/playground/#track=%22Numb%22%20by%20Linkin%20Park&mode=youtube) or
+[`07_Burial_-_Archangel.mp3`](https://4matic.github.io/trackparse/playground/#track=07_Burial_-_Archangel.mp3) in the playground.
+
 ## Warnings
 
-**Docs:** [Warnings](https://4matic.github.io/trackparse/reference/warnings/)
+**Docs:** [Warnings](https://4matic.github.io/trackparse/reference/warnings/) · [`Warning`](https://pkg.go.dev/github.com/4matic/trackparse/go#Warning) on pkg.go.dev
 
 The parser never fails, but it says when it had to guess. `track.Warnings` is a `[]Warning`,
 empty when every decision was unambiguous.
 
 | Constant | JSON name | Means |
 |---|---|---|
-| `WarningNoSeparator` | `noSeparator` | No artist/title separator was found. The whole string is the title |
-| `WarningAmbiguousSeparator` | `ambiguousSeparator` | A two-part pipe title with no dash was read as artist and title |
-| `WarningUnspacedDashSplit` | `unspacedDashSplit` | Split at a dash without spaces around it |
-| `WarningAsymmetricDashSplit` | `asymmetricDashSplit` | Split at a dash with a space on one side only |
-| `WarningBySplit` | `bySplit` | Read `"Title" by Artist` |
-| `WarningQuotedTitleSplit` | `quotedTitleSplit` | Took a quoted span as the title and the text before it as the artist |
-| `WarningAmbiguousMixCredit` | `ambiguousMixCredit` | `<Name> Mix` was read as a remix, but the name is long enough to be a style |
-| `WarningUnbalancedBrackets` | `unbalancedBrackets` | A bracket was opened and never closed |
+| `WarningNoSeparator` | [`noSeparator`](https://4matic.github.io/trackparse/reference/warnings/#track-warnings:~:text=noSeparator) | No artist/title separator was found. The whole string is the title |
+| `WarningAmbiguousSeparator` | [`ambiguousSeparator`](https://4matic.github.io/trackparse/reference/warnings/#track-warnings:~:text=ambiguousSeparator) | A two-part pipe title with no dash was read as artist and title |
+| `WarningUnspacedDashSplit` | [`unspacedDashSplit`](https://4matic.github.io/trackparse/reference/warnings/#track-warnings:~:text=unspacedDashSplit) | Split at a dash without spaces around it |
+| `WarningAsymmetricDashSplit` | [`asymmetricDashSplit`](https://4matic.github.io/trackparse/reference/warnings/#track-warnings:~:text=asymmetricDashSplit) | Split at a dash with a space on one side only |
+| `WarningBySplit` | [`bySplit`](https://4matic.github.io/trackparse/reference/warnings/#track-warnings:~:text=bySplit) | Read `"Title" by Artist` |
+| `WarningQuotedTitleSplit` | [`quotedTitleSplit`](https://4matic.github.io/trackparse/reference/warnings/#track-warnings:~:text=quotedTitleSplit) | Took a quoted span as the title and the text before it as the artist |
+| `WarningAmbiguousMixCredit` | [`ambiguousMixCredit`](https://4matic.github.io/trackparse/reference/warnings/#track-warnings:~:text=ambiguousMixCredit) | `<Name> Mix` was read as a remix, but the name is long enough to be a style |
+| `WarningUnbalancedBrackets` | [`unbalancedBrackets`](https://4matic.github.io/trackparse/reference/warnings/#track-warnings:~:text=unbalancedBrackets) | A bracket was opened and never closed |
 
 ```go
 track := trackparse.Parse("Around the World")
@@ -485,14 +504,14 @@ fmt.Println(track.Warnings[0] == trackparse.WarningNoSeparator) // true
 fmt.Println(trackparse.Parse("Noisia - Stigma (VIP").Warnings) // [unbalancedBrackets]
 ```
 
-Tracklists have their own warnings, with line numbers. They are listed under
-[Tracklists](#tracklists).
+Tracklists have their own [warnings](https://4matic.github.io/trackparse/reference/warnings/#tracklist-warnings), with line numbers. They are listed
+under [Tracklists](#tracklists).
 
 ## Tracklists
 
 **Docs:** [Tracklists](https://4matic.github.io/trackparse/guides/tracklists/) · [Editing tracklists](https://4matic.github.io/trackparse/guides/editing-tracklists/) · [Tracklist API](https://4matic.github.io/trackparse/reference/tracklist/) · [Warnings](https://4matic.github.io/trackparse/reference/warnings/#tracklist-warnings)
 
-`ParseTracklist` parses a whole tracklist, one entry per line, and checks it. Each entry keeps its
+[`ParseTracklist`](https://pkg.go.dev/github.com/4matic/trackparse/go#ParseTracklist) parses a whole tracklist, one entry per line, and checks it. Each entry keeps its
 line exactly as written plus its own line ending, so joining every `Raw` and `Eol` is always the
 input, CRLF or not.
 
@@ -540,10 +559,12 @@ s := list.Stats
 fmt.Println(s.Lines, s.Tracks, s.Markers, s.Timed, *s.FirstTime, *s.LastTime) // 9 7 1 8 2900 4536
 ```
 
-The suggestion exists because exactly one time, one digit away from `00:11:02`, fits between its
-neighbours. With several candidates or none, `Suggestion` is `nil`.
+The [suggestion](https://4matic.github.io/trackparse/reference/warnings/#suggestions) exists because exactly one time, one digit away from `00:11:02`,
+fits between its neighbours. With several candidates or none, `Suggestion` is `nil`.
+[Open this list in the playground](https://4matic.github.io/trackparse/playground/#list=Hour%202%0A48%3A20%20Noisia%20-%20Stigma%0A52%3A47%20Mefjus%20%26%20Kasra%20-%20Bandwagon%20%28Phace%20Remix%29%0A56%3A05%20Black%20Sun%20Empire%20-%20ID%0A59%3A31%20Alix%20Perez%20-%20Fade%20Away%0A01%3A03%3A10%20Interview%20with%20Hybris%0A01%3A07%3A44%20Imanu%20-%20Sacrifice%0A00%3A11%3A02%20Current%20Value%20feat.%20Teddy%20Killerz%20-%20Payload%0A01%3A15%3A36%20Hybris%20-%20Spinning%20Top).
 
-`ApplyEdits` takes a slice of `Edit` values and only rewrites the lines they name:
+[`ApplyEdits`](https://pkg.go.dev/github.com/4matic/trackparse/go#ApplyEdits) takes a slice of [`Edit`](https://pkg.go.dev/github.com/4matic/trackparse/go#Edit) values and only rewrites the
+lines they name:
 
 ```go
 text := "48:20 Noisia - Stigma\r\n59:31 Alix Perez - Fade Away\r\n00:03:10 Imanu - Sacrifice\r\n"
@@ -567,15 +588,16 @@ fmt.Println(result.Warnings[0].Code, result.Text == text) // edit-invalid true
 
 A rewritten time keeps its line's style: `48:20` stays `MM:SS`, and a time that crosses the hour
 gets hours, with a `style-upgraded` warning. A time pushed below zero stops at zero and warns
-`time-clamped`. A bad edit changes nothing and warns `edit-invalid`.
+`time-clamped`. A bad edit changes nothing and warns `edit-invalid`
+([edit warnings](https://4matic.github.io/trackparse/reference/warnings/#edit-warnings), [editing tracklists](https://4matic.github.io/trackparse/guides/editing-tracklists/#times-keep-their-style)).
 
-Edits are built with `SetTime(line, seconds)`, `Shift(seconds)` (all timed lines),
+Edits ([reference](https://4matic.github.io/trackparse/reference/tracklist/#edits)) are built with [`SetTime(line, seconds)`](https://pkg.go.dev/github.com/4matic/trackparse/go#SetTime), `Shift(seconds)` (all timed lines),
 `ShiftFrom(seconds, from)`, `ShiftLines(seconds, lines...)`, `SortByTime()`,
 `SetRest(line, rest)`, `Insert(after, text)` (`after` 0 inserts at the top) and `Delete(line)`.
 `Edit` is a plain struct with an `Op` field, so you can also fill it yourself; each operation reads
 only its own fields. Line numbers are 1-based.
 
-`TracklistOptions` has `Mode` (zero value: `ModeTracklist`; `ModeAuto` picks a mode per line),
+[`TracklistOptions`](https://pkg.go.dev/github.com/4matic/trackparse/go#TracklistOptions) ([options](https://4matic.github.io/trackparse/reference/options/#tracklist-options)) has `Mode` (zero value: `ModeTracklist`; `ModeAuto` picks a mode per line),
 `KnownArtists`, `SplitAnd`, `Keywords`, `AudioSeconds` (a `*float64`; it enables
 `time-after-audio-end`) and `MarkerWords`:
 
@@ -607,17 +629,17 @@ previous one
 ([Markdown](https://4matic.github.io/trackparse/guides/tracklists/#markdown),
 [layered tracks](https://4matic.github.io/trackparse/guides/tracklists/#layered-tracks)).
 
-Warning codes (`WarningCode`): `time-missing`, `time-out-of-order`, `time-duplicate`,
+[Warning codes](https://4matic.github.io/trackparse/reference/warnings/#tracklist-warnings) ([`WarningCode`](https://pkg.go.dev/github.com/4matic/trackparse/go#WarningCode)): `time-missing`, `time-out-of-order`, `time-duplicate`,
 `no-start-at-zero`, `time-after-audio-end` (needs `AudioSeconds`), `invalid-time`, `position-gap`,
 `position-duplicate`, `line-unparsed`, as the constants `WarningCodeTimeMissing` to
 `WarningCodeLineUnparsed`. Edit warnings (`EditWarningCode`): `EditWarningCodeEditInvalid`,
 `EditWarningCodeTimeClamped`, `EditWarningCodeStyleUpgraded`. The
 [Tracklist API reference](https://4matic.github.io/trackparse/reference/tracklist/) explains each
 one, and the rules are in
-[SPEC R13](https://github.com/4matic/trackparse/blob/main/spec/SPEC.md#r13-tracklists).
+[R13 of the spec](https://4matic.github.io/trackparse/reference/spec/#r13-tracklists).
 
-Every line is parsed with `ModeTracklist`, where the first spaced dash always separates artist and
-title. `ParseWith` accepts it too:
+Every line is parsed with [`ModeTracklist`](https://4matic.github.io/trackparse/guides/tracklists/#tracklist-mode), where the first
+spaced dash always separates artist and title. `ParseWith` accepts it too:
 
 ```go
 track := trackparse.Parse("Electrosoul System - Liquid Metal")
@@ -631,7 +653,7 @@ fmt.Println(track.Title) // Liquid Metal
 
 ## Errors
 
-No function returns an `error` and none panics. `Parse` gives a complete `Track` for any string,
+No function returns an `error` and none panics ([R0.8](https://4matic.github.io/trackparse/reference/spec/#r0-portability)). `Parse` gives a complete `Track` for any string,
 `""` included, and `ParseTracklist` and `ApplyEdits` return for any text. `ApplyEdits` reports an
 edit it cannot apply (a line that does not exist, non-finite seconds) as an
 `EditWarningCodeEditInvalid` warning and leaves the text alone. The only function with an `error`
@@ -667,8 +689,8 @@ fmt.Printf("%q\n", trackparse.Parse("Noisia - Sti\xffgma\xe2\x82").Title) // "St
 - A `Parser` with options, the zero `Parser`, the package functions, `ParseTracklistWith` and
   `ApplyEdits` are called from 16 goroutines at once and compared with a sequential run, under
   the race detector in CI.
-- The `Example` functions in `example_test.go` are checked by `go test`, so the examples on
-  pkg.go.dev run as shown.
+- The `Example` functions in [`example_test.go`](https://github.com/4matic/trackparse/blob/main/go/example_test.go) are checked by `go test`,
+  so the [examples on pkg.go.dev](https://pkg.go.dev/github.com/4matic/trackparse/go#pkg-examples) run as shown.
 - [`scripts/compare-ports.mjs`](https://github.com/4matic/trackparse/blob/main/scripts/compare-ports.mjs)
   runs every fixture input through the JavaScript package and this module and compares the
   complete JSON output, every field of it, not only the ones a fixture asserts. The Python and
@@ -689,7 +711,8 @@ Go toolchain that builds the program:
 - `golang.org/x/text/unicode/norm` picks its NFC and NFD tables by build tag: Unicode 15 below
   Go 1.27, Unicode 17 from Go 1.27.
 
-So the output does not depend on the Go version you build with.
+So the output does not depend on the Go version you build with. More in
+[what the Go port taught](https://4matic.github.io/trackparse/project/ports/#what-the-go-port-taught).
 
 This differs from the Rust crate, which takes NFC and NFD from the `unicode-normalization` crate
 and its Unicode 18 tables. Unicode 18 added 32 combining marks, so a string containing one of
@@ -716,9 +739,10 @@ Other programs were running, so the numbers vary by about 20% between runs:
 
 **Changelog:** [go/CHANGELOG.md](https://github.com/4matic/trackparse/blob/main/go/CHANGELOG.md)
 
-The module version is the spec version (`SpecVersion`). Releases are tagged `go/vX.Y.Z` in the
-repository, the tag form the Go toolchain expects for a module in a subfolder, and the Go
-module proxy serves them from there. There is no upload step: the tag is the release.
+The module version is the spec version ([`SpecVersion`](#specversion)). Releases are tagged
+`go/vX.Y.Z` in the repository, the tag form the Go toolchain expects for a module in a subfolder,
+and the Go module proxy serves them from there. There is no upload step: the tag is the release.
+Every published version is listed on [pkg.go.dev](https://pkg.go.dev/github.com/4matic/trackparse/go?tab=versions).
 
 While it is 0.x, a release that changes the output for some input bumps the minor version, and a
 patch release only fixes bugs. `go get -u` moves to the newest minor, so if you store parsed
@@ -733,12 +757,12 @@ same fixtures, are released together under one version number, and return identi
 every fixture input. You can parse in one language and read the result in another. The one known
 difference is described under [Unicode version](#unicode-version).
 
-| Language | Package | Install |
-|---|---|---|
-| JavaScript / TypeScript | [trackparse on npm](https://www.npmjs.com/package/trackparse) | `npm install trackparse` |
-| Python | [trackparse on PyPI](https://pypi.org/project/trackparse/) | `pip install trackparse` |
-| Rust | [trackparse on crates.io](https://crates.io/crates/trackparse) | `cargo add trackparse` |
-| Go | [github.com/4matic/trackparse/go](https://pkg.go.dev/github.com/4matic/trackparse/go) | `go get github.com/4matic/trackparse/go` |
+| Language | Package | Install | Docs |
+|---|---|---|---|
+| JavaScript / TypeScript | [trackparse on npm](https://www.npmjs.com/package/trackparse) | `npm install trackparse` | [README](https://github.com/4matic/trackparse/blob/main/js/README.md) · [changelog](https://github.com/4matic/trackparse/blob/main/js/CHANGELOG.md) · [API](https://4matic.github.io/trackparse/reference/parse/) |
+| Python | [trackparse on PyPI](https://pypi.org/project/trackparse/) | `pip install trackparse` | [README](https://github.com/4matic/trackparse/blob/main/python/README.md) · [changelog](https://github.com/4matic/trackparse/blob/main/python/CHANGELOG.md) · [API](https://4matic.github.io/trackparse/reference/parse/) |
+| Rust | [trackparse on crates.io](https://crates.io/crates/trackparse) | `cargo add trackparse` | [README](https://github.com/4matic/trackparse/blob/main/rust/README.md) · [changelog](https://github.com/4matic/trackparse/blob/main/rust/CHANGELOG.md) · [API on docs.rs](https://docs.rs/trackparse) |
+| Go | [github.com/4matic/trackparse/go](https://pkg.go.dev/github.com/4matic/trackparse/go) | `go get github.com/4matic/trackparse/go` | [README](https://github.com/4matic/trackparse/blob/main/go/README.md) · [changelog](https://github.com/4matic/trackparse/blob/main/go/CHANGELOG.md) · [API on pkg.go.dev](https://pkg.go.dev/github.com/4matic/trackparse/go) |
 
 ## Limitations
 
@@ -789,4 +813,4 @@ spec, not here: see [AGENTS.md](https://github.com/4matic/trackparse/blob/main/A
 
 ## License
 
-[MIT](https://github.com/4matic/trackparse/blob/main/LICENSE)
+[MIT](https://github.com/4matic/trackparse/blob/main/go/LICENSE)
