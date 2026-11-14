@@ -330,7 +330,7 @@ func checkTrackTotality(tb testing.TB, s string) {
 		}
 		for _, feat := range []FeatPlacement{"", FeatSource, FeatArtist, FeatTitle, FeatOmit, "nope"} {
 			_ = FormatWith(track, FormatOptions{
-				Feat: feat, FeatMarker: s, Joiners: JoinersCanonical, Position: true,
+				Feat: feat, FeatMarker: &s, Joiners: JoinersCanonical, Position: true,
 			})
 		}
 	}
@@ -340,7 +340,7 @@ func checkTrackTotality(tb testing.TB, s string) {
 func formatOptionsFrom(r *rng, s string) FormatOptions {
 	return FormatOptions{
 		Feat:          FeatPlacement(r.pick([]string{"", "source", "artist", "title", "omit", "x"})),
-		FeatMarker:    r.pick([]string{"", "", "feat.", "ft.", "&", s}),
+		FeatMarker:    []*string{nil, nil, Ptr(""), Ptr("feat."), Ptr("ft."), Ptr("&"), &s}[r.below(7)],
 		Joiners:       JoinerStyle(r.pick([]string{"", "original", "canonical", "x"})),
 		Versions:      VersionsOption(r.pick([]string{"", "all", "none", "x"})),
 		OmitProducers: r.chance(30),

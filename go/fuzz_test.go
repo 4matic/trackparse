@@ -123,10 +123,11 @@ var fuzzParseOptions = []ParseOptions{
 // fuzzTracklistOptions are the option sets FuzzParseTracklist cycles through.
 var fuzzTracklistOptions = []TracklistOptions{
 	{},
-	{Mode: Mode("auto")},
-	{Mode: ModeYouTube, AudioSeconds: 600},
+	{Mode: ModeAuto},
+	{Mode: ModeYouTube, AudioSeconds: Ptr(600.0)},
 	{KnownArtists: []string{"Camo & Krooked"}, MarkerWords: []string{"Break", "", "ID"}},
-	{SplitAnd: SplitAndNever, AudioSeconds: -1},
+	{SplitAnd: SplitAndNever, AudioSeconds: Ptr(-1.0)},
+	{AudioSeconds: Ptr(0.0)},
 	{Keywords: Keywords{Junk: []JunkPhrase{{Phrase: "out now", Kind: JunkKindPromo}}}},
 }
 

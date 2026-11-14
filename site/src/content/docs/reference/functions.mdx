@@ -35,7 +35,8 @@ What to know for each language:
   [docs.rs](https://docs.rs/trackparse).
 - **Go.** Like Rust, each function that takes options comes in two forms: `Parse(input)` and
   `ParseWith(input, options)`. Options are structs passed by value, and their zero value means the
-  defaults. Fields are exported CamelCase (`FullTitle`, `UnknownArtist`), nullable fields are
+  defaults (the two fields whose zero value is also a real setting are pointers, set with
+  `trackparse.Ptr`). Fields are exported CamelCase (`FullTitle`, `UnknownArtist`), nullable fields are
   pointers, and results are returned by value with no `error`. No function panics, and input that
   is not valid UTF-8 is read with U+FFFD in place of each bad sequence. The tracklist functions
   are in the same package.

@@ -6,14 +6,15 @@ package trackparse
 // fields are pointers, and enums are typed strings that hold the spec's names.
 
 // Mode is the mode a string is parsed in (R2). In a [Track] it is clean, youtube, filename or
-// tracklist. In [ParseOptions] and [TracklistOptions] the zero value [ModeAuto] asks the parser
-// to pick one; auto never resolves to tracklist (R13.6).
+// tracklist, never auto. In [ParseOptions] and [TracklistOptions], [ModeAuto] asks the parser to
+// pick one (auto never resolves to tracklist, R13.6), and the empty string means the option's
+// default: auto for a parse, tracklist for a tracklist.
 type Mode string
 
 // The modes. Any other string in an option behaves as the JavaScript package does with an
 // unknown mode: no youtube detection, filenames still detected.
 const (
-	ModeAuto      Mode = ""
+	ModeAuto      Mode = "auto"
 	ModeClean     Mode = "clean"
 	ModeYouTube   Mode = "youtube"
 	ModeFilename  Mode = "filename"
@@ -232,7 +233,7 @@ type Timestamp struct {
 type Track struct {
 	// Input is the string that was parsed, unchanged.
 	Input string
-	// Mode is the mode it was parsed in; never ModeAuto.
+	// Mode is the mode it was parsed in; never [ModeAuto].
 	Mode Mode
 	// Position is a leading track number.
 	Position *Position

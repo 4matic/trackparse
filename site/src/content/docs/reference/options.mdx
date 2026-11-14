@@ -70,7 +70,7 @@ parse_with(input, &options);
 
 ```go
 type ParseOptions struct {
-    Mode         Mode       // ModeAuto ("") | ModeClean | ModeYouTube | ModeFilename | ModeTracklist
+    Mode         Mode       // ModeAuto | ModeClean | ModeYouTube | ModeFilename | ModeTracklist; "" means auto
     Uploader     string     // empty means none
     KnownArtists []string
     SplitAnd     SplitAnd   // SplitAndAuto | SplitAndAlways | SplitAndNever; "" means auto
@@ -337,9 +337,10 @@ In Rust they are the setters of `TracklistOptions`, passed to `parse_tracklist_w
 | `audioSeconds` | `audio_seconds` | `AudioSeconds` | none | Length of the audio. Turns on the `time-after-audio-end` check |
 | `markerWords` | `marker_words` | `MarkerWords` | empty | Extra marker words. With `["drop"]`, `03:00 Drop` is a marker, not a track |
 
-In Go the zero value of `TracklistOptions` is the defaults too, which leaves two cases it can't
-express. An empty `Mode` means `tracklist`, so auto needs the string `Mode("auto")`. An
-`AudioSeconds` of 0 means unknown, where JavaScript takes `audioSeconds: 0` as audio of length 0.
+In Go the zero value of `TracklistOptions` is the defaults too: an empty `Mode` means
+`ModeTracklist`, and `ModeAuto` asks for auto mode on each line. `AudioSeconds` is a `*float64`,
+so `nil` means no length and `trackparse.Ptr(0.0)` is an audio of length 0, as `audioSeconds: 0`
+is in JavaScript.
 
 [Tracklists](/trackparse/guides/tracklists/#options) has an example in each language, and the
 [Tracklist API](/trackparse/reference/tracklist/#options) lists them again with the functions.
@@ -349,7 +350,7 @@ express. An empty `Mode` means `tracklist`, so auto needs the string `Mode("auto
 `format` has its own options (`feat`, `featMarker`, `joiners`, `versions`, `producers`, `position`).
 They are listed under [Formatting](/trackparse/guides/formatting/#options). In Go they are the
 fields of `FormatOptions`; `producers: false` is `OmitProducers: true` there, so the zero value
-keeps the producers.
+keeps the producers, and `FeatMarker` is a `*string` (`nil` keeps the input's marker).
 
 ## See also
 

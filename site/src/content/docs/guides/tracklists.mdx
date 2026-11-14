@@ -507,7 +507,7 @@ mix.warnings;
 <TabItem label="Go">
 
 ```go
-options := trackparse.TracklistOptions{AudioSeconds: 3600, MarkerWords: []string{"drop"}}
+options := trackparse.TracklistOptions{AudioSeconds: trackparse.Ptr(3600.0), MarkerWords: []string{"drop"}}
 mix := trackparse.ParseTracklistWith("00:00 Intro\n03:00 Drop\n1:02:03 Noisia - Stigma", options)
 
 kinds = nil

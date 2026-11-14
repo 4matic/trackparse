@@ -266,10 +266,10 @@ them.
 Python uses keyword arguments. Rust has a setter of the same name for each on `TracklistOptions`,
 for example `TracklistOptions::new().audio_seconds(3600.0).marker_words(["drop"])`, and passes it
 to `parse_tracklist_with` or `apply_edits_with`. Go takes a `TracklistOptions` struct, for example
-`trackparse.TracklistOptions{AudioSeconds: 3600, MarkerWords: []string{"drop"}}`, in
-`ParseTracklistWith` or `ApplyEditsWith`. Its zero value is the defaults, which leaves two
-differences: an empty `Mode` means `"tracklist"`, so automatic mode is `Mode("auto")`, and an
-`AudioSeconds` of zero or less means no length, so an audio of length 0 can't be given.
+`trackparse.TracklistOptions{AudioSeconds: trackparse.Ptr(3600.0), MarkerWords: []string{"drop"}}`,
+in `ParseTracklistWith` or `ApplyEditsWith`. Its zero value is the defaults: an empty `Mode` means
+`ModeTracklist` (`ModeAuto` asks for auto), and a `nil` `AudioSeconds` means no length, while
+`trackparse.Ptr(0.0)` is an audio of length 0.
 [Tracklists](/trackparse/guides/tracklists/#options) has a full example.
 
 ## Types

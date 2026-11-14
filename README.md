@@ -289,7 +289,8 @@ fmt.Println(string(b))
 // {"name":"Foreign Beggars","role":"featured","joiner":"feat.","source":"artist"}
 ```
 
-Options are plain structs whose zero value is the default, passed to the `With` form of a
+Options are plain structs whose zero value is the default (a field that must be told apart
+from its zero value is a pointer, set with `trackparse.Ptr`), passed to the `With` form of a
 function: `trackparse.ParseWith(s, trackparse.ParseOptions{KnownArtists: []string{"Chase & Status"}})`.
 The full Go API is in [`go/README.md`](go/README.md) and on
 [pkg.go.dev](https://pkg.go.dev/github.com/4matic/trackparse/go).
@@ -899,12 +900,12 @@ constructors on `Edit`: `set_time(line, seconds)`, `shift(seconds)`, `shift_from
 `delete(line)`.
 
 Go has `ParseTracklistWith` and `ApplyEditsWith`, which take
-`TracklistOptions{AudioSeconds: 3600, MarkerWords: []string{"drop"}}`. Edits are built with
-`SetTime(line, seconds)`, `Shift(seconds)`, `ShiftFrom(seconds, from)`,
+`TracklistOptions{AudioSeconds: trackparse.Ptr(3600.0), MarkerWords: []string{"drop"}}`. Edits
+are built with `SetTime(line, seconds)`, `Shift(seconds)`, `ShiftFrom(seconds, from)`,
 `ShiftLines(seconds, lines...)`, `SortByTime()`, `SetRest(line, rest)`, `Insert(after, text)` and
-`Delete(line)`. Because a zero value means the default, `AudioSeconds: 0` means unknown, and auto
-mode for the lines is `Mode: trackparse.Mode("auto")`
-([details](go/README.md#what-a-zero-value-cannot-say)).
+`Delete(line)`. `AudioSeconds` is a pointer, so `nil` (unknown) and an audio of length 0 are
+different values, and `Mode: trackparse.ModeAuto` parses each line in auto mode
+([details](go/README.md#pointer-fields-and-ptr)).
 
 More on the options: [Tracklist options](https://4matic.github.io/trackparse/reference/options/#tracklist-options).
 

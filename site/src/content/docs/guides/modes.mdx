@@ -19,8 +19,8 @@ source can take.
 | `auto` | anything (the default) | Picks `filename`, `youtube` or `clean` from the string. It never picks `tracklist` |
 
 The resolved mode is in `track.mode`, so you can always see which one ran. In Rust the option is
-the enum `ModeOption` and the resolved mode is `Mode`, which has no `Auto`. In Go both are the string type `Mode`: the zero value `trackparse.ModeAuto`
-(the empty string) asks for auto in `ParseOptions`, and `Track.Mode` is never empty. The mode rules are
+the enum `ModeOption` and the resolved mode is `Mode`, which has no `Auto`. In Go both are the string type `Mode`: `trackparse.ModeAuto` (`"auto"`) asks for auto, an empty
+`Mode` in `ParseOptions` means auto too, and `Track.Mode` is never `ModeAuto`. The mode rules are
 [R2](/trackparse/reference/spec/#r2-mode-prelude) in the spec.
 
 ## How auto decides

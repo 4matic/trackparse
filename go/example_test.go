@@ -209,7 +209,7 @@ func ExampleParseTracklist() {
 
 func ExampleParseTracklistWith() {
 	list := trackparse.ParseTracklistWith("00:00 A - B\n1:02:03 C - D", trackparse.TracklistOptions{
-		AudioSeconds: 3600,
+		AudioSeconds: trackparse.Ptr(3600.0),
 	})
 	fmt.Println(list.Warnings[0].Code, list.Warnings[0].Line)
 	// Output:
@@ -300,4 +300,20 @@ func ExampleTrack_MarshalJSON_escapeHTML() {
 	// {"name":"Status","role":"primary","joiner":"\u0026","source":"artist"}
 	// {"name":"Status","role":"primary","joiner":"&","source":"artist"}
 	// {"name":"Status","role":"primary","joiner":"&","source":"artist"}
+}
+
+func ExamplePtr() {
+	// A pointer to 0 is an audio of length 0, as audioSeconds: 0 in JavaScript.
+	list := trackparse.ParseTracklistWith("00:00 A - B\n00:30 C - D", trackparse.TracklistOptions{
+		AudioSeconds: trackparse.Ptr(0.0),
+	})
+	for _, w := range list.Warnings {
+		fmt.Println(w.Code, w.Line)
+	}
+
+	track := trackparse.Parse("Wilkinson ft. Becky Hill - Afterglow")
+	fmt.Println(trackparse.FormatWith(track, trackparse.FormatOptions{FeatMarker: trackparse.Ptr("with")}))
+	// Output:
+	// time-after-audio-end 2
+	// Wilkinson with Becky Hill - Afterglow
 }
