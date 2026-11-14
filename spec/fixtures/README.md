@@ -103,6 +103,7 @@ pnpm test                          # JavaScript: js/test/fixtures.test.ts
 # one case, by id
 pnpm --filter trackparse exec vitest run test/fixtures.test.ts -t "brackets-version-001"
 (cd python && uv run pytest tests/test_fixtures.py -k "brackets-version-001")
+(cd rust && TRACKPARSE_ONLY=brackets-version-001 cargo test --test fixtures)
 (cd go && TRACKPARSE_ONLY=brackets-version-001 go test -run TestFixtures -v)
 
 # pass rate per fixture file and per spec rule
