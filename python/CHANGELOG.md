@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.1](https://github.com/4matic/trackparse/compare/python-v0.6.0...python-v0.6.1) (2026-11-14)
+
+
+### Documentation
+
+* **python:** link options, fields, modes, warnings and functions to the site reference and the spec rules, with playground links and the other packages' READMEs, changelogs and API docs ([8bfe5d3](https://github.com/4matic/trackparse/commit/8bfe5d38ca79a1e1b242a3a9aba27a59990d5402))
+
 ## [0.6.0](https://github.com/4matic/trackparse/compare/python-v0.5.1...python-v0.6.0) (2026-11-14)
 
 

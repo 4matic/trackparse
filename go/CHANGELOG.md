@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.1](https://github.com/4matic/trackparse/compare/go/v0.6.0...go/v0.6.1) (2026-11-14)
+
+
+### Documentation
+
+* **go:** link every item to pkg.go.dev and to the site reference and spec rules, point the license at go/LICENSE, and add playground links and the other packages' docs ([4ff469c](https://github.com/4matic/trackparse/commit/4ff469c1a902e41af0efd48b41c0e063037b7434))
+
 ## [0.6.0](https://github.com/4matic/trackparse/compare/go/v0.5.1...go/v0.6.0) (2026-11-14)
 
 

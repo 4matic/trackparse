@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.1](https://github.com/4matic/trackparse/compare/rust-v0.6.0...rust-v0.6.1) (2026-11-14)
+
+
+### Documentation
+
+* **rust:** link every item to docs.rs and to the site reference and spec rules, with playground links and the other packages' READMEs, changelogs and API docs ([dbb118f](https://github.com/4matic/trackparse/commit/dbb118fec5e5c80419568eab7b1d0a2dbb96d39e))
+
 ## [0.6.0](https://github.com/4matic/trackparse/compare/rust-v0.5.1...rust-v0.6.0) (2026-11-14)
 
 
