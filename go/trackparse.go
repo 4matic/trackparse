@@ -37,8 +37,9 @@ func FormatWith(track Track, options FormatOptions) string {
 	return formatTrack(&track, resolveFormat(&options))
 }
 
-// Normalize is the R1 normalization the parser applies first: NFC, whitespace and dash
-// variants, invisible characters.
+// Normalize is the Unicode cleanup (R1) every function runs first: NFC; zero-width
+// characters, the BOM and soft hyphens removed; fullwidth brackets, smart quotes and dash
+// variants mapped to ASCII; whitespace collapsed and trimmed. Running it twice changes nothing.
 func Normalize(input string) string {
 	return normalize(sanitize(input))
 }

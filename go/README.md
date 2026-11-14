@@ -714,14 +714,15 @@ Other programs were running, so the numbers vary by about 20% between runs:
 
 ## Versioning
 
+**Changelog:** [go/CHANGELOG.md](https://github.com/4matic/trackparse/blob/main/go/CHANGELOG.md)
+
 The module version is the spec version (`SpecVersion`). Releases are tagged `go/vX.Y.Z` in the
 repository, the tag form the Go toolchain expects for a module in a subfolder, and the Go
 module proxy serves them from there. There is no upload step: the tag is the release.
 
 While it is 0.x, a release that changes the output for some input bumps the minor version, and a
 patch release only fixes bugs. `go get -u` moves to the newest minor, so if you store parsed
-results, upgrade on purpose and read the changelog first:
-[`go/CHANGELOG.md`](https://github.com/4matic/trackparse/blob/main/go/CHANGELOG.md).
+results, upgrade on purpose and read the changelog first.
 
 ## Other languages
 
@@ -764,6 +765,11 @@ go test -race ./...                    # every shared fixture, primitives, examp
 TRACKPARSE_REPORT=1 go test -run TestFixtures -v   # pass rate per fixture file and per rule
 ```
 
+The Go side of `scripts/compare-ports.mjs` is a command behind a build tag, so it is not part of
+the package API: `go run -tags trackparse_wire ./internal/cmd/dump` reads fixture calls as JSON
+lines and writes each result as the JavaScript package would. CI also runs `go vet` and
+staticcheck with `-tags trackparse_wire`.
+
 Files mirror the JS reference one to one (`scanner.go` is `scanner.ts`, `tl_parse.go` is
 `tracklist/parse.ts`, and so on) and cite the same spec rule IDs. Behaviour changes start in the
 spec, not here: see [AGENTS.md](https://github.com/4matic/trackparse/blob/main/AGENTS.md).
@@ -774,7 +780,9 @@ spec, not here: see [AGENTS.md](https://github.com/4matic/trackparse/blob/main/A
   Rust and Go, and a [playground](https://4matic.github.io/trackparse/playground/) that runs the
   parser in your browser
 - [API documentation on pkg.go.dev](https://pkg.go.dev/github.com/4matic/trackparse/go)
-- [Spec](https://github.com/4matic/trackparse/blob/main/spec/SPEC.md)
+- [Spec](https://github.com/4matic/trackparse/blob/main/spec/SPEC.md) and its
+  [changelog](https://github.com/4matic/trackparse/blob/main/spec/CHANGELOG.md)
+- [Changelog](https://github.com/4matic/trackparse/blob/main/go/CHANGELOG.md)
 - [Project README](https://github.com/4matic/trackparse#readme)
 - [GitHub repository](https://github.com/4matic/trackparse)
 - [npm package](https://www.npmjs.com/package/trackparse) · [PyPI package](https://pypi.org/project/trackparse/) · [Rust crate](https://crates.io/crates/trackparse)
