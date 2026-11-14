@@ -37,6 +37,7 @@ jobs:
             python
             rust
             go
+            c
             site
             ci
             deps

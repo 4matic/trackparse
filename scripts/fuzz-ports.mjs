@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Random differential run: generated single-track inputs and tracklists with edits through the
-// built JS package (the reference), the Python port, the Rust port and the Go port, comparing the
-// FULL JSON outputs, like scripts/compare-ports.mjs does for the fixture inputs.
+// built JS package (the reference), the Python port, the Rust port, the Go port and the C port,
+// comparing the FULL JSON outputs, like scripts/compare-ports.mjs does for the fixture inputs.
 //
 // Usage (from the repo root):
 //   pnpm --filter trackparse build
@@ -14,22 +14,23 @@
 //   --lists=N    tracklists; each gives a parseTracklist and an applyEdits case with random
 //                edits (invalid ones included); default 58% of --n (290,000 for 500,000)
 //   --seed=N     generator seed (mulberry32); default 1. The same seed gives the same cases.
-//   --only=X     python, rust or go; default all three
+//   --only=X     python, rust, go or c; default all four
 //   --batch=N    cases per port process; default 20000
 //   --out=FILE   write every differing case as JSONL (the case and each port's output)
 //
-// The inputs are what the JSON door can carry faithfully: no lone surrogates (Rust and Go read
+// The inputs are what the JSON door can carry faithfully: no lone surrogates (Rust, Go and C read
 // them as U+FFFD), no NaN or -0 in options or edits (JSON.stringify changes them). Option values
 // include odd types and strings, integer-like keyword keys and unknown names, as the R0.8
-// fallbacks must agree too. Go and Rust are built once (go build, cargo build --release) and
-// their binaries run per batch; Python runs scripts/dump_py.py per batch.
+// fallbacks must agree too. Go, Rust and C are built once (go build, cargo build --release,
+// CMake into c/build when the C dump is stale) and their binaries run per batch; Python runs
+// scripts/dump_py.py per batch.
 // Exits 1 if any case differs.
 
 import { execFileSync } from "node:child_process";
 import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { comparable, describeDiff, root, runJs, runLines, runPython } from "./lib/ports.mjs";
+import { buildC, comparable, describeDiff, root, runJs, runLines, runPython } from "./lib/ports.mjs";
 
 const MAX_SHOWN = 20;
 
@@ -326,9 +327,10 @@ const ports = [
   { name: "Python", key: "py", build: () => runPython },
   { name: "Rust", key: "rs", build: buildRust },
   { name: "Go", key: "go", build: buildGo },
+  { name: "C", key: "c", build: buildC },
 ].filter((p) => !only || p.name.toLowerCase() === only);
 if (ports.length === 0) {
-  console.error(`unknown port ${only}: use --only=python, --only=rust or --only=go`);
+  console.error(`unknown port ${only}: use --only=python, --only=rust, --only=go or --only=c`);
   process.exit(2);
 }
 for (const port of ports) port.run = port.build();

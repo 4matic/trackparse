@@ -6,11 +6,12 @@
 // runner resolves to a Map from i to { ok: <output> } or { error: <message> }.
 //
 // JS is the reference and runs in this process from js/dist. Python gets one process per call
-// (scripts/dump_py.py, JSONL over stdin/stdout). Rust and Go read one case per line and write
-// one JSON result per line, in order (rust/examples/dump.rs, go/internal/cmd/dump).
+// (scripts/dump_py.py, JSONL over stdin/stdout). Rust, Go and C read one case per line and write
+// one JSON result per line, in order (rust/examples/dump.rs, go/internal/cmd/dump,
+// c/tools/dump.c).
 
-import { spawn } from "node:child_process";
-import { existsSync } from "node:fs";
+import { execFileSync, spawn } from "node:child_process";
+import { existsSync, readdirSync, statSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
@@ -84,8 +85,8 @@ export function runPython(all) {
 }
 
 /**
- * A port that reads one case per line and writes one JSON result per line, in order (Rust and
- * Go). Such ports never throw: every line is a result.
+ * A port that reads one case per line and writes one JSON result per line, in order (Rust, Go
+ * and C). Such ports never throw: every line is a result.
  */
 export function runLines(name, command, args, cwd) {
   return (all) =>
@@ -114,6 +115,62 @@ export function runLines(name, command, args, cwd) {
       }
       child.stdin.end();
     });
+}
+
+const cDir = join(root, "c");
+const cBuild = join(cDir, "build");
+
+/** The newest modification time under the C sources the dump binary is built from. */
+function newestCSource() {
+  let newest = statSync(join(cDir, "CMakeLists.txt")).mtimeMs;
+  const walk = (dir) => {
+    if (!existsSync(dir)) return;
+    for (const entry of readdirSync(dir)) {
+      const full = join(dir, entry);
+      const st = statSync(full);
+      if (st.isDirectory()) walk(full);
+      else newest = Math.max(newest, st.mtimeMs);
+    }
+  };
+  for (const sub of ["src", "wire", "tools", "include"]) walk(join(cDir, sub));
+  return newest;
+}
+
+/** `cmake` when it runs, else `uvx cmake` (the way the repo's docs run it without an install). */
+function cmakeCommand() {
+  try {
+    execFileSync("cmake", ["--version"], { stdio: "ignore" });
+    return ["cmake"];
+  } catch {
+    return ["uvx", "cmake"];
+  }
+}
+
+/** The dump binary in c/build, or undefined (single- and multi-config generators). */
+function cDumpBinary() {
+  const exe = process.platform === "win32" ? ".exe" : "";
+  return [join(cBuild, `trackparse-dump${exe}`), join(cBuild, "Release", `trackparse-dump${exe}`)].find(
+    (p) => existsSync(p),
+  );
+}
+
+/**
+ * The C port: builds c/ with CMake into c/build (Release) when the dump binary is missing or
+ * older than its sources, then runs c/build/trackparse-dump (c/tools/dump.c) for each batch.
+ */
+export function buildC() {
+  let bin = cDumpBinary();
+  if (!bin || statSync(bin).mtimeMs < newestCSource()) {
+    const [cmake, ...pre] = cmakeCommand();
+    const run = (args) => execFileSync(cmake, [...pre, ...args], { cwd: root, stdio: "inherit" });
+    if (!existsSync(join(cBuild, "CMakeCache.txt"))) {
+      run(["-S", cDir, "-B", cBuild, "-DCMAKE_BUILD_TYPE=Release", "-DTRACKPARSE_BUILD_TESTS=OFF"]);
+    }
+    run(["--build", cBuild, "--config", "Release", "--target", "trackparse-dump"]);
+    bin = cDumpBinary();
+    if (!bin) throw new Error("the C build did not produce trackparse-dump");
+  }
+  return runLines("C", bin, [], root);
 }
 
 /** JSON with object keys sorted recursively, so key order never counts as a difference. */

@@ -1,16 +1,19 @@
 #!/usr/bin/env node
 // Cross-port byte check: runs every fixture case (spec/fixtures/**) through the built JS package,
-// the Python port, the Rust port and the Go port, and diffs the FULL outputs (not the partial
+// the Python port, the Rust port, the Go port and the C port, and diffs the FULL outputs (not the partial
 // fixture expectations). JS is the reference; each other port is compared with it.
 //
 // Usage (from the repo root):
 //   pnpm --filter trackparse build        # builds js/dist
-//   node scripts/compare-ports.mjs        # needs `uv` (Python), `cargo` (Rust) and `go` (Go)
-//   node scripts/compare-ports.mjs --only=python   # or --only=rust, --only=go
+//   node scripts/compare-ports.mjs        # needs `uv` (Python), `cargo` (Rust), `go` (Go) and
+//                                         # CMake plus a C compiler (C)
+//   node scripts/compare-ports.mjs --only=python   # or --only=rust, --only=go, --only=c
 //
 // Rust runs `cargo run --release --example dump` in rust/ and Go runs
 // `go run -tags trackparse_wire ./internal/cmd/dump` in go/ (both JSONL in, one JSON result per
-// line, the same protocol; the tag links the JSON door into the Go module).
+// line, the same protocol; the tag links the JSON door into the Go module). C builds c/ with CMake
+// into c/build (Release) when c/build/trackparse-dump is missing or older than the sources, then
+// runs it (c/tools/dump.c, the same protocol).
 // Options are merged like js/test/runner.ts ({...defaults.options, ...case.options}, same for
 // formatOptions). Python gets one process for all cases (JSONL over stdin/stdout); dump_py.py maps
 // the camelCase options to snake_case kwargs and serialises with to_dict() (ParsedTrack, and the
@@ -20,7 +23,7 @@
 
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
-import { describeDiff, comparable, root, runJs, runLines, runPython } from "./lib/ports.mjs";
+import { buildC, describeDiff, comparable, root, runJs, runLines, runPython } from "./lib/ports.mjs";
 
 const fixturesDir = join(root, "spec", "fixtures");
 const MAX_SHOWN = 30;
@@ -60,12 +63,14 @@ for (const full of walk(fixturesDir)) {
 
 const runRust = runLines("Rust", "cargo", ["run", "--quiet", "--release", "--example", "dump"], join(root, "rust"));
 const runGo = runLines("Go", "go", ["run", "-tags", "trackparse_wire", "./internal/cmd/dump"], join(root, "go"));
+const runC = (all) => buildC()(all);
 
 const only = process.argv.find((a) => a.startsWith("--only="))?.slice(7);
 const ports = [
   { name: "Python", key: "py", run: runPython },
   { name: "Rust", key: "rs", run: runRust },
   { name: "Go", key: "go", run: runGo },
+  { name: "C", key: "c", run: runC },
 ].filter((p) => !only || p.name.toLowerCase() === only);
 
 const jsResults = cases.map(runJs);
