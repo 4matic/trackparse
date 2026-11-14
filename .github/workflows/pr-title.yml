@@ -36,6 +36,7 @@ jobs:
             fixtures
             python
             rust
+            go
             site
             ci
             deps
