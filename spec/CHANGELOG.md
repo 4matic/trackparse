@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.6.1](https://github.com/4matic/trackparse/compare/spec-v0.6.0...spec-v0.6.1) (2026-11-14)
+
+
+### Documentation
+
+* **fixtures:** link fn values, options and rule IDs to the reference and the spec, and the skip lists and port READMEs ([e52c54c](https://github.com/4matic/trackparse/commit/e52c54cac71021de0240525970b109d24170c674))
+* **generator:** link the fixture format, the spec rules and the generator sources ([8d7e4df](https://github.com/4matic/trackparse/commit/8d7e4df33e41ccf887aa08579d26e7bdca5ca493))
+
 ## [0.6.0](https://github.com/4matic/trackparse/compare/spec-v0.5.1...spec-v0.6.0) (2026-11-14)
 
 

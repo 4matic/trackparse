@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.1](https://github.com/4matic/trackparse/compare/js-v0.6.0...js-v0.6.1) (2026-11-14)
+
+
+### Documentation
+
+* **js:** link options, fields, modes, warnings and functions to the site reference and the spec rules, with playground links and the other packages' READMEs, changelogs and API docs ([8841415](https://github.com/4matic/trackparse/commit/8841415891a2d1c442afd40cc0226bd548c27750))
+
 ## [0.6.0](https://github.com/4matic/trackparse/compare/js-v0.5.1...js-v0.6.0) (2026-11-14)
 
 

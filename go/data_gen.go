@@ -3,7 +3,7 @@
 package trackparse
 
 // SpecVersion is the version of the spec this module implements.
-const SpecVersion = "0.6.0" // x-release-please-version
+const SpecVersion = "0.6.1" // x-release-please-version
 
 // dataKV is one entry of a JSON object in spec/data, in file order.
 type dataKV struct {
