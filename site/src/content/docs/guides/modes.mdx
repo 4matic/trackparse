@@ -18,9 +18,12 @@ source can take.
 | `tracklist` | one line of a tracklist | The first spaced dash always separates, and the words after it are never read as a version or genre suffix |
 | `auto` | anything (the default) | Picks `filename`, `youtube` or `clean` from the string. It never picks `tracklist` |
 
-The resolved mode is in `track.mode`, so you can always see which one ran. In Rust the option is
-the enum `ModeOption` and the resolved mode is `Mode`, which has no `Auto`. In Go both are the string type `Mode`: `trackparse.ModeAuto` (`"auto"`) asks for auto, an empty
-`Mode` in `ParseOptions` means auto too, and `Track.Mode` is never `ModeAuto`. The mode rules are
+The resolved mode is in `track.mode`, so you can always see which one ran. You pick one with the
+[`mode` option](/trackparse/reference/options/#parse-options). In Rust the option is the enum
+[`ModeOption`](https://docs.rs/trackparse/latest/trackparse/enum.ModeOption.html) and the resolved mode is [`Mode`](https://docs.rs/trackparse/latest/trackparse/enum.Mode.html),
+which has no `Auto`. In Go both are the string type [`Mode`](https://pkg.go.dev/github.com/4matic/trackparse/go#Mode):
+[`trackparse.ModeAuto`](https://pkg.go.dev/github.com/4matic/trackparse/go#ModeAuto) (`"auto"`) asks for auto, an empty `Mode` in `ParseOptions`
+means auto too, and `Track.Mode` is never `ModeAuto`. The mode rules are
 [R2](/trackparse/reference/spec/#r2-mode-prelude) in the spec.
 
 ## How auto decides
@@ -29,6 +32,10 @@ the enum `ModeOption` and the resolved mode is `Mode`, which has no `Auto`. In G
    `filename`.
 2. Junk, a `|`, or a platform suffix like `- YouTube` means `youtube`.
 3. Anything else is `clean`.
+
+That order is [R2.1](/trackparse/reference/spec/#r2-mode-prelude:~:text=R2.1%20Resolution). Open the
+[file name](/trackparse/playground/#track=07_Burial_-_Archangel.mp3) or the [video title](/trackparse/playground/#track=Noisia%20-%20Stigma%20%7C%20Official%20Video)
+in the playground to see the mode it picks.
 
 <Tabs syncKey="lang">
 <TabItem label="JavaScript">
@@ -100,7 +107,10 @@ fmt.Printf("%s %q %+v\n", t.Mode, t.Title, t.Junk)
 ## youtube mode
 
 Set it yourself when you know the strings are video titles. It takes guesses that `clean`
-won't, and every guess shows up in [`warnings`](/trackparse/reference/warnings/#track-warnings):
+won't, and every guess shows up in [`warnings`](/trackparse/reference/warnings/#track-warnings). The
+three below are [R6.6](/trackparse/reference/spec/#r6-artisttitle-separator:~:text=R6.6%20by%20%28youtube%20only%29),
+[R6.5](/trackparse/reference/spec/#r6-artisttitle-separator:~:text=R6.5%20Quoted%20title) and [R6.7](/trackparse/reference/spec/#r6-artisttitle-separator:~:text=R6.7%20Unspaced%20dash); pipes are
+[R2.4](/trackparse/reference/spec/#r2-mode-prelude:~:text=R2.4%20youtube%20pipes):
 
 <Tabs syncKey="lang">
 <TabItem label="JavaScript">
@@ -177,7 +187,7 @@ fmt.Printf("%q %q %v\n", t.Artists[0].Name, t.Title, t.Warnings)
 </Tabs>
 
 In `clean` mode the last one comes back with no artist, the whole string as the title and a
-`noSeparator` warning. That's the safe answer when you can't be sure. Compare the two in the
+[`noSeparator`](/trackparse/reference/warnings/#track-warnings:~:text=noSeparator) warning. That's the safe answer when you can't be sure. Compare the two in the
 playground:
 [youtube](/trackparse/playground/#track=Blink-182-All%20The%20Small%20Things&mode=youtube) and
 [clean](/trackparse/playground/#track=Blink-182-All%20The%20Small%20Things&mode=clean).
@@ -185,8 +195,9 @@ playground:
 ### The uploader fallback
 
 Many music videos are titled with only the song name, and the artist is the channel. Pass the
-channel as `uploader` and youtube mode uses it when there's no separator. Auto-generated suffixes
-like `- Topic` and `VEVO` are dropped:
+channel as [`uploader`](/trackparse/reference/options/#parse-options) and youtube mode uses it when there's no separator. Auto-generated suffixes
+like `- Topic` and `VEVO` are dropped ([R6.8](/trackparse/reference/spec/#r6-artisttitle-separator:~:text=R6.8%20No%20separator);
+[try it](/trackparse/playground/#track=Around%20the%20World&mode=youtube&uploader=Daft%20Punk%20-%20Topic)):
 
 <Tabs syncKey="lang">
 <TabItem label="JavaScript">
@@ -227,6 +238,11 @@ fmt.Printf("%q %q\n", t.Artists[0].Name, t.Title)
 </Tabs>
 
 ## filename mode
+
+The extension comes off first, and a name without spaces gets its underscores turned into spaces
+([R2.3](/trackparse/reference/spec/#r2-mode-prelude:~:text=R2.3%20filename)). A leading number then
+counts as a track number in more forms than elsewhere, such as `311 - ` and `01-Track` ([R4.2](/trackparse/reference/spec/#r4-prefixes-timestamp-and-position:~:text=R4.2%20Position)). Try
+[the first line](/trackparse/playground/#track=02_Aphex_Twin_-_Xtal.flac) in the playground.
 
 <Tabs syncKey="lang">
 <TabItem label="JavaScript">
@@ -272,7 +288,8 @@ number. Anywhere else, `311` could be a band.
 
 ## tracklist mode
 
-Inside a tracklist almost every line is `Artist - Title`, so the first spaced dash can be trusted.
+Inside a tracklist almost every line is `Artist - Title`, so the first spaced dash can be trusted
+([R6.10](/trackparse/reference/spec/#r6-artisttitle-separator:~:text=R6.10%20Tracklist%20mode), [R13.6](/trackparse/reference/spec/#r136-tracklist-mode)).
 A single string doesn't get that benefit of the doubt:
 
 <Tabs syncKey="lang">
@@ -329,12 +346,14 @@ fmt.Printf("%q %q\n", t.Artists[0].Name, t.Title)
 
 [`parseTracklist`](/trackparse/guides/tracklists/) (`parse_tracklist` in Python and Rust, `ParseTracklist` in Go) uses this
 mode for every line. You only need to set it yourself when you parse tracklist lines one at a time.
+The playground can show [this line in tracklist mode](/trackparse/playground/#track=Electrosoul%20System%20-%20Liquid%20Metal&mode=tracklist).
 [Tracklist mode](/trackparse/guides/tracklists/#tracklist-mode) in the tracklist guide has more
 lines that need it.
 
 ## See also
 
-- [Options](/trackparse/reference/options/) for `mode`, `uploader` and the other options.
-- [Warnings](/trackparse/reference/warnings/) for what each guess reports.
+- [Options](/trackparse/reference/options/) for `mode`, [`uploader`](/trackparse/reference/options/#parse-options) and the other options.
+- [Warnings](/trackparse/reference/warnings/#track-warnings) for what each guess reports.
+- [Specification, R2](/trackparse/reference/spec/#r2-mode-prelude) for the exact mode rules.
 - [How it works](/trackparse/project/how-it-works/#finding-the-separator) for how the separator
   search differs between modes.

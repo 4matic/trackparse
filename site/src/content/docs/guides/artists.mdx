@@ -52,10 +52,12 @@ type Artist struct {
 `role` says what the person did. `joiner` is the text that introduced the name, exactly as written
 (`"&"`, `","`, `"ft."`, `"prod. by"`), and `null` for the first name of a list (`None` in Python and
 Rust, `nil` in Go, where `Joiner` is a `*string`). `source` says where the credit was found: left of the dash (`artist`), right of it (`title`),
-or inside a version (`version`). In Rust, `role` and `source` are the enums `ArtistRole` and
-`ArtistSource`; `as_str()` and `Display` give the lowercase names used here. In Go they are the
-string types `Role` and `Source`, with constants such as `trackparse.RolePrimary` and
-`trackparse.SourceTitle` whose values are those names.
+or inside a version (`version`). In Rust, `role` and `source` are the enums
+[`ArtistRole`](https://docs.rs/trackparse/latest/trackparse/enum.ArtistRole.html) and [`ArtistSource`](https://docs.rs/trackparse/latest/trackparse/enum.ArtistSource.html);
+`as_str()` and `Display` give the lowercase names used here. In Go they are the string types
+[`Role`](https://pkg.go.dev/github.com/4matic/trackparse/go#Role) and [`Source`](https://pkg.go.dev/github.com/4matic/trackparse/go#Source), with constants such as `trackparse.RolePrimary`
+and `trackparse.SourceTitle` whose values are those names. The full field list is under
+[`Artist`](/trackparse/reference/parse/#artist) in the reference.
 
 Remixers live inside `versions`, not in `artists`. Use [`allArtists(track)`](/trackparse/reference/functions/#allartiststrack)
 (`all_artists` in Python and Rust, `AllArtists` in Go) when you want everyone in one list.
@@ -149,7 +151,10 @@ Some things look like joiners and aren't:
   [`no-split-before.json`](https://github.com/4matic/trackparse/blob/main/spec/data/no-split-before.json).
 - A comma between two digits (`1,000`) is part of the name.
 
-The rules for the artist side are [R7](/trackparse/reference/spec/#r7-artist-side) in the spec.
+The rules for the artist side are [R7](/trackparse/reference/spec/#r7-artist-side) in the spec, and
+the splitting itself is [R7.3](/trackparse/reference/spec/#r7-artist-side:~:text=R7.3%20Credit%2Dlist%20splitting). Open the
+[first example](/trackparse/playground/#track=Skrillex%20%26%20Diplo%20x%20Justin%20Bieber%20-%20Where%20Are%20%C3%9C%20Now)
+in the playground to see every joiner.
 
 ### `and` is special
 
@@ -203,7 +208,9 @@ fmt.Printf("%q\n", names(trackparse.ParseArtists("Crosby, Stills, Nash and Young
 </TabItem>
 </Tabs>
 
-Set `splitAnd` (`split_and` in Python and Rust, `SplitAnd` in Go) to `"always"` or `"never"` to change that:
+Set [`splitAnd`](/trackparse/reference/options/#parse-options) (`split_and` in Python and Rust,
+`SplitAnd` in Go) to `"always"` or `"never"` to change that
+([try it](/trackparse/playground/#track=Simon%20and%20Garfunkel%20-%20The%20Boxer&splitAnd=always)):
 
 <Tabs syncKey="lang">
 <TabItem label="JavaScript">
@@ -260,7 +267,10 @@ fmt.Printf("%q\n", names(trackparse.ParseArtistsWith("Crosby, Stills, Nash and Y
 
 `feat.`, `ft.` and `featuring` work on either side of the dash and in brackets. `with` and `w/`
 only count at the start of a bracket, since "with" turns up in plenty of titles. All of these give
-the second name the role `featured`:
+the second name the role `featured`. In a bracket the rule is
+[R5.2](/trackparse/reference/spec/#r5-group-classification:~:text=R5.2%20Feat), left of the dash
+[R7.2](/trackparse/reference/spec/#r7-artist-side:~:text=R7.2%20Unbracketed%20feat) and right of it
+[R8.3](/trackparse/reference/spec/#r8-title-side:~:text=R8.3%20Unbracketed%20feat):
 
 <Tabs syncKey="lang">
 <TabItem label="JavaScript">
@@ -358,9 +368,16 @@ fmt.Printf("%q\n", names(trackparse.Parse("Noisia feat. Foreign Beggars - Shells
 
 Names are compared with full Unicode case folding and accents removed, so `Sigur Rós` and
 `SIGUR ROS` count as the same artist
-([R9](/trackparse/reference/spec/#r9-assembly-and-dedup)).
+([R9.2](/trackparse/reference/spec/#r9-assembly-and-dedup:~:text=R9.2%20Dedup)). [Try the
+example](/trackparse/playground/#track=Noisia%20feat.%20Foreign%20Beggars%20-%20Shellshock%20%28feat.%20Foreign%20Beggars%29)
+in the playground.
 
 ## Producers
+
+`prod.`, `prod. by` and `produced by` credit a producer, in brackets
+([R5.3](/trackparse/reference/spec/#r5-group-classification:~:text=R5.3%20Producer)) or after the title
+([R8.3](/trackparse/reference/spec/#r8-title-side:~:text=R8.3%20Unbracketed%20feat)). The producer gets the role `producer` and
+leaves the title:
 
 <Tabs syncKey="lang">
 <TabItem label="JavaScript">
@@ -464,11 +481,16 @@ parse a lot of strings with the same names, put them in
 [`createParser`](/trackparse/reference/functions/#createparseroptions) (`create_parser` in Python,
 `Parser::new` in Rust, `NewParser` in Go). You can try it in the
 [playground](/trackparse/playground/#track=Chase%20%26%20Status%20-%20Baddadan&known=Chase%20%26%20Status).
+The option is listed under [Options](/trackparse/reference/options/#parse-options), and the
+matching rule is [R7.3](/trackparse/reference/spec/#r7-artist-side:~:text=R7.3%20Credit%2Dlist%20splitting) (a).
 
 ## Unknown artists
 
 `ID` (and `Unknown`, `Untitled`, `?`, `???`) means the track hasn't been announced yet. It doesn't become a name.
-The track gets `flags.unknownArtist: true` (`flags.unknown_artist` in Python and Rust, `Flags.UnknownArtist` in Go) instead, and the same goes for titles:
+The track gets `flags.unknownArtist: true` (`flags.unknown_artist` in Python and Rust,
+`Flags.UnknownArtist` in Go) instead, and the same goes for titles
+([R7.5](/trackparse/reference/spec/#r7-artist-side:~:text=R7.5%20Drops%20and%20unknowns), [R8.6](/trackparse/reference/spec/#r8-title-side:~:text=R8.6%20Unknown%20title);
+[open it in the playground](/trackparse/playground/#track=ID%20-%20ID%20%28ID%20Remix%29)):
 
 <Tabs syncKey="lang">
 <TabItem label="JavaScript">
@@ -523,6 +545,6 @@ fmt.Println(t.Versions[0].UnknownArtist)     // true
 - [`parseArtists`](/trackparse/reference/functions/#parseartistsinput-options) splits an artist
   string that has no title, and [`allArtists`](/trackparse/reference/functions/#allartiststrack)
   lists the remixers too.
-- [Options](/trackparse/reference/options/) covers `knownArtists`, `splitAnd` and extra feat markers
-  in `keywords`.
+- [Options](/trackparse/reference/options/) covers [`knownArtists`](/trackparse/reference/options/#parse-options), [`splitAnd`](/trackparse/reference/options/#parse-options) and extra feat markers
+  in [`keywords`](/trackparse/reference/options/#keywords).
 - [Versions and remixes](/trackparse/guides/versions/) is where the remixers go.

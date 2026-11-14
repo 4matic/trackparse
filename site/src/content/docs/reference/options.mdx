@@ -5,9 +5,11 @@ description: Every option of parse, parseArtists and createParser, including cus
 
 import { Tabs, TabItem } from "@astrojs/starlight/components";
 
-`parse`, `parseArtists` and `createParser` take the same options. JavaScript takes an object,
+[`parse`](/trackparse/reference/parse/), [`parseArtists`](/trackparse/reference/functions/#parseartistsinput-options) and [`createParser`](/trackparse/reference/functions/#createparseroptions) take the same options. JavaScript takes an object,
 Python takes keyword arguments, Rust takes a `ParseOptions` value through the `_with` functions,
 and Go takes a `ParseOptions` struct through the `With` functions.
+
+## Parse options
 
 <Tabs syncKey="lang">
 <TabItem label="JavaScript">
@@ -51,7 +53,8 @@ pub struct ParseOptions {
 }
 ```
 
-Start from the defaults and chain a setter per option:
+Start from the defaults and chain a setter per option
+([`ParseOptions` on docs.rs](https://docs.rs/trackparse/latest/trackparse/struct.ParseOptions.html)):
 
 ```rust
 use trackparse::{parse_with, ModeOption, ParseOptions, SplitAnd};
@@ -78,7 +81,8 @@ type ParseOptions struct {
 }
 ```
 
-Set the fields you need. The others keep their zero value, which is the default:
+Set the fields you need. The others keep their zero value, which is the default
+([`ParseOptions` on pkg.go.dev](https://pkg.go.dev/github.com/4matic/trackparse/go#ParseOptions)):
 
 ```go
 import (
@@ -106,15 +110,23 @@ fmt.Printf("%q\n", trackparse.ParseWith(input, options).Artists[0].Name)   // "C
 | `knownArtists` | `known_artists` | `KnownArtists` | empty | Names that are never split, like `Chase & Status` or `Earth, Wind & Fire`. Matched case- and accent-insensitively. See [knownArtists](/trackparse/guides/artists/#knownartists) |
 | `uploader` | `uploader` | `Uploader` | none | The YouTube channel. In youtube mode it becomes the artist when there's no separator. `- Topic` and `VEVO` are dropped. See [the uploader fallback](/trackparse/guides/modes/#the-uploader-fallback) |
 | `splitAnd` | `split_and` | `SplitAnd` | `"auto"` | `auto` splits on `and` only after a comma (`A, B and C`), so `Simon and Garfunkel` stays whole. `always` and `never` do what they say. See [`and` is special](/trackparse/guides/artists/#and-is-special) |
-| `keywords` | `keywords` | `Keywords` | none | Extra vocabulary, see below |
+| `keywords` | `keywords` | `Keywords` | none | Extra vocabulary, see [keywords](#keywords) below |
 
-In Rust the values are enums: `ModeOption::Auto`, `Clean`, `Youtube`, `Filename` or `Tracklist`,
-and `SplitAnd::Auto`, `Always` or `Never`. The option structs are `#[non_exhaustive]`, so start
+All five work the same in [`parse`](/trackparse/reference/parse/),
+[`parseArtists`](/trackparse/reference/functions/#parseartistsinput-options) (which ignores `mode`
+and `uploader`) and [`createParser`](/trackparse/reference/functions/#createparseroptions). The
+playground has a field for each but `keywords`:
+[this link](/trackparse/playground/#track=Chase%20%26%20Status%20-%20Baddadan&mode=youtube&splitAnd=never&known=Chase%20%26%20Status&uploader=Daft%20Punk%20-%20Topic) opens the example above with all four set.
+
+In Rust the values are enums: [`ModeOption`](https://docs.rs/trackparse/latest/trackparse/enum.ModeOption.html)`::Auto`, `Clean`,
+`Youtube`, `Filename` or `Tracklist`, and [`SplitAnd`](https://docs.rs/trackparse/latest/trackparse/enum.SplitAnd.html)`::Auto`, `Always`
+or `Never`. The option structs are `#[non_exhaustive]`, so start
 from `ParseOptions::new()` (or `default()`) and chain setters. The fields are public and can also
 be assigned.
 
-In Go the values are typed strings with constants: `trackparse.ModeAuto`, `ModeClean`,
-`ModeYouTube`, `ModeFilename` or `ModeTracklist`, and `SplitAndAuto`, `SplitAndAlways` or `SplitAndNever`. The zero
+In Go the values are typed strings with constants: [`trackparse.ModeAuto`](https://pkg.go.dev/github.com/4matic/trackparse/go#ModeAuto),
+`ModeClean`, `ModeYouTube`, `ModeFilename` or `ModeTracklist` (the type [`Mode`](https://pkg.go.dev/github.com/4matic/trackparse/go#Mode)), and
+`SplitAndAuto`, `SplitAndAlways` or `SplitAndNever` (the type [`SplitAnd`](https://pkg.go.dev/github.com/4matic/trackparse/go#SplitAnd)). The zero
 value of `ParseOptions` is the defaults: an empty `Mode` is auto, an empty `SplitAnd` is auto and an
 empty `Uploader` is none. A string that is not one of the constants behaves as an unknown value does
 in JavaScript.
@@ -132,12 +144,15 @@ a missing key is the default, an unknown name such as `"mode":"radio"` is an err
 ## keywords
 
 `keywords` adds words to the built-in vocabulary. It can't take any away. In Python its keys are
-snake_case too: `version_heads`, `feat_markers`. In Rust, `KeywordOptions` has one setter per word,
-and each call adds one entry. In Go, `Keywords` holds slices: the two maps of the JavaScript options
-are ordered slices of `VersionHead` and `JunkPhrase`, because a Go map has no insertion order. They
+snake_case too: `version_heads`, `feat_markers`. In Rust,
+[`KeywordOptions`](https://docs.rs/trackparse/latest/trackparse/struct.KeywordOptions.html) has one setter per word, and each call adds one
+entry. In Go, [`Keywords`](https://pkg.go.dev/github.com/4matic/trackparse/go#Keywords) holds slices: the two maps of the JavaScript options
+are ordered slices of [`VersionHead`](https://pkg.go.dev/github.com/4matic/trackparse/go#VersionHead) and [`JunkPhrase`](https://pkg.go.dev/github.com/4matic/trackparse/go#JunkPhrase), because a Go map has no insertion order. They
 are read as JavaScript reads an object: a repeated key keeps its first place and takes the last
 value, and integer-like keys come first, in ascending order. The built-in lists are JSON files in
-[`spec/data`](https://github.com/4matic/trackparse/tree/main/spec/data).
+[`spec/data`](https://github.com/4matic/trackparse/tree/main/spec/data), and the keyword rules are
+[R12](/trackparse/reference/spec/#r12-options). [Your own words](/trackparse/guides/versions/#your-own-words) in the
+versions guide has another example.
 
 <Tabs syncKey="lang">
 <TabItem label="JavaScript">
@@ -326,21 +341,23 @@ fmt.Printf("%+v\n", r.Junk)   // [{Raw:Some Label Rip Kind:label}]
 
 ## Tracklist options
 
-`parseTracklist` and `applyEdits` (`parse_tracklist` and `apply_edits` in Python and Rust,
+[`parseTracklist`](/trackparse/reference/tracklist/#parsetracklisttext-options) and [`applyEdits`](/trackparse/reference/tracklist/#applyeditstext-edits-options) (`parse_tracklist` and `apply_edits` in Python and Rust,
 `ParseTracklist` and `ApplyEdits` in Go) take
-`mode` (default `"tracklist"`), `knownArtists`, `splitAnd` and `keywords`, plus two of their own.
-In Rust they are the setters of `TracklistOptions`, passed to `parse_tracklist_with` and
-`apply_edits_with`. In Go they are the fields of the `TracklistOptions` struct, passed to
-`ParseTracklistWith` and `ApplyEditsWith`:
+`mode` (default `"tracklist"`), [`knownArtists`](/trackparse/guides/artists/#knownartists), [`splitAnd`](/trackparse/guides/artists/#and-is-special) and `keywords`, plus two of their own.
+In Rust they are the setters of [`TracklistOptions`](/trackparse/reference/tracklist/#options), passed to `parse_tracklist_with` and
+`apply_edits_with` ([`TracklistOptions` on docs.rs](https://docs.rs/trackparse/latest/trackparse/tracklist/struct.TracklistOptions.html)).
+In Go they are the fields of the [`TracklistOptions`](https://pkg.go.dev/github.com/4matic/trackparse/go#TracklistOptions) struct, passed to
+[`ParseTracklistWith`](https://pkg.go.dev/github.com/4matic/trackparse/go#ParseTracklistWith) and [`ApplyEditsWith`](https://pkg.go.dev/github.com/4matic/trackparse/go#ApplyEditsWith). The
+rules are [R13.10](/trackparse/reference/spec/#r1310-options):
 
 | JavaScript | Python and Rust | Go | Default | Description |
 |---|---|---|---|---|
-| `audioSeconds` | `audio_seconds` | `AudioSeconds` | none | Length of the audio. Turns on the `time-after-audio-end` check |
-| `markerWords` | `marker_words` | `MarkerWords` | empty | Extra marker words. With `["drop"]`, `03:00 Drop` is a marker, not a track |
+| [`audioSeconds`](/trackparse/guides/tracklists/#options) | `audio_seconds` | `AudioSeconds` | none | Length of the audio. Turns on the [`time-after-audio-end`](/trackparse/reference/warnings/#tracklist-warnings:~:text=time%2Dafter%2Daudio%2Dend) check |
+| [`markerWords`](/trackparse/guides/tracklists/#options) | `marker_words` | `MarkerWords` | empty | Extra marker words. With `["drop"]`, `03:00 Drop` is a marker, not a track |
 
 In Go the zero value of `TracklistOptions` is the defaults too: an empty `Mode` means
 `ModeTracklist`, and `ModeAuto` asks for auto mode on each line. `AudioSeconds` is a `*float64`,
-so `nil` means no length and `trackparse.Ptr(0.0)` is an audio of length 0, as `audioSeconds: 0`
+so `nil` means no length and [`trackparse.Ptr`](https://pkg.go.dev/github.com/4matic/trackparse/go#Ptr)`(0.0)` is an audio of length 0, as `audioSeconds: 0`
 is in JavaScript.
 
 [Tracklists](/trackparse/guides/tracklists/#options) has an example in each language, and the
@@ -348,15 +365,20 @@ is in JavaScript.
 
 ## Format options
 
-`format` has its own options (`feat`, `featMarker`, `joiners`, `versions`, `producers`, `position`).
+[`format`](/trackparse/reference/functions/#formattrack-options) has its own options (`feat`, [`featMarker`](/trackparse/guides/formatting/#options), `joiners`, `versions`, `producers`, `position`).
 They are listed under [Formatting](/trackparse/guides/formatting/#options). In Go they are the
-fields of `FormatOptions`; `producers: false` is `OmitProducers: true` there, so the zero value
-keeps the producers, and `FeatMarker` is a `*string` (`nil` keeps the input's marker).
+fields of [`FormatOptions`](https://pkg.go.dev/github.com/4matic/trackparse/go#FormatOptions); `producers: false` is `OmitProducers: true` there, so the zero value
+keeps the producers, and `FeatMarker` is a `*string` (`nil` keeps the input's marker). In Rust
+they are the setters of [`FormatOptions`](https://docs.rs/trackparse/latest/trackparse/struct.FormatOptions.html). The rules are
+[R11](/trackparse/reference/spec/#r11-format).
 
 ## See also
 
 - [`parse` and `ParsedTrack`](/trackparse/reference/parse/) for what comes back.
+- [Tracklist API](/trackparse/reference/tracklist/#options) for the tracklist options next to
+  `parseTracklist` and `applyEdits`.
 - [`createParser`](/trackparse/reference/functions/#createparseroptions) to resolve options once
   for many calls.
 - [Modes](/trackparse/guides/modes/) and [Artists and credits](/trackparse/guides/artists/) for
-  what `mode`, `uploader`, `knownArtists` and `splitAnd` change.
+  what `mode`, [`uploader`](/trackparse/guides/modes/#the-uploader-fallback), [`knownArtists`](/trackparse/guides/artists/#knownartists) and [`splitAnd`](/trackparse/guides/artists/#and-is-special) change.
+- [Specification, R12](/trackparse/reference/spec/#r12-options) for the exact option rules.

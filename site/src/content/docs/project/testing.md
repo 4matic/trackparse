@@ -17,14 +17,14 @@ field, so nothing drifts unnoticed.
 |---|---:|---|
 | Regressions | 273 | Every test from two real-world parsers this library replaces, and the known failures of get-artist-title and friends |
 | Versions and brackets | 90 | Every version keyword, generic heads (`Radio Edit` → radio), multi-version groups, feat inside brackets |
-| Artists | 76 | Joiners, guards (`AC/DC`, `Mumford & Sons`, `Malcolm X`), `knownArtists`, dedup |
+| Artists | 76 | Joiners, guards (`AC/DC`, `Mumford & Sons`, `Malcolm X`), [`knownArtists`](/trackparse/reference/options/#parse-options), dedup |
 | Title credits and producers | 57 | `Title ft. X`, `(prod. by X)`, self-produced artists |
 | Separators and suffixes | 63 | Dash variants, `- Remastered 2015`, unspaced and asymmetric dashes |
 | Prefixes, junk, flags | 111 | Track numbers vs `2 Unlimited`, cue times, every junk kind, years, explicit/clean |
 | Modes | 65 | YouTube pipes, `"Title" by Artist`, uploader fallback, file names |
 | Unicode and normalization | 71 | NFC, zero-width characters, fullwidth brackets, Cyrillic, CJK, Turkish İ |
-| `format`, `parseArtists`, unknown IDs | 94 | Round trips, canonical joiners, `ID - ID` |
-| Tracklist mode | 67 | Real lines that single-line `parse()` gets wrong, real lines with no separator at all, Markdown around names, and names that keep their `*` and `_` |
+| [`format`](/trackparse/reference/functions/#formattrack-options), [`parseArtists`](/trackparse/reference/functions/#parseartistsinput-options), unknown IDs | 94 | Round trips, canonical joiners, `ID - ID` |
+| Tracklist mode | 67 | Real lines that single-line [`parse()`](/trackparse/reference/parse/) gets wrong, real lines with no separator at all, Markdown around names, and names that keep their `*` and `_` |
 | Tracklist lines and times | 104 | LF/CRLF/CR, trailing spaces, line kinds, every time form, brackets, gap separators, invalid times, list bullets, Markdown around times, `w/` lines |
 | Tracklist positions | 15 | A real 81-line list numbered without dots, and the `2 Unlimited` guard |
 | Tracklist warnings | 38 | Each code with its near-miss, and real out-of-order lists with their suggestions |
@@ -54,7 +54,7 @@ Each port throws thousands of random strings at the parser to check the
 [fast-check](https://github.com/dubzzz/fast-check) and the Python suite uses
 [Hypothesis](https://hypothesis.works). The Rust and Go suites each have a small seeded generator
 of their own, so neither needs an extra test dependency. The Go module also has fuzz targets for
-`Parse`, `ParseArtists`, `Format`, `ParseTracklist`, `ApplyEdits`, `Track.UnmarshalJSON` and the
+`Parse`, [`ParseArtists`](/trackparse/reference/functions/#parseartistsinput-options), `Format`, [`ParseTracklist`](/trackparse/reference/tracklist/#parsetracklisttext-options), [`ApplyEdits`](/trackparse/reference/tracklist/#applyeditstext-edits-options), `Track.UnmarshalJSON` and the
 internal pipeline (`go test -fuzz`) that run the same checks on whatever the fuzzer finds, and a
 test that calls the parser, the tracklist functions and the edits from 16 goroutines at once under
 the race detector.
@@ -66,7 +66,7 @@ the race detector.
   under a second in Python;
   the ceiling is loose so that a busy CI machine doesn't
   fail the run but a blowup does;
-- `normalize` is idempotent;
+- [`normalize`](/trackparse/reference/functions/#normalizeinput) is idempotent;
 - whitespace, dash and zero-width noise don't change the result;
 - every output validates against the JSON Schema (JavaScript, Python and Go; the Rust output is
   compared with JavaScript byte for byte instead, see below);
@@ -90,9 +90,10 @@ A fixture only checks the fields it asserts. So
 every fixture input through all four ports, JavaScript, Python, Rust and Go, and diffs the complete
 JSON output, tracklists and edits included. The difference count is zero.
 
-The Rust crate was also run against JavaScript on random input, which reaches places no fixture
-does: about 500,000 random single-track cases and 290,000 random tracklists with edits, again with
-zero differences.
+[`fuzz-ports.mjs`](https://github.com/4matic/trackparse/blob/main/scripts/fuzz-ports.mjs) does the
+same with random input, which reaches places no fixture does. The Rust crate and the Go module were
+each run against JavaScript on about 500,000 random single-track cases and 290,000 random
+tracklists with edits, again with zero differences.
 
 ## Real tracklists
 
@@ -139,6 +140,7 @@ TRACKPARSE_REPORT=1 go test -run TestFixtures -v .   # pass rate per file and pe
 cd ..
 pnpm build
 node scripts/compare-ports.mjs   # must print "differences: 0"
+node scripts/fuzz-ports.mjs      # the same diff on random tracks and tracklists with edits
 ```
 
 ## See also

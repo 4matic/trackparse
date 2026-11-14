@@ -9,9 +9,11 @@ output.
 
 The results are the same in JavaScript, Python, Rust and Go, because all four follow one
 [spec](/trackparse/reference/spec/). The values are shown as they appear in JSON: `remix`, `bySplit`.
-In Rust they are enum variants such as `VersionType::Remix` and `Warning::BySplit`. In Go they are
-typed string constants such as `trackparse.VersionTypeRemix` and `trackparse.WarningBySplit`, whose
-values are these same names.
+In Rust they are enum variants such as [`VersionType::Remix`](https://docs.rs/trackparse/latest/trackparse/enum.VersionType.html) and
+[`Warning::BySplit`](https://docs.rs/trackparse/latest/trackparse/enum.Warning.html). In Go they are typed string constants such as
+[`trackparse.VersionTypeRemix`](https://pkg.go.dev/github.com/4matic/trackparse/go#VersionTypeRemix) and
+[`trackparse.WarningBySplit`](https://pkg.go.dev/github.com/4matic/trackparse/go#WarningBySplit), whose values are these same names. The columns
+are fields of [`ParsedTrack`](/trackparse/reference/parse/#parsedtrack).
 
 | Input | Artists | Title | Versions and other fields |
 |---|---|---|---|
@@ -49,36 +51,42 @@ A few of these deserve a comment.
 **`2 Unlimited` is not track 2.** A leading number only counts as a track number when it's written
 like one: `01.` or `1)`, a zero-padded `01 `, `3 - Artist - Title`, or `07_` in a file name. A plain
 `2 ` in front of a word is part of the name, which is what you want for `2 Unlimited`, `50 Cent` and
-`808 State`. The rule is [R4](/trackparse/reference/spec/#r4-prefixes-timestamp-and-position), and
+`808 State`. The rule is [R4.2](/trackparse/reference/spec/#r4-prefixes-timestamp-and-position:~:text=R4.2%20Position), and
 [Track numbers](/trackparse/guides/junk-and-flags/#track-numbers) has more examples.
 
 **`Mumford & Sons` stays whole.** `&` is a joiner, but `& Sons`, `& Co.` or `& His Orchestra`
 never start a second artist. `& The` does split, on purpose: `Noisia & The Upbeats` is two
-acts. `Chase & Status` splits too, because nothing in the string tells it apart from two artists.
+acts ([R7.3](/trackparse/reference/spec/#r7-artist-side:~:text=R7.3%20Credit%2Dlist%20splitting), with the list in
+[`no-split-before.json`](https://github.com/4matic/trackparse/blob/main/spec/data/no-split-before.json)).
+`Chase & Status` splits too, because nothing in the string tells it apart from two artists.
 Names like that go in [`knownArtists`](/trackparse/guides/artists/#knownartists) (`known_artists` in
 Python and Rust, `KnownArtists` in Go).
 
 **The Rolling Stones keep their brackets.** `(I Can't Get No)` is not a version, a feat or junk, so
-it stays in the title. That's the rule: anything unrecognized is left alone.
+it stays in the title. That's the rule: anything unrecognized is left alone
+([R5.8](/trackparse/reference/spec/#r5-group-classification:~:text=R5.8%20Unknown)).
 
 **Two rows needed `mode: "youtube"`.** `"Numb" by Linkin Park` and `Blink-182-All The Small Things`
 are fine guesses on YouTube and bad ones in a music library, so the default `clean` mode won't make
-them. In `youtube` mode it does, and it tells you through `warnings`. In Python the option is
-`mode="youtube"`, in Rust `ParseOptions::new().mode(ModeOption::Youtube)`, in Go
-`trackparse.ParseOptions{Mode: trackparse.ModeYouTube}`. See
-[Modes](/trackparse/guides/modes/#youtube-mode) and [Warnings](/trackparse/reference/warnings/).
+them. In `youtube` mode it does, and it tells you through `warnings`
+([`bySplit`](/trackparse/reference/warnings/#track-warnings:~:text=bySplit) and
+[`unspacedDashSplit`](/trackparse/reference/warnings/#track-warnings:~:text=unspacedDashSplit)). In
+Python the option is `mode="youtube"`, in Rust `ParseOptions::new().mode(ModeOption::Youtube)`, in
+Go `trackparse.ParseOptions{Mode: trackparse.ModeYouTube}`. See
+[Modes](/trackparse/guides/modes/#youtube-mode) and the [`mode` option](/trackparse/reference/options/#parse-options).
 
 ## In a tracklist
 
 Lines of a pasted tracklist go through
-[`parseTracklist`](/trackparse/guides/tracklists/) (`parse_tracklist` in Python and Rust, `ParseTracklist` in Go), which
+[`parseTracklist`](/trackparse/guides/tracklists/) (`parse_tracklist` in Python and Rust,
+`ParseTracklist` in Go; the [Tracklist API](/trackparse/reference/tracklist/) has every field), which
 also reads list bullets, Markdown emphasis and `w/` lines. Each input below is one line; click it to open it in the playground's
 tracklist tab.
 
 | Line | Artists | Title | Other fields |
 |---|---|---|---|
 | [`* 00:00 Noisia - Stigma`](/trackparse/playground/#list=*%2000%3A00%20Noisia%20-%20Stigma) | Noisia | `Stigma` | time 0 s, bullet in `lead` |
-| [`**[**00:00**] 10. Nitepunk - ID**`](/trackparse/playground/#list=**%5B**00%3A00**%5D%2010.%20Nitepunk%20-%20ID**) | Nitepunk | `ID` | time 0 s, position 10, `**` kept in `parts` |
+| [`**[**00:00**] 10. Nitepunk - ID**`](/trackparse/playground/#list=**%5B**00%3A00**%5D%2010.%20Nitepunk%20-%20ID**) | Nitepunk | `ID` | time 0 s, position 10, `**` kept in [`parts`](/trackparse/guides/tracklists/#nothing-is-lost) |
 | [`00:00 **Noisia** - _Stigma_`](/trackparse/playground/#list=00%3A00%20**Noisia**%20-%20_Stigma_) | Noisia | `Stigma` | time 0 s |
 | [`w/ Nitepunk & Habstrakt - Point`](/trackparse/playground/#list=w%2F%20Nitepunk%20%26%20Habstrakt%20-%20Point) | Nitepunk, Habstrakt | `Point` | layered |
 | [`00:00 P*nk - Raise Your Glass`](/trackparse/playground/#list=00%3A00%20P*nk%20-%20Raise%20Your%20Glass) | P\*nk | `Raise Your Glass` | the star stays |

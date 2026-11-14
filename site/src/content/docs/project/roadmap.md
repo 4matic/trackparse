@@ -15,7 +15,7 @@ once.
   trailing time stays in the title. In a range only the start becomes the line's time; the end
   ends up in `track.timestamp` and nothing checks it.
 - Label and catalog numbers as fields. Catalog numbers like `[HOSP123]` stay in the title.
-  Only known label phrases (`[NCS Release]`) go to `junk` as `label`.
+  Only known label phrases (`[NCS Release]`) go to [`junk`](/trackparse/guides/junk-and-flags/#junk) as `label`.
 - Key and BPM (`8A`, `174 BPM`) stay in the title too.
 - An artist database. `Earth, Wind & Fire` splits unless you pass it in
   [`knownArtists`](/trackparse/guides/artists/#knownartists) (`known_artists` in Python and Rust, `KnownArtists` in Go),
@@ -36,3 +36,9 @@ The changelogs list what has shipped so far:
 [Rust](https://github.com/4matic/trackparse/blob/main/rust/CHANGELOG.md),
 [Go](https://github.com/4matic/trackparse/blob/main/go/CHANGELOG.md) and the
 [spec](https://github.com/4matic/trackparse/blob/main/spec/CHANGELOG.md).
+
+## See also
+
+- [Tracklists](/trackparse/guides/tracklists/) for what tracklist parsing does today.
+- [Compared to others](/trackparse/project/comparison/) for what other parsers cover.
+- [Contributing](/trackparse/project/contributing/) to report a case or propose a rule.

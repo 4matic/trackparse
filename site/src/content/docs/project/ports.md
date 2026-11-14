@@ -8,7 +8,7 @@ description: The JavaScript, Python, Rust and Go implementations, and what it ta
 | JavaScript / TypeScript | [`trackparse`](https://www.npmjs.com/package/trackparse) on npm | Reference implementation. 13,130 / 13,130 fixtures. Tracklists in `trackparse/tracklist` |
 | Python | [`trackparse`](https://pypi.org/project/trackparse/) on PyPI | 13,130 / 13,130 fixtures, output identical to JS. Tracklists in `trackparse.tracklist` |
 | Rust | [`trackparse`](https://crates.io/crates/trackparse) on crates.io, API docs on [docs.rs](https://docs.rs/trackparse) | 13,130 / 13,130 fixtures, output identical to JS. Tracklists in `trackparse::tracklist` |
-| Go | [`github.com/4matic/trackparse/go`](https://pkg.go.dev/github.com/4matic/trackparse/go), API docs on pkg.go.dev | 13,130 / 13,130 fixtures, output identical to JS. Tracklists in the same package (`trackparse.ParseTracklist`) |
+| Go | [`github.com/4matic/trackparse/go`](https://pkg.go.dev/github.com/4matic/trackparse/go), API docs on [pkg.go.dev](https://pkg.go.dev/github.com/4matic/trackparse/go) | 13,130 / 13,130 fixtures, output identical to JS. Tracklists in the same package (`trackparse.ParseTracklist`) |
 
 | | JavaScript | Python | Rust | Go |
 |---|---|---|---|---|
@@ -16,7 +16,7 @@ description: The JavaScript, Python, Rust and Go implementations, and what it ta
 | Needs | Node 18 or newer, or any ES2020 runtime | Python 3.9 or newer | Rust 1.74 or newer | Go 1.22 or newer |
 | Dependencies | none | none | `unicode-normalization`; `serde` is optional | none |
 | Types | TypeScript types included | `py.typed`, passes `mypy --strict` | structs and enums, no `unsafe` | structs and typed string constants, no `unsafe`, no cgo |
-| Names | `parseArtists`, `fullTitle` | `parse_artists`, `full_title` | `parse_artists`, `full_title` | `ParseArtists`, `FullTitle` |
+| Names | [`parseArtists`](/trackparse/reference/functions/#parseartistsinput-options), [`fullTitle`](/trackparse/reference/parse/#parsedtrack) | `parse_artists`, `full_title` | `parse_artists`, `full_title` | `ParseArtists`, `FullTitle` |
 | Options | one object | keyword arguments | `_with` functions and option builders | `With` functions and option structs |
 | On bad input | never throws on a string | `TypeError` if the input isn't a `str` | never panics, no `Result` | never panics, no `error` |
 | JSON | `JSON.stringify(track)` | `track.to_dict()` | `track.to_json()`, or `serde` | `json.Marshal(track)` |
@@ -27,7 +27,9 @@ description: The JavaScript, Python, Rust and Go implementations, and what it ta
 All of them share one version number. The spec, the JavaScript package, the Python package, the
 Rust crate and the Go module are released together, from one release PR, and CI fails if their
 versions drift apart. The crate has been on crates.io since 0.4.0. A Go release is the tag
-`go/vX.Y.Z`, which the Go module proxy reads.
+`go/vX.Y.Z`, which the Go module proxy reads
+([published versions](https://proxy.golang.org/github.com/4matic/trackparse/go/@v/list)). The
+[changelogs](/trackparse/project/roadmap/#next) list what each release brought.
 
 ## Adding a language
 
@@ -39,7 +41,7 @@ pipeline a port has to build.
 The checklist, in short:
 
 1. Generate source from `spec/data` and `spec/VERSION`, with a check mode for CI.
-2. Implement the R0 primitives: the whitespace set, word keys, dedup keys, code-point iteration.
+2. Implement the [R0](/trackparse/reference/spec/#r0-portability) primitives: the whitespace set, word keys, dedup keys, code-point iteration.
 3. Build the pipeline in the order of `js/src/parser.ts`, then tracklists as a separate module.
 4. Write the fixture matcher (about 40 lines) and a runner over both fixture folders, with schema
    validation and a skip list that can only shrink.
@@ -77,7 +79,7 @@ cross-port diff and in random differential runs against JavaScript:
 - **Normalization follows the crate.** `unicode-normalization` ships Unicode 18 while Node 24 has
   Unicode 17, so 32 new combining marks are ordered differently in NFC.
 - **Keyword values are arbitrary strings.** JavaScript passes any string given as a version type or
-  junk kind in `keywords` through to the output. A port with enums needs a string form inside the
+  junk kind in [`keywords`](/trackparse/reference/options/#keywords) through to the output. A port with enums needs a string form inside the
   pipeline to produce the same JSON.
 - **JavaScript's number formatting is part of the output.** Edit warnings echo the `line` of an
   edit, so a large or fractional number has to be written the way JavaScript's number-to-string does
@@ -124,5 +126,5 @@ typing questions. What was new:
 ## See also
 
 - [How it's tested](/trackparse/project/testing/) for the fixtures and the cross-port diff.
-- [The spec](/trackparse/reference/spec/#r0-portability): rule R0 is the portability contract.
+- [The spec](/trackparse/reference/spec/#r0-portability): rule [R0](/trackparse/reference/spec/#r0-portability) is the portability contract.
 - [Contributing](/trackparse/project/contributing/) for the commands of each port.

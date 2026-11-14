@@ -49,7 +49,8 @@ import { Aside, Steps, Tabs, TabItem } from "@astrojs/starlight/components";
       </TabItem>
     </Tabs>
 
-2. Parse a track.
+2. Parse a track with [`parse`](/trackparse/reference/parse/)
+   ([try it in the playground](/trackparse/playground/#track=Noisia%20feat.%20Foreign%20Beggars%20-%20Shellshock)).
 
     <Tabs syncKey="lang">
       <TabItem label="JavaScript">
@@ -107,7 +108,8 @@ import { Aside, Steps, Tabs, TabItem } from "@astrojs/starlight/components";
       </TabItem>
     </Tabs>
 
-3. Look at the versions and the noise.
+3. Look at the [versions](/trackparse/guides/versions/) and the
+   [noise](/trackparse/guides/junk-and-flags/).
 
     <Tabs syncKey="lang">
       <TabItem label="JavaScript">
@@ -159,7 +161,9 @@ import { Aside, Steps, Tabs, TabItem } from "@astrojs/starlight/components";
       </TabItem>
     </Tabs>
 
-4. Tell it about names that contain a joiner.
+4. Tell it about names that contain a joiner with
+   [`knownArtists`](/trackparse/guides/artists/#knownartists)
+   ([try it](/trackparse/playground/#track=Chase%20%26%20Status%20-%20Baddadan&known=Chase%20%26%20Status)).
 
     <Tabs syncKey="lang">
       <TabItem label="JavaScript">
@@ -210,7 +214,8 @@ import { Aside, Steps, Tabs, TabItem } from "@astrojs/starlight/components";
       </TabItem>
     </Tabs>
 
-5. Write it back, or turn it into JSON.
+5. Write it back with [`format`](/trackparse/guides/formatting/), or turn it into
+   [JSON](/trackparse/reference/parse/#serializing-to-json).
 
     <Tabs syncKey="lang">
       <TabItem label="JavaScript">
@@ -249,7 +254,7 @@ import { Aside, Steps, Tabs, TabItem } from "@astrojs/starlight/components";
       </TabItem>
     </Tabs>
 
-6. Parse a whole tracklist.
+6. Parse a whole [tracklist](/trackparse/guides/tracklists/).
 
     <Tabs syncKey="lang">
       <TabItem label="JavaScript">
@@ -303,8 +308,8 @@ import { Aside, Steps, Tabs, TabItem } from "@astrojs/starlight/components";
 </Steps>
 
 <Aside type="tip" title="Parsing a lot of strings?">
-`createParser(options)` (`create_parser` in Python, `Parser::new(&options)` in Rust,
-`trackparse.NewParser(options)` in Go) compiles your options and keywords once. Its `parse` method is the same function with those options already applied. See [Other functions](/trackparse/reference/functions/#createparseroptions).
+`createParser(options)` ([`create_parser`](/trackparse/reference/functions/#createparseroptions) in Python, `Parser::new(&options)` in Rust,
+`trackparse.NewParser(options)` in Go) compiles your options and keywords once. Its [`parse`](/trackparse/reference/parse/) method is the same function with those options already applied. See [Other functions](/trackparse/reference/functions/#createparseroptions).
 </Aside>
 
 ## Where each task is explained
