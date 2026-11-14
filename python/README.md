@@ -261,19 +261,17 @@ Renders a track back to a string.
 | `position` | `False` | Include the track number (`01. `) |
 
 ```python
-from trackparse import format_track
+from trackparse import format_track, parse
 
-format_track(
-    parse("Wilkinson ft. Becky Hill - Afterglow (Sub Focus Remix)"),
-    feat="title",
-    joiners="canonical",
-)
+t = parse("01. Wilkinson ft. Becky Hill - Afterglow (Sub Focus Remix)")
+
+format_track(t)  # 'Wilkinson ft. Becky Hill - Afterglow (Sub Focus Remix)'
+format_track(t, feat="title", joiners="canonical")
 # 'Wilkinson - Afterglow (feat. Becky Hill) (Sub Focus Remix)'
-
-format_track(track, feat="omit", versions="none")
-# 'Wilkinson - Afterglow'
-format_track(track, position=True)
-# '01. Wilkinson ft. Becky Hill & Tom Cane - Afterglow (Sub Focus VIP Remix)'
+format_track(t, feat="omit", versions="none")  # 'Wilkinson - Afterglow'
+format_track(t, feat_marker="featuring")
+# 'Wilkinson featuring Becky Hill - Afterglow (Sub Focus Remix)'
+format_track(t, position=True)  # '01. Wilkinson ft. Becky Hill - Afterglow (Sub Focus Remix)'
 ```
 
 ### `normalize(s)`
@@ -325,9 +323,9 @@ parser.parse("Chase & Status x Camo & Krooked - Track (Alix Perez Rerub)").versi
 
 ### `SPEC_VERSION`
 
-The spec version this build implements, `"0.5.0"` in this release. It equals `__version__`: the
-PyPI package, the npm package, the Rust crate, the Go module and the spec are released together and
-always share one version number.
+The version of the spec this build implements. It equals `__version__`: the PyPI package, the npm
+package, the Rust crate, the Go module and the spec are released together and always share one
+version number.
 
 ## Modes
 
@@ -564,8 +562,8 @@ The package ships `py.typed` and passes `mypy --strict`.
 
 The package version is the spec version (`SPEC_VERSION`). While it is 0.x, a release that changes
 the output for some input bumps the minor version, and a patch release only fixes bugs. If you
-store parsed results, pin the minor version (`trackparse~=0.5.0`) and read the changelog before
-moving up.
+store parsed results, pin the minor version (`trackparse~=0.6.0` stays on 0.6.x) and read the
+changelog before moving up.
 
 ## Other languages
 
@@ -615,7 +613,8 @@ same spec rule IDs. Behaviour changes start in the spec, not here: see
 - [Documentation](https://4matic.github.io/trackparse/), with every example in JavaScript, Python,
   Rust and Go, and a [playground](https://4matic.github.io/trackparse/playground/) that runs the
   parser in your browser
-- [Spec](https://github.com/4matic/trackparse/blob/main/spec/SPEC.md)
+- [Spec](https://github.com/4matic/trackparse/blob/main/spec/SPEC.md) and its
+  [changelog](https://github.com/4matic/trackparse/blob/main/spec/CHANGELOG.md)
 - [Changelog](https://github.com/4matic/trackparse/blob/main/python/CHANGELOG.md)
 - [Project README](https://github.com/4matic/trackparse#readme)
 - [GitHub repository](https://github.com/4matic/trackparse)
