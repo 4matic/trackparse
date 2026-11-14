@@ -1,7 +1,9 @@
 # Fixtures
 
-The shared test corpus: 13,130 cases, 1,203 written by hand and 11,927 generated. Every port
-(JavaScript, Python, Rust and Go) runs every case here. The fixtures, not any one implementation,
+The shared test corpus: 13,130 cases, [1,203 written by hand](https://4matic.github.io/trackparse/project/testing/#handwritten-1203-cases)
+and [11,927 generated](https://4matic.github.io/trackparse/project/testing/#generated-11927-cases). Every port
+([JavaScript](../../js/README.md), [Python](../../python/README.md), [Rust](../../rust/README.md)
+and [Go](../../go/README.md)) runs every case here. The fixtures, not any one implementation,
 define correct behaviour.
 
 **Docs:** [How it's tested](https://4matic.github.io/trackparse/project/testing/) · [Contributing](https://4matic.github.io/trackparse/project/contributing/)
@@ -16,6 +18,8 @@ Generated files use the same format in a compact form (per-file `defaults.option
 shorthand for the first primary artist). See [`../generator/README.md`](../generator/README.md).
 
 Each file validates against [`../schema/fixture-file.schema.json`](../schema/fixture-file.schema.json).
+The rule IDs in `rules` are the ones in [`../SPEC.md`](../SPEC.md), also shown on the
+[site](https://4matic.github.io/trackparse/reference/spec/) with an anchor per rule (`#r6-artisttitle-separator`, `#r132-times`).
 
 ## File format
 
@@ -45,12 +49,12 @@ Each file validates against [`../schema/fixture-file.schema.json`](../schema/fix
 | Field | Meaning |
 |---|---|
 | `id` | Unique, stable, `[a-z0-9:._-]`. Handwritten: `<file-stem>-NNN`. Generated: `gen:<scenario>:<atoms>`. |
-| `fn` | `parse` (default), `parseArtists`, `format`, `normalize`, `parseTracklist`, `applyEdits` (SPEC R13). Can be set in `defaults` or on the case. |
+| `fn` | [`parse`](https://4matic.github.io/trackparse/reference/parse/) (default), [`parseArtists`](https://4matic.github.io/trackparse/reference/functions/#parseartistsinput-options), [`format`](https://4matic.github.io/trackparse/reference/functions/#formattrack-options), [`normalize`](https://4matic.github.io/trackparse/reference/functions/#normalizeinput), [`parseTracklist`](https://4matic.github.io/trackparse/reference/tracklist/#parsetracklisttext-options), [`applyEdits`](https://4matic.github.io/trackparse/reference/tracklist/#applyeditstext-edits-options) ([SPEC R13](https://4matic.github.io/trackparse/reference/spec/#r13-tracklists)). Can be set in `defaults` or on the case. |
 | `input` | Input string. For `fn: "format"` the input is parsed first (with `options`), then formatted with `formatOptions`. For `parseTracklist` / `applyEdits` it is the whole (multi-line) text. |
-| `edits` | `fn: "applyEdits"` only: the edit list (SPEC R13.9). |
-| `options` | Parse options (tracklist options, SPEC R13.10, for `parseTracklist` / `applyEdits`). Merged over `defaults.options` (shallow). |
-| `formatOptions` | Format options (fn `format` only). |
-| `expected` | Partial expectation, see below. For `parse` an object, for `parseArtists` an array, for `format` / `normalize` a string, for `parseTracklist` a Tracklist, for `applyEdits` `{ text, changed, warnings }`. |
+| `edits` | `fn: "applyEdits"` only: the edit list ([SPEC R13.9](https://4matic.github.io/trackparse/reference/spec/#r139-edits)). |
+| `options` | [Parse options](https://4matic.github.io/trackparse/reference/options/) ([tracklist options](https://4matic.github.io/trackparse/reference/options/#tracklist-options), [SPEC R13.10](https://4matic.github.io/trackparse/reference/spec/#r1310-options), for `parseTracklist` / `applyEdits`). Merged over `defaults.options` (shallow). |
+| `formatOptions` | [Format options](https://4matic.github.io/trackparse/reference/options/#format-options) (fn `format` only). |
+| `expected` | Partial expectation, see [below](#matching-semantics-match-partial). For `parse` an object, for `parseArtists` an array, for `format` / `normalize` a string, for `parseTracklist` a Tracklist ([schema](../schema/tracklist.schema.json)), for `applyEdits` `{ text, changed, warnings }`. |
 | `match` | `partial` (default) or `exact`. |
 | `status` | `pass` (default), `xfail` (known wrong; the port must still fail it), `ambiguous` (several answers are acceptable; uses `expectedAny`). |
 | `expectedAny` | For `ambiguous`: the case passes if any entry matches. |
@@ -86,8 +90,9 @@ unrelated fields: the case then survives changes elsewhere, and the exact cases 
 - A case the reference port can't meet yet and that is out of scope for this release is `xfail`
   with a `note`. A port's runner fails if an `xfail` case unexpectedly passes, so the status gets
   promoted.
-- Port-specific gaps go in that port's skip list (`js/test/skip.json`, `python/tests/skip.json`,
-  `rust/tests/skip.json`, `go/testdata/skip.json`), not here. A skip list can only shrink, and all
+- Port-specific gaps go in that port's skip list ([`js/test/skip.json`](../../js/test/skip.json),
+  [`python/tests/skip.json`](../../python/tests/skip.json), [`rust/tests/skip.json`](../../rust/tests/skip.json),
+  [`go/testdata/skip.json`](../../go/testdata/skip.json)), not here. A skip list can only shrink, and all
   four are empty today.
 
 ## Running the fixtures
@@ -114,6 +119,7 @@ pnpm conformance
 
 # after pnpm build: the complete output of all four ports, compared
 node scripts/compare-ports.mjs
+node scripts/fuzz-ports.mjs        # the same diff on random input
 
 # schema and repo-wide unique ids, for every fixture file
 pnpm --filter @trackparse/fixture-gen validate
@@ -122,5 +128,6 @@ pnpm --filter @trackparse/fixture-gen validate
 ## Changing expectations
 
 Any change to an existing `expected` value is a behaviour change. Commit it as a `feat` (conventional
-commits); release-please then bumps the spec minor version (0.x) and writes the changelog. See
-[AGENTS.md](../../AGENTS.md#versioning-and-release).
+commits); release-please then bumps the spec minor version (0.x) and writes the
+[changelog](../CHANGELOG.md). See [AGENTS.md](../../AGENTS.md#versioning-and-release) and
+[Contributing](https://4matic.github.io/trackparse/project/contributing/).
