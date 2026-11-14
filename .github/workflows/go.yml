@@ -44,9 +44,19 @@ jobs:
         with:
           go-version: ${{ matrix.go }}
           cache: false
+      - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4.4.0
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 24
+          cache: pnpm
+      # The artist-side tests read testdata/artist_cases.json, which is too big to commit (it
+      # would ship in the module zip): write it from the built JS package.
+      - name: Artist cases from the JS package
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm --filter trackparse build
+          node go/scripts/dump_artist_cases.mjs
+        working-directory: .
       - name: Data codegen is up to date
         run: node scripts/gen_data.mjs --check
       - name: Unicode codegen is up to date
@@ -71,6 +81,14 @@ jobs:
         run: "! grep -q '^require' go.mod"
       # Every shared fixture, the primitives and the API tests.
       - run: go test -race ./...
+        env:
+          TRACKPARSE_REQUIRE_ARTIST_CASES: "1"
+      # The committed Unicode sample is small; this compares every code point and more with Node.
+      - if: matrix.go == 'stable'
+        name: Full Unicode check against Node
+        run: go test -run '^TestUnicodeFull$' -count=1 .
+        env:
+          TRACKPARSE_UNICODE_FULL: "1"
 
   # Every fixture input through the built JS package and the Go module: full outputs must match.
   compare:

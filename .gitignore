@@ -21,6 +21,8 @@ target/
 
 # Go (test binaries from -cpuprofile / -c, fuzz caches)
 *.test
+# Go: written by go/scripts/dump_artist_cases.mjs from js/dist, too big for the module zip
+go/testdata/artist_cases.json
 
 # Editors / OS
 .DS_Store

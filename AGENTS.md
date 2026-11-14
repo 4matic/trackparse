@@ -133,8 +133,10 @@ go/                       Go module `github.com/4matic/trackparse/go`, package `
   unicode_gen.go          GENERATED from Node: L, Lu, the lowercase map, combining class ranks,
                           composition and decomposition tables (never edit)
   scripts/gen_data.mjs    codegen for data_gen.go (--check for CI)
-  scripts/gen_unicode.mjs codegen for unicode_gen.go and testdata/unicode/ (--check for CI)
-  scripts/dump_artist_cases.mjs  JS values for the artist-side unit tests, into testdata/
+  scripts/gen_unicode.mjs codegen for unicode_gen.go and the committed sample testdata/unicode/
+                          (under 300 KB, it ships in the module zip; --check for CI)
+  scripts/dump_artist_cases.mjs  JS values for the artist-side unit tests, into
+                          testdata/artist_cases.json (git-ignored, written on demand)
   internal/cmd/dump/      Go side of compare-ports (JSONL in, JSON out, through internal/wire);
                           go run -tags trackparse_wire ./internal/cmd/dump
   internal/wire/          the JSON door's package
@@ -145,7 +147,8 @@ go/                       Go module `github.com/4matic/trackparse/go`, package `
                           example_test.go (the pkg.go.dev examples, checked by go test),
                           fuzz_test.go (fuzz targets seeded from the fixture inputs), unit tests per area
   testdata/               skip.json (only ever shrinks), unicode/ (cases dumped from Node),
-                          artist_cases.json (from dump_artist_cases.mjs)
+                          artist_cases.json (git-ignored: dump_artist_cases.mjs writes it; the
+                          tests skip without it, CI writes it and requires it)
 site/                     documentation site + playground (Astro + Starlight, GitHub Pages)
   astro.config.mjs        base /trackparse, sidebar
   src/content/docs/       the pages (Markdown/MDX, JS + Python + Rust + Go tabs on every example);
@@ -311,7 +314,8 @@ Go (run inside `go/`; Go 1.22 or newer, Node for the codegen):
 | `gofmt -l .` · `go vet ./...` · `go run honnef.co/go/tools/cmd/staticcheck@2026.2.2 ./...` | Format check (must print nothing) and lint; CI runs vet and staticcheck again with `-tags trackparse_wire` |
 | `go run -tags trackparse_wire ./internal/cmd/dump < cases.jsonl` | The JSON door on JSONL (what compare-ports and fuzz-ports run); without the tag it stops with a message |
 | `go test -run '^$' -fuzz '^FuzzParse$' -fuzztime 60s` | Fuzz one target (`go test -list Fuzz` lists them: Parse, ParseArtists, Format, ParseTracklist, ApplyEdits, Run); a failing input lands in `testdata/fuzz/` |
-| `TRACKPARSE_UNICODE_FULL=1 go test -run TestUnicodeFull` | The full NFC/NFD and lowercase sweep against Node (slow) |
+| `pnpm --filter trackparse build && node scripts/dump_artist_cases.mjs` | Write `testdata/artist_cases.json` (2.3 MB, git-ignored) for the artist-side tests; without it they skip, and `TRACKPARSE_REQUIRE_ARTIST_CASES=1` (set in CI) makes that a failure |
+| `TRACKPARSE_UNICODE_FULL=1 go test -run TestUnicodeFull` | The full NFC/NFD and lowercase sweep against Node (about 20 s; CI runs it on stable). The committed sample in `testdata/unicode/` is a small subset |
 
 Cross-port check, from the repo root (needs `uv`, `cargo` and `go`):
 

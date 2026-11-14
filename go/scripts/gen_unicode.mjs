@@ -315,13 +315,17 @@ function* cases(t, full) {
   if (full) {
     for (const cp of scalars()) yield caseLine("single", chr(cp), true);
   } else {
-    const set = new Set([...decompCps, ...marks, ...lowerCps, ...n.pairs.map((p) => p[1])]);
+    // The committed sample is shipped in the module zip, so it stays small (under 300 KB): every
+    // range boundary of the tables, and every SAMPLE-th entry of the per-code-point lists.
+    const SAMPLE = 8;
+    const every = (list) => list.filter((_, i) => i % SAMPLE === 0);
+    const set = new Set([...every(decompCps), ...every(marks), ...every(lowerCps), ...every(n.pairs.map((p) => p[1]))]);
     for (const [a, b] of [...t.letter, ...t.upper, ...n.nfcNo, ...t.cased, ...t.ignorable]) {
       set.add(a);
       set.add(b);
     }
-    for (const cp of scalars()) if (cp % 499 === 0) set.add(cp);
-    for (let cp = S_BASE; cp < S_BASE + S_COUNT; cp += 97) set.add(cp);
+    for (const cp of scalars()) if (cp % 4999 === 0) set.add(cp);
+    for (let cp = S_BASE; cp < S_BASE + S_COUNT; cp += 997) set.add(cp);
     for (const cp of [...set].sort((a, b) => a - b)) if (!isSurrogate(cp)) yield caseLine("single", chr(cp), true);
   }
 
@@ -337,20 +341,21 @@ function* cases(t, full) {
       }
     }
   } else {
-    for (let i = 0; i < 3000; i++) yield caseLine("pair+base", pick(bases) + chr(pick(marks)) + chr(pick(marks)));
+    for (let i = 0; i < 500; i++) yield caseLine("pair+base", pick(bases) + chr(pick(marks)) + chr(pick(marks)));
   }
 
   // Composition: every pair, blocked and unblocked by a mark in between, and the composite plus
   // marks.
-  for (const [a, b, c] of n.pairs) {
-    yield caseLine("compose", chr(a) + chr(b));
-    yield caseLine("compose", chr(a) + chr(pick(marks)) + chr(b));
-    yield caseLine("compose", chr(c) + chr(pick(marks)));
+  // (The sample takes one of the three forms per pair, in turn.)
+  for (const [i, [a, b, c]] of n.pairs.entries()) {
+    if (full || i % 3 === 0) yield caseLine("compose", chr(a) + chr(b));
+    if (full || i % 3 === 1) yield caseLine("compose", chr(a) + chr(pick(marks)) + chr(b));
+    if (full || i % 3 === 2) yield caseLine("compose", chr(c) + chr(pick(marks)));
   }
 
   // Starter + mark + mark triples (starters that decompose or compose are the interesting ones).
   const starters = [...decompCps.filter((cp) => !n.nfcNo.some(([lo, hi]) => cp >= lo && cp <= hi)), ...n.pairs.map((p) => p[0])];
-  const triples = full ? 200000 : 2000;
+  const triples = full ? 200000 : 400;
   for (let i = 0; i < triples; i++) yield caseLine("triple", chr(pick(starters)) + chr(pick(marks)) + chr(pick(marks)));
 
   // Hangul: L+V, LV+T for the whole conjoining jamo blocks, syllables followed by T, and longer
@@ -372,11 +377,11 @@ function* cases(t, full) {
     for (const s of lv) for (const t2 of T) yield caseLine("hangul", chr(s) + chr(t2));
     for (let s = S_BASE; s < S_BASE + S_COUNT; s++) yield caseLine("hangul", chr(s) + chr(pick(T)));
   } else {
-    for (let i = 0; i < 800; i++) yield caseLine("hangul", chr(pick(L)) + chr(pick(V)));
-    for (let i = 0; i < 800; i++) yield caseLine("hangul", chr(pick(lv)) + chr(pick(T)));
+    for (let i = 0; i < 150; i++) yield caseLine("hangul", chr(pick(L)) + chr(pick(V)));
+    for (let i = 0; i < 150; i++) yield caseLine("hangul", chr(pick(lv)) + chr(pick(T)));
   }
   const jamo = [...L, ...V, ...T, 0x302e, 0x0301];
-  for (let i = 0; i < (full ? 50000 : 500); i++) {
+  for (let i = 0; i < (full ? 50000 : 100); i++) {
     let s = "";
     for (let k = int(2, 6); k > 0; k--) s += chr(pick(jamo));
     yield caseLine("hangul", s);
@@ -393,7 +398,7 @@ function* cases(t, full) {
   ];
   for (const s of sigma) yield caseLine("sigma", s);
   const sigmaPool = ["\u03a3", "\u03a3", "A", "a", "1", " ", ".", "'", ":", "\u0301", "\u0345", "\u02b0", "\u00ad", "\u24b6", "\u0130", "\u200d"];
-  for (let i = 0; i < (full ? 50000 : 1000); i++) {
+  for (let i = 0; i < (full ? 50000 : 300); i++) {
     let s = "";
     for (let k = int(1, 8); k > 0; k--) s += pick(sigmaPool);
     yield caseLine("sigma", s);
@@ -412,7 +417,7 @@ function* cases(t, full) {
     span(0x4e00, 0x9fff), span(0xf900, 0xfaff), span(0x2f800, 0x2fa1f), span(0x3040, 0x30ff),
     () => pick(decompCps), () => pick(lowerCps), () => pick(starters),
   ];
-  for (let i = 0; i < (full ? 200000 : 3000); i++) {
+  for (let i = 0; i < (full ? 200000 : 300); i++) {
     const cpsOut = [];
     for (let k = int(1, 24); k > 0; k--) {
       const cp = pick(pools)();
