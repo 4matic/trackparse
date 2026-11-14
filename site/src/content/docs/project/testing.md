@@ -54,10 +54,10 @@ Each port throws thousands of random strings at the parser to check the
 [fast-check](https://github.com/dubzzz/fast-check) and the Python suite uses
 [Hypothesis](https://hypothesis.works). The Rust and Go suites each have a small seeded generator
 of their own, so neither needs an extra test dependency. The Go module also has fuzz targets for
-`Parse`, `ParseArtists`, `Format`, `ParseTracklist`, `ApplyEdits` and `Track.UnmarshalJSON`
-(`go test -fuzz`) that run the same checks on whatever the fuzzer finds, and a test that calls
-the parser, the tracklist functions and the edits from 16 goroutines at once under the race
-detector.
+`Parse`, `ParseArtists`, `Format`, `ParseTracklist`, `ApplyEdits`, `Track.UnmarshalJSON` and the
+internal pipeline (`go test -fuzz`) that run the same checks on whatever the fuzzer finds, and a
+test that calls the parser, the tracklist functions and the edits from 16 goroutines at once under
+the race detector.
 
 - it never throws or panics, on any input, in any mode;
 - a 10,000-code-point input finishes inside a ceiling: 1 s in JavaScript and Python, 2 s in Rust
@@ -79,7 +79,7 @@ For tracklists, on random multi-line text and random edit lists:
 - `applyEdits(t, [])` returns `t`, and an edit never touches a line it doesn't name;
 - shifting forward and back restores the text, unless something was clamped or upgraded;
 - 10,000 lines parse inside a ceiling each suite sets for itself: 3 s in JavaScript (it takes
-  about 0.6 s), 15 s in Python, 3 s in an optimized Rust build, 3 s in Go (it takes about 0.35 s);
+  about 0.8 s), 15 s in Python, 3 s in an optimized Rust build, 3 s in Go (it takes about 0.35 s);
 - Markdown emphasis around a time or a track line gives the same kind, time and track as the plain
   line.
 
@@ -109,8 +109,8 @@ Every push runs one workflow per port, plus one for the spec:
 | [`js.yml`](https://github.com/4matic/trackparse/blob/main/.github/workflows/js.yml) | The full suite on Node 22 and 24, and every fixture against the built package on Node 18 and 20 |
 | [`python.yml`](https://github.com/4matic/trackparse/blob/main/.github/workflows/python.yml) | ruff, `mypy --strict` and pytest on Python 3.9 to 3.14, and every fixture against the installed wheel |
 | [`rust.yml`](https://github.com/4matic/trackparse/blob/main/.github/workflows/rust.yml) | `cargo test --locked` on stable and on Rust 1.74. On stable only: rustfmt, clippy, the tests with `--all-features` and a publish dry run. Also the Rust output against the built JavaScript package on every fixture |
-| [`go.yml`](https://github.com/4matic/trackparse/blob/main/.github/workflows/go.yml) | `go vet` and `go test -race` on Go 1.22 and on stable, with the artist-side test data written from the built JavaScript package. On stable only: gofmt, staticcheck and the full Unicode check against Node. Also checks that the generated data and Unicode tables are current, that `go.mod` has no dependencies and that no unstable `sort.Slice` is used, and compares the Go output with the built JavaScript package on every fixture |
-| [`spec.yml`](https://github.com/4matic/trackparse/blob/main/.github/workflows/spec.yml) | Fixture validation, stale generated files, the generator's own tests, and that the four version numbers match |
+| [`go.yml`](https://github.com/4matic/trackparse/blob/main/.github/workflows/go.yml) | `go vet` and `go test -race` on Go 1.22 and on stable, with the artist-side test data written from the built JavaScript package. On stable only: gofmt, staticcheck and the full Unicode check against Node. Also checks that the generated data and Unicode tables are current, that `go.mod` has no dependencies and that no unstable `sort.Slice` is used, and compares the Go output with the built JavaScript package on every fixture. A separate job builds and tests `go/` on its own, as the module zip holds it. A weekly scheduled run fuzzes every fuzz target for three to five minutes |
+| [`spec.yml`](https://github.com/4matic/trackparse/blob/main/.github/workflows/spec.yml) | Fixture validation, stale generated files, the generator's own tests, and that the version numbers of the spec and the four packages match |
 
 ## Run it yourself
 

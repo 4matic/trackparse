@@ -243,7 +243,9 @@ delimiter is `-` (`VersionDelimiter::Dash` in Rust, `trackparse.DelimiterDash` i
 ```js
 const t = parse("The Beatles - Hey Jude - Remastered 2015");
 t.title;        // 'Hey Jude'
-t.versions[0];  // { type: 'remaster', raw: 'Remastered 2015', year: 2015, delimiter: '-', … }
+t.versions[0];
+// { type: 'remaster', raw: 'Remastered 2015', artists: [], modifiers: [],
+//   descriptor: null, year: 2015, unknownArtist: false, delimiter: '-' }
 ```
 
 </TabItem>
@@ -252,7 +254,9 @@ t.versions[0];  // { type: 'remaster', raw: 'Remastered 2015', year: 2015, delim
 ```python
 t = parse("The Beatles - Hey Jude - Remastered 2015")
 t.title        # 'Hey Jude'
-t.versions[0]  # Version(type='remaster', raw='Remastered 2015', ..., year=2015, ..., delimiter='-')
+t.versions[0]
+# Version(type='remaster', raw='Remastered 2015', artists=(), modifiers=(),
+#         descriptor=None, year=2015, unknown_artist=False, delimiter='-')
 ```
 
 </TabItem>
@@ -261,7 +265,9 @@ t.versions[0]  # Version(type='remaster', raw='Remastered 2015', ..., year=2015,
 ```rust
 let t = parse("The Beatles - Hey Jude - Remastered 2015");
 &t.title;        // "Hey Jude"
-&t.versions[0];  // Version { version_type: Remaster, raw: "Remastered 2015", year: Some(2015), delimiter: Dash, .. }
+&t.versions[0];
+// Version { version_type: Remaster, raw: "Remastered 2015", artists: [], modifiers: [],
+//           descriptor: None, year: Some(2015), unknown_artist: false, delimiter: Dash }
 ```
 
 </TabItem>

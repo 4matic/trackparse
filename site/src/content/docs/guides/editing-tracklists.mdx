@@ -52,6 +52,7 @@ suggested fix, then push everything from line 5 on back by 45 seconds:
 <TabItem label="JavaScript">
 
 ```js
+// text is the list from the previous page.
 const fix = parseTracklist(text).warnings[1].suggestion;   // { line: 8, raw: '01:11:02', seconds: 4262 }
 
 const result = applyEdits(text, [
@@ -75,6 +76,7 @@ result.text.split("\r\n").slice(4);
 <TabItem label="Python">
 
 ```python
+# text is the list from the previous page.
 fix = parse_tracklist(text).warnings[1].suggestion   # Suggestion(line=8, raw='01:11:02', seconds=4262)
 
 result = apply_edits(text, [
@@ -96,13 +98,14 @@ result.text.split("\r\n")[4:]
 <TabItem label="Rust">
 
 ```rust
+// text is the list from the previous page.
 let fix = parse_tracklist(&text).warnings[1].suggestion.clone().unwrap();
 // Suggestion { line: 8, raw: "01:11:02", seconds: 4262.0 }
 
 let result = apply_edits(&text, &[Edit::set_time(fix.line, fix.seconds), Edit::shift_from(45.0, 5)]);
 
-result.changed;   // [5, 6, 7, 8, 9]
-result.warnings;  // [EditWarning { code: StyleUpgraded, edit: 1, line: Some(5) }]
+&result.changed;   // [5, 6, 7, 8, 9]
+&result.warnings;  // [EditWarning { code: StyleUpgraded, edit: 1, line: Some(5) }]
 result.text.split("\r\n").skip(4).collect::<Vec<_>>();
 // [
 //     "01:00:16 Alix Perez - Fade Away",
@@ -174,7 +177,7 @@ and Go have a constructor for each:
 | `{ op: "shift", seconds, from }` | `Edit::shift_from(seconds, from)` | `ShiftFrom(seconds, from)` | The same, for every timed line from line `from` on |
 | `{ op: "shift", seconds, lines }` | `Edit::shift_lines(seconds, lines)` | `ShiftLines(seconds, lines...)` | The same, for the listed lines only |
 | `{ op: "sort-by-time" }` | `Edit::sort_by_time()` | `SortByTime()` | Reorder by time. Untimed lines move with the timed line above them, and lines before the first time stay on top |
-| `{ op: "set-rest", line, rest }` | `Edit::set_rest(line, rest)` | `SetRest(line, rest)` | Replace everything after the time, for example with `format(track)` (`format_track`) |
+| `{ op: "set-rest", line, rest }` | `Edit::set_rest(line, rest)` | `SetRest(line, rest)` | Replace everything after the time, for example with `format(track)` (`format_track`, Go `Format`) |
 | `{ op: "insert", after, text }` | `Edit::insert(after, text)` | `Insert(after, text)` | Insert a line after line `after` (`0` puts it at the top). It gets the text's usual line ending |
 | `{ op: "delete", line }` | `Edit::delete(line)` | `Delete(line)` | Remove a line |
 
@@ -245,8 +248,8 @@ let tidy = apply_edits(messy, &[
     Edit::delete(4),
 ]);
 
-tidy.text;      // "00:00 Noisia - Stigma\n04:10 Mefjus feat. Phace - Sleepless\n06:45 Phace - Psycho"
-tidy.changed;   // [1, 2, 3]
+&tidy.text;     // "00:00 Noisia - Stigma\n04:10 Mefjus feat. Phace - Sleepless\n06:45 Phace - Psycho"
+&tidy.changed;  // [1, 2, 3]
 ```
 
 </TabItem>
@@ -320,9 +323,9 @@ result.warnings  # (EditWarning(code='style-upgraded', edit=0, line=2),)
 let text = "**[**52:47**] Mefjus - Bandwagon**\n**[**59:31**] Alix Perez - Fade Away**";
 let result = apply_edits(text, &[Edit::shift(45.0)]);
 
-result.text;
+&result.text;
 // "**[**53:32**] Mefjus - Bandwagon**\n**[**01:00:16**] Alix Perez - Fade Away**"
-result.warnings;  // [EditWarning { code: StyleUpgraded, edit: 0, line: Some(2) }]
+&result.warnings;  // [EditWarning { code: StyleUpgraded, edit: 0, line: Some(2) }]
 ```
 
 </TabItem>

@@ -62,7 +62,7 @@ let options = ParseOptions::new()
     .known_artists(["Chase & Status"])
     .uploader("Daft Punk - Topic")
     .split_and(SplitAnd::Never);
-parse_with(input, &options);
+&parse_with(input, &options).artists[0].name;   // "Chase & Status"
 ```
 
 </TabItem>
@@ -113,8 +113,8 @@ and `SplitAnd::Auto`, `Always` or `Never`. The option structs are `#[non_exhaust
 from `ParseOptions::new()` (or `default()`) and chain setters. The fields are public and can also
 be assigned.
 
-In Go the values are typed strings with constants: `trackparse.ModeClean`, `ModeYouTube`,
-`ModeFilename` or `ModeTracklist`, and `SplitAndAuto`, `SplitAndAlways` or `SplitAndNever`. The zero
+In Go the values are typed strings with constants: `trackparse.ModeAuto`, `ModeClean`,
+`ModeYouTube`, `ModeFilename` or `ModeTracklist`, and `SplitAndAuto`, `SplitAndAlways` or `SplitAndNever`. The zero
 value of `ParseOptions` is the defaults: an empty `Mode` is auto, an empty `SplitAnd` is auto and an
 empty `Uploader` is none. A string that is not one of the constants behaves as an unknown value does
 in JavaScript.
@@ -303,8 +303,8 @@ parse("Artist - Song [Some Label Rip]").title;   // "Song [Some Label Rip]"
 
 let keywords = KeywordOptions::new().junk("some label rip", JunkKind::Label);
 let r = parse_with("Artist - Song [Some Label Rip]", &ParseOptions::new().keywords(keywords));
-r.title;   // "Song"
-r.junk;    // [Junk { raw: "Some Label Rip", kind: Label }]
+&r.title;   // "Song"
+&r.junk;    // [Junk { raw: "Some Label Rip", kind: Label }]
 ```
 
 </TabItem>
@@ -326,7 +326,8 @@ fmt.Printf("%+v\n", r.Junk)   // [{Raw:Some Label Rip Kind:label}]
 
 ## Tracklist options
 
-`parseTracklist` and `applyEdits` (`parse_tracklist` and `apply_edits` in Python and Rust) take
+`parseTracklist` and `applyEdits` (`parse_tracklist` and `apply_edits` in Python and Rust,
+`ParseTracklist` and `ApplyEdits` in Go) take
 `mode` (default `"tracklist"`), `knownArtists`, `splitAnd` and `keywords`, plus two of their own.
 In Rust they are the setters of `TracklistOptions`, passed to `parse_tracklist_with` and
 `apply_edits_with`. In Go they are the fields of the `TracklistOptions` struct, passed to

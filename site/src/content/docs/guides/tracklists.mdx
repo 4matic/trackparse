@@ -52,7 +52,8 @@ in Rust the module `trackparse::tracklist`. Go has no separate entry: `trackpars
 and `trackparse.ApplyEdits` are in the one package.
 
 Two things differ in Rust. Seconds are `f64`, since a time can carry a fraction, so `Debug` prints
-`3167.0` where JavaScript and Python print `3167`. `to_json()` writes `3167`, like the other two.
+`3167.0` where JavaScript and Python print `3167`. `to_json()` writes `3167`, as JavaScript and
+Python do.
 And `entry.time` and `entry.track` are `Option`s, because a header or a blank line has neither.
 
 Go is like Rust here. `Seconds` is a `float64`, which `fmt` prints as `3167`, and `json.Marshal`
@@ -155,7 +156,7 @@ track.versions.iter().map(|v| format!("{} by {}", v.version_type, v.artists[0].n
 // ["remix by Phace"]
 list.entries[3].track.as_ref().unwrap().flags.unknown_title;   // true (the ID)
 
-list.stats;
+&list.stats;
 // Stats { lines: 9, tracks: 7, markers: 1, timed: 8, first_time: Some(2900.0), last_time: Some(4536.0) }
 ```
 
@@ -293,8 +294,8 @@ Emphasis in the rest of the line stays in `rest`, but the parser reads the text 
 <TabItem label="JavaScript">
 
 ```js
-const list = parseTracklist("**[**14:21**] 10. Nitepunk - ID**\n* 18:02 Noisia - _Stigma_");
-const [a, b] = list.entries;
+const md = parseTracklist("**[**14:21**] 10. Nitepunk - ID**\n* 18:02 Noisia - _Stigma_");
+const [a, b] = md.entries;
 
 a.parts;   // { lead: '**[**', time: '14:21', gap: '**] ', rest: '10. Nitepunk - ID**' }
 a.track.artists.map((x) => x.name);   // [ 'Nitepunk' ]
@@ -307,8 +308,8 @@ b.track.title;                        // 'Stigma'
 <TabItem label="Python">
 
 ```python
-tl = parse_tracklist("**[**14:21**] 10. Nitepunk - ID**\n* 18:02 Noisia - _Stigma_")
-a, b = tl.entries
+md = parse_tracklist("**[**14:21**] 10. Nitepunk - ID**\n* 18:02 Noisia - _Stigma_")
+a, b = md.entries
 
 a.parts   # Parts(lead='**[**', time='14:21', gap='**] ', rest='10. Nitepunk - ID**')
 [x.name for x in a.track.artists]   # ['Nitepunk']
@@ -321,8 +322,8 @@ b.track.title                       # 'Stigma'
 <TabItem label="Rust">
 
 ```rust
-let list = parse_tracklist("**[**14:21**] 10. Nitepunk - ID**\n* 18:02 Noisia - _Stigma_");
-let (a, b) = (&list.entries[0], &list.entries[1]);
+let md = parse_tracklist("**[**14:21**] 10. Nitepunk - ID**\n* 18:02 Noisia - _Stigma_");
+let (a, b) = (&md.entries[0], &md.entries[1]);
 
 &a.parts;   // Parts { lead: "**[**", time: "14:21", gap: "**] ", rest: "10. Nitepunk - ID**" }
 let track = a.track.as_ref().unwrap();
@@ -372,43 +373,43 @@ doesn't warn `time-missing`, and it doesn't count as a neighbour for bare track 
 <TabItem label="JavaScript">
 
 ```js
-const list = parseTracklist("00:00 Noisia - Stigma\nw/ Phace - Psycho (Acapella)\n03:10 Mefjus - Sleepless");
-const e = list.entries[1];
+const layers = parseTracklist("00:00 Noisia - Stigma\nw/ Phace - Psycho (Acapella)\n03:10 Mefjus - Sleepless");
+const e = layers.entries[1];
 
 e.layered;                          // true
 e.time;                             // null
 e.track.artists.map((a) => a.name); // [ 'Phace' ]
 e.track.title;                      // 'Psycho'
-list.warnings;                      // []
+layers.warnings;                    // []
 ```
 
 </TabItem>
 <TabItem label="Python">
 
 ```python
-tl = parse_tracklist("00:00 Noisia - Stigma\nw/ Phace - Psycho (Acapella)\n03:10 Mefjus - Sleepless")
-e = tl.entries[1]
+layers = parse_tracklist("00:00 Noisia - Stigma\nw/ Phace - Psycho (Acapella)\n03:10 Mefjus - Sleepless")
+e = layers.entries[1]
 
 e.layered                          # True
 e.time                             # None
 [a.name for a in e.track.artists]  # ['Phace']
 e.track.title                      # 'Psycho'
-tl.warnings                        # ()
+layers.warnings                    # ()
 ```
 
 </TabItem>
 <TabItem label="Rust">
 
 ```rust
-let list = parse_tracklist("00:00 Noisia - Stigma\nw/ Phace - Psycho (Acapella)\n03:10 Mefjus - Sleepless");
-let e = &list.entries[1];
+let layers = parse_tracklist("00:00 Noisia - Stigma\nw/ Phace - Psycho (Acapella)\n03:10 Mefjus - Sleepless");
+let e = &layers.entries[1];
 
 e.layered;                                                   // true
 &e.time;                                                     // None
 let track = e.track.as_ref().unwrap();
 track.artists.iter().map(|a| &a.name).collect::<Vec<_>>();   // ["Phace"]
 &track.title;                                                // "Psycho"
-&list.warnings;                                              // []
+&layers.warnings;                                            // []
 ```
 
 </TabItem>
@@ -457,7 +458,8 @@ enum `EntryKind` (`EntryKind::Track`, `EntryKind::Marker` and so on), in Go the 
 ## Options
 
 `parseTracklist` takes the `parse` options `mode` (default `"tracklist"`), `knownArtists`, `splitAnd`
-and `keywords`, plus two of its own. `audioSeconds` is the length of the audio, and turns on the check for times after the end.
+and `keywords`, plus two of its own (snake_case keyword arguments in Python, setters of
+`TracklistOptions` in Rust, fields of `TracklistOptions` in Go). `audioSeconds` is the length of the audio, and turns on the check for times after the end.
 `markerWords` adds marker words to the built-in ones:
 
 <Tabs syncKey="lang">
@@ -499,7 +501,7 @@ let options = TracklistOptions::new().audio_seconds(3600.0).marker_words(["drop"
 let mix = parse_tracklist_with("00:00 Intro\n03:00 Drop\n1:02:03 Noisia - Stigma", &options);
 
 mix.entries.iter().map(|e| e.kind).collect::<Vec<_>>();   // [Marker, Marker, Track]
-mix.warnings;
+&mix.warnings;
 // [TracklistWarning { code: TimeAfterAudioEnd, line: 3, severity: Warning, suggestion: None }]
 ```
 
@@ -557,7 +559,7 @@ tl.warnings
 <TabItem label="Rust">
 
 ```rust
-parse_tracklist(&text).warnings;
+&list.warnings;
 // [TracklistWarning { code: NoStartAtZero, line: 2, severity: Info, suggestion: None },
 //  TracklistWarning { code: TimeOutOfOrder, line: 8, severity: Warning,
 //                     suggestion: Some(Suggestion { line: 8, raw: "01:11:02", seconds: 4262.0 }) }]

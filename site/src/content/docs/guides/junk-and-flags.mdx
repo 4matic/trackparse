@@ -40,8 +40,8 @@ t.junk   # (Junk(raw='Official Music Video', kind='video'), Junk(raw='HD', kind=
 use trackparse::parse;
 
 let t = parse("Daft Punk - One More Time (Official Music Video) [HD]");
-t.title;  // "One More Time"
-t.junk;   // [Junk { raw: "Official Music Video", kind: Video }, Junk { raw: "HD", kind: Quality }]
+&t.title;  // "One More Time"
+&t.junk;   // [Junk { raw: "Official Music Video", kind: Video }, Junk { raw: "HD", kind: Quality }]
 ```
 
 </TabItem>
@@ -194,8 +194,8 @@ t.year   # 2015
 
 ```rust
 let t = parse("Noisia - Stigma (2015)");
-t.title;  // "Stigma"
-t.year;   // Some(2015)
+&t.title;  // "Stigma"
+t.year;    // Some(2015)
 ```
 
 </TabItem>

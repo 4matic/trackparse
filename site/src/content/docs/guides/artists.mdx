@@ -71,8 +71,8 @@ they produce is still primary.
 ```js
 import { parse, parseArtists } from "trackparse";
 
-parse("Skrillex & Diplo x Justin Bieber - Where Are Ü Now").artists;
-// Skrillex (joiner null), Diplo (joiner '&'), Justin Bieber (joiner 'x'), all primary
+parse("Skrillex & Diplo x Justin Bieber - Where Are Ü Now").artists.map((a) => [a.name, a.joiner, a.role]);
+// [ [ 'Skrillex', null, 'primary' ], [ 'Diplo', '&', 'primary' ], [ 'Justin Bieber', 'x', 'primary' ] ]
 
 parse("Kanye West vs. Daft Punk - Stronger").artists.map((a) => a.name);
 // [ 'Kanye West', 'Daft Punk' ]
@@ -84,8 +84,8 @@ parse("Kanye West vs. Daft Punk - Stronger").artists.map((a) => a.name);
 ```python
 from trackparse import parse, parse_artists
 
-parse("Skrillex & Diplo x Justin Bieber - Where Are Ü Now").artists
-# Skrillex (joiner None), Diplo (joiner '&'), Justin Bieber (joiner 'x'), all primary
+[(a.name, a.joiner, a.role) for a in parse("Skrillex & Diplo x Justin Bieber - Where Are Ü Now").artists]
+# [('Skrillex', None, 'primary'), ('Diplo', '&', 'primary'), ('Justin Bieber', 'x', 'primary')]
 
 [a.name for a in parse("Kanye West vs. Daft Punk - Stronger").artists]
 # ['Kanye West', 'Daft Punk']
@@ -97,8 +97,9 @@ parse("Skrillex & Diplo x Justin Bieber - Where Are Ü Now").artists
 ```rust
 use trackparse::{parse, parse_artists, parse_artists_with, parse_with, ParseOptions, SplitAnd};
 
-parse("Skrillex & Diplo x Justin Bieber - Where Are Ü Now").artists;
-// Skrillex (joiner None), Diplo (joiner Some("&")), Justin Bieber (joiner Some("x")), all Primary
+parse("Skrillex & Diplo x Justin Bieber - Where Are Ü Now")
+    .artists.iter().map(|a| (&a.name, &a.joiner, a.role)).collect::<Vec<_>>();
+// [("Skrillex", None, Primary), ("Diplo", Some("&"), Primary), ("Justin Bieber", Some("x"), Primary)]
 
 parse("Kanye West vs. Daft Punk - Stronger").artists.iter().map(|a| &a.name).collect::<Vec<_>>();
 // ["Kanye West", "Daft Punk"]
@@ -265,36 +266,53 @@ the second name the role `featured`:
 <TabItem label="JavaScript">
 
 ```js
-parse("Noisia feat. Foreign Beggars - Shellshock");     // source 'artist'
-parse("Noisia - Shellshock ft. Foreign Beggars");       // source 'title'
-parse("Silk City - Electricity (with Dua Lipa)");       // source 'title'
+parse("Noisia feat. Foreign Beggars - Shellshock").artists[1];
+// { name: 'Foreign Beggars', role: 'featured', joiner: 'feat.', source: 'artist' }
+parse("Noisia - Shellshock ft. Foreign Beggars").artists[1];
+// { name: 'Foreign Beggars', role: 'featured', joiner: 'ft.', source: 'title' }
+parse("Silk City - Electricity (with Dua Lipa)").artists[1];
+// { name: 'Dua Lipa', role: 'featured', joiner: 'with', source: 'title' }
 ```
 
 </TabItem>
 <TabItem label="Python">
 
 ```python
-parse("Noisia feat. Foreign Beggars - Shellshock")     # source 'artist'
-parse("Noisia - Shellshock ft. Foreign Beggars")       # source 'title'
-parse("Silk City - Electricity (with Dua Lipa)")       # source 'title'
+parse("Noisia feat. Foreign Beggars - Shellshock").artists[1]
+# Artist(name='Foreign Beggars', role='featured', joiner='feat.', source='artist')
+parse("Noisia - Shellshock ft. Foreign Beggars").artists[1]
+# Artist(name='Foreign Beggars', role='featured', joiner='ft.', source='title')
+parse("Silk City - Electricity (with Dua Lipa)").artists[1]
+# Artist(name='Dua Lipa', role='featured', joiner='with', source='title')
 ```
 
 </TabItem>
 <TabItem label="Rust">
 
 ```rust
-parse("Noisia feat. Foreign Beggars - Shellshock");     // source Artist
-parse("Noisia - Shellshock ft. Foreign Beggars");       // source Title
-parse("Silk City - Electricity (with Dua Lipa)");       // source Title
+&parse("Noisia feat. Foreign Beggars - Shellshock").artists[1];
+// Artist { name: "Foreign Beggars", role: Featured, joiner: Some("feat."), source: Artist }
+&parse("Noisia - Shellshock ft. Foreign Beggars").artists[1];
+// Artist { name: "Foreign Beggars", role: Featured, joiner: Some("ft."), source: Title }
+&parse("Silk City - Electricity (with Dua Lipa)").artists[1];
+// Artist { name: "Dua Lipa", role: Featured, joiner: Some("with"), source: Title }
 ```
 
 </TabItem>
 <TabItem label="Go">
 
 ```go
-fmt.Println(trackparse.Parse("Noisia feat. Foreign Beggars - Shellshock").Artists[1].Source)   // artist
-fmt.Println(trackparse.Parse("Noisia - Shellshock ft. Foreign Beggars").Artists[1].Source)     // title
-fmt.Println(trackparse.Parse("Silk City - Electricity (with Dua Lipa)").Artists[1].Source)     // title
+for _, s := range []string{
+    "Noisia feat. Foreign Beggars - Shellshock",
+    "Noisia - Shellshock ft. Foreign Beggars",
+    "Silk City - Electricity (with Dua Lipa)",
+} {
+    a := trackparse.Parse(s).Artists[1]
+    fmt.Printf("%q %s %q %s\n", a.Name, a.Role, *a.Joiner, a.Source)
+}
+// "Foreign Beggars" featured "feat." artist
+// "Foreign Beggars" featured "ft." title
+// "Dua Lipa" featured "with" title
 ```
 
 </TabItem>
@@ -479,7 +497,7 @@ t.versions[0].unknown_artist  # True
 
 ```rust
 let t = parse("ID - ID (ID Remix)");
-t.artists;                     // []
+&t.artists;                    // []
 t.flags.unknown_artist;        // true
 t.flags.unknown_title;         // true
 t.versions[0].unknown_artist;  // true

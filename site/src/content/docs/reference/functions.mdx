@@ -106,7 +106,8 @@ for _, a := range trackparse.ParseArtists("Sub Focus, Wilkinson & Dimension feat
 Takes `knownArtists`, `splitAnd` and `keywords` (`known_artists`, `split_and`, `keywords`; in Rust
 through `parse_artists_with`, in Go through `ParseArtistsWith`). Use it for the artist field of ID3 tags or a streaming API, where
 the title is already separate. The result is a list of
-[`Artist`](/trackparse/reference/parse/#artist) values, and the splitting rules are explained in
+[`Artist`](/trackparse/reference/parse/#artist) values (a `list` in Python, a `Vec` in Rust, a slice
+in Go), and the splitting rules are explained in
 [Artists and credits](/trackparse/guides/artists/). In the spec this is
 [R10](/trackparse/reference/spec/#r10-parseartists).
 
@@ -325,7 +326,8 @@ fmt.Println(parser.Parse("Chase & Status x Camo & Krooked - Track (Alix Perez Re
 
 The version of the [spec](/trackparse/reference/spec/) the package implements, as a string (`&str`
 in Rust, the constant `SpecVersion` in Go). The packages and the spec are released together, so it's the same as the package version.
-A parsed tracklist carries it too, as `specVersion` (`spec_version`).
+A parsed tracklist carries it too, as `specVersion` (`spec_version` in Python and Rust,
+`SpecVersion` in Go).
 
 ## See also
 
