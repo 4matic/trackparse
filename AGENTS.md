@@ -103,7 +103,8 @@ rust/                     crates.io package `trackparse` (Rust 1.74+, one depend
   scripts/dump_primitives.mjs  expected R0 primitive values from JS, into tests/data/
   examples/dump.rs        Rust side of compare-ports (JSONL in, JSON out, through wire)
   tests/                  fixtures.rs (every shared fixture + the conformance report), api.rs,
-                          tracklist_api.rs, tracklist_properties.rs (R13.11 invariants), serde.rs,
+                          properties.rs (SPEC invariants), tracklist_api.rs,
+                          tracklist_properties.rs (R13.11 invariants), serde.rs,
                           data/primitives.json (from dump_primitives.mjs), skip.json (only ever shrinks)
 go/                       Go module `github.com/4matic/trackparse/go`, package `trackparse` (Go 1.22+,
                           no dependencies, no unsafe or cgo; a release-please component, tagged
@@ -147,15 +148,20 @@ go/                       Go module `github.com/4matic/trackparse/go`, package `
                           example_test.go (the pkg.go.dev examples, checked by go test),
                           fuzz_test.go (fuzz targets seeded from the fixture inputs),
                           concurrency_test.go (16 goroutines against sequential results, under
-                          -race in CI), unit tests per area
+                          -race in CI), bench_test.go (the time ceilings and the benchmarks),
+                          options_test.go (typed options against the JSON door on every fixture),
+                          race_test.go / norace_test.go (raceEnabled: fewer property cases and
+                          ten times the ceilings under -race), unit tests per area
   testdata/               skip.json (only ever shrinks), unicode/ (cases dumped from Node),
                           artist_cases.json (git-ignored: dump_artist_cases.mjs writes it; the
-                          tests skip without it, CI writes it and requires it)
+                          tests skip without it, CI writes it and requires it), fuzz/ (failing
+                          fuzz inputs land here)
 site/                     documentation site + playground (Astro + Starlight, GitHub Pages)
   astro.config.mjs        base /trackparse, sidebar
   src/content/docs/       the pages (Markdown/MDX, JS + Python + Rust + Go tabs on every example);
                           reference/spec.md is generated from spec/SPEC.md
-  src/components/         HeroDemo, Playground (runs js/ in the browser), Feature, Stats
+  src/components/         HeroDemo, Playground (runs js/ in the browser), Install (the install
+                          switch), Features, Compare, Stats, SocialIcons
   src/lib/                trackview.ts (highlight + field rendering), icons.ts (Lucide SVG strings),
                           lang.ts (one language choice for docs tabs, install switch, playground)
   scripts/sync-spec.mjs   copies spec/SPEC.md into the docs at build time
@@ -172,7 +178,9 @@ scripts/dump_py.py        Python side of compare-ports (JSONL in, to_dict() JSON
                           rust.yml (codegen drift, fmt, clippy, cargo test on stable and 1.74,
                           publish dry run; compare: Rust vs built JS on every fixture),
                           go.yml (codegen drift, gofmt, vet, staticcheck, the sort.Slice and
-                          no-require greps, go test -race on stable and 1.22; compare: Go vs built JS),
+                          no-require greps, go test -race on stable and 1.22, the full Unicode
+                          sweep on stable; compare: Go vs built JS; module-zip: go/ alone, as the
+                          proxy serves it; fuzz: each target, weekly and by hand),
                           spec.yml (fixture validation, generated/codegen drift, generator tests,
                           js/python/rust/go/spec version link), release.yml (release-please + npm,
                           PyPI and crates.io publish, Go tag checks through the module proxy),
@@ -256,8 +264,9 @@ Every port must produce byte-identical output. The full text is SPEC.md R0; in s
 - **Iterate by code point** (R0.5), not UTF-16 unit or byte. No offsets in the output.
 - *Digit* means ASCII `0`–`9` only.
 - **Total** (R0.8): any string returns a ParsedTrack. Never throw or panic, including on bad
-  options. No backtracking blowups: a 10,000-code-point input takes tens of milliseconds in JS and Rust
-  and well under a second in Python (the suites enforce 1 s, Rust 2 s).
+  options. No backtracking blowups: a 10,000-code-point input takes tens of milliseconds at most in
+  JS, Rust and Go and well under a second in Python (the suites enforce 1 s in JS and Python, 2 s
+  in Rust and Go).
 
 ## Commands
 
@@ -492,7 +501,7 @@ Each of these was written wrong at least once and caught in review. Check them w
 | "under 100 ms" for every port | True for JS (10 to 70 ms on 10,000 code points) and Rust (under 20 ms, release build). Python takes 40 to 170 ms. The suites enforce 1 s (JS, Python) and 2 s (Rust). Go: 3 to 7 ms (`go test -bench Parse10k` in `go/`, on an i7-4770S, Go 1.24, with other jobs running; JS on the same inputs 4 to 18 ms), ceiling 2 s. So "at most tens of milliseconds" holds for JS, Rust and Go, not Python. A 10,000-line tracklist: Go 0.33 to 0.38 s, JS 0.8 to 0.9 s. |
 | "identical output for any input" | Identical on every fixture input. The Rust crate takes NFC from `unicode-normalization` (Unicode 18), Node 24 has Unicode 17, so 32 new combining marks can be ordered differently. Link `project/ports/#what-the-rust-port-taught`. |
 | "zero dependencies" for the project | Zero in JS, Python and Go (the Go tables are generated from Node, not taken from `golang.org/x/text`). Rust has one, `unicode-normalization`. |
-| a size in mixed units | Core: about 18 kB gzip. Tracklist entry: about 8.4 KiB (8,607 B), budget 9 KiB. Re-measure with `pnpm --filter trackparse build && pnpm --filter trackparse size`. |
+| a size in mixed units | Core: about 18 kB gzip. Tracklist entry: about 8.4 KiB (8,606 B), budget 9 KiB. Re-measure with `pnpm --filter trackparse build && pnpm --filter trackparse size`. |
 | every suite checks "no word goes missing" | Only `rust/tests/properties.rs` and `go/properties_test.go` have that test today. |
 | "Neuropunk" on the site | "a private corpus of real podcast tracklists". Fixture file names and `source` values keep the name; the site and READMEs don't. |
 
@@ -577,8 +586,10 @@ with the count.
   (`"\r\r\n\n\r"`, insert after 2 gives 4 lines). All ports agree; no fixture pins it yet.
 - Python tracklist types have `to_dict()` but no `from_dict()`; `ParsedTrack` has both.
 - JS and Python do not test invariant 6 ("no word goes missing"); only Rust and Go do.
-- The npm and PyPI publish jobs use actions by tag; the crates.io job pins its auth action by SHA.
-- The playground's Rust snippet is a whole program, the JS and Python ones are bare expressions.
+- The npm, PyPI and crates.io publish jobs use actions by tag (only the crates.io auth action is
+  pinned by SHA); the Go job and `go.yml` pin every action by SHA.
+- The playground's Rust and Go snippets are whole programs, the JS and Python ones are bare
+  expressions.
 
 ## Porting guide (Rust, Go, others)
 
@@ -721,7 +732,8 @@ R13 (tracklists) notes for a new port:
   hazard above does not apply here.
 - **Time ceilings.** R13.11 asks for linear time; each port's suite picks its own 10,000-line
   ceilings: `parseTracklist` JS 3 s, Python 15 s; `applyEdits` (shift + sort, 2,000 edits) JS 1 s,
-  Python 2 s / 5 s. The Rust ceilings are in `rust/tests/tracklist_properties.rs`.
+  Python 2 s / 5 s; Go 3 s and 1 s, ten times that under `-race` (`go/bench_test.go`). The Rust
+  ceilings are in `rust/tests/tracklist_properties.rs`.
 
 ## Versioning and release
 
@@ -751,8 +763,8 @@ Version rules:
   existing fixture expectation is a behaviour change → `feat`. Adding fixtures for behaviour that
   already passes is not.
 - `python` is **linked** too: same version as `js` and `spec`. The release PR also bumps
-  `python/pyproject.toml`, `__version__` in `python/src/trackparse/__init__.py` and `SPEC_VERSION`
-  in `python/src/trackparse/_data.py`, and writes `python/CHANGELOG.md`. Merging it tags
+  `python/pyproject.toml`, `__version__` in `python/src/trackparse/__init__.py`, `SPEC_VERSION`
+  in `python/src/trackparse/_data.py` and the package's own entry in `python/uv.lock`, and writes `python/CHANGELOG.md`. Merging it tags
   `python-vX.Y.Z` and publishes to PyPI via trusted publishing (environment `pypi`), with the wheel
   and sdist attached to the release. `spec.yml` checks that all five versions match (js, spec,
   python, rust, go).
