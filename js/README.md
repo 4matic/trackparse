@@ -578,9 +578,6 @@ fixture input. You can parse in one language and read the result in another.
 | Rust | [trackparse on crates.io](https://crates.io/crates/trackparse) | `cargo add trackparse` |
 | Go | [github.com/4matic/trackparse/go](https://pkg.go.dev/github.com/4matic/trackparse/go) | `go get github.com/4matic/trackparse/go` |
 
-The Go module's first version comes with the next release (tag `go/vX.Y.Z`); until then the
-pkg.go.dev page and `go get` find nothing.
-
 ## Limitations
 
 **Docs:** [Limitations and roadmap](https://4matic.github.io/trackparse/project/roadmap/)

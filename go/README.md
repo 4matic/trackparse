@@ -43,9 +43,6 @@ The import path ends in `/go` because the module lives in the `go/` folder of th
 next to the other ports. The package name is `trackparse`, so the alias in the import line is
 optional; it only makes the name visible to readers and to tools that guess it from the path.
 
-The module is released with the other ports, starting with the next release after 0.5.1. Until
-that tag exists, `go get` and the pkg.go.dev links above find nothing.
-
 ## Quick start
 
 **Docs:** [Getting started](https://4matic.github.io/trackparse/start/getting-started/)
@@ -684,9 +681,15 @@ fmt.Printf("%q\n", trackparse.Parse("Noisia - Sti\xffgma\xe2\x82").Title) // "St
 
 The Unicode facts the rules need (letters, uppercase letters, the lowercase mapping, and the NFC
 and NFD tables) are generated from Node 24, which has Unicode 17, and compiled into the module.
-The `unicode` package of the Go standard library is not used for them, so the output does not
-depend on the Go toolchain you build with, although Go 1.22 ships Unicode 15 and later releases
-newer versions.
+Neither source that a Go program would usually take them from is used, because both follow the
+Go toolchain that builds the program:
+
+- the standard library's `unicode` package has the tables of its Go release (`unicode.Version` is
+  `"15.0.0"` in Go 1.24);
+- `golang.org/x/text/unicode/norm` picks its NFC and NFD tables by build tag: Unicode 15 below
+  Go 1.27, Unicode 17 from Go 1.27.
+
+So the output does not depend on the Go version you build with.
 
 This differs from the Rust crate, which takes NFC and NFD from the `unicode-normalization` crate
 and its Unicode 18 tables. Unicode 18 added 32 combining marks, so a string containing one of
@@ -696,17 +699,18 @@ ports.
 
 ## Performance
 
-There are no regular expressions, so there is no regex backtracking. Measured with `go test
--bench` on Go 1.24, on a 2013 desktop CPU (Intel i7-4770S) that was also running other jobs:
+There are no regular expressions, so there is no regex backtracking. Measured with
+`go test -bench . -run '^$' -benchtime 2s` (the benchmarks in `bench_test.go`) on an Intel
+i7-4770S, Go 1.24, and the JavaScript package on Node 24 with the same inputs on the same machine.
+Other programs were running, so the numbers vary by about 20% between runs:
 
-| Input | Time |
-|---|---|
-| A typical track (the string at the top of this page) | about 0.1 ms |
-| 10,000 code points of repeated blocks (`a & `, `feat. X `, `(Remix) `, `[HD] `, `- `) | 6 to 18 ms |
-| A 10,000-line tracklist | about 0.5 s |
-
-The JavaScript package on Node 24 took about the same on that machine (0.12 ms for the typical
-track, 12 ms for 10,000 code points of `(Remix) `).
+| Input | Go | JavaScript |
+|---|---|---|
+| A typical track (`Noisia feat. Foreign Beggars - Shellshock (Phace Remix) [Official Video]`) | 0.04 to 0.06 ms | 0.07 to 0.09 ms |
+| 10,000 code points of one repeated block (`a & `, `a feat. `, `feat. X `, `(Remix) `, `[HD] `, `- `, or the typical track) | 3 to 7 ms | 4 to 18 ms |
+| A 42-line tracklist | 1.4 to 1.8 ms | 2.9 ms |
+| A 10,000-line tracklist | 0.33 to 0.38 s | 0.8 to 0.9 s |
+| `ApplyEdits` with a shift and a sort on 10,000 lines | 60 to 67 ms | 100 to 160 ms |
 
 ## Versioning
 
@@ -716,8 +720,8 @@ module proxy serves them from there. There is no upload step: the tag is the rel
 
 While it is 0.x, a release that changes the output for some input bumps the minor version, and a
 patch release only fixes bugs. `go get -u` moves to the newest minor, so if you store parsed
-results, upgrade on purpose and read the changelog first. The changelog will be
-`go/CHANGELOG.md` in the repository, written by the release that publishes the first version.
+results, upgrade on purpose and read the changelog first:
+[`go/CHANGELOG.md`](https://github.com/4matic/trackparse/blob/main/go/CHANGELOG.md).
 
 ## Other languages
 
