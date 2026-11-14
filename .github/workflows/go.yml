@@ -55,11 +55,15 @@ jobs:
         name: gofmt
         run: test -z "$(gofmt -l .)" || { gofmt -l .; exit 1; }
       - run: go vet ./...
+      # wire_hook.go and internal/cmd/dump with the JSON door linked in.
+      - run: go vet -tags trackparse_wire ./...
       - if: matrix.go == 'stable'
         name: staticcheck
         env:
           GOTOOLCHAIN: auto
-        run: go run honnef.co/go/tools/cmd/staticcheck@2026.2.2 ./...
+        run: |
+          go run honnef.co/go/tools/cmd/staticcheck@2026.2.2 ./...
+          go run honnef.co/go/tools/cmd/staticcheck@2026.2.2 -tags trackparse_wire ./...
       - name: No unstable sorts
         # JS sorts are stable; sort.Slice is not. Use slices.SortStableFunc.
         run: "! grep -n 'sort\\.Slice(' --include='*.go' -r ."

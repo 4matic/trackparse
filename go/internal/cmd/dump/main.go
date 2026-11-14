@@ -6,7 +6,10 @@
 // package writes it. A line that is not a JSON object gives null. Non-finite numbers travel as
 // 1e999 / -1e999, which the reader takes as infinity.
 //
-//	go run ./internal/cmd/dump < cases.jsonl > results.jsonl
+//	go run -tags trackparse_wire ./internal/cmd/dump < cases.jsonl > results.jsonl
+//
+// The tag links the JSON door into the trackparse package (wire_hook.go); without it the command
+// stops with a message.
 package main
 
 import (
@@ -15,11 +18,15 @@ import (
 	"io"
 	"os"
 
-	_ "github.com/4matic/trackparse/go" // fills in wire.Call
+	_ "github.com/4matic/trackparse/go" // fills in wire.Call when built with -tags trackparse_wire
 	"github.com/4matic/trackparse/go/internal/wire"
 )
 
 func main() {
+	if wire.Call == nil {
+		fmt.Fprintln(os.Stderr, "dump: build with -tags trackparse_wire: go run -tags trackparse_wire ./internal/cmd/dump")
+		os.Exit(2)
+	}
 	if err := run(os.Stdin, os.Stdout); err != nil {
 		fmt.Fprintln(os.Stderr, "dump:", err)
 		os.Exit(1)

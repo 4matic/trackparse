@@ -124,8 +124,10 @@ go/                       Go module `github.com/4matic/trackparse/go`, package `
   tl_*.go                 one file per js/src/tracklist file: tl_split, tl_times, tl_emphasis,
                           tl_kinds, tl_positions, tl_warnings, tl_parse, tl_edits, tl_options
   unicode.go              L and Lu (R0.6), JS toLowerCase (R0.4), NFC/NFD (R1) over the generated tables
-  wire.go                 the JSON door: every function with loose JSON arguments, reached from
-                          internal/wire (fixtures, compare-ports, fuzzers) so it is not public API
+  wire.go                 the JSON door: every function with loose JSON arguments (fixtures and
+                          fuzzers call it in tests), not public API
+  wire_hook.go            //go:build trackparse_wire: the only init(), it fills in internal/wire for
+                          internal/cmd/dump; without the tag no user binary links the JSON door
   data_gen.go             GENERATED from spec/data + spec/VERSION (never edit); SpecVersion carries
                           the x-release-please-version marker
   unicode_gen.go          GENERATED from Node: L, Lu, the lowercase map, combining class ranks,
@@ -133,7 +135,8 @@ go/                       Go module `github.com/4matic/trackparse/go`, package `
   scripts/gen_data.mjs    codegen for data_gen.go (--check for CI)
   scripts/gen_unicode.mjs codegen for unicode_gen.go and testdata/unicode/ (--check for CI)
   scripts/dump_artist_cases.mjs  JS values for the artist-side unit tests, into testdata/
-  internal/cmd/dump/      Go side of compare-ports (JSONL in, JSON out, through internal/wire)
+  internal/cmd/dump/      Go side of compare-ports (JSONL in, JSON out, through internal/wire);
+                          go run -tags trackparse_wire ./internal/cmd/dump
   internal/wire/          the JSON door's package
   *_test.go               fixtures_test.go (every shared fixture + the conformance report; skipped
                           when ../spec is absent, as in the module zip), match_test.go, schema_test.go,
@@ -305,7 +308,8 @@ Go (run inside `go/`; Go 1.22 or newer, Node for the codegen):
 | `go test ./...` | Every fixture, the primitives, the invariants, the examples, API and unit tests (CI adds `-race`) |
 | `TRACKPARSE_REPORT=1 go test -run TestFixtures -v` | Pass rate per fixture file and per rule ID |
 | `node scripts/gen_data.mjs` · `node scripts/gen_unicode.mjs` | Regenerate `data_gen.go` / `unicode_gen.go` (and `testdata/unicode/`); `--check` fails if stale |
-| `gofmt -l .` · `go vet ./...` · `go run honnef.co/go/tools/cmd/staticcheck@2026.2.2 ./...` | Format check (must print nothing) and lint |
+| `gofmt -l .` · `go vet ./...` · `go run honnef.co/go/tools/cmd/staticcheck@2026.2.2 ./...` | Format check (must print nothing) and lint; CI runs vet and staticcheck again with `-tags trackparse_wire` |
+| `go run -tags trackparse_wire ./internal/cmd/dump < cases.jsonl` | The JSON door on JSONL (what compare-ports and fuzz-ports run); without the tag it stops with a message |
 | `go test -run '^$' -fuzz '^FuzzParse$' -fuzztime 60s` | Fuzz one target (`go test -list Fuzz` lists them: Parse, ParseArtists, Format, ParseTracklist, ApplyEdits, Run); a failing input lands in `testdata/fuzz/` |
 | `TRACKPARSE_UNICODE_FULL=1 go test -run TestUnicodeFull` | The full NFC/NFD and lowercase sweep against Node (slow) |
 
@@ -344,7 +348,8 @@ uv run mypy --strict src && uv run pytest && uv build`, and in `rust/`
 `node scripts/gen_data.mjs --check && cargo fmt --check &&
 cargo clippy --all-targets --all-features -- -D warnings && cargo test && cargo test --all-features`, and in `go/`
 `node scripts/gen_data.mjs --check && node scripts/gen_unicode.mjs --check && test -z "$(gofmt -l .)" &&
-go vet ./... && go run honnef.co/go/tools/cmd/staticcheck@2026.2.2 ./... && go test -race ./...`.
+go vet ./... && go vet -tags trackparse_wire ./... && go run honnef.co/go/tools/cmd/staticcheck@2026.2.2 ./... &&
+go test -race ./...`.
 
 ## Fixture authoring
 
@@ -817,7 +822,8 @@ Version rules:
 - Go: `gofmt`, `go vet` and staticcheck clean, `go 1.22` in `go.mod`, no `require` lines (no
   dependencies), no `unsafe`, no cgo. Sorts are stable (`slices.SortStableFunc`, never
   `sort.Slice`); no `range` over a map on a path that reaches the output. No `recover()` in the
-  library: a panic is a bug to fix, found by fuzzing and the differential run, not hidden. Go has
+  library: a panic is a bug to fix, found by fuzzing and the differential run, not hidden. No
+  `init()` except `wire_hook.go`, which only `-tags trackparse_wire` builds. Go has
   no lint against indexing, so look up code points with `at()` (it returns -1 out of range).
   Every exported identifier has a doc comment; examples are `Example` functions with `// Output:`.
 - Public types in `js/src/types.ts`, `python/src/trackparse/types.py`, `rust/src/types.rs` and
