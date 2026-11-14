@@ -665,7 +665,11 @@ fmt.Printf("%q\n", trackparse.Parse("Noisia - Sti\xffgma\xe2\x82").Title) // "St
   `Normalize` idempotent, whitespace and dash noise not changing the result, no word of the input
   going missing, the `Format` round trip, and for tracklists the byte-for-byte round trip, edit
   locality and the shift round trip. Fuzz targets (`go test -fuzz`) check that nothing panics on
-  any bytes and that every output string is valid UTF-8.
+  any bytes and that every output string is valid UTF-8; one feeds `Track.UnmarshalJSON` and
+  checks the JSON round trip.
+- A `Parser` with options, the zero `Parser`, the package functions, `ParseTracklistWith` and
+  `ApplyEdits` are called from 16 goroutines at once and compared with a sequential run, under
+  the race detector in CI.
 - The `Example` functions in `example_test.go` are checked by `go test`, so the examples on
   pkg.go.dev run as shown.
 - [`scripts/compare-ports.mjs`](https://github.com/4matic/trackparse/blob/main/scripts/compare-ports.mjs)

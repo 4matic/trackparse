@@ -54,8 +54,10 @@ Each port throws thousands of random strings at the parser to check the
 [fast-check](https://github.com/dubzzz/fast-check) and the Python suite uses
 [Hypothesis](https://hypothesis.works). The Rust and Go suites each have a small seeded generator
 of their own, so neither needs an extra test dependency. The Go module also has fuzz targets for
-`Parse`, `ParseArtists`, `Format`, `ParseTracklist` and `ApplyEdits` (`go test -fuzz`) that run the
-same checks on whatever the fuzzer finds.
+`Parse`, `ParseArtists`, `Format`, `ParseTracklist`, `ApplyEdits` and `Track.UnmarshalJSON`
+(`go test -fuzz`) that run the same checks on whatever the fuzzer finds, and a test that calls
+the parser, the tracklist functions and the edits from 16 goroutines at once under the race
+detector.
 
 - it never throws or panics, on any input, in any mode;
 - a 10,000-code-point input finishes inside a ceiling: 1 s in JavaScript and Python, 2 s in Rust
