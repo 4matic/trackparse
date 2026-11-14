@@ -3,9 +3,15 @@ package trackparse
 // Tests of the artist side (classify.go, credits.go, artists.go, assemble.go, format.go) that
 // run without the title side of the pipeline, against values dumped from the JS reference
 // (testdata/artist_cases.json, written by scripts/dump_artist_cases.mjs).
+//
+// The file is about 2.3 MB, so it is not committed (it would ship in the module zip). Write it
+// with `pnpm --filter trackparse build && node scripts/dump_artist_cases.mjs`; without it these
+// tests skip, unless TRACKPARSE_REQUIRE_ARTIST_CASES=1 (set in CI) makes that a failure.
 
 import (
 	"bytes"
+	"errors"
+	"io/fs"
 	"math/rand"
 	"os"
 	"strings"
@@ -14,8 +20,10 @@ import (
 	"time"
 )
 
+const artistCasesPath = "testdata/artist_cases.json"
+
 var artistCases = sync.OnceValues(func() (jsonValue, error) {
-	text, err := os.ReadFile("testdata/artist_cases.json")
+	text, err := os.ReadFile(artistCasesPath)
 	if err != nil {
 		return jsonValue{}, err
 	}
@@ -26,6 +34,10 @@ var artistCases = sync.OnceValues(func() (jsonValue, error) {
 func casesOf(t *testing.T, section string) []jsonValue {
 	t.Helper()
 	all, err := artistCases()
+	if errors.Is(err, fs.ErrNotExist) && os.Getenv("TRACKPARSE_REQUIRE_ARTIST_CASES") != "1" {
+		t.Skipf("%s not found: run pnpm --filter trackparse build && "+
+			"node scripts/dump_artist_cases.mjs", artistCasesPath)
+	}
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -744,11 +744,12 @@ difference is described under [Unicode version](#unicode-version).
 ## Development
 
 From `go/` in the [repository](https://github.com/4matic/trackparse) (Node 24 is needed for the
-codegen scripts only):
+codegen scripts and the artist-side test data only):
 
 ```sh
 node scripts/gen_data.mjs --check      # spec/data codegen is up to date
 node scripts/gen_unicode.mjs --check   # Unicode tables are up to date
+pnpm --filter trackparse build && node scripts/dump_artist_cases.mjs   # data for the artist-side tests
 gofmt -l .                             # prints nothing
 go vet ./...
 go test -race ./...                    # every shared fixture, primitives, examples, API

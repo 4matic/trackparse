@@ -2,7 +2,7 @@ package trackparse
 
 // Tests for unicode.go against Node, the reference engine.
 //
-// testdata/unicode/cases.jsonl is a committed sample (about 1.3 MB) written by
+// testdata/unicode/cases.jsonl is a committed sample (under 300 KB) written by
 // scripts/gen_unicode.mjs from Node, so `go test` needs no Node. `gen_unicode.mjs --check` keeps
 // it in step with the tables. The exhaustive check (every code point, every ordered pair of
 // non-starters, ...) is too big to commit: with TRACKPARSE_UNICODE_FULL=1 the test runs

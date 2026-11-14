@@ -104,7 +104,12 @@ TRACKPARSE_REPORT=1 go test -run TestFixtures -v .    # pass rate per file and p
 gofmt -l . && go vet ./...
 node scripts/gen_data.mjs                             # regenerate data_gen.go from spec/data
 node scripts/gen_unicode.mjs                          # regenerate unicode_gen.go
+pnpm --filter trackparse build && node scripts/dump_artist_cases.mjs   # data for the artist-side tests
 ```
+
+The artist-side tests compare with values from the JavaScript package. Their data file is too big
+to ship in the module, so it is not committed: the last command writes it, and without it those
+tests are skipped. CI writes it and requires it.
 
 ## Comparing the ports
 
