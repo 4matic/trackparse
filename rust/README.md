@@ -360,6 +360,12 @@ assert_eq!(
     format_track_with(&track, &options),
     "01. Wilkinson ft. Becky Hill - Afterglow (Sub Focus Remix)"
 );
+
+let options = FormatOptions::new().feat_marker("featuring");
+assert_eq!(
+    format_track_with(&track, &options),
+    "Wilkinson featuring Becky Hill - Afterglow (Sub Focus Remix)"
+);
 ```
 
 ### `normalize`
@@ -412,9 +418,9 @@ assert_eq!(track.versions[0].version_type, VersionType::Rework);
 
 ### `SPEC_VERSION`
 
-The spec version this build implements, `"0.5.0"` in this release. It equals the crate version:
-the crate, the npm package, the PyPI package, the Go module and the spec are released together and
-always share one version number.
+The version of the spec this build implements. It equals the crate version: the crate, the npm
+package, the PyPI package, the Go module and the spec are released together and always share one
+version number.
 
 ## Modes
 
@@ -677,8 +683,8 @@ length (thousands of duplicate credits, bracket groups or junk phrases) under a 
 
 The crate version is the spec version (`SPEC_VERSION`). While it is 0.x, a release that changes
 the output for some input bumps the minor version, and a patch release only fixes bugs. Cargo's
-default requirement (`trackparse = "0.5"`) already stays within one minor version, so `cargo update`
-will not change your output. Read the changelog before moving to the next minor.
+default requirement already stays within one minor version (`trackparse = "0.6"` means 0.6.x), so
+`cargo update` only brings fixes. Read the changelog before moving to the next minor.
 
 ## Other languages
 
@@ -730,7 +736,8 @@ same spec rule IDs. Behaviour changes start in the spec, not here: see
   Rust and Go, and a [playground](https://4matic.github.io/trackparse/playground/) that runs the
   parser in your browser
 - [API documentation on docs.rs](https://docs.rs/trackparse)
-- [Spec](https://github.com/4matic/trackparse/blob/main/spec/SPEC.md)
+- [Spec](https://github.com/4matic/trackparse/blob/main/spec/SPEC.md) and its
+  [changelog](https://github.com/4matic/trackparse/blob/main/spec/CHANGELOG.md)
 - [Changelog](https://github.com/4matic/trackparse/blob/main/rust/CHANGELOG.md)
 - [Project README](https://github.com/4matic/trackparse#readme)
 - [GitHub repository](https://github.com/4matic/trackparse)
