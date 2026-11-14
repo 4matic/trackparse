@@ -62,7 +62,8 @@ detector.
 - it never throws or panics, on any input, in any mode;
 - a 10,000-code-point input finishes inside a ceiling: 1 s in JavaScript and Python, 2 s in Rust
   and Go.
-  It normally takes tens of milliseconds in JavaScript and Rust and well under a second in Python;
+  It normally takes tens of milliseconds in JavaScript and Rust, a few milliseconds in Go and well
+  under a second in Python;
   the ceiling is loose so that a busy CI machine doesn't
   fail the run but a blowup does;
 - `normalize` is idempotent;
@@ -78,7 +79,7 @@ For tracklists, on random multi-line text and random edit lists:
 - `applyEdits(t, [])` returns `t`, and an edit never touches a line it doesn't name;
 - shifting forward and back restores the text, unless something was clamped or upgraded;
 - 10,000 lines parse inside a ceiling each suite sets for itself: 3 s in JavaScript (it takes
-  about 0.6 s), 15 s in Python, 3 s in an optimized Rust build, 3 s in Go;
+  about 0.6 s), 15 s in Python, 3 s in an optimized Rust build, 3 s in Go (it takes about 0.35 s);
 - Markdown emphasis around a time or a track line gives the same kind, time and track as the plain
   line.
 
