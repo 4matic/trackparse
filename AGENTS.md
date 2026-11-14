@@ -153,6 +153,9 @@ site/                     documentation site + playground (Astro + Starlight, Gi
 scripts/compare-ports.mjs every fixture through js/dist, the Python port, the Rust crate and the Go
                           module, diffs the full outputs (parseTracklist and applyEdits included);
                           --only=python, --only=rust or --only=go for one port
+scripts/fuzz-ports.mjs    random differential run: single tracks and tracklists with edits through
+                          all four ports (--n, --lists, --seed, --only=go|rust|python, --out)
+scripts/lib/ports.mjs     runners and the JSON diff shared by compare-ports and fuzz-ports
 scripts/corpus-check.mjs  R13 against a private tracklist corpus (JSONL in spec/corpus/), via js/dist
 scripts/dump_py.py        Python side of compare-ports (JSONL in, to_dict() JSON out)
 .github/workflows/        js.yml (full suite on Node 22/24; compat: fixtures vs built dist on Node 18/20),
@@ -474,7 +477,7 @@ Each of these was written wrong at least once and caught in review. Check them w
 | Don't write | Write instead, and why |
 |---|---|
 | "linear time" | Hand-written scanners, no regex backtracking. The R9.2 dedup in JS and Python is quadratic on thousands of repeated `feat.` credits (Rust and Go are near-linear). |
-| "under 100 ms" for every port | True for JS (10 to 70 ms on 10,000 code points) and Rust (under 20 ms, release build). Python takes 40 to 170 ms. The suites enforce 1 s (JS, Python) and 2 s (Rust). Go has no published figure yet: measure it before writing one. |
+| "under 100 ms" for every port | True for JS (10 to 70 ms on 10,000 code points) and Rust (under 20 ms, release build). Python takes 40 to 170 ms. The suites enforce 1 s (JS, Python) and 2 s (Rust). Go: 5 to 8 ms (benchmarks in `go/bench_test.go`), ceiling 2 s. So "tens of milliseconds" holds for JS, Rust and Go, not Python. |
 | "identical output for any input" | Identical on every fixture input. The Rust crate takes NFC from `unicode-normalization` (Unicode 18), Node 24 has Unicode 17, so 32 new combining marks can be ordered differently. Link `project/ports/#what-the-rust-port-taught`. |
 | "zero dependencies" for the project | Zero in JS, Python and Go (the Go tables are generated from Node, not taken from `golang.org/x/text`). Rust has one, `unicode-normalization`. |
 | a size in mixed units | Core: about 18 kB gzip. Tracklist entry: about 8.4 KiB (8,607 B), budget 9 KiB. Re-measure with `pnpm --filter trackparse build && pnpm --filter trackparse size`. |
@@ -555,6 +558,11 @@ with the count.
 - `format(track, { feat: "nope" })` drops the featured artists in JS and Python (and in Go, which
   matches JS: `FormatOptions{Feat: "nope"}`) instead of falling
   back to the default, unlike other bad options. Needs a spec decision and a fixture first.
+- `format(track, { featMarker: null })` writes the literal marker `null` in JS, Rust and Go;
+  Python falls back to the input's marker (found by `scripts/fuzz-ports.mjs`). Needs a spec
+  decision and a fixture.
+- R13.9.5: `insert` next to a bare CR can merge the new line with an empty LF line on re-read
+  (`"\r\r\n\n\r"`, insert after 2 gives 4 lines). All ports agree; no fixture pins it yet.
 - Python tracklist types have `to_dict()` but no `from_dict()`; `ParsedTrack` has both.
 - JS and Python do not test invariant 6 ("no word goes missing"); only Rust and Go do.
 - The npm and PyPI publish jobs use actions by tag; the crates.io job pins its auth action by SHA.
