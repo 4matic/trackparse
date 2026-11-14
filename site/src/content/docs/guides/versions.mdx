@@ -64,14 +64,14 @@ pub struct Version {
 
 ```go
 type Version struct {
-    Type          VersionType  // VersionTypeRemix, VersionTypeVIP, VersionTypeRadio, …
-    Raw           string       // the text as written, without brackets: "Sub Focus VIP Remix"
-    Artists       []Artist     // remixers, role RoleRemixer
-    Modifiers     []string     // other type words that didn't win: ["extended"]
-    Descriptor    *string      // leftover words: "Taylor's", "at Wembley"
-    Year          *int
-    UnknownArtist bool         // "ID Remix"
-    Delimiter     Delimiter    // DelimiterParen | DelimiterSquare | DelimiterCurly | DelimiterDash
+	Type          VersionType  // VersionTypeRemix, VersionTypeVIP, VersionTypeRadio, …
+	Raw           string       // the text as written, without brackets: "Sub Focus VIP Remix"
+	Artists       []Artist     // remixers, role RoleRemixer
+	Modifiers     []string     // other type words that didn't win: ["extended"]
+	Descriptor    *string      // leftover words: "Taylor's", "at Wembley"
+	Year          *int
+	UnknownArtist bool         // "ID Remix"
+	Delimiter     Delimiter    // DelimiterParen | DelimiterSquare | DelimiterCurly | DelimiterDash
 }
 ```
 
@@ -161,9 +161,9 @@ use trackparse::parse;
 
 ```go
 import (
-    "fmt"
+	"fmt"
 
-    "github.com/4matic/trackparse/go"
+	"github.com/4matic/trackparse/go"
 )
 
 v := trackparse.Parse("Pendulum - Watercolour (Extended VIP Mix)").Versions[0]
@@ -224,13 +224,13 @@ parse("Dimension - Offshore (Mefjus Remix / Noisia Remix)")
 
 ```go
 for _, v := range trackparse.Parse("Avicii - Levels (Skrillex Remix) [Radio Edit]").Versions {
-    fmt.Println(v.Type)
+	fmt.Println(v.Type)
 }
 // remix
 // radio
 
 for _, v := range trackparse.Parse("Dimension - Offshore (Mefjus Remix / Noisia Remix)").Versions {
-    fmt.Println(v.Artists[0].Name)
+	fmt.Println(v.Artists[0].Name)
 }
 // Mefjus
 // Noisia
@@ -352,9 +352,9 @@ parser.parse("Chase & Status x Camo & Krooked - Track (Alix Perez Rerub)").versi
 
 ```go
 parser := trackparse.NewParser(trackparse.ParseOptions{
-    Keywords: trackparse.Keywords{
-        VersionHeads: []trackparse.VersionHead{{Key: "rerub", Type: trackparse.VersionTypeRework}},
-    },
+	Keywords: trackparse.Keywords{
+		VersionHeads: []trackparse.VersionHead{{Key: "rerub", Type: trackparse.VersionTypeRework}},
+	},
 })
 fmt.Println(parser.Parse("Chase & Status x Camo & Krooked - Track (Alix Perez Rerub)").Versions[0].Type)
 // rework

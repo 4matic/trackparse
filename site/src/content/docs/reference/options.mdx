@@ -73,11 +73,11 @@ let options = ParseOptions::new()
 
 ```go
 type ParseOptions struct {
-    Mode         Mode       // ModeAuto | ModeClean | ModeYouTube | ModeFilename | ModeTracklist; "" means auto
-    Uploader     string     // empty means none
-    KnownArtists []string
-    SplitAnd     SplitAnd   // SplitAndAuto | SplitAndAlways | SplitAndNever; "" means auto
-    Keywords     Keywords
+	Mode         Mode       // ModeAuto | ModeClean | ModeYouTube | ModeFilename | ModeTracklist; "" means auto
+	Uploader     string     // empty means none
+	KnownArtists []string
+	SplitAnd     SplitAnd   // SplitAndAuto | SplitAndAlways | SplitAndNever; "" means auto
+	Keywords     Keywords
 }
 ```
 
@@ -86,17 +86,17 @@ Set the fields you need. The others keep their zero value, which is the default
 
 ```go
 import (
-    "fmt"
+	"fmt"
 
-    "github.com/4matic/trackparse/go"
+	"github.com/4matic/trackparse/go"
 )
 
 input := "Chase & Status - Baddadan"
 options := trackparse.ParseOptions{
-    Mode:         trackparse.ModeYouTube,
-    KnownArtists: []string{"Chase & Status"},
-    Uploader:     "Daft Punk - Topic",
-    SplitAnd:     trackparse.SplitAndNever,
+	Mode:         trackparse.ModeYouTube,
+	KnownArtists: []string{"Chase & Status"},
+	Uploader:     "Daft Punk - Topic",
+	SplitAnd:     trackparse.SplitAndNever,
 }
 fmt.Printf("%q\n", trackparse.ParseWith(input, options).Artists[0].Name)   // "Chase & Status"
 ```
@@ -198,11 +198,11 @@ pub struct KeywordOptions {
 
 ```go
 type Keywords struct {
-    VersionHeads []VersionHead   // {Key: "rerub", Type: VersionTypeRework}
-    Descriptors  []string        // extra style words, like the built-in "D'n'B"
-    Genres       []string        // extra genre names (junk kind genre)
-    Junk         []JunkPhrase    // {Phrase: "live stream", Kind: JunkKindOther}
-    FeatMarkers  []string        // extra feat markers
+	VersionHeads []VersionHead   // {Key: "rerub", Type: VersionTypeRework}
+	Descriptors  []string        // extra style words, like the built-in "D'n'B"
+	Genres       []string        // extra genre names (junk kind genre)
+	Junk         []JunkPhrase    // {Phrase: "live stream", Kind: JunkKindOther}
+	FeatMarkers  []string        // extra feat markers
 }
 ```
 
@@ -265,10 +265,10 @@ t.versions[0].version_type;                              // Rework
 
 ```go
 parser := trackparse.NewParser(trackparse.ParseOptions{
-    KnownArtists: []string{"Chase & Status", "Camo & Krooked"},
-    Keywords: trackparse.Keywords{
-        VersionHeads: []trackparse.VersionHead{{Key: "rerub", Type: trackparse.VersionTypeRework}},
-    },
+	KnownArtists: []string{"Chase & Status", "Camo & Krooked"},
+	Keywords: trackparse.Keywords{
+		VersionHeads: []trackparse.VersionHead{{Key: "rerub", Type: trackparse.VersionTypeRework}},
+	},
 })
 
 t := parser.Parse("Chase & Status x Camo & Krooked - Track (Alix Perez Rerub)")
@@ -329,7 +329,7 @@ let r = parse_with("Artist - Song [Some Label Rip]", &ParseOptions::new().keywor
 fmt.Printf("%q\n", trackparse.Parse("Artist - Song [Some Label Rip]").Title)   // "Song [Some Label Rip]"
 
 keywords := trackparse.Keywords{
-    Junk: []trackparse.JunkPhrase{{Phrase: "some label rip", Kind: trackparse.JunkKindLabel}},
+	Junk: []trackparse.JunkPhrase{{Phrase: "some label rip", Kind: trackparse.JunkKindLabel}},
 }
 r := trackparse.ParseWith("Artist - Song [Some Label Rip]", trackparse.ParseOptions{Keywords: keywords})
 fmt.Printf("%q\n", r.Title)   // "Song"

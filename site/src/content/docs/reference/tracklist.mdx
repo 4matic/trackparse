@@ -112,10 +112,10 @@ pub struct Tracklist {
 
 ```go
 type Tracklist struct {
-    SpecVersion string
-    Entries     []Entry
-    Warnings    []TracklistWarning
-    Stats       Stats   // Lines, Tracks, Markers, Timed, FirstTime, LastTime
+	SpecVersion string
+	Entries     []Entry
+	Warnings    []TracklistWarning
+	Stats       Stats   // Lines, Tracks, Markers, Timed, FirstTime, LastTime
 }
 ```
 
@@ -178,10 +178,10 @@ pub struct TracklistWarning {
 
 ```go
 type TracklistWarning struct {
-    Code       WarningCode
-    Line       int
-    Severity   Severity      // SeverityInfo | SeverityWarning
-    Suggestion *Suggestion   // Suggestion{Line int, Raw string, Seconds float64}
+	Code       WarningCode
+	Line       int
+	Severity   Severity      // SeverityInfo | SeverityWarning
+	Suggestion *Suggestion   // Suggestion{Line int, Raw string, Seconds float64}
 }
 ```
 
@@ -335,14 +335,14 @@ Everything is in the package `trackparse`: the structs `Tracklist`, `Entry`, `Pa
 
 ```go
 type Edit struct {
-    Op      EditOp    // EditOpSetTime, EditOpShift, EditOpSortByTime, EditOpSetRest, EditOpInsert, EditOpDelete
-    Line    int       // set-time, set-rest, delete
-    Seconds float64   // set-time, shift
-    Lines   []int     // shift: nil means not given
-    From    *int      // shift: nil means not given
-    Rest    string    // set-rest
-    After   int       // insert
-    Text    string    // insert
+	Op      EditOp    // EditOpSetTime, EditOpShift, EditOpSortByTime, EditOpSetRest, EditOpInsert, EditOpDelete
+	Line    int       // set-time, set-rest, delete
+	Seconds float64   // set-time, shift
+	Lines   []int     // shift: nil means not given
+	From    *int      // shift: nil means not given
+	Rest    string    // set-rest
+	After   int       // insert
+	Text    string    // insert
 }
 ```
 

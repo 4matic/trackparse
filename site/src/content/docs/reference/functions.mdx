@@ -88,13 +88,13 @@ parse_artists("Sub Focus, Wilkinson & Dimension feat. Kojo")
 
 ```go
 import (
-    "fmt"
+	"fmt"
 
-    "github.com/4matic/trackparse/go"
+	"github.com/4matic/trackparse/go"
 )
 
 for _, a := range trackparse.ParseArtists("Sub Focus, Wilkinson & Dimension feat. Kojo") {
-    fmt.Printf("%s:%s\n", a.Name, a.Role)
+	fmt.Printf("%s:%s\n", a.Name, a.Role)
 }
 // Sub Focus:primary
 // Wilkinson:primary
@@ -243,7 +243,7 @@ all_artists(&parse("Wilkinson ft. Becky Hill - Afterglow (Sub Focus Remix)"))
 
 ```go
 for _, a := range trackparse.AllArtists(trackparse.Parse("Wilkinson ft. Becky Hill - Afterglow (Sub Focus Remix)")) {
-    fmt.Printf("%s:%s\n", a.Name, a.Role)
+	fmt.Printf("%s:%s\n", a.Name, a.Role)
 }
 // Wilkinson:primary
 // Becky Hill:featured
@@ -317,10 +317,10 @@ parser.parse("Chase & Status x Camo & Krooked - Track (Alix Perez Rerub)").versi
 
 ```go
 parser := trackparse.NewParser(trackparse.ParseOptions{
-    KnownArtists: []string{"Chase & Status", "Camo & Krooked"},
-    Keywords: trackparse.Keywords{
-        VersionHeads: []trackparse.VersionHead{{Key: "rerub", Type: trackparse.VersionTypeRework}},
-    },
+	KnownArtists: []string{"Chase & Status", "Camo & Krooked"},
+	Keywords: trackparse.Keywords{
+		VersionHeads: []trackparse.VersionHead{{Key: "rerub", Type: trackparse.VersionTypeRework}},
+	},
 })
 
 fmt.Println(parser.Parse("Chase & Status x Camo & Krooked - Track (Alix Perez Rerub)").Versions[0].Type)

@@ -37,9 +37,9 @@ use trackparse::tracklist::{apply_edits, parse_tracklist, Edit};
 
 ```go
 import (
-    "fmt"
+	"fmt"
 
-    "github.com/4matic/trackparse/go"
+	"github.com/4matic/trackparse/go"
 )
 ```
 
@@ -125,27 +125,27 @@ import "strings"
 
 // text is the list from the previous page.
 text := strings.Join([]string{
-    "Hour 2", "48:20 Noisia - Stigma", "52:47 Mefjus & Kasra - Bandwagon (Phace Remix)",
-    "56:05 Black Sun Empire - ID", "59:31 Alix Perez - Fade Away", "01:03:10 Interview with Hybris",
-    "01:07:44 Imanu - Sacrifice", "00:11:02 Current Value feat. Teddy Killerz - Payload",
-    "01:15:36 Hybris - Spinning Top",
+	"Hour 2", "48:20 Noisia - Stigma", "52:47 Mefjus & Kasra - Bandwagon (Phace Remix)",
+	"56:05 Black Sun Empire - ID", "59:31 Alix Perez - Fade Away", "01:03:10 Interview with Hybris",
+	"01:07:44 Imanu - Sacrifice", "00:11:02 Current Value feat. Teddy Killerz - Payload",
+	"01:15:36 Hybris - Spinning Top",
 }, "\r\n")
 
 fix := *trackparse.ParseTracklist(text).Warnings[1].Suggestion
 fmt.Printf("%+v\n", fix)   // {Line:8 Raw:01:11:02 Seconds:4262}
 
 result := trackparse.ApplyEdits(text, []trackparse.Edit{
-    trackparse.SetTime(fix.Line, fix.Seconds),
-    trackparse.ShiftFrom(45, 5),
+	trackparse.SetTime(fix.Line, fix.Seconds),
+	trackparse.ShiftFrom(45, 5),
 })
 
 fmt.Println(result.Changed)   // [5 6 7 8 9]
 for _, w := range result.Warnings {
-    fmt.Println(w.Code, w.Edit, *w.Line)
+	fmt.Println(w.Code, w.Edit, *w.Line)
 }
 // style-upgraded 1 5
 for _, line := range strings.Split(result.Text, "\r\n")[4:] {
-    fmt.Println(line)
+	fmt.Println(line)
 }
 // 01:00:16 Alix Perez - Fade Away
 // 01:03:55 Interview with Hybris
@@ -266,10 +266,10 @@ rest := trackparse.FormatWith(track, trackparse.FormatOptions{Joiners: trackpars
 fmt.Printf("%q\n", rest)   // "Mefjus feat. Phace - Sleepless"
 
 tidy := trackparse.ApplyEdits(messy, []trackparse.Edit{
-    trackparse.SortByTime(),
-    trackparse.SetRest(2, rest),
-    trackparse.Insert(2, "06:45 Phace - Psycho"),
-    trackparse.Delete(4),
+	trackparse.SortByTime(),
+	trackparse.SetRest(2, rest),
+	trackparse.Insert(2, "06:45 Phace - Psycho"),
+	trackparse.Delete(4),
 })
 
 fmt.Printf("%q\n", tidy.Text)   // "00:00 Noisia - Stigma\n04:10 Mefjus feat. Phace - Sleepless\n06:45 Phace - Psycho"
@@ -345,7 +345,7 @@ result = trackparse.ApplyEdits(text, []trackparse.Edit{trackparse.Shift(45)})
 fmt.Printf("%q\n", result.Text)
 // "**[**53:32**] Mefjus - Bandwagon**\n**[**01:00:16**] Alix Perez - Fade Away**"
 for _, w := range result.Warnings {
-    fmt.Println(w.Code, w.Edit, *w.Line)
+	fmt.Println(w.Code, w.Edit, *w.Line)
 }
 // style-upgraded 0 2
 ```

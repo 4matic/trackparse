@@ -39,10 +39,10 @@ pub struct Artist {
 
 ```go
 type Artist struct {
-    Name   string
-    Role   Role     // RolePrimary | RoleFeatured | RoleRemixer | RoleProducer
-    Joiner *string  // nil for the first name of a list
-    Source Source   // SourceArtist | SourceTitle | SourceVersion
+	Name   string
+	Role   Role     // RolePrimary | RoleFeatured | RoleRemixer | RoleProducer
+	Joiner *string  // nil for the first name of a list
+	Source Source   // SourceArtist | SourceTitle | SourceVersion
 }
 ```
 
@@ -112,25 +112,25 @@ parse("Kanye West vs. Daft Punk - Stronger").artists.iter().map(|a| &a.name).col
 
 ```go
 import (
-    "fmt"
+	"fmt"
 
-    "github.com/4matic/trackparse/go"
+	"github.com/4matic/trackparse/go"
 )
 
 names := func(artists []trackparse.Artist) []string {
-    out := []string{}
-    for _, a := range artists {
-        out = append(out, a.Name)
-    }
-    return out
+	out := []string{}
+	for _, a := range artists {
+		out = append(out, a.Name)
+	}
+	return out
 }
 
 for _, a := range trackparse.Parse("Skrillex & Diplo x Justin Bieber - Where Are Ü Now").Artists {
-    if a.Joiner == nil {
-        fmt.Println(a.Name, "(joiner nil),", a.Role)
-    } else {
-        fmt.Printf("%s (joiner %q), %s\n", a.Name, *a.Joiner, a.Role)
-    }
+	if a.Joiner == nil {
+		fmt.Println(a.Name, "(joiner nil),", a.Role)
+	} else {
+		fmt.Printf("%s (joiner %q), %s\n", a.Name, *a.Joiner, a.Role)
+	}
 }
 // Skrillex (joiner nil), primary
 // Diplo (joiner "&"), primary
@@ -313,12 +313,12 @@ parse("Silk City - Electricity (with Dua Lipa)").artists[1]
 
 ```go
 for _, s := range []string{
-    "Noisia feat. Foreign Beggars - Shellshock",
-    "Noisia - Shellshock ft. Foreign Beggars",
-    "Silk City - Electricity (with Dua Lipa)",
+	"Noisia feat. Foreign Beggars - Shellshock",
+	"Noisia - Shellshock ft. Foreign Beggars",
+	"Silk City - Electricity (with Dua Lipa)",
 } {
-    a := trackparse.Parse(s).Artists[1]
-    fmt.Printf("%q %s %q %s\n", a.Name, a.Role, *a.Joiner, a.Source)
+	a := trackparse.Parse(s).Artists[1]
+	fmt.Printf("%q %s %q %s\n", a.Name, a.Role, *a.Joiner, a.Source)
 }
 // "Foreign Beggars" featured "feat." artist
 // "Foreign Beggars" featured "ft." title

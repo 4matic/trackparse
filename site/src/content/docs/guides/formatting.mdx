@@ -60,13 +60,13 @@ format_track(&t);
 
 ```go
 import (
-    "fmt"
+	"fmt"
 
-    "github.com/4matic/trackparse/go"
+	"github.com/4matic/trackparse/go"
 )
 
 t := trackparse.Parse(
-    "01. Wilkinson ft. Becky Hill & Tom Cane - Afterglow (Sub Focus VIP Remix) [Official Video]",
+	"01. Wilkinson ft. Becky Hill & Tom Cane - Afterglow (Sub Focus VIP Remix) [Official Video]",
 )
 
 fmt.Printf("%q\n", trackparse.Format(t))
@@ -187,8 +187,8 @@ fmt.Printf("%q\n", trackparse.FormatWith(t, trackparse.FormatOptions{Feat: track
 // "Wilkinson - Afterglow (ft. Becky Hill & Tom Cane) (Sub Focus VIP Remix)"
 
 fmt.Printf("%q\n", trackparse.FormatWith(t, trackparse.FormatOptions{
-    Feat:    trackparse.FeatTitle,
-    Joiners: trackparse.JoinersCanonical,
+	Feat:    trackparse.FeatTitle,
+	Joiners: trackparse.JoinersCanonical,
 }))
 // "Wilkinson - Afterglow (feat. Becky Hill & Tom Cane) (Sub Focus VIP Remix)"
 
@@ -203,8 +203,8 @@ fmt.Printf("%q\n", trackparse.FormatWith(t, trackparse.FormatOptions{Position: t
 // "01. Wilkinson ft. Becky Hill & Tom Cane - Afterglow (Sub Focus VIP Remix)"
 
 fmt.Printf("%q\n", trackparse.FormatWith(
-    trackparse.Parse("Future - Mask Off (prod. by Metro Boomin)"),
-    trackparse.FormatOptions{OmitProducers: true},
+	trackparse.Parse("Future - Mask Off (prod. by Metro Boomin)"),
+	trackparse.FormatOptions{OmitProducers: true},
 ))
 // "Future - Mask Off"
 ```

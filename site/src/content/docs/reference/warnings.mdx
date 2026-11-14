@@ -96,11 +96,11 @@ a warning. `Warning::ALL` lists the variants, and `Warning::from_name("bySplit")
 
 ```go
 import (
-    "fmt"
-    "slices"
-    "strings"
+	"fmt"
+	"slices"
+	"strings"
 
-    "github.com/4matic/trackparse/go"
+	"github.com/4matic/trackparse/go"
 )
 
 track := trackparse.ParseWith("Blink-182-All The Small Things", trackparse.ParseOptions{Mode: trackparse.ModeYouTube})
@@ -110,14 +110,14 @@ fmt.Println(slices.Contains(track.Warnings, trackparse.WarningUnspacedDashSplit)
 fmt.Println(len(track.Warnings) == 0)                                               // false
 
 for _, warning := range track.Warnings {
-    switch warning {
-    case trackparse.WarningNoSeparator:
-        fmt.Println("no artist")
-    case trackparse.WarningUnspacedDashSplit, trackparse.WarningAsymmetricDashSplit:
-        fmt.Println("check the dash")
-    default:
-        fmt.Println(warning)   // the code itself, such as bySplit
-    }
+	switch warning {
+	case trackparse.WarningNoSeparator:
+		fmt.Println("no artist")
+	case trackparse.WarningUnspacedDashSplit, trackparse.WarningAsymmetricDashSplit:
+		fmt.Println("check the dash")
+	default:
+		fmt.Println(warning)   // the code itself, such as bySplit
+	}
 }
 // check the dash
 ```
@@ -224,21 +224,21 @@ text := "00:00 Noisia - Stigma\n04:10 Mefjus - Sleepless\n03:55 Phace - Psycho\n
 list := trackparse.ParseTracklist(text)
 
 for _, w := range list.Warnings {
-    fmt.Println(w.Code, w.Line, w.Severity, w.Suggestion == nil)
+	fmt.Println(w.Code, w.Line, w.Severity, w.Suggestion == nil)
 }
 // time-out-of-order 3 warning true
 // line-unparsed 4 warning true
 
 for _, w := range list.Warnings {
-    if w.Severity == trackparse.SeverityWarning {
-        fmt.Printf("line %d: %s\n", w.Line, w.Code)
-    }
+	if w.Severity == trackparse.SeverityWarning {
+		fmt.Printf("line %d: %s\n", w.Line, w.Code)
+	}
 }
 // line 3: time-out-of-order
 // line 4: line-unparsed
 
 fmt.Println(slices.ContainsFunc(list.Warnings, func(w trackparse.TracklistWarning) bool {
-    return w.Code == trackparse.WarningCodeTimeOutOfOrder
+	return w.Code == trackparse.WarningCodeTimeOutOfOrder
 }))   // true
 ```
 
@@ -339,12 +339,12 @@ result.warnings.iter().any(|w| w.code == EditWarningCode::EditInvalid);   // tru
 
 ```go
 result := trackparse.ApplyEdits(text, []trackparse.Edit{
-    trackparse.SetTime(9, 60),           // there is no line 9
-    trackparse.ShiftLines(-300, 2),      // 04:10 minus five minutes
+	trackparse.SetTime(9, 60),           // there is no line 9
+	trackparse.ShiftLines(-300, 2),      // 04:10 minus five minutes
 })
 
 for _, w := range result.Warnings {
-    fmt.Println(w.Code, w.Edit, *w.Line)
+	fmt.Println(w.Code, w.Edit, *w.Line)
 }
 // edit-invalid 0 9
 // time-clamped 1 2
@@ -352,7 +352,7 @@ fmt.Println(result.Changed)                                // [2]
 fmt.Printf("%q\n", strings.Split(result.Text, "\n")[1])   // "00:00 Mefjus - Sleepless"
 
 fmt.Println(slices.ContainsFunc(result.Warnings, func(w trackparse.EditWarning) bool {
-    return w.Code == trackparse.EditWarningCodeEditInvalid
+	return w.Code == trackparse.EditWarningCodeEditInvalid
 }))   // true
 ```
 

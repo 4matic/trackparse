@@ -95,23 +95,23 @@ in the title, word for word.
   </TabItem>
   <TabItem label="Go">
     ```go
-    import (
-        "fmt"
+	import (
+		"fmt"
 
-        "github.com/4matic/trackparse/go"
-    )
+		"github.com/4matic/trackparse/go"
+	)
 
-    track := trackparse.Parse("Noisia feat. Foreign Beggars - Shellshock")
-    for _, a := range track.Artists {
-        fmt.Printf("%s (%s)\n", a.Name, a.Role)
-    }
-    // Noisia (primary)
-    // Foreign Beggars (featured)
+	track := trackparse.Parse("Noisia feat. Foreign Beggars - Shellshock")
+	for _, a := range track.Artists {
+		fmt.Printf("%s (%s)\n", a.Name, a.Role)
+	}
+	// Noisia (primary)
+	// Foreign Beggars (featured)
 
-    v := trackparse.Parse("Queen - Bohemian Rhapsody (Live at Wembley 1986)").Versions[0]
-    fmt.Println(v.Type, *v.Descriptor, *v.Year)
-    // live at Wembley 1986
-    ```
+	v := trackparse.Parse("Queen - Bohemian Rhapsody (Live at Wembley 1986)").Versions[0]
+	fmt.Println(v.Type, *v.Descriptor, *v.Year)
+	// live at Wembley 1986
+	```
   </TabItem>
 </Tabs>
 

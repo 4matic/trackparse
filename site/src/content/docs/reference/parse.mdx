@@ -136,18 +136,18 @@ pub struct ParsedTrack {
 
 ```go
 type Track struct {
-    Input     string
-    Mode      Mode
-    Position  *Position    // Position{Raw string; Number int}
-    Timestamp *Timestamp   // Timestamp{Raw string; Seconds int}
-    Artists   []Artist
-    Title     string
-    FullTitle string
-    Versions  []Version
-    Year      *int
-    Flags     Flags        // Flags{Explicit, Clean, UnknownArtist, UnknownTitle bool}
-    Junk      []Junk       // Junk{Raw string; Kind JunkKind}
-    Warnings  []Warning
+	Input     string
+	Mode      Mode
+	Position  *Position    // Position{Raw string; Number int}
+	Timestamp *Timestamp   // Timestamp{Raw string; Seconds int}
+	Artists   []Artist
+	Title     string
+	FullTitle string
+	Versions  []Version
+	Year      *int
+	Flags     Flags        // Flags{Explicit, Clean, UnknownArtist, UnknownTitle bool}
+	Junk      []Junk       // Junk{Raw string; Kind JunkKind}
+	Warnings  []Warning
 }
 ```
 
@@ -284,14 +284,14 @@ pub struct Version {
 
 ```go
 type Version struct {
-    Type          VersionType
-    Raw           string
-    Artists       []Artist
-    Modifiers     []string
-    Descriptor    *string
-    Year          *int
-    UnknownArtist bool
-    Delimiter     Delimiter
+	Type          VersionType
+	Raw           string
+	Artists       []Artist
+	Modifiers     []string
+	Descriptor    *string
+	Year          *int
+	UnknownArtist bool
+	Delimiter     Delimiter
 }
 ```
 
@@ -397,11 +397,11 @@ keys, so `serde_json` writes the same text and reads it back.
 
 ```go
 import (
-    "encoding/json"
-    "fmt"
-    "reflect"
+	"encoding/json"
+	"fmt"
+	"reflect"
 
-    "github.com/4matic/trackparse/go"
+	"github.com/4matic/trackparse/go"
 )
 
 track := trackparse.Parse("Noisia - Stigma (2015)")
