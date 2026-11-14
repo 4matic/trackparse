@@ -1,0 +1,6 @@
+# CMake build trees (c/build, c/build-<name>, ...)
+build*/
+# amalgamation output (scripts/amalgamate.mjs)
+dist/
+# local test data, never committed
+tests/data/*.local.*
