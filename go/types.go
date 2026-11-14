@@ -528,7 +528,9 @@ type EditWarning struct {
 	// Edit is the index of the edit in the edits slice.
 	Edit int
 	// Line is the line concerned; for edit-invalid the edit's own line (or after), which may
-	// not exist in the text.
+	// not exist in the text. Edits pass their line numbers through float64, as JavaScript
+	// numbers do, so a line beyond 2^53 in magnitude comes back rounded to a float64 value
+	// (Delete(1<<53 + 1) is reported as line 9007199254740992).
 	Line *int
 }
 

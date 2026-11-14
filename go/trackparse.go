@@ -90,8 +90,9 @@ func ParseTracklistWith(text string, options TracklistOptions) Tracklist {
 }
 
 // ApplyEdits applies edits to a tracklist text (R13.9), in order, each to the result of the
-// previous one. Lines no edit wrote stay byte-identical. An edit that cannot be applied changes
-// nothing and is reported as [EditWarningCodeEditInvalid].
+// previous one. Lines no edit wrote stay byte-identical, after invalid UTF-8 is replaced (each
+// maximal ill-formed subpart becomes one U+FFFD, as in every function). An edit that cannot be
+// applied changes nothing and is reported as [EditWarningCodeEditInvalid].
 func ApplyEdits(text string, edits []Edit) EditResult {
 	loose := make([]jsonValue, len(edits))
 	for i := range edits {
