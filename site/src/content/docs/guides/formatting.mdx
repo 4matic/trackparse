@@ -5,11 +5,13 @@ description: Turn a ParsedTrack back into a string, in the style you want.
 
 import { Tabs, TabItem } from "@astrojs/starlight/components";
 
-`format(track, options?)` renders a parsed track back to a string. In Python it is
-`format_track(track, **options)`. In Rust it is `format_track(&track)`, or
-`format_track_with(&track, &options)` with options. In Go it is `trackparse.Format(track)`, or
-`trackparse.FormatWith(track, options)`. Use it to bring a messy library to one style,
-or to build a display title without the junk.
+[`format(track, options?)`](/trackparse/reference/functions/#formattrack-options) renders a parsed
+track back to a string. In Python it is `format_track(track, **options)`. In Rust it is
+[`format_track(&track)`](https://docs.rs/trackparse/latest/trackparse/fn.format_track.html), or
+[`format_track_with(&track, &options)`](https://docs.rs/trackparse/latest/trackparse/fn.format_track_with.html) with options. In Go it is
+[`trackparse.Format(track)`](https://pkg.go.dev/github.com/4matic/trackparse/go#Format), or [`trackparse.FormatWith(track, options)`](https://pkg.go.dev/github.com/4matic/trackparse/go#FormatWith).
+Use it to bring a messy library to one style, or to build a display title without the junk. The
+rules are [R11](/trackparse/reference/spec/#r11-format) in the spec.
 
 <Tabs syncKey="lang">
 <TabItem label="JavaScript">
@@ -74,22 +76,27 @@ fmt.Printf("%q\n", trackparse.Format(t))
 </TabItem>
 </Tabs>
 
-Junk is never written back. Everything else is, by default, the way it was written.
+Junk is never written back. Everything else is, by default, the way it was written. The
+[playground](/trackparse/playground/#track=01.%20Wilkinson%20ft.%20Becky%20Hill%20%26%20Tom%20Cane%20-%20Afterglow%20%28Sub%20Focus%20VIP%20Remix%29%20%5BOfficial%20Video%5D) has a `format()` panel with this track loaded.
 
 ## Options
 
 | Option | Values | Default |
 |---|---|---|
-| `feat` | `"source"` keep features where they were, `"artist"` move them left of the dash, `"title"` move them into the title, `"omit"` drop them | `"source"` |
+| `feat` | `"source"` keep features where they were, `"artist"` move them left of the dash, `"title"` move them into the title, `"omit"` drop them ([R11.2](/trackparse/reference/spec/#r11-format:~:text=R11.2%20Featured)) | `"source"` |
 | `featMarker` | the word to write before features | the one from the input |
-| `joiners` | `"original"` as written, `"canonical"` normalized (`and` → `&`, `;` → `,`, `ft.` → `feat.`) | `"original"` |
+| `joiners` | `"original"` as written, `"canonical"` normalized (`and` → `&`, `;` → `,`, `ft.` → `feat.`; [R11.5](/trackparse/reference/spec/#r11-format:~:text=R11.5%20canonical%20joiners)) | `"original"` |
 | `versions` | `"all"` or `"none"` | `"all"` |
 | `producers` | write `(prod. by …)` credits | `true` |
 | `position` | write the track number back | `false` |
 
 Python takes the options as keyword arguments, so `featMarker` is `feat_marker`. Rust takes a
-`FormatOptions` value built with one setter per option, and the values are enums. Go takes a
-`FormatOptions` struct whose zero value is the default, and the values are typed string constants.
+[`FormatOptions`](https://docs.rs/trackparse/latest/trackparse/struct.FormatOptions.html) value built with one setter per option, and the
+values are enums ([`FeatPlacement`](https://docs.rs/trackparse/latest/trackparse/enum.FeatPlacement.html),
+[`JoinerStyle`](https://docs.rs/trackparse/latest/trackparse/enum.JoinerStyle.html), [`VersionsOption`](https://docs.rs/trackparse/latest/trackparse/enum.VersionsOption.html)). Go
+takes a [`FormatOptions`](https://pkg.go.dev/github.com/4matic/trackparse/go#FormatOptions) struct whose zero value is the default, and the values
+are typed string constants ([`FeatPlacement`](https://pkg.go.dev/github.com/4matic/trackparse/go#FeatPlacement), [`JoinerStyle`](https://pkg.go.dev/github.com/4matic/trackparse/go#JoinerStyle),
+[`VersionsOption`](https://pkg.go.dev/github.com/4matic/trackparse/go#VersionsOption)); [`trackparse.Ptr`](https://pkg.go.dev/github.com/4matic/trackparse/go#Ptr) sets `FeatMarker`.
 Since a Go `bool` field defaults to `false`, `producers` becomes `OmitProducers`:
 
 | Option | Python | Rust | Go |
@@ -209,7 +216,7 @@ fmt.Printf("%q\n", trackparse.FormatWith(
 
 Parsing the formatted string gives back the same artist names and roles, the same title and the
 same version types and remixers, as long as the first parse raised no warnings. The spec makes this
-an invariant (R11.6, under [R11](/trackparse/reference/spec/#r11-format)), and the
+an invariant ([R11.6](/trackparse/reference/spec/#r11-format:~:text=R11.6%20Round%2Dtrip)), and the
 [property tests](/trackparse/project/testing/#properties) check it on generated input:
 
 <Tabs syncKey="lang">
@@ -256,11 +263,14 @@ fmt.Printf("%q\n", again.FullTitle)   // "Shellshock (Phace Remix)"
 </Tabs>
 
 The [playground](/trackparse/playground/#track=01.%20Wilkinson%20ft.%20Becky%20Hill%20%26%20Tom%20Cane%20-%20Afterglow%20%28Sub%20Focus%20VIP%20Remix%29%20%5BOfficial%20Video%5D)
-has a `format()` panel if you want to try the options on this track or your own strings.
+has a `format()` panel if you want to try the options on this track or your own strings. Its code
+view writes the call for each language.
 
 ## See also
 
-- [`format` in the reference](/trackparse/reference/functions/#formattrack-options).
+- [`format` in the reference](/trackparse/reference/functions/#formattrack-options), and
+  [Format options](/trackparse/reference/options/#format-options) for how the options are typed in
+  each language.
 - [Editing tracklists](/trackparse/guides/editing-tracklists/#the-edits) uses `format` to rewrite
   the track text of a line.
 - [Artists and credits](/trackparse/guides/artists/) and

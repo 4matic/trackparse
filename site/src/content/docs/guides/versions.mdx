@@ -7,7 +7,9 @@ import { Tabs, TabItem } from "@astrojs/starlight/components";
 
 A version is anything that says which take of a song this is: a remix, a VIP, a radio edit, a live
 recording, a remaster, a sped-up TikTok cut. trackparse reads them from brackets and from dash
-suffixes, and puts each one in `versions`, left to right.
+suffixes, and puts each one in `versions`, left to right
+([R9.3](/trackparse/reference/spec/#r9-assembly-and-dedup:~:text=R9.3%20Versions%20order)). The fields are listed under
+[`Version`](/trackparse/reference/parse/#version) in the reference.
 
 <Tabs syncKey="lang">
 <TabItem label="JavaScript">
@@ -76,17 +78,19 @@ type Version struct {
 </TabItem>
 </Tabs>
 
-`title` never includes versions. `fullTitle` (`full_title` in Python and Rust, `FullTitle` in Go) is the title with them
+`title` never includes versions. [`fullTitle`](/trackparse/reference/parse/#parsedtrack) (`full_title` in Python and Rust, `FullTitle` in Go) is the title with them
 put back, in their original brackets.
 
 In Rust the type is the field `version_type`, because `type` is a reserved word, and its values are
-enum variants (`VersionType::Remix`, `VersionType::SpedUp`). `as_str()` gives the names used on this
+variants of the enum [`VersionType`](https://docs.rs/trackparse/latest/trackparse/enum.VersionType.html) (`VersionType::Remix`,
+`VersionType::SpedUp`). `as_str()` gives the names used on this
 page (`"remix"`, `"spedUp"`), and so does `Display`. `modifiers` holds those names as strings.
-`delimiter` is the enum `VersionDelimiter`: `Paren`, `Square`, `Curly` or `Dash`.
+`delimiter` is the enum [`VersionDelimiter`](https://docs.rs/trackparse/latest/trackparse/enum.VersionDelimiter.html): `Paren`, `Square`,
+`Curly` or `Dash`.
 
-In Go the field is `Type`, of the string type `VersionType`. Its constants
+In Go the field is `Type`, of the string type [`VersionType`](https://pkg.go.dev/github.com/4matic/trackparse/go#VersionType). Its constants
 (`trackparse.VersionTypeRemix`, `trackparse.VersionTypeSpedUp`) hold the names used on this page, so
-they print as `remix` and `spedUp`. `Delimiter` is a string type too, holding the delimiter itself:
+they print as `remix` and `spedUp`. [`Delimiter`](https://pkg.go.dev/github.com/4matic/trackparse/go#Delimiter) is a string type too, holding the delimiter itself:
 `trackparse.DelimiterParen` is `"("`. `Descriptor` and `Year` are pointers, `nil` when absent.
 
 ## The 27 types
@@ -100,14 +104,15 @@ they print as `remix` and `spedUp`. `Delimiter` is a string type too, holding th
 
 The keywords behind them are in
 [`version-keywords.json`](https://github.com/4matic/trackparse/blob/main/spec/data/version-keywords.json).
-In Rust, `VersionType::ALL` lists the 27 variants and `VersionType::from_name("spedUp")` reads a
-name back. In Go, `trackparse.AllVersionTypes()` lists them, and since the type is a string,
+In Rust, [`VersionType::ALL`](https://docs.rs/trackparse/latest/trackparse/enum.VersionType.html#associatedconstant.ALL) lists the 27
+variants and `VersionType::from_name("spedUp")` reads a name back. In Go,
+[`trackparse.AllVersionTypes()`](https://pkg.go.dev/github.com/4matic/trackparse/go#AllVersionTypes) lists them, and since the type is a string,
 `trackparse.VersionType("spedUp")` is a conversion.
 
 ## Generic words borrow their meaning
 
 "Mix", "Edit" and "Version" don't say much on their own. trackparse looks at the word in front
-([R5](/trackparse/reference/spec/#r5-group-classification) in the spec). Click an input to open it
+([R5.7](/trackparse/reference/spec/#r5-group-classification:~:text=R5.7%20Version) in the spec). Click an input to open it
 in the playground:
 
 | Input | `type` | Why |
@@ -175,7 +180,9 @@ fmt.Println(v.Delimiter)                    // (
 
 ## Several versions
 
-Two groups give two versions. So does a slash inside one group:
+Two groups give two versions. So does a slash inside one group
+([R5.6](/trackparse/reference/spec/#r5-group-classification:~:text=R5.6%20Multi%2Dversion);
+[try it](/trackparse/playground/#track=Dimension%20-%20Offshore%20%28Mefjus%20Remix%20%2F%20Noisia%20Remix%29)):
 
 <Tabs syncKey="lang">
 <TabItem label="JavaScript">
@@ -235,7 +242,8 @@ for _, v := range trackparse.Parse("Dimension - Offshore (Mefjus Remix / Noisia 
 ## Dash suffixes
 
 Streaming services often write versions after a second dash. Those are read too, and the
-delimiter is `-` (`VersionDelimiter::Dash` in Rust, `trackparse.DelimiterDash` in Go):
+delimiter is `-` (`VersionDelimiter::Dash` in Rust, `trackparse.DelimiterDash` in Go;
+[try it](/trackparse/playground/#track=The%20Beatles%20-%20Hey%20Jude%20-%20Remastered%202015)):
 
 <Tabs syncKey="lang">
 <TabItem label="JavaScript">
@@ -286,18 +294,24 @@ fmt.Printf("%q\n", v.Raw)              // "Remastered 2015"
 
 A dash suffix that isn't a version stays in the title. In a
 [tracklist](/trackparse/guides/tracklists/#tracklist-mode) the rule is stricter, because there the
-first dash is almost always the separator. The suffix rules are part of
-[R6](/trackparse/reference/spec/#r6-artisttitle-separator).
+first dash is almost always the separator. The suffix rules are
+[R6.2](/trackparse/reference/spec/#r6-artisttitle-separator:~:text=R6.2%20Suffix%20peeling) and
+[R8.2](/trackparse/reference/spec/#r8-title-side:~:text=R8.2%20Dash%20suffixes).
 
 ## Unknown remixers
 
 `(ID Remix)` is a remix by someone not yet announced. You get the version with
-`unknownArtist: true` (`unknown_artist` in Python and Rust, `UnknownArtist` in Go) and no artists. There is no artist
-called "ID". [Unknown artists](/trackparse/guides/artists/#unknown-artists) has an example.
+`unknownArtist: true` ([`unknown_artist`](/trackparse/guides/artists/#unknown-artists) in Python and Rust, `UnknownArtist` in Go) and no artists. There is no artist
+called "ID". [Unknown artists](/trackparse/guides/artists/#unknown-artists) has an example, and
+the [playground](/trackparse/playground/#track=ID%20-%20ID%20%28ID%20Remix%29) shows it.
 
 ## Your own words
 
-If your catalog uses a word trackparse doesn't know, add it with `keywords.versionHeads` (`version_heads` in Python, `KeywordOptions::version_head` in Rust, `Keywords.VersionHeads` in Go):
+If your catalog uses a word trackparse doesn't know, add it with
+[`keywords.versionHeads`](/trackparse/reference/options/#keywords) (`version_heads` in Python,
+[`KeywordOptions::version_head`](https://docs.rs/trackparse/latest/trackparse/struct.KeywordOptions.html#method.version_head) in Rust,
+[`Keywords.VersionHeads`](https://pkg.go.dev/github.com/4matic/trackparse/go#Keywords) in Go). The playground has no field for keywords, so this
+one runs only in code:
 
 <Tabs syncKey="lang">
 <TabItem label="JavaScript">

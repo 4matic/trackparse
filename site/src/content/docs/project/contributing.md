@@ -22,7 +22,8 @@ Behaviour starts in the spec, not in the code:
 
 1. Add or amend a rule in [`spec/SPEC.md`](https://github.com/4matic/trackparse/blob/main/spec/SPEC.md).
    Rule IDs are never renumbered or reused.
-2. Add handwritten fixtures that cite the rule: the positive case, the near-miss that must not
+2. Add handwritten fixtures that cite the rule
+   ([format](https://github.com/4matic/trackparse/blob/main/spec/fixtures/README.md)): the positive case, the near-miss that must not
    trigger, and one exact case if the rule touches many fields.
 3. If the rule is combinatorial (a new joiner, a new version word), teach the generator the atom
    and regenerate.
@@ -120,6 +121,7 @@ repository root. It runs every fixture through all four ports and compares the c
 pnpm build
 node scripts/compare-ports.mjs                # must print "differences: 0"
 node scripts/compare-ports.mjs --only=rust    # one port against JavaScript (or --only=python, --only=go)
+node scripts/fuzz-ports.mjs                   # the same diff on random input
 ```
 
 ## This website
@@ -136,6 +138,14 @@ pnpm docs:build    # build it; fails on broken pages
 every command and the release process. Commits follow
 [Conventional Commits](https://www.conventionalcommits.org/), because the changelog is generated
 from them. The four packages and the spec are released together under one version number.
+
+## See also
+
+- [How it works](/trackparse/project/how-it-works/) for the pipeline and the rule groups.
+- [How it's tested](/trackparse/project/testing/) for the fixtures, the generator and the
+  cross-port diff.
+- [Ports](/trackparse/project/ports/) for what a new language has to get right.
+- [Limitations and roadmap](/trackparse/project/roadmap/) for what is planned.
 
 ## License
 

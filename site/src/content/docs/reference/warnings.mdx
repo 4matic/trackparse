@@ -10,23 +10,26 @@ three kinds: on a single track, on a tracklist, and on an edit.
 
 In JavaScript and Python a warning code is a string. In Rust it is an enum variant, and `as_str()`
 or `Display` gives the same string. In Go it is a constant of a string type, whose value is the
-string. The tables below give the string, the Rust variant and the Go constant for each code.
+string. The tables below give the string, the Rust variant and the Go constant for each code, and
+the rule of the [spec](/trackparse/reference/spec/) that raises it.
 
 ## Track warnings
 
 `ParsedTrack.warnings` is a list of codes: an array of strings in JavaScript, a tuple of strings in
-Python, a `Vec<Warning>` in Rust, a `[]Warning` in Go. An empty list means every decision was unambiguous.
+Python, a `Vec<Warning>` in Rust ([`Warning`](https://docs.rs/trackparse/latest/trackparse/enum.Warning.html)), a `[]Warning` in Go
+([`Warning`](https://pkg.go.dev/github.com/4matic/trackparse/go#Warning)). An empty list means every decision was unambiguous. Click an example
+to open it in the playground.
 
 | Warning | Rust | Go | Means | Example |
 |---|---|---|---|---|
-| `noSeparator` | `Warning::NoSeparator` | `WarningNoSeparator` | No artist/title separator was found. The whole string is the title | `Around the World` |
-| `ambiguousSeparator` | `Warning::AmbiguousSeparator` | `WarningAmbiguousSeparator` | A pipe-separated YouTube title had two parts and no dash, so they were read as artist and title | `Noisia \| Stigma` |
-| `unspacedDashSplit` | `Warning::UnspacedDashSplit` | `WarningUnspacedDashSplit` | Split at a dash without spaces around it (youtube and filename modes, and timed tracklist lines) | `Blink-182-All The Small Things` |
-| `asymmetricDashSplit` | `Warning::AsymmetricDashSplit` | `WarningAsymmetricDashSplit` | Split at a dash with a space on one side only | `Artist -Title` |
-| `bySplit` | `Warning::BySplit` | `WarningBySplit` | Read `"Title" by Artist` (youtube mode) | `"Numb" by Linkin Park` |
-| `quotedTitleSplit` | `Warning::QuotedTitleSplit` | `WarningQuotedTitleSplit` | Took a quoted span as the title and what came before it as the artist (youtube mode) | `Linkin Park: "Numb"` |
-| `ambiguousMixCredit` | `Warning::AmbiguousMixCredit` | `WarningAmbiguousMixCredit` | `<Name> Mix` was read as a remix, but the name is long enough that it might be a style | `(Fonetick Lee & Sonic Art Space Drums Mix)` |
-| `unbalancedBrackets` | `Warning::UnbalancedBrackets` | `WarningUnbalancedBrackets` | A bracket was opened and never closed | `Noisia - Stigma (VIP` |
+| `noSeparator` | `Warning::NoSeparator` | `WarningNoSeparator` | No artist/title separator was found. The whole string is the title ([R6.8](/trackparse/reference/spec/#r6-artisttitle-separator:~:text=R6.8%20No%20separator)) | [`Around the World`](/trackparse/playground/#track=Around%20the%20World) |
+| `ambiguousSeparator` | `Warning::AmbiguousSeparator` | `WarningAmbiguousSeparator` | A pipe-separated YouTube title had two parts and no dash, so they were read as artist and title ([R2.4](/trackparse/reference/spec/#r2-mode-prelude:~:text=R2.4%20youtube%20pipes)) | [`Noisia \| Stigma`](/trackparse/playground/#track=Noisia%20%7C%20Stigma&mode=youtube) |
+| `unspacedDashSplit` | `Warning::UnspacedDashSplit` | `WarningUnspacedDashSplit` | Split at a dash without spaces around it (youtube and filename modes, and timed tracklist lines: [R6.7](/trackparse/reference/spec/#r6-artisttitle-separator:~:text=R6.7%20Unspaced%20dash), [R6.10](/trackparse/reference/spec/#r6-artisttitle-separator:~:text=R6.10%20Tracklist%20mode)) | [`Blink-182-All The Small Things`](/trackparse/playground/#track=Blink-182-All%20The%20Small%20Things&mode=youtube) |
+| `asymmetricDashSplit` | `Warning::AsymmetricDashSplit` | `WarningAsymmetricDashSplit` | Split at a dash with a space on one side only ([R6.4](/trackparse/reference/spec/#r6-artisttitle-separator:~:text=R6.4%20Asymmetric%20dash)) | [`Artist -Title`](/trackparse/playground/#track=Artist%20-Title) |
+| `bySplit` | `Warning::BySplit` | `WarningBySplit` | Read `"Title" by Artist` (youtube mode, [R6.6](/trackparse/reference/spec/#r6-artisttitle-separator:~:text=R6.6%20by%20%28youtube%20only%29)) | [`"Numb" by Linkin Park`](/trackparse/playground/#track=%22Numb%22%20by%20Linkin%20Park&mode=youtube) |
+| `quotedTitleSplit` | `Warning::QuotedTitleSplit` | `WarningQuotedTitleSplit` | Took a quoted span as the title and what came before it as the artist (youtube mode, [R6.5](/trackparse/reference/spec/#r6-artisttitle-separator:~:text=R6.5%20Quoted%20title)) | [`Linkin Park: "Numb"`](/trackparse/playground/#track=Linkin%20Park%3A%20%22Numb%22&mode=youtube) |
+| `ambiguousMixCredit` | `Warning::AmbiguousMixCredit` | `WarningAmbiguousMixCredit` | `<Name> Mix` was read as a remix, but the name is long enough that it might be a style ([R5.7](/trackparse/reference/spec/#r5-group-classification:~:text=R5.7%20Version)) | [`(Fonetick Lee & Sonic Art Space Drums Mix)`](/trackparse/playground/#track=Artist%20-%20Title%20%28Fonetick%20Lee%20%26%20Sonic%20Art%20Space%20Drums%20Mix%29) |
+| `unbalancedBrackets` | `Warning::UnbalancedBrackets` | `WarningUnbalancedBrackets` | A bracket was opened and never closed ([R3.3](/trackparse/reference/spec/#r3-group-scanner-and-skeleton:~:text=R3.3%20An%20opener)) | [`Noisia - Stigma (VIP`](/trackparse/playground/#track=Noisia%20-%20Stigma%20%28VIP) |
 
 What to do with them depends on your data. For a music library, a track with any warning is a good
 candidate for a human to look at. For scrobbling, most of them are fine to accept.
@@ -128,10 +131,13 @@ for _, warning := range track.Warnings {
 
 ## Tracklist warnings
 
-`Tracklist.warnings` holds objects: `{ code, line, severity, suggestion }`. They are sorted by line.
-In Rust the code is a `WarningCode` and the severity is `Severity::Info` or `Severity::Warning`.
-In Go they are a `WarningCode` and `SeverityInfo` or `SeverityWarning`, and `Suggestion` is a
-pointer.
+`Tracklist.warnings` holds objects: `{ code, line, severity, suggestion }`
+([`TracklistWarning`](/trackparse/reference/tracklist/#tracklistwarning)). They are sorted by line.
+In Rust the code is a [`WarningCode`](https://docs.rs/trackparse/latest/trackparse/tracklist/enum.WarningCode.html) and the severity is
+[`Severity`](https://docs.rs/trackparse/latest/trackparse/tracklist/enum.Severity.html)`::Info` or `Severity::Warning`. In Go they are a
+[`WarningCode`](https://pkg.go.dev/github.com/4matic/trackparse/go#WarningCode) and [`SeverityInfo`](https://pkg.go.dev/github.com/4matic/trackparse/go#SeverityInfo) or `SeverityWarning`,
+and `Suggestion` is a pointer. All of them are
+[R13.7](/trackparse/reference/spec/#r137-warnings) in the spec.
 
 | Code | Rust | Go | Severity | When |
 |---|---|---|---|---|
@@ -139,7 +145,7 @@ pointer.
 | `time-out-of-order` | `WarningCode::TimeOutOfOrder` | `WarningCodeTimeOutOfOrder` | warning | Earlier than the previous timed line. May carry a `suggestion` |
 | `time-duplicate` | `WarningCode::TimeDuplicate` | `WarningCodeTimeDuplicate` | warning | Same time as the previous timed line |
 | `no-start-at-zero` | `WarningCode::NoStartAtZero` | `WarningCodeNoStartAtZero` | info | The first time isn't `0:00` |
-| `time-after-audio-end` | `WarningCode::TimeAfterAudioEnd` | `WarningCodeTimeAfterAudioEnd` | warning | Later than `audioSeconds` (`audio_seconds`, `AudioSeconds`) |
+| `time-after-audio-end` | `WarningCode::TimeAfterAudioEnd` | `WarningCodeTimeAfterAudioEnd` | warning | Later than [`audioSeconds`](/trackparse/guides/tracklists/#options) (`audio_seconds`, `AudioSeconds`) |
 | `invalid-time` | `WarningCode::InvalidTime` | `WarningCodeInvalidTime` | warning | Looks like a time but isn't one (`1:75`, `0:61:00`). The line keeps it in `rest` |
 | `position-gap` | `WarningCode::PositionGap` | `WarningCodePositionGap` | warning | A track number isn't the previous one plus 1 |
 | `position-duplicate` | `WarningCode::PositionDuplicate` | `WarningCodePositionDuplicate` | warning | Same track number as the previous one |
@@ -241,8 +247,7 @@ fmt.Println(slices.ContainsFunc(list.Warnings, func(w trackparse.TracklistWarnin
 </TabItem>
 </Tabs>
 
-Here line 3 has no suggestion, because more than one time would fit between its neighbours. The
-checks are [R13.7](/trackparse/reference/spec/#r137-warnings) in the spec, and
+Here line 3 has no suggestion, because more than one time would fit between its neighbours.
 [Tracklists](/trackparse/guides/tracklists/#checks) walks through a list that does get a
 suggestion.
 
@@ -258,20 +263,23 @@ candidate fits, or none does, `suggestion` is `null` (`None` in Python and Rust,
 suggestion would be worse than none.
 
 To apply one, pass its `line` and `seconds` to a `set-time` edit. See
-[Editing tracklists](/trackparse/guides/editing-tracklists/).
+[Editing tracklists](/trackparse/guides/editing-tracklists/). In the
+[playground](/trackparse/playground/#list=48%3A20%20Noisia%20-%20Stigma%0A01%3A07%3A44%20Imanu%20-%20Sacrifice%0A00%3A11%3A02%20Current%20Value%20-%20Payload%0A01%3A15%3A36%20Hybris%20-%20Spinning%20Top),
+a warning with a suggestion has a button that applies it.
 
 ## Edit warnings
 
-`applyEdits` (`apply_edits` in Python and Rust, `ApplyEdits` in Go) returns `{ code, edit, line }`
-objects. `edit` is
-the index in your list of edits, and `line` is `null` (`None`, `nil` in Go) when the edit names no
-line.
+[`applyEdits`](/trackparse/reference/tracklist/#applyeditstext-edits-options) (`apply_edits` in Python and Rust, `ApplyEdits` in Go) returns `{ code, edit, line }`
+objects ([`EditWarning`](https://docs.rs/trackparse/latest/trackparse/tracklist/struct.EditWarning.html) in Rust,
+[`EditWarning`](https://pkg.go.dev/github.com/4matic/trackparse/go#EditWarning) in Go). `edit` is the index in your list of edits, and `line` is
+`null` (`None`, `nil` in Go) when the edit names no line. The rules are
+[R13.9](/trackparse/reference/spec/#r139-edits).
 
 | Code | Rust | Go | When |
 |---|---|---|---|
-| `style-upgraded` | `EditWarningCode::StyleUpgraded` | `EditWarningCodeStyleUpgraded` | a time without hours passed one hour and gained them |
-| `time-clamped` | `EditWarningCode::TimeClamped` | `EditWarningCodeTimeClamped` | a time would go below zero and was set to zero |
-| `edit-invalid` | `EditWarningCode::EditInvalid` | `EditWarningCodeEditInvalid` | the edit could not apply and changed nothing |
+| `style-upgraded` | `EditWarningCode::StyleUpgraded` | `EditWarningCodeStyleUpgraded` | a time without hours passed one hour and gained them ([R13.9.2](/trackparse/reference/spec/#r139-edits:~:text=R13.9.2%20Time%20style)) |
+| `time-clamped` | `EditWarningCode::TimeClamped` | `EditWarningCodeTimeClamped` | a time would go below zero and was set to zero ([R13.9.3](/trackparse/reference/spec/#r139-edits:~:text=R13.9.3%20Clamp)) |
+| `edit-invalid` | `EditWarningCode::EditInvalid` | `EditWarningCodeEditInvalid` | the edit could not apply and changed nothing ([R13.9.6](/trackparse/reference/spec/#r139-edits:~:text=R13.9.6%20Totality)) |
 
 <Tabs syncKey="lang">
 <TabItem label="JavaScript">
@@ -362,4 +370,6 @@ makes an edit invalid.
 - [`parse` and `ParsedTrack`](/trackparse/reference/parse/) and the
   [Tracklist API](/trackparse/reference/tracklist/) for the types that carry the warnings.
 - [Modes](/trackparse/guides/modes/) for the guesses behind the track warnings.
-- [Tracklists](/trackparse/guides/tracklists/#checks) for the list checks.
+- [Tracklists](/trackparse/guides/tracklists/#checks) for the list checks, and
+  [Editing tracklists](/trackparse/guides/editing-tracklists/#when-an-edit-cant-apply) for the
+  edit warnings.

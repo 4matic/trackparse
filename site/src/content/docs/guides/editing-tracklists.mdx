@@ -5,7 +5,8 @@ description: Fix times, shift whole sections, sort, insert and delete lines, and
 
 import { Tabs, TabItem } from "@astrojs/starlight/components";
 
-`applyEdits(text, edits)` (`apply_edits` in Python and Rust, `ApplyEdits` in Go) takes a
+[`applyEdits(text, edits)`](/trackparse/reference/tracklist/#applyeditstext-edits-options)
+(`apply_edits` in Python and Rust, `ApplyEdits` in Go) takes a
 tracklist as text and returns new text. It's built for editors: you get back the lines it changed, and every other line keeps its
 bytes and its line ending. The rules are [R13.9](/trackparse/reference/spec/#r139-edits) in the
 spec.
@@ -157,13 +158,15 @@ for _, line := range strings.Split(result.Text, "\r\n")[4:] {
 </Tabs>
 
 In JavaScript an edit is an object with an `op`. In Python it is a plain dict with the same keys,
-`"from"` included. In Rust it is a value of the `Edit` enum, made with a function per edit:
-`Edit::set_time(line, seconds)`, `Edit::shift_from(seconds, from)`. In Go it is an `Edit` struct,
-made with a function per edit as well: `trackparse.SetTime(line, seconds)`,
-`trackparse.ShiftFrom(seconds, from)`.
+`"from"` included. In Rust it is a value of the [`Edit`](https://docs.rs/trackparse/latest/trackparse/tracklist/enum.Edit.html) enum, made
+with a function per edit: `Edit::set_time(line, seconds)`, `Edit::shift_from(seconds, from)`. In Go
+it is an [`Edit`](https://pkg.go.dev/github.com/4matic/trackparse/go#Edit) struct, made with a function per edit as well:
+[`trackparse.SetTime(line, seconds)`](https://pkg.go.dev/github.com/4matic/trackparse/go#SetTime), [`trackparse.ShiftFrom(seconds, from)`](https://pkg.go.dev/github.com/4matic/trackparse/go#ShiftFrom).
 
-Lines 1 to 4 are untouched, CRLF included. Edits run in order, each on the text the previous one
-produced, with line numbers as that text has them.
+Lines 1 to 4 are untouched, CRLF included ([R13.9.1](/trackparse/reference/spec/#r139-edits:~:text=R13.9.1%20Locality)). Edits run in
+order, each on the text the previous one produced, with line numbers as that text has them. The
+[playground](/trackparse/playground/#list=Hour%202%0A48%3A20%20Noisia%20-%20Stigma%0A52%3A47%20Mefjus%20%26%20Kasra%20-%20Bandwagon%20%28Phace%20Remix%29%0A56%3A05%20Black%20Sun%20Empire%20-%20ID%0A59%3A31%20Alix%20Perez%20-%20Fade%20Away%0A01%3A03%3A10%20Interview%20with%20Hybris%0A01%3A07%3A44%20Imanu%20-%20Sacrifice%0A00%3A11%3A02%20Current%20Value%20feat.%20Teddy%20Killerz%20-%20Payload%0A01%3A15%3A36%20Hybris%20-%20Spinning%20Top)
+does the same with buttons: the suggested fix, a shift and a sort, with undo.
 
 ## The edits
 
@@ -177,12 +180,13 @@ and Go have a constructor for each:
 | `{ op: "shift", seconds, from }` | `Edit::shift_from(seconds, from)` | `ShiftFrom(seconds, from)` | The same, for every timed line from line `from` on |
 | `{ op: "shift", seconds, lines }` | `Edit::shift_lines(seconds, lines)` | `ShiftLines(seconds, lines...)` | The same, for the listed lines only |
 | `{ op: "sort-by-time" }` | `Edit::sort_by_time()` | `SortByTime()` | Reorder by time. Untimed lines move with the timed line above them, and lines before the first time stay on top |
-| `{ op: "set-rest", line, rest }` | `Edit::set_rest(line, rest)` | `SetRest(line, rest)` | Replace everything after the time, for example with `format(track)` (`format_track`, Go `Format`) |
+| `{ op: "set-rest", line, rest }` | `Edit::set_rest(line, rest)` | `SetRest(line, rest)` | Replace everything after the time, for example with `format(track)` ([`format_track`](/trackparse/reference/functions/#formattrack-options), Go `Format`) |
 | `{ op: "insert", after, text }` | `Edit::insert(after, text)` | `Insert(after, text)` | Insert a line after line `after` (`0` puts it at the top). It gets the text's usual line ending |
 | `{ op: "delete", line }` | `Edit::delete(line)` | `Delete(line)` | Remove a line |
 
 In Python the dict keys are quoted: `{"op": "set-time", "line": 3, "seconds": 90}`. Line numbers
-start at 1.
+start at 1. Sorting is [R13.9.4](/trackparse/reference/spec/#r139-edits:~:text=R13.9.4%20Sort), and inserting and deleting
+[R13.9.5](/trackparse/reference/spec/#r139-edits:~:text=R13.9.5%20Insert%20and%20delete).
 
 This example sorts a list, rewrites one line's track text with
 [`format`](/trackparse/guides/formatting/), inserts a line and deletes one:
@@ -281,16 +285,19 @@ after the insert the outro is line 4.
 ## Times keep their style
 
 A rewritten time looks like its neighbours. Hours or no hours, digit widths and fraction digits are
-all kept, so `52:47` plus 45 seconds is `53:32`, not `00:53:32`.
+all kept, so `52:47` plus 45 seconds is `53:32`, not `00:53:32`
+([R13.9.2](/trackparse/reference/spec/#r139-edits:~:text=R13.9.2%20Time%20style)).
 
 When a time without hours crosses the hour, it gains hours in the style the rest of the list uses
 (`59:31` → `01:00:16`, or `1:00:16` if the list writes one-digit hours). The edit reports
-`style-upgraded` so you know the line got longer.
+[`style-upgraded`](/trackparse/reference/warnings/#edit-warnings:~:text=style%2Dupgraded) so you know
+the line got longer.
 
 ## Bullets and Markdown stay
 
-A list bullet or Markdown emphasis around a time sits in `lead` and `gap`, so a rewritten time keeps
-it. Only the digits change:
+A list bullet or Markdown emphasis around a time sits in `lead` and `gap`
+([parts](/trackparse/guides/tracklists/#nothing-is-lost)), so a rewritten time keeps it. Only the
+digits change:
 
 <Tabs syncKey="lang">
 <TabItem label="JavaScript">
@@ -352,14 +359,16 @@ time is still read afterwards, because emphasis next to a time doesn't need a pa
 
 ## When an edit can't apply
 
-Edits never throw or panic. A bad one changes nothing and reports why. In Rust the codes are the
-enum `EditWarningCode` (`EditInvalid`, `TimeClamped`, `StyleUpgraded`), in Go the string type
-`EditWarningCode` (`trackparse.EditWarningCodeEditInvalid` and so on):
+Edits never throw or panic. A bad one changes nothing and reports why
+([R13.9.6](/trackparse/reference/spec/#r139-edits:~:text=R13.9.6%20Totality)). In Rust the codes are the enum
+[`EditWarningCode`](https://docs.rs/trackparse/latest/trackparse/tracklist/enum.EditWarningCode.html) (`EditInvalid`, `TimeClamped`,
+`StyleUpgraded`), in Go the string type [`EditWarningCode`](https://pkg.go.dev/github.com/4matic/trackparse/go#EditWarningCode)
+(`trackparse.EditWarningCodeEditInvalid` and so on):
 
 | Code | When |
 |---|---|
 | `edit-invalid` | missing line, no time on the line, `NaN` or infinity, a time too large to write, a line break inside `text` or `rest`, an unknown `op` |
-| `time-clamped` | the time would go below zero, so it was set to zero |
+| `time-clamped` | the time would go below zero, so it was set to zero ([R13.9.3](/trackparse/reference/spec/#r139-edits:~:text=R13.9.3%20Clamp)) |
 | `style-upgraded` | a time gained hours (see above) |
 
 Each edit warning is `{ code, edit, line }`, where `edit` is the index in your `edits` array and
@@ -368,17 +377,21 @@ Each edit warning is `{ code, edit, line }`, where `edit` is the index in your `
 
 ## Guarantees
 
-The property tests check these on random text and random edit lists:
+The [property tests](/trackparse/project/testing/#properties) check these on random text and
+random edit lists:
 
 - `applyEdits(t, [])` returns `t`.
 - An edit never touches a line it doesn't name.
 - `shift(+s)` followed by `shift(-s)` gives back the original text, unless something was clamped
-  or upgraded on the way.
+  or upgraded on the way ([R13.9.7](/trackparse/reference/spec/#r139-edits:~:text=R13.9.7%20Round%20trip)).
 
 ## See also
 
 - [Tracklist API](/trackparse/reference/tracklist/#applyeditstext-edits-options) for the result
   fields and the `Edit` type in each language.
 - [Tracklists](/trackparse/guides/tracklists/) for parsing, line kinds and checks.
+- [Warnings](/trackparse/reference/warnings/#edit-warnings) for the edit warnings in each
+  language.
 - [How it's tested](/trackparse/project/testing/#properties) for the property tests behind the
   guarantees.
+- [Specification, R13.9](/trackparse/reference/spec/#r139-edits) for the exact edit rules.

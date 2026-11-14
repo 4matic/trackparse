@@ -77,10 +77,14 @@ fmt.Printf("%+v\n", t.Junk)   // [{Raw:Official Music Video Kind:video} {Raw:HD 
 The phrases are in [`junk.json`](https://github.com/4matic/trackparse/blob/main/spec/data/junk.json)
 (plus `genres.json` for the genre kind) and [`platform-suffixes.json`](https://github.com/4matic/trackparse/blob/main/spec/data/platform-suffixes.json).
 Seeing junk is also one of the ways `mode: "auto"` decides a string came from YouTube
-(see [Modes](/trackparse/guides/modes/#how-auto-decides)).
+(see [Modes](/trackparse/guides/modes/#how-auto-decides)). A bracket of junk is
+[R5.1](/trackparse/reference/spec/#r5-group-classification:~:text=R5.1%20Junk), a platform suffix
+[R2.2](/trackparse/reference/spec/#r2-mode-prelude:~:text=R2.2%20Platform%20suffixes), and unbracketed junk at the end of a
+YouTube title [R8.4](/trackparse/reference/spec/#r8-title-side:~:text=R8.4%20Trailing%20junk).
 
-In Rust the kind is the enum `JunkKind` (`JunkKind::Video`, `JunkKind::Quality` and so on). Its
-`as_str()` gives the lowercase names in the table. In Go the kind is the string type `JunkKind`,
+In Rust the kind is the enum [`JunkKind`](https://docs.rs/trackparse/latest/trackparse/enum.JunkKind.html) (`JunkKind::Video`,
+`JunkKind::Quality` and so on). Its `as_str()` gives the lowercase names in the table. In Go the
+kind is the string type [`JunkKind`](https://pkg.go.dev/github.com/4matic/trackparse/go#JunkKind),
 and its constants (`trackparse.JunkKindVideo`, `trackparse.JunkKindQuality`) hold those names.
 
 <Tabs syncKey="lang">
@@ -118,8 +122,10 @@ fmt.Printf("%+v\n", trackparse.Parse("Elektronomia - Sky High [NCS Release]").Ju
 </TabItem>
 </Tabs>
 
-Catalog numbers like `[HOSP123]` are not junk yet. They stay in the title. See the
-[roadmap](/trackparse/project/roadmap/).
+Both lines are in the playground: [the platform
+suffix](/trackparse/playground/#track=Porter%20Robinson%20-%20Shelter%20-%20YouTube) and [the
+label](/trackparse/playground/#track=Elektronomia%20-%20Sky%20High%20%5BNCS%20Release%5D). Catalog numbers like `[HOSP123]`
+are not junk yet. They stay in the title. See the [roadmap](/trackparse/project/roadmap/).
 
 To treat a phrase of your own as junk, add it with
 [`keywords.junk`](/trackparse/reference/options/#keywords).
@@ -161,7 +167,8 @@ fmt.Printf("%+v\n", trackparse.Parse("Eminem - Without Me (Explicit)").Flags)
 </TabItem>
 </Tabs>
 
-`explicit` and `clean` come from `(Explicit)`, `[Clean]` and the like. `unknownArtist` and
+`explicit` and `clean` come from `(Explicit)`, `[Clean]` and the like
+([R5.4](/trackparse/reference/spec/#r5-group-classification:~:text=R5.4%20Flag); [try it](/trackparse/playground/#track=Eminem%20-%20Without%20Me%20%28Explicit%29)). `unknownArtist` and
 `unknownTitle` (`unknown_artist` and `unknown_title` in Python and Rust, `UnknownArtist` and `UnknownTitle` in
 Go) are set when the artist
 or title is a placeholder such as `ID`. See
@@ -169,7 +176,9 @@ or title is a placeholder such as `ID`. See
 
 ## Year
 
-A year on its own in brackets, or as a dash suffix, goes into `year`:
+A year on its own in brackets, or as a dash suffix, goes into `year`
+([R5.5](/trackparse/reference/spec/#r5-group-classification:~:text=R5.5%20Year); if there are several, the first in the string
+wins, [R9.6](/trackparse/reference/spec/#r9-assembly-and-dedup:~:text=R9.6%20Track%20year)):
 
 <Tabs syncKey="lang">
 <TabItem label="JavaScript">
@@ -212,6 +221,7 @@ fmt.Println(*t.Year)          // 2015
 
 A year inside a version (`Remastered 2015`) belongs to that version instead, in `versions[i].year`.
 In Rust both are `Option<u32>`; in Go both are `*int`, `nil` when there is no year.
+[Try it](/trackparse/playground/#track=Noisia%20-%20Stigma%20%282015%29) in the playground.
 
 ## Track numbers
 
@@ -258,13 +268,16 @@ fmt.Println(trackparse.Parse("2 Unlimited - No Limit").Position == nil)    // tr
 - in file names, also `07_Burial`, `01-Track` and `3 My Song.mp3`.
 
 A plain number before a word is part of the name: `2 Unlimited`, `50 Cent`, `808 State`. The rule
-is [R4](/trackparse/reference/spec/#r4-prefixes-timestamp-and-position). In a tracklist, a bare
+is [R4.2](/trackparse/reference/spec/#r4-prefixes-timestamp-and-position:~:text=R4.2%20Position), and the playground shows both
+[`01. Aphex Twin`](/trackparse/playground/#track=01.%20Aphex%20Twin%20-%20Xtal) and [`2 Unlimited`](/trackparse/playground/#track=2%20Unlimited%20-%20No%20Limit). In a tracklist, a bare
 number can still count when the lines around it continue the sequence: see
 [Bare track numbers](/trackparse/guides/tracklists/#bare-track-numbers).
 
 ## Cue times
 
-A time at the start becomes `timestamp`, with the seconds worked out for you:
+A time at the start becomes `timestamp`, with the seconds worked out for you
+([R4.1](/trackparse/reference/spec/#r4-prefixes-timestamp-and-position:~:text=R4.1%20Timestamp);
+[try it](/trackparse/playground/#track=%5B12%3A34%5D%20Noisia%20-%20Stigma)):
 
 <Tabs syncKey="lang">
 <TabItem label="JavaScript">

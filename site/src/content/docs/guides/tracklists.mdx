@@ -6,8 +6,9 @@ description: Parse the tracklist of a mix or podcast line by line, with start ti
 import { Tabs, TabItem } from "@astrojs/starlight/components";
 
 Mixes and podcasts come with a tracklist: a block of text, one track per line, usually with a start
-time in front. `parseTracklist` (`parse_tracklist` in Python and Rust, `ParseTracklist` in Go) reads the whole block. Every
-line gets its kind, its time and a full [`ParsedTrack`](/trackparse/reference/parse/). The list as a
+time in front. [`parseTracklist`](/trackparse/reference/tracklist/#parsetracklisttext-options)
+(`parse_tracklist` in Python and Rust, `ParseTracklist` in Go) reads the whole block. Every line
+gets its kind, its time and a full [`ParsedTrack`](/trackparse/reference/parse/). The list as a
 whole gets checks with line numbers. The rules are [R13](/trackparse/reference/spec/#r13-tracklists)
 in the spec, and every field is listed in the [Tracklist API](/trackparse/reference/tracklist/).
 
@@ -48,8 +49,9 @@ import (
 
 In JavaScript it's a separate entry point, `trackparse/tracklist`, about 8.4 KiB gzipped, so code
 that only parses single tracks never loads it. In Python it is the module `trackparse.tracklist`,
-in Rust the module `trackparse::tracklist`. Go has no separate entry: `trackparse.ParseTracklist`
-and `trackparse.ApplyEdits` are in the one package.
+in Rust the module [`trackparse::tracklist`](https://docs.rs/trackparse/latest/trackparse/tracklist/index.html). Go has no separate entry:
+[`trackparse.ParseTracklist`](https://pkg.go.dev/github.com/4matic/trackparse/go#ParseTracklist) and [`trackparse.ApplyEdits`](https://pkg.go.dev/github.com/4matic/trackparse/go#ApplyEdits)
+are in the one package.
 
 Two things differ in Rust. Seconds are `f64`, since a time can carry a fraction, so `Debug` prints
 `3167.0` where JavaScript and Python print `3167`. `to_json()` writes `3167`, as JavaScript and
@@ -253,7 +255,8 @@ fmt.Println(joined.String() == text)   // true
 </TabItem>
 </Tabs>
 
-`parts` cuts `raw` into four strings that join back into it:
+`parts` cuts `raw` into four strings that join back into it
+([R13.1.3](/trackparse/reference/spec/#r131-lines-and-the-lossless-guarantee:~:text=R13.1.3%20Parts)):
 
 | Part | Holds |
 |---|---|
@@ -280,7 +283,7 @@ A list bullet in front is fine too, as in lists pasted from Discord or Reddit:
 bullet goes into `lead`.
 
 Something that looks like a time but can't be one, like `1:75` or `0:61:00`, stays in `rest` and
-raises an `invalid-time` warning. The time forms are
+raises an [`invalid-time`](/trackparse/reference/warnings/#tracklist-warnings:~:text=invalid%2Dtime) warning. The time forms are
 [R13.2](/trackparse/reference/spec/#r132-times).
 
 ## Markdown
@@ -289,6 +292,7 @@ Lists copied from Discord, Reddit, Telegram or YouTube comments often keep their
 `**bold**`, `__underline__`, `*italic*` or `_italic_`, sometimes only around the time. trackparse
 reads through it. Emphasis next to the time goes into `lead` and `gap`, so an edit keeps it.
 Emphasis in the rest of the line stays in `rest`, but the parser reads the text without it.
+Both lines below are in the [playground](/trackparse/playground/#list=%2A%2A%5B%2A%2A14%3A21%2A%2A%5D%2010.%20Nitepunk%20-%20ID%2A%2A%0A%2A%2018%3A02%20Noisia%20-%20_Stigma_).
 
 <Tabs syncKey="lang">
 <TabItem label="JavaScript">
@@ -367,7 +371,10 @@ written. Runs of three or more, `~~`, `||` and backticks are never treated as Ma
 DJ tracklists mark a track played over the previous one, like an acapella on the second deck, with
 `w/` where the track number would go. Such a line gets `layered: true`. The `w/` stays in `rest` and
 is left out of the parsed track. An untimed layered line plays at the previous track's time, so it
-doesn't warn `time-missing`, and it doesn't count as a neighbour for bare track numbers.
+doesn't warn [`time-missing`](/trackparse/reference/warnings/#tracklist-warnings:~:text=time%2Dmissing),
+and it doesn't count as a neighbour for bare track numbers. [Open the
+example](/trackparse/playground/#list=00%3A00%20Noisia%20-%20Stigma%0Aw%2F%20Phace%20-%20Psycho%20%28Acapella%29%0A03%3A10%20Mefjus%20-%20Sleepless) in the
+playground.
 
 <Tabs syncKey="lang">
 <TabItem label="JavaScript">
@@ -451,16 +458,20 @@ whitespace and a track counts, so `00:30 w/ Phace - Psycho` is layered too. `w/`
 | `blank` | empty or only whitespace |
 
 Only `track` and `marker` entries have a `track`. No line is ever dropped. In Rust the kind is the
-enum `EntryKind` (`EntryKind::Track`, `EntryKind::Marker` and so on), in Go the string type
-`EntryKind` (`trackparse.EntryKindTrack`, `trackparse.EntryKindMarker`). The kinds are
+enum [`EntryKind`](https://docs.rs/trackparse/latest/trackparse/tracklist/enum.EntryKind.html) (`EntryKind::Track`, `EntryKind::Marker`
+and so on), in Go the string type [`EntryKind`](https://pkg.go.dev/github.com/4matic/trackparse/go#EntryKind) (`trackparse.EntryKindTrack`,
+`trackparse.EntryKindMarker`). The marker words are in
+[`marker-words.json`](https://github.com/4matic/trackparse/blob/main/spec/data/marker-words.json). The kinds are
 [R13.3](/trackparse/reference/spec/#r133-line-kinds).
 
 ## Options
 
-`parseTracklist` takes the `parse` options `mode` (default `"tracklist"`), `knownArtists`, `splitAnd`
-and `keywords`, plus two of its own (snake_case keyword arguments in Python, setters of
-`TracklistOptions` in Rust, fields of `TracklistOptions` in Go). `audioSeconds` is the length of the audio, and turns on the check for times after the end.
-`markerWords` adds marker words to the built-in ones:
+`parseTracklist` takes the [`parse` options](/trackparse/reference/options/#parse-options) `mode`
+(default `"tracklist"`), `knownArtists`, `splitAnd` and `keywords`, plus two of its own
+(snake_case keyword arguments in Python, setters of [`TracklistOptions`](https://docs.rs/trackparse/latest/trackparse/tracklist/struct.TracklistOptions.html)
+in Rust, fields of [`TracklistOptions`](https://pkg.go.dev/github.com/4matic/trackparse/go#TracklistOptions) in Go). `audioSeconds` is the length
+of the audio, and turns on the check for times after the end. `markerWords` adds marker words to
+the built-in ones ([R13.10](/trackparse/reference/spec/#r1310-options)):
 
 <Tabs syncKey="lang">
 <TabItem label="JavaScript">
@@ -526,8 +537,11 @@ for _, w := range mix.Warnings {
 </TabItem>
 </Tabs>
 
-Without `markerWords`, `03:00 Drop` is a track line with no separator, and it warns `line-unparsed`.
-The options are listed under [Tracklist API](/trackparse/reference/tracklist/#options).
+Without `markerWords`, `03:00 Drop` is a track line with no separator, and it warns [`line-unparsed`](/trackparse/reference/warnings/#tracklist-warnings:~:text=line%2Dunparsed).
+The options are listed under [Tracklist API](/trackparse/reference/tracklist/#options). The
+playground has a field for `audioSeconds` but none for `markerWords`, so
+[this link](/trackparse/playground/#list=00%3A00%20Intro%0A03%3A00%20Drop%0A1%3A02%3A03%20Noisia%20-%20Stigma&audioSeconds=3600) shows
+both warnings.
 
 ## Checks
 
@@ -585,7 +599,9 @@ for _, w := range list.Warnings {
 
 `00:11:02` sits between `01:07:44` and `01:15:36`. Changing one digit gives exactly one time that
 fits, `01:11:02`, so the warning carries it as a suggestion. When several fixes would fit, or none
-does, `suggestion` is `null` (`None`, `nil` in Go) and you only get the warning.
+does, `suggestion` is `null` (`None`, `nil` in Go) and you only get the warning. The checks are
+[R13.7](/trackparse/reference/spec/#r137-warnings), and [Suggestions](/trackparse/reference/warnings/#suggestions)
+describes the search.
 
 Sometimes the typo is on the line before. In `01:22:21` followed by `01:03:55`, the second line is
 flagged, but the suggestion is to change the first one to `01:02:21`. All the codes are listed in
@@ -596,7 +612,7 @@ each language. To apply a suggestion, see
 ## Bare track numbers
 
 Some lists number their lines without a dot: `1 Artist - Title`, `2 Artist - Title`. A single
-`parse()` call would read `1 Artist` as the artist's name, and it should, because `2 Unlimited`
+[`parse()`](/trackparse/reference/parse/) call would read `1 Artist` as the artist's name, and it should, because `2 Unlimited`
 exists. In a list, trackparse looks at the neighbours: a bare number counts as a position when the
 nearest line before or after it carries the next or previous number
 ([R13.5](/trackparse/reference/spec/#r135-bare-positions)).
@@ -604,7 +620,7 @@ nearest line before or after it carries the next or previous number
 ## Tracklist mode
 
 Inside a tracklist, the first ` - ` is the separator on almost every line, so each line is
-parsed with `mode: "tracklist"` ([Modes](/trackparse/guides/modes/#tracklist-mode)). These lines all go wrong with a plain `parse()` and right in a list:
+parsed with `mode: "tracklist"` ([Modes](/trackparse/guides/modes/#tracklist-mode)). These lines all go wrong with a plain [`parse()`](/trackparse/reference/parse/) and right in a list:
 
 | Line | `parse(line)` | In a tracklist |
 |---|---|---|
@@ -620,7 +636,7 @@ what a plain `parse()` makes of them. The last two need neighbours: the position
 
 ## JSON
 
-A `Tracklist` serializes like a single track: `JSON.stringify(list)` in JavaScript,
+A `Tracklist` ([R13.8](/trackparse/reference/spec/#r138-output)) serializes like a single track: `JSON.stringify(list)` in JavaScript,
 `tl.to_dict()` in Python, `list.to_json()` in Rust and `json.Marshal(list)` in Go give the same JSON, with camelCase keys such
 as `specVersion` and `firstTime`. See
 [Serializing to JSON](/trackparse/reference/parse/#serializing-to-json).
@@ -631,3 +647,4 @@ as `specVersion` and `firstTime`. See
   delete lines.
 - [Tracklist API](/trackparse/reference/tracklist/): every field and option.
 - [Warnings](/trackparse/reference/warnings/#tracklist-warnings): every code and what to do with it.
+- [Modes](/trackparse/guides/modes/#tracklist-mode): the single-line mode every entry is parsed in.
