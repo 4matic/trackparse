@@ -263,12 +263,13 @@ Renders a `ParsedTrack` back to a string: `Artists - Title (versions) (prod. ...
 ```js
 import { format, parse } from "trackparse";
 
-const t = parse("Wilkinson ft. Becky Hill - Afterglow (Sub Focus Remix)");
+const t = parse("01. Wilkinson ft. Becky Hill - Afterglow (Sub Focus Remix)");
 
 format(t);                                          // 'Wilkinson ft. Becky Hill - Afterglow (Sub Focus Remix)'
 format(t, { feat: "title", joiners: "canonical" }); // 'Wilkinson - Afterglow (feat. Becky Hill) (Sub Focus Remix)'
 format(t, { feat: "omit", versions: "none" });      // 'Wilkinson - Afterglow'
 format(t, { featMarker: "featuring" });             // 'Wilkinson featuring Becky Hill - Afterglow (Sub Focus Remix)'
+format(t, { position: true });                      // '01. Wilkinson ft. Becky Hill - Afterglow (Sub Focus Remix)'
 ```
 
 ### `normalize(input)`
@@ -325,9 +326,9 @@ r.junk;                       // [ { raw: 'Full Album', kind: 'other' } ]
 
 ### `SPEC_VERSION`
 
-The spec version this build implements, `"0.5.0"` in this release. The npm package, the PyPI
-package, the Rust crate, the Go module and the spec are released together and always share one
-version number.
+The version of the spec this build implements. It equals the package version: the npm package,
+the PyPI package, the Rust crate, the Go module and the spec are released together and always
+share one version number.
 
 ## Modes
 
@@ -560,8 +561,8 @@ catches a misspelt name.
 
 The package version is the spec version (`SPEC_VERSION`). While it is 0.x, a release that changes
 the output for some input bumps the minor version, and a patch release only fixes bugs. If you
-store parsed results, pin the minor version (`"trackparse": "~0.5.0"`) and read the changelog
-before moving up.
+store parsed results, pin the minor version with a tilde range (`"trackparse": "~0.6.0"` stays on
+0.6.x) and read the changelog before moving up.
 
 ## Other languages
 
@@ -610,7 +611,8 @@ spec, not here: see [AGENTS.md](https://github.com/4matic/trackparse/blob/main/A
 - [Documentation](https://4matic.github.io/trackparse/), with every example in JavaScript, Python,
   Rust and Go, and a [playground](https://4matic.github.io/trackparse/playground/) that runs the
   parser in your browser
-- [Spec](https://github.com/4matic/trackparse/blob/main/spec/SPEC.md)
+- [Spec](https://github.com/4matic/trackparse/blob/main/spec/SPEC.md) and its
+  [changelog](https://github.com/4matic/trackparse/blob/main/spec/CHANGELOG.md)
 - [Changelog](https://github.com/4matic/trackparse/blob/main/js/CHANGELOG.md)
 - [Project README](https://github.com/4matic/trackparse#readme)
 - [GitHub repository](https://github.com/4matic/trackparse)
