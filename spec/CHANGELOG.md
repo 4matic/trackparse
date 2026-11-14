@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.6.0](https://github.com/4matic/trackparse/compare/spec-v0.5.1...spec-v0.6.0) (2026-11-14)
+
+
+### Documentation
+
+* **fixtures:** the Go runner, matcher, skip list and commands ([184713c](https://github.com/4matic/trackparse/commit/184713cefe5c595b5d9e933177568a0366508745))
+* **fixtures:** the Rust command for running one fixture case ([779392c](https://github.com/4matic/trackparse/commit/779392cadb617cb6fff322a87aad1410b5d22014))
+* **generator:** run the Go port on regenerated fixtures ([91e62f3](https://github.com/4matic/trackparse/commit/91e62f337e541f94858673d6d08a5b57f434f2e5))
+
 ## [0.5.1](https://github.com/4matic/trackparse/compare/spec-v0.5.0...spec-v0.5.1) (2026-11-11)
 
 

@@ -4,7 +4,7 @@
 use crate::value::V;
 
 /// The version of the spec this crate implements.
-pub const SPEC_VERSION: &str = "0.5.1"; // x-release-please-version
+pub const SPEC_VERSION: &str = "0.6.0"; // x-release-please-version
 
 /// spec/data/descriptors.json
 pub static DESCRIPTORS_DATA: V = V::Obj(&[
