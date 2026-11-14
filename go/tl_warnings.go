@@ -226,11 +226,29 @@ func suggestFix(times []timedEntry, k int) *Suggestion {
 }
 
 // warningRank is the table order of R13.7; the warnings of one line are emitted in this order.
+// It is a switch, not a lookup in AllWarningCodes, so no caller can change the order.
 func warningRank(code WarningCode) int {
-	if i := slices.Index(AllWarningCodes, code); i >= 0 {
-		return i
+	switch code {
+	case WarningCodeTimeMissing:
+		return 0
+	case WarningCodeTimeOutOfOrder:
+		return 1
+	case WarningCodeTimeDuplicate:
+		return 2
+	case WarningCodeNoStartAtZero:
+		return 3
+	case WarningCodeTimeAfterAudioEnd:
+		return 4
+	case WarningCodeInvalidTime:
+		return 5
+	case WarningCodePositionGap:
+		return 6
+	case WarningCodePositionDuplicate:
+		return 7
+	case WarningCodeLineUnparsed:
+		return 8
 	}
-	return len(AllWarningCodes)
+	return 9
 }
 
 // flagAt is list[i], false out of range.

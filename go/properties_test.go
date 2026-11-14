@@ -308,7 +308,7 @@ func checkTrackTotality(tb testing.TB, s string) {
 	if twice := Normalize(once); twice != once {
 		tb.Fatalf("normalize is not idempotent on %q: %q then %q", s, once, twice)
 	}
-	for _, mode := range append([]Mode{ModeAuto, Mode("bogus")}, AllModes...) {
+	for _, mode := range append([]Mode{ModeAuto, Mode("bogus")}, AllModes()...) {
 		options := ParseOptions{
 			Mode:         mode,
 			Uploader:     s,

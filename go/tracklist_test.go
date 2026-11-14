@@ -604,3 +604,20 @@ func TestTracklistTotality(t *testing.T) {
 		}
 	}
 }
+
+func TestWarningRankFollowsAllWarningCodes(t *testing.T) {
+	codes := AllWarningCodes()
+	for i, c := range codes {
+		if warningRank(c) != i {
+			t.Errorf("warningRank(%s) = %d, want %d", c, warningRank(c), i)
+		}
+	}
+	if warningRank("bogus") != len(codes) {
+		t.Error("an unknown code ranks last")
+	}
+	// The lists are fresh slices: changing one changes neither the next call nor the ranking.
+	codes[0], codes[1] = codes[1], codes[0]
+	if AllWarningCodes()[0] != WarningCodeTimeMissing || warningRank(WarningCodeTimeMissing) != 0 {
+		t.Error("AllWarningCodes shares its backing array")
+	}
+}
