@@ -101,7 +101,7 @@ they print as `remix` and `spedUp`. `Delimiter` is a string type too, holding th
 The keywords behind them are in
 [`version-keywords.json`](https://github.com/4matic/trackparse/blob/main/spec/data/version-keywords.json).
 In Rust, `VersionType::ALL` lists the 27 variants and `VersionType::from_name("spedUp")` reads a
-name back. In Go, `trackparse.AllVersionTypes` lists them, and since the type is a string,
+name back. In Go, `trackparse.AllVersionTypes()` lists them, and since the type is a string,
 `trackparse.VersionType("spedUp")` is a conversion.
 
 ## Generic words borrow their meaning

@@ -278,13 +278,13 @@ Version types, junk kinds, warnings, roles, modes and the tracklist codes are ty
 (`type VersionType string`) with one constant per spec name: `VersionTypeRemix`,
 `JunkKindVideo`, `WarningNoSeparator`, `WarningCodeTimeOutOfOrder`. The value is the name used in
 the spec and in JSON, so `string(v.Type)` is `"remix"` and a `switch` on the constants works. A
-slice per type lists every constant in the spec's order (`AllVersionTypes`, `AllJunkKinds`,
-`AllWarnings`, ...):
+function per type returns every constant in the spec's order, as a new slice each time
+(`AllVersionTypes()`, `AllJunkKinds()`, `AllWarnings()`, ...):
 
 ```go
 fmt.Println(trackparse.VersionTypeSpedUp)        // spedUp
-fmt.Println(len(trackparse.AllVersionTypes))     // 27
-fmt.Println(trackparse.AllRoles)                 // [primary featured remixer producer]
+fmt.Println(len(trackparse.AllVersionTypes()))   // 27
+fmt.Println(trackparse.AllRoles())               // [primary featured remixer producer]
 ```
 
 A later spec version can add a version type or a warning, so a `switch` on them needs a

@@ -21,8 +21,11 @@ const (
 	ModeTracklist Mode = "tracklist"
 )
 
-// AllModes lists the modes a [Track] can have, in the spec's order.
-var AllModes = []Mode{ModeClean, ModeYouTube, ModeFilename, ModeTracklist}
+// AllModes returns the modes a [Track] can have, in the spec's order.
+// Each call returns a new slice.
+func AllModes() []Mode {
+	return []Mode{ModeClean, ModeYouTube, ModeFilename, ModeTracklist}
+}
 
 // Role is what an artist did on the track (R7).
 type Role string
@@ -35,8 +38,11 @@ const (
 	RoleProducer Role = "producer"
 )
 
-// AllRoles lists every [Role], in the spec's order.
-var AllRoles = []Role{RolePrimary, RoleFeatured, RoleRemixer, RoleProducer}
+// AllRoles returns every [Role], in the spec's order.
+// Each call returns a new slice.
+func AllRoles() []Role {
+	return []Role{RolePrimary, RoleFeatured, RoleRemixer, RoleProducer}
+}
 
 // Source is where in the string an artist was found: the artist side, the title side, or a
 // version group.
@@ -49,8 +55,11 @@ const (
 	SourceVersion Source = "version"
 )
 
-// AllSources lists every [Source], in the spec's order.
-var AllSources = []Source{SourceArtist, SourceTitle, SourceVersion}
+// AllSources returns every [Source], in the spec's order.
+// Each call returns a new slice.
+func AllSources() []Source {
+	return []Source{SourceArtist, SourceTitle, SourceVersion}
+}
 
 // VersionType is the type of a version (R5): remix, edit, live, remaster and so on. A version
 // head added through [Keywords] can carry any string, which the output keeps as given.
@@ -87,14 +96,17 @@ const (
 	VersionTypeNightcore    VersionType = "nightcore"
 )
 
-// AllVersionTypes lists the 27 version types of the spec, in the spec's order.
-var AllVersionTypes = []VersionType{
-	VersionTypeRemix, VersionTypeBootleg, VersionTypeVIP, VersionTypeEdit, VersionTypeFlip,
-	VersionTypeRefix, VersionTypeRework, VersionTypeMashup, VersionTypeBlend, VersionTypeDub,
-	VersionTypeMix, VersionTypeExtended, VersionTypeRadio, VersionTypeClub, VersionTypeOriginal,
-	VersionTypeInstrumental, VersionTypeAcapella, VersionTypeLive, VersionTypeAcoustic,
-	VersionTypeRemaster, VersionTypeDemo, VersionTypeReprise, VersionTypeCover,
-	VersionTypeVersion, VersionTypeSpedUp, VersionTypeSlowed, VersionTypeNightcore,
+// AllVersionTypes returns the 27 version types of the spec, in the spec's order.
+// Each call returns a new slice.
+func AllVersionTypes() []VersionType {
+	return []VersionType{
+		VersionTypeRemix, VersionTypeBootleg, VersionTypeVIP, VersionTypeEdit, VersionTypeFlip,
+		VersionTypeRefix, VersionTypeRework, VersionTypeMashup, VersionTypeBlend, VersionTypeDub,
+		VersionTypeMix, VersionTypeExtended, VersionTypeRadio, VersionTypeClub, VersionTypeOriginal,
+		VersionTypeInstrumental, VersionTypeAcapella, VersionTypeLive, VersionTypeAcoustic,
+		VersionTypeRemaster, VersionTypeDemo, VersionTypeReprise, VersionTypeCover,
+		VersionTypeVersion, VersionTypeSpedUp, VersionTypeSlowed, VersionTypeNightcore,
+	}
 }
 
 // Delimiter is how a version was written: in a bracket group, or after a dash.
@@ -108,8 +120,11 @@ const (
 	DelimiterDash   Delimiter = "-"
 )
 
-// AllDelimiters lists every [Delimiter], in the spec's order.
-var AllDelimiters = []Delimiter{DelimiterParen, DelimiterSquare, DelimiterCurly, DelimiterDash}
+// AllDelimiters returns every [Delimiter], in the spec's order.
+// Each call returns a new slice.
+func AllDelimiters() []Delimiter {
+	return []Delimiter{DelimiterParen, DelimiterSquare, DelimiterCurly, DelimiterDash}
+}
 
 // JunkKind is what kind of noise a junk fragment is (R5). A junk phrase added through
 // [Keywords] can carry any string, which the output keeps as given.
@@ -128,10 +143,13 @@ const (
 	JunkKindOther    JunkKind = "other"
 )
 
-// AllJunkKinds lists the junk kinds of the spec, in the spec's order.
-var AllJunkKinds = []JunkKind{
-	JunkKindVideo, JunkKindAudio, JunkKindLyrics, JunkKindQuality, JunkKindPromo,
-	JunkKindPlatform, JunkKindLabel, JunkKindGenre, JunkKindOther,
+// AllJunkKinds returns the junk kinds of the spec, in the spec's order.
+// Each call returns a new slice.
+func AllJunkKinds() []JunkKind {
+	return []JunkKind{
+		JunkKindVideo, JunkKindAudio, JunkKindLyrics, JunkKindQuality, JunkKindPromo,
+		JunkKindPlatform, JunkKindLabel, JunkKindGenre, JunkKindOther,
+	}
 }
 
 // Warning is a warning of the single-track parser: the result is a guess the caller may want
@@ -150,11 +168,14 @@ const (
 	WarningUnbalancedBrackets  Warning = "unbalancedBrackets"
 )
 
-// AllWarnings lists every [Warning], in the spec's order.
-var AllWarnings = []Warning{
-	WarningNoSeparator, WarningAmbiguousSeparator, WarningUnspacedDashSplit,
-	WarningAsymmetricDashSplit, WarningBySplit, WarningQuotedTitleSplit,
-	WarningAmbiguousMixCredit, WarningUnbalancedBrackets,
+// AllWarnings returns every [Warning], in the spec's order.
+// Each call returns a new slice.
+func AllWarnings() []Warning {
+	return []Warning{
+		WarningNoSeparator, WarningAmbiguousSeparator, WarningUnspacedDashSplit,
+		WarningAsymmetricDashSplit, WarningBySplit, WarningQuotedTitleSplit,
+		WarningAmbiguousMixCredit, WarningUnbalancedBrackets,
+	}
 }
 
 // Artist is one credited artist.
@@ -274,10 +295,13 @@ const (
 	EntryKindBlank  EntryKind = "blank"
 )
 
-// AllEntryKinds lists every [EntryKind], in the spec's order.
-var AllEntryKinds = []EntryKind{
-	EntryKindTrack, EntryKindMarker, EntryKindHeader, EntryKindLink, EntryKindNote,
-	EntryKindBlank,
+// AllEntryKinds returns every [EntryKind], in the spec's order.
+// Each call returns a new slice.
+func AllEntryKinds() []EntryKind {
+	return []EntryKind{
+		EntryKindTrack, EntryKindMarker, EntryKindHeader, EntryKindLink, EntryKindNote,
+		EntryKindBlank,
+	}
 }
 
 // Eol is the line terminator that followed a line (R13.1.1). The value is the terminator
@@ -292,8 +316,11 @@ const (
 	EolNone Eol = ""
 )
 
-// AllEols lists every [Eol], in the spec's order.
-var AllEols = []Eol{EolLF, EolCRLF, EolCR, EolNone}
+// AllEols returns every [Eol], in the spec's order.
+// Each call returns a new slice.
+func AllEols() []Eol {
+	return []Eol{EolLF, EolCRLF, EolCR, EolNone}
+}
 
 // Parts is a line cut into four pieces that join back to it: Lead + Time + Gap + Rest is the
 // raw line (R13.1.3).
@@ -354,11 +381,14 @@ const (
 	WarningCodeLineUnparsed      WarningCode = "line-unparsed"
 )
 
-// AllWarningCodes lists every [WarningCode], in the spec's order.
-var AllWarningCodes = []WarningCode{
-	WarningCodeTimeMissing, WarningCodeTimeOutOfOrder, WarningCodeTimeDuplicate,
-	WarningCodeNoStartAtZero, WarningCodeTimeAfterAudioEnd, WarningCodeInvalidTime,
-	WarningCodePositionGap, WarningCodePositionDuplicate, WarningCodeLineUnparsed,
+// AllWarningCodes returns every [WarningCode], in the spec's order.
+// Each call returns a new slice.
+func AllWarningCodes() []WarningCode {
+	return []WarningCode{
+		WarningCodeTimeMissing, WarningCodeTimeOutOfOrder, WarningCodeTimeDuplicate,
+		WarningCodeNoStartAtZero, WarningCodeTimeAfterAudioEnd, WarningCodeInvalidTime,
+		WarningCodePositionGap, WarningCodePositionDuplicate, WarningCodeLineUnparsed,
+	}
 }
 
 // Severity is how serious a tracklist warning is.
@@ -370,8 +400,11 @@ const (
 	SeverityWarning Severity = "warning"
 )
 
-// AllSeverities lists every [Severity], in the spec's order.
-var AllSeverities = []Severity{SeverityInfo, SeverityWarning}
+// AllSeverities returns every [Severity], in the spec's order.
+// Each call returns a new slice.
+func AllSeverities() []Severity {
+	return []Severity{SeverityInfo, SeverityWarning}
+}
 
 // Suggestion is a fix for a time-out-of-order warning that changes one or two digits (R13.7).
 type Suggestion struct {
@@ -438,9 +471,12 @@ const (
 	EditOpDelete     EditOp = "delete"
 )
 
-// AllEditOps lists every [EditOp], in the spec's order.
-var AllEditOps = []EditOp{
-	EditOpSetTime, EditOpShift, EditOpSortByTime, EditOpSetRest, EditOpInsert, EditOpDelete,
+// AllEditOps returns every [EditOp], in the spec's order.
+// Each call returns a new slice.
+func AllEditOps() []EditOp {
+	return []EditOp{
+		EditOpSetTime, EditOpShift, EditOpSortByTime, EditOpSetRest, EditOpInsert, EditOpDelete,
+	}
 }
 
 // Edit is one edit of a tracklist text (R13.9). Line numbers are 1-based and refer to the text
@@ -477,9 +513,12 @@ const (
 	EditWarningCodeStyleUpgraded EditWarningCode = "style-upgraded"
 )
 
-// AllEditWarningCodes lists every [EditWarningCode], in the spec's order.
-var AllEditWarningCodes = []EditWarningCode{
-	EditWarningCodeEditInvalid, EditWarningCodeTimeClamped, EditWarningCodeStyleUpgraded,
+// AllEditWarningCodes returns every [EditWarningCode], in the spec's order.
+// Each call returns a new slice.
+func AllEditWarningCodes() []EditWarningCode {
+	return []EditWarningCode{
+		EditWarningCodeEditInvalid, EditWarningCodeTimeClamped, EditWarningCodeStyleUpgraded,
+	}
 }
 
 // EditWarning is a warning about one edit.

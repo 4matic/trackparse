@@ -477,8 +477,8 @@ name `trackparse`):
 - structs with exported fields: `Track`, `Artist`, `Version`, `Junk`, `Flags`, `Position`,
   `Timestamp`;
 - typed strings: `Role`, `Source`, `VersionType`, `Delimiter`, `JunkKind`, `Warning`, `Mode`. Each
-  has a constant per value (`trackparse.RolePrimary`, `trackparse.VersionTypeSpedUp`) and a slice
-  of all values in the spec's order (`AllRoles`, `AllVersionTypes`). The value is the spec's name,
+  has a constant per value (`trackparse.RolePrimary`, `trackparse.VersionTypeSpedUp`) and a function
+  that returns all values in the spec's order as a new slice (`AllRoles()`, `AllVersionTypes()`). The value is the spec's name,
   so `fmt` prints it as is and a plain conversion reads one;
 - options: `ParseOptions`, `Keywords` (with `VersionHead` and `JunkPhrase`), `FormatOptions`,
   with the typed strings `SplitAnd`, `FeatPlacement`, `JoinerStyle` and `VersionsOption`;
@@ -487,7 +487,7 @@ name `trackparse`):
 ```go
 fmt.Println(trackparse.VersionTypeSpedUp)              // spedUp
 fmt.Println(trackparse.VersionType("remix") == trackparse.VersionTypeRemix)   // true
-fmt.Println(len(trackparse.AllVersionTypes))           // 27
+fmt.Println(len(trackparse.AllVersionTypes()))         // 27
 ```
 
 A later spec version can add a version type or a warning, so a `switch` on these needs a
