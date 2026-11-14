@@ -4,8 +4,10 @@
 // with the same fallbacks as the JavaScript reference (a bad value means the default, SPEC R0.8).
 //
 // The package is internal so loose JSON never becomes public API. It holds only a hook: the
-// root package trackparse fills it in when it is initialized, so a program must import
-// trackparse (a blank import is enough) before calling it.
+// root package trackparse fills it in when it is initialized, but only when it is built with
+// -tags trackparse_wire (wire_hook.go), so programs that use the module never link the JSON door.
+// A program that calls Call must import trackparse (a blank import is enough) and be built with
+// that tag.
 package wire
 
 // Call runs one case. line is a JSON object
@@ -14,5 +16,5 @@ package wire
 // the function's output, as the JavaScript package writes it. A line that is not a JSON object,
 // or an unknown fn, gives null. Never panics.
 //
-// Nil until the trackparse package is initialized.
+// Nil unless the trackparse package is built with -tags trackparse_wire and initialized.
 var Call func(line []byte) []byte

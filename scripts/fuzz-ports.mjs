@@ -310,7 +310,10 @@ function* generate() {
 function buildGo() {
   const dir = mkdtempSync(join(tmpdir(), "trackparse-fuzz-"));
   const bin = join(dir, "dump");
-  execFileSync("go", ["build", "-o", bin, "./internal/cmd/dump"], { cwd: join(root, "go"), stdio: "inherit" });
+  execFileSync("go", ["build", "-tags", "trackparse_wire", "-o", bin, "./internal/cmd/dump"], {
+    cwd: join(root, "go"),
+    stdio: "inherit",
+  });
   return runLines("Go", bin, [], root);
 }
 
