@@ -4,8 +4,8 @@ description: The parsing pipeline, why it has no regex lookaround, and how track
 ---
 
 trackparse is a fixed pipeline of small hand-written scanners. There are no regexes with lookaround
-or backreferences, so nothing backtracks. A 10,000-code-point input takes tens of milliseconds in
-JavaScript, Rust and Go, and well under a second in Python.
+or backreferences, so nothing backtracks. A 10,000-code-point input takes at most tens of
+milliseconds in JavaScript, Rust and Go, and well under a second in Python.
 The same design is what lets the JavaScript, Python, Rust and Go packages give the same output: each
 step is a short function that reads the same way in all four languages.
 

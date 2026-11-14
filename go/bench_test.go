@@ -189,6 +189,11 @@ func BenchmarkParse10k(b *testing.B) {
 	for _, c := range []struct{ name, block string }{
 		{"text", typicalTrack + " "},
 		{"feat", "a feat. "},
+		{"and", "a & "},
+		{"featX", "feat. X "},
+		{"remix", "(Remix) "},
+		{"hd", "[HD] "},
+		{"dash", "- "},
 	} {
 		input := repeated(c.block, 10_000)
 		b.Run(c.name, func(b *testing.B) {
