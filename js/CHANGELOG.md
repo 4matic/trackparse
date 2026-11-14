@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.6.0](https://github.com/4matic/trackparse/compare/js-v0.5.1...js-v0.6.0) (2026-11-14)
+
+
+### Documentation
+
+* **js:** list the Go module among the other languages ([e0c0c85](https://github.com/4matic/trackparse/commit/e0c0c8584951b543a859c17ff16c7b6b1d9585da))
+* **js:** the README shows SPEC_VERSION without a hard-coded version, links the spec changelog and adds format position ([2558d94](https://github.com/4matic/trackparse/commit/2558d944ea0e3b0987e958b33f08002865768228))
+* the Go module is described as published, with exact Unicode versions and its own Types cell ([4038ab9](https://github.com/4matic/trackparse/commit/4038ab9961d7c11abb57793fccd6b9e1f5d0d063))
+
 ## [0.5.1](https://github.com/4matic/trackparse/compare/js-v0.5.0...js-v0.5.1) (2026-11-11)
 
 

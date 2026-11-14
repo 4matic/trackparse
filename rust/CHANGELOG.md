@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.6.0](https://github.com/4matic/trackparse/compare/rust-v0.5.1...rust-v0.6.0) (2026-11-14)
+
+
+### Documentation
+
+* **rust:** list the Go module among the other languages, and its Unicode tables ([2e9056c](https://github.com/4matic/trackparse/commit/2e9056c0605b5e26b9899e288e7388786502b590))
+* **rust:** the crate description names the Go module ([7f44477](https://github.com/4matic/trackparse/commit/7f44477afcbfa4b8843324a3d61f9c68c96497bc))
+* **rust:** the README shows feat_marker, links the spec changelog, and drops the stale 0.5 version ([9668ee6](https://github.com/4matic/trackparse/commit/9668ee61761d69010b61cddd6e8fd8dd9971798e))
+* the Go module is described as published, with exact Unicode versions and its own Types cell ([4038ab9](https://github.com/4matic/trackparse/commit/4038ab9961d7c11abb57793fccd6b9e1f5d0d063))
+
 ## [0.5.1](https://github.com/4matic/trackparse/compare/rust-v0.5.0...rust-v0.5.1) (2026-11-11)
 
 

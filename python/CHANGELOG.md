@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.6.0](https://github.com/4matic/trackparse/compare/python-v0.5.1...python-v0.6.0) (2026-11-14)
+
+
+### Documentation
+
+* **python:** list the Go module among the other languages ([85c4360](https://github.com/4matic/trackparse/commit/85c436061c454add60fa8cf414b2d58aabd54129))
+* **python:** the README's format_track examples parse their own track, and SPEC_VERSION and the pin no longer name 0.5 ([490e39d](https://github.com/4matic/trackparse/commit/490e39df3f10c5ede0e8e2c4db748200f9cca53c))
+* the Go module is described as published, with exact Unicode versions and its own Types cell ([4038ab9](https://github.com/4matic/trackparse/commit/4038ab9961d7c11abb57793fccd6b9e1f5d0d063))
+
 ## [0.5.1](https://github.com/4matic/trackparse/compare/python-v0.5.0...python-v0.5.1) (2026-11-11)
 
 
