@@ -242,3 +242,45 @@ func FuzzApplyEdits(f *testing.F) {
 		checkShiftRoundTrip(t, list, r)
 	})
 }
+
+// FuzzUnmarshalTrack feeds Track.UnmarshalJSON arbitrary bytes, seeded with the JSON of parsed
+// fixture inputs. Whatever decodes must marshal and decode again to the same bytes, and Format,
+// FormatWith and AllArtists must accept it: a decoded track can hold values the parser never
+// writes (nil slices, empty names, any enum string), and none of them may panic.
+func FuzzUnmarshalTrack(f *testing.F) {
+	for _, s := range seedInputs("parse", "format") {
+		track := Parse(s)
+		f.Add(marshal(&track))
+	}
+	f.Add([]byte(`{}`))
+	f.Add([]byte(`{"artists":[{"name":"A","role":"x","joiner":null,"source":"y"}],"versions":[{"type":"z","artists":null}]}`))
+	f.Add([]byte(`{"position":{"raw":"01","number":1e300},"year":-5,"mode":"auto"}`))
+	f.Add([]byte(`{"title":"\ud800","artists":[{}],"junk":[{}],"warnings":["?"]}`))
+	f.Fuzz(func(t *testing.T, data []byte) {
+		var track Track
+		if err := track.UnmarshalJSON(data); err != nil {
+			return
+		}
+		b, err := track.MarshalJSON()
+		if err != nil {
+			t.Fatalf("MarshalJSON after UnmarshalJSON: %v", err)
+		}
+		var again Track
+		if err := again.UnmarshalJSON(b); err != nil {
+			t.Fatalf("UnmarshalJSON of MarshalJSON output %s: %v", b, err)
+		}
+		if b2, _ := again.MarshalJSON(); string(b2) != string(b) {
+			t.Fatalf("round trip changed the JSON:\n%s\n%s", b, b2)
+		}
+		for _, o := range []FormatOptions{
+			{},
+			{Feat: FeatTitle, Joiners: JoinersCanonical, Position: true, FeatMarker: Ptr("ft.")},
+			{Feat: FeatArtist, Versions: VersionsNone, OmitProducers: true},
+			{Feat: FeatOmit, FeatMarker: Ptr("")},
+		} {
+			_ = FormatWith(track, o)
+		}
+		_ = Format(track)
+		_ = AllArtists(track)
+	})
+}

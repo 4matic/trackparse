@@ -145,7 +145,9 @@ go/                       Go module `github.com/4matic/trackparse/go`, package `
                           primitives_test.go (R0 values from rust/tests/data/primitives.json),
                           unicode_test.go, properties_test.go (SPEC invariants and R13.11),
                           example_test.go (the pkg.go.dev examples, checked by go test),
-                          fuzz_test.go (fuzz targets seeded from the fixture inputs), unit tests per area
+                          fuzz_test.go (fuzz targets seeded from the fixture inputs),
+                          concurrency_test.go (16 goroutines against sequential results, under
+                          -race in CI), unit tests per area
   testdata/               skip.json (only ever shrinks), unicode/ (cases dumped from Node),
                           artist_cases.json (git-ignored: dump_artist_cases.mjs writes it; the
                           tests skip without it, CI writes it and requires it)
@@ -313,7 +315,7 @@ Go (run inside `go/`; Go 1.22 or newer, Node for the codegen):
 | `node scripts/gen_data.mjs` · `node scripts/gen_unicode.mjs` | Regenerate `data_gen.go` / `unicode_gen.go` (and `testdata/unicode/`); `--check` fails if stale |
 | `gofmt -l .` · `go vet ./...` · `go run honnef.co/go/tools/cmd/staticcheck@2026.2.2 ./...` | Format check (must print nothing) and lint; CI runs vet and staticcheck again with `-tags trackparse_wire` |
 | `go run -tags trackparse_wire ./internal/cmd/dump < cases.jsonl` | The JSON door on JSONL (what compare-ports and fuzz-ports run); without the tag it stops with a message |
-| `go test -run '^$' -fuzz '^FuzzParse$' -fuzztime 60s` | Fuzz one target (`go test -list Fuzz` lists them: Parse, ParseArtists, Format, ParseTracklist, ApplyEdits, Run); a failing input lands in `testdata/fuzz/` |
+| `go test -run '^$' -fuzz '^FuzzParse$' -fuzztime 60s` | Fuzz one target (`go test -list Fuzz` lists them: Parse, ParseArtists, Format, ParseTracklist, ApplyEdits, Run, UnmarshalTrack); a failing input lands in `testdata/fuzz/` |
 | `pnpm --filter trackparse build && node scripts/dump_artist_cases.mjs` | Write `testdata/artist_cases.json` (2.3 MB, git-ignored) for the artist-side tests; without it they skip, and `TRACKPARSE_REQUIRE_ARTIST_CASES=1` (set in CI) makes that a failure |
 | `TRACKPARSE_UNICODE_FULL=1 go test -run TestUnicodeFull` | The full NFC/NFD and lowercase sweep against Node (about 20 s; CI runs it on stable). The committed sample in `testdata/unicode/` is a small subset |
 
