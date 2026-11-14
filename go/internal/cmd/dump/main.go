@@ -6,7 +6,7 @@
 // package writes it. A line that is not a JSON object gives null. Non-finite numbers travel as
 // 1e999 / -1e999, which the reader takes as infinity.
 //
-//	go run ./cmd/dump < cases.jsonl > results.jsonl
+//	go run ./internal/cmd/dump < cases.jsonl > results.jsonl
 package main
 
 import (

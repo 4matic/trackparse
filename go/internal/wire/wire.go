@@ -1,8 +1,7 @@
 // Package wire is the JSON door into trackparse: every public function called with loose JSON
 // arguments, returning JSON. The shared fixtures, the cross-port diff (scripts/compare-ports.mjs
-// through cmd/dump) and fuzzers use it. Options arrive as loose JSON and are resolved with the
-// same fallbacks as the JavaScript reference (a bad value means the default, SPEC R0.8), which
-// the typed Go API cannot express.
+// through internal/cmd/dump) and fuzzers use it. Options arrive as loose JSON and are resolved
+// with the same fallbacks as the JavaScript reference (a bad value means the default, SPEC R0.8).
 //
 // The package is internal so loose JSON never becomes public API. It holds only a hook: the
 // root package trackparse fills it in when it is initialized, so a program must import
