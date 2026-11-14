@@ -89,22 +89,22 @@ import { Aside, Steps, Tabs, TabItem } from "@astrojs/starlight/components";
       </TabItem>
       <TabItem label="Go">
         ```go
-        import (
-            "fmt"
+		import (
+			"fmt"
 
-            "github.com/4matic/trackparse/go"
-        )
+			"github.com/4matic/trackparse/go"
+		)
 
-        track := trackparse.Parse("Noisia feat. Foreign Beggars - Shellshock")
+		track := trackparse.Parse("Noisia feat. Foreign Beggars - Shellshock")
 
-        fmt.Printf("%q\n", track.Title)   // "Shellshock"
-        names := []string{}
-        for _, a := range track.Artists {
-            names = append(names, a.Name)
-        }
-        fmt.Printf("%q\n", names)                 // ["Noisia" "Foreign Beggars"]
-        fmt.Println(track.Artists[1].Role)       // featured
-        ```
+		fmt.Printf("%q\n", track.Title)   // "Shellshock"
+		names := []string{}
+		for _, a := range track.Artists {
+			names = append(names, a.Name)
+		}
+		fmt.Printf("%q\n", names)                 // ["Noisia" "Foreign Beggars"]
+		fmt.Println(track.Artists[1].Role)       // featured
+		```
       </TabItem>
     </Tabs>
 
@@ -147,17 +147,17 @@ import { Aside, Steps, Tabs, TabItem } from "@astrojs/starlight/components";
       </TabItem>
       <TabItem label="Go">
         ```go
-        t := trackparse.Parse("Daft Punk - One More Time (Official Music Video) [HD]")
-        fmt.Printf("%q\n", t.Title)   // "One More Time"
-        fmt.Printf("%+v\n", t.Junk)   // [{Raw:Official Music Video Kind:video} {Raw:HD Kind:quality}]
+		t := trackparse.Parse("Daft Punk - One More Time (Official Music Video) [HD]")
+		fmt.Printf("%q\n", t.Title)   // "One More Time"
+		fmt.Printf("%+v\n", t.Junk)   // [{Raw:Official Music Video Kind:video} {Raw:HD Kind:quality}]
 
-        r := trackparse.Parse("Dimension - Offshore (Mefjus Remix / Noisia Remix)")
-        for _, v := range r.Versions {
-            fmt.Println(v.Type, "by", v.Artists[0].Name)
-        }
-        // remix by Mefjus
-        // remix by Noisia
-        ```
+		r := trackparse.Parse("Dimension - Offshore (Mefjus Remix / Noisia Remix)")
+		for _, v := range r.Versions {
+			fmt.Println(v.Type, "by", v.Artists[0].Name)
+		}
+		// remix by Mefjus
+		// remix by Noisia
+		```
       </TabItem>
     </Tabs>
 
@@ -198,19 +198,19 @@ import { Aside, Steps, Tabs, TabItem } from "@astrojs/starlight/components";
       </TabItem>
       <TabItem label="Go">
         ```go
-        names = nil
-        for _, a := range trackparse.Parse("Chase & Status - Baddadan").Artists {
-            names = append(names, a.Name)
-        }
-        fmt.Printf("%q\n", names)   // ["Chase" "Status"]
+		names = nil
+		for _, a := range trackparse.Parse("Chase & Status - Baddadan").Artists {
+			names = append(names, a.Name)
+		}
+		fmt.Printf("%q\n", names)   // ["Chase" "Status"]
 
-        options := trackparse.ParseOptions{KnownArtists: []string{"Chase & Status"}}
-        names = nil
-        for _, a := range trackparse.ParseWith("Chase & Status - Baddadan", options).Artists {
-            names = append(names, a.Name)
-        }
-        fmt.Printf("%q\n", names)   // ["Chase & Status"]
-        ```
+		options := trackparse.ParseOptions{KnownArtists: []string{"Chase & Status"}}
+		names = nil
+		for _, a := range trackparse.ParseWith("Chase & Status - Baddadan", options).Artists {
+			names = append(names, a.Name)
+		}
+		fmt.Printf("%q\n", names)   // ["Chase & Status"]
+		```
       </TabItem>
     </Tabs>
 
@@ -245,12 +245,12 @@ import { Aside, Steps, Tabs, TabItem } from "@astrojs/starlight/components";
       </TabItem>
       <TabItem label="Go">
         ```go
-        import "encoding/json"
+		import "encoding/json"
 
-        fmt.Println(trackparse.Format(t))   // Daft Punk - One More Time
-        data, _ := json.Marshal(t)
-        fmt.Println(string(data))           // {"input":"Daft Punk - One More Time (Official Music Video) [HD]","mode":"youtube",…}
-        ```
+		fmt.Println(trackparse.Format(t))   // Daft Punk - One More Time
+		data, _ := json.Marshal(t)
+		fmt.Println(string(data))           // {"input":"Daft Punk - One More Time (Official Music Video) [HD]","mode":"youtube",…}
+		```
       </TabItem>
     </Tabs>
 
@@ -290,16 +290,16 @@ import { Aside, Steps, Tabs, TabItem } from "@astrojs/starlight/components";
       </TabItem>
       <TabItem label="Go">
         ```go
-        list := trackparse.ParseTracklist("00:00 Noisia - Stigma\n04:10 Mefjus - Sleepless (Phace Remix)")
-        for _, e := range list.Entries {
-            if e.Time != nil && e.Track != nil {
-                fmt.Printf("%vs %s\n", e.Time.Seconds, e.Track.Title)
-            }
-        }
-        // 0s Stigma
-        // 250s Sleepless
-        fmt.Println(len(list.Warnings))   // 0
-        ```
+		list := trackparse.ParseTracklist("00:00 Noisia - Stigma\n04:10 Mefjus - Sleepless (Phace Remix)")
+		for _, e := range list.Entries {
+			if e.Time != nil && e.Track != nil {
+				fmt.Printf("%vs %s\n", e.Time.Seconds, e.Track.Title)
+			}
+		}
+		// 0s Stigma
+		// 250s Sleepless
+		fmt.Println(len(list.Warnings))   // 0
+		```
 
         `Time` and `Track` are pointers in Go, `nil` on a blank line or a note.
       </TabItem>

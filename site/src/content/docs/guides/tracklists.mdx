@@ -38,9 +38,9 @@ use trackparse::tracklist::parse_tracklist;
 
 ```go
 import (
-    "fmt"
+	"fmt"
 
-    "github.com/4matic/trackparse/go"
+	"github.com/4matic/trackparse/go"
 )
 ```
 
@@ -169,22 +169,22 @@ list.entries[3].track.as_ref().unwrap().flags.unknown_title;   // true (the ID)
 import "strings"
 
 text := strings.Join([]string{
-    "Hour 2",
-    "48:20 Noisia - Stigma",
-    "52:47 Mefjus & Kasra - Bandwagon (Phace Remix)",
-    "56:05 Black Sun Empire - ID",
-    "59:31 Alix Perez - Fade Away",
-    "01:03:10 Interview with Hybris",
-    "01:07:44 Imanu - Sacrifice",
-    "00:11:02 Current Value feat. Teddy Killerz - Payload", // typo: should be 01:11:02
-    "01:15:36 Hybris - Spinning Top",
+	"Hour 2",
+	"48:20 Noisia - Stigma",
+	"52:47 Mefjus & Kasra - Bandwagon (Phace Remix)",
+	"56:05 Black Sun Empire - ID",
+	"59:31 Alix Perez - Fade Away",
+	"01:03:10 Interview with Hybris",
+	"01:07:44 Imanu - Sacrifice",
+	"00:11:02 Current Value feat. Teddy Killerz - Payload", // typo: should be 01:11:02
+	"01:15:36 Hybris - Spinning Top",
 }, "\r\n")
 
 list := trackparse.ParseTracklist(text)
 
 kinds := []trackparse.EntryKind{}
 for _, e := range list.Entries {
-    kinds = append(kinds, e.Kind)
+	kinds = append(kinds, e.Kind)
 }
 fmt.Println(kinds)   // [header track track track track marker track track track]
 
@@ -194,11 +194,11 @@ fmt.Printf("%#v\n", bandwagon.Parts)
 // trackparse.Parts{Lead:"", Time:"52:47", Gap:" ", Rest:"Mefjus & Kasra - Bandwagon (Phace Remix)"}
 names := []string{}
 for _, a := range bandwagon.Track.Artists {
-    names = append(names, a.Name)
+	names = append(names, a.Name)
 }
 fmt.Printf("%q\n", names)   // ["Mefjus" "Kasra"]
 for _, v := range bandwagon.Track.Versions {
-    fmt.Println(v.Type, "by", v.Artists[0].Name)
+	fmt.Println(v.Type, "by", v.Artists[0].Name)
 }
 // remix by Phace
 fmt.Println(list.Entries[3].Track.Flags.UnknownTitle)   // true
@@ -247,7 +247,7 @@ list.entries.iter().map(|e| format!("{}{}", e.raw, e.eol)).collect::<String>() =
 ```go
 var joined strings.Builder
 for _, e := range list.Entries {
-    joined.WriteString(e.Raw + string(e.Eol))
+	joined.WriteString(e.Raw + string(e.Eol))
 }
 fmt.Println(joined.String() == text)   // true
 ```
@@ -348,7 +348,7 @@ fmt.Printf("%#v\n", a.Parts)
 // trackparse.Parts{Lead:"**[**", Time:"14:21", Gap:"**] ", Rest:"10. Nitepunk - ID**"}
 names = nil
 for _, x := range a.Track.Artists {
-    names = append(names, x.Name)
+	names = append(names, x.Name)
 }
 fmt.Printf("%q\n", names)                // ["Nitepunk"]
 fmt.Printf("%q\n", a.Track.Title)        // "ID"
@@ -430,7 +430,7 @@ fmt.Println(e.Layered)        // true
 fmt.Println(e.Time == nil)    // true
 names = nil
 for _, a := range e.Track.Artists {
-    names = append(names, a.Name)
+	names = append(names, a.Name)
 }
 fmt.Printf("%q\n", names)           // ["Phace"]
 fmt.Printf("%q\n", e.Track.Title)   // "Psycho"
@@ -525,11 +525,11 @@ mix := trackparse.ParseTracklistWith("00:00 Intro\n03:00 Drop\n1:02:03 Noisia - 
 
 kinds = nil
 for _, e := range mix.Entries {
-    kinds = append(kinds, e.Kind)
+	kinds = append(kinds, e.Kind)
 }
 fmt.Println(kinds)   // [marker marker track]
 for _, w := range mix.Warnings {
-    fmt.Println(w.Code, w.Line, w.Severity, w.Suggestion == nil)
+	fmt.Println(w.Code, w.Line, w.Severity, w.Suggestion == nil)
 }
 // time-after-audio-end 3 warning true
 ```
@@ -584,10 +584,10 @@ tl.warnings
 
 ```go
 for _, w := range list.Warnings {
-    fmt.Println(w.Code, w.Line, w.Severity)
-    if w.Suggestion != nil {
-        fmt.Printf("%+v\n", *w.Suggestion)
-    }
+	fmt.Println(w.Code, w.Line, w.Severity)
+	if w.Suggestion != nil {
+		fmt.Printf("%+v\n", *w.Suggestion)
+	}
 }
 // no-start-at-zero 2 info
 // time-out-of-order 8 warning
