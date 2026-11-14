@@ -3,9 +3,9 @@
 Combinatorial fixture generator for the trackparse spec. It writes
 `spec/fixtures/generated/*.json`: 11,927 cases, about 7.7 MB (`test/generated.test.ts` caps the
 size at 7.8 MB). Every port (JavaScript, Python, Rust and Go) runs these files next to the 1,203
-handwritten fixtures.
+handwritten fixtures. The case format is in [`../fixtures/README.md`](../fixtures/README.md).
 
-**Docs:** [How it's tested: generated cases](https://4matic.github.io/trackparse/project/testing/#generated-11927-cases)
+**Docs:** [How it's tested: generated cases](https://4matic.github.io/trackparse/project/testing/#generated-11927-cases) · [Spec](https://4matic.github.io/trackparse/reference/spec/)
 
 ## Oracle principle
 
@@ -13,7 +13,7 @@ The generator is not a parser. Each case is a composition of hand-written *atoms
 artist, a joiner, a feat marker and placement, a title, a version, a junk phrase, a prefix, a mode,
 a Unicode transform…). Every atom carries two things: the text it renders, and the output it
 contributes to the parse result (for example `{R} Remix` → type `remix`, remixers = the credit).
-`model.ts` renders the input string and computes the expected result from the atoms alone.
+[`model.ts`](src/model.ts) renders the input string and computes the expected result from the atoms alone.
 It never runs a parser.
 
 That only works when a composition is unambiguous. `problem()` in `model.ts` rejects every
@@ -28,6 +28,9 @@ When the SPEC changes, update the atom expectations and `problem()` in the same 
 Python, Rust and Go.
 
 ## Scenarios
+
+The rule IDs are those of [`../SPEC.md`](../SPEC.md); on the [site](https://4matic.github.io/trackparse/reference/spec/) each rule group has an
+anchor (`#r7-artist-side`, `#r13-tracklists`).
 
 | Scenario | Focus (SPEC rules) |
 |---|---|
@@ -47,7 +50,7 @@ Python, Rust and Go.
 Scenarios whose product is at most `exhaustiveLimit` are exhaustive. The others use a greedy
 pairwise covering array (every pair of atom values from two dimensions appears in at least one
 valid case) plus a seeded random sample (`sample` per scenario, `kitchenSinkSample` in
-`config.json`). Output is deterministic for a given `config.json` seed.
+[`config.json`](config.json)). Output is deterministic for a given `config.json` seed.
 
 ## Output encoding (kept compact, still strict)
 
@@ -78,7 +81,7 @@ pnpm --filter @trackparse/fixture-gen typecheck
 
 ## Adding an atom
 
-1. Add it to the right pool in `src/atoms.ts` with a lowercase `[a-z0-9-]` id that is unique in
+1. Add it to the right pool in [`src/atoms.ts`](src/atoms.ts) with a lowercase `[a-z0-9-]` id that is unique in
    its pool. Fill in its expected contribution (for a version: `type`, `modifiers`,
    `descriptor`, `year`, `unknownArtist`, plus `creditAsDescriptor` / `prefixForm` when those
    rules apply).
@@ -91,5 +94,5 @@ pnpm --filter @trackparse/fixture-gen typecheck
    atom's expectation is wrong or the reference implementation disagrees with the spec. Fix the
    one that is wrong. Never edit generated files by hand.
 5. Run the other ports on the new files (`cd python && uv run pytest`, `cd rust && cargo test`,
-   `cd go && go test ./...`), then `node scripts/compare-ports.mjs` from the repository root. It must print
-   `differences: 0`.
+   `cd go && go test ./...`), then [`node scripts/compare-ports.mjs`](../../scripts/compare-ports.mjs)
+   from the repository root. It must print `differences: 0`.
