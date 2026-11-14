@@ -757,6 +757,31 @@ const listExamples: { label: string; title: string; text: string }[] = [
   }
 
   // ---- Rust literals for the generated code -------------------------------------------------
+  /** Control, invisible and bidi characters, written as escapes in the generated literals. */
+  function invisible(cp: number): boolean {
+    return (
+      cp < 0x20 ||
+      (cp >= 0x7f && cp <= 0x9f) ||
+      cp === 0xad ||
+      cp === 0x34f ||
+      cp === 0x61c ||
+      cp === 0x180e ||
+      (cp >= 0x200b && cp <= 0x200f) ||
+      (cp >= 0x2028 && cp <= 0x202e) ||
+      (cp >= 0x2060 && cp <= 0x206f) ||
+      cp === 0xfeff ||
+      (cp >= 0xfff9 && cp <= 0xfffb)
+    );
+  }
+  /** A JavaScript or Python string literal: JSON, plus `\uXXXX` for invisible characters. */
+  function jsStr(s: string): string {
+    let out = "";
+    for (const ch of JSON.stringify(s)) {
+      const cp = ch.codePointAt(0)!;
+      out += cp >= 0x7f && invisible(cp) ? `\\u${cp.toString(16).padStart(4, "0")}` : ch;
+    }
+    return out;
+  }
   /** A Rust string literal. Control, invisible and bidi characters are written as `\u{…}`. */
   function rsStr(s: string): string {
     let out = '"';
@@ -768,7 +793,7 @@ const listExamples: { label: string; title: string; text: string }[] = [
       else if (ch === "\t") out += "\\t";
       // A lone surrogate cannot be in a Rust string: U+FFFD, as a lossy conversion would give.
       else if (cp >= 0xd800 && cp <= 0xdfff) out += "\\u{fffd}";
-      else if (cp < 0x20 || (cp >= 0x7f && cp <= 0x9f) || (cp >= 0x200b && cp <= 0x200f) || (cp >= 0x2028 && cp <= 0x202e) || (cp >= 0x2066 && cp <= 0x2069) || cp === 0xfeff)
+      else if (invisible(cp))
         out += `\\u{${cp.toString(16)}}`;
       else out += ch;
     }
@@ -786,7 +811,39 @@ const listExamples: { label: string; title: string; text: string }[] = [
   function rsUse(path: string, names: string[]): string {
     const lower = (n: string) => n[0] === n[0].toLowerCase();
     const sorted = [...names.filter(lower).sort(), ...names.filter((n) => !lower(n)).sort()];
-    return `use ${path}::${sorted.length === 1 ? sorted[0] : `{${sorted.join(", ")}}`};`;
+    const line = `use ${path}::${sorted.length === 1 ? sorted[0] : `{${sorted.join(", ")}}`};`;
+    if (line.length <= 100) return line;
+    // Too long: the names fill lines of at most 100 columns inside braces.
+    const rows: string[] = [];
+    for (const n of sorted) {
+      const last = rows.length - 1;
+      if (last >= 0 && `${rows[last]} ${n},`.length <= 100) rows[last] += ` ${n},`;
+      else rows.push(`    ${n},`);
+    }
+    return `use ${path}::{\n${rows.join("\n")}\n};`;
+  }
+  // rustfmt's main width rules, so the common programs come out as `cargo fmt` writes them.
+  /** Columns a line takes: wide characters (emoji, CJK) count two. */
+  function rsWidth(s: string): number {
+    let w = 0;
+    for (const ch of s) {
+      const cp = ch.codePointAt(0)!;
+      w += (cp >= 0x1100 && cp <= 0x115f) || (cp >= 0x2e80 && cp <= 0xa4cf) || (cp >= 0xac00 && cp <= 0xd7a3) || (cp >= 0xf900 && cp <= 0xfaff) || (cp >= 0xfe30 && cp <= 0xfe4f) || (cp >= 0xff00 && cp <= 0xff60) || (cp >= 0xffe0 && cp <= 0xffe6) || (cp >= 0x1f300 && cp <= 0x1faff) || cp >= 0x20000 ? 2 : 1;
+    }
+    return w;
+  }
+  /** `let x = Root::new().a().b();`: a chain wider than 60 columns gets one call per line. */
+  function rsChain(lhs: string, root: string, calls: string[], indent = "    "): string {
+    const chain = root + calls.join("");
+    if (calls.length < 2 || rsWidth(chain) <= 60) return `${lhs}${chain};`;
+    return `${lhs}${root}\n${calls.map((c) => `${indent}    ${c}`).join("\n")};`;
+  }
+  /** `let x = f(a, b);`: arguments wider than 60 columns go one per line, if each then fits. */
+  function rsCall(lhs: string, fn: string, args: string[], indent = "    "): string {
+    const flat = `${lhs}${fn}(${args.join(", ")});`;
+    const fits = args.every((a) => indent.length + 4 + rsWidth(a) + 1 <= 100);
+    if (rsWidth(args.join(", ")) <= 60 || !fits) return flat;
+    return `${lhs}${fn}(\n${args.map((a) => `${indent}    ${a},`).join("\n")}\n${indent});`;
   }
 
   // ---- Go literals for the generated code ---------------------------------------------------
@@ -801,7 +858,7 @@ const listExamples: { label: string; title: string; text: string }[] = [
       else if (ch === "\t") out += "\\t";
       // A Go string cannot spell a lone surrogate: U+FFFD, as the module reads invalid UTF-8.
       else if (cp >= 0xd800 && cp <= 0xdfff) out += "\\ufffd";
-      else if (cp < 0x20 || (cp >= 0x7f && cp <= 0x9f) || (cp >= 0x200b && cp <= 0x200f) || (cp >= 0x2028 && cp <= 0x202e) || (cp >= 0x2066 && cp <= 0x2069) || cp === 0xfeff)
+      else if (invisible(cp))
         out += `\\u${cp.toString(16).padStart(4, "0")}`;
       else out += ch;
     }
@@ -846,7 +903,7 @@ const listExamples: { label: string; title: string; text: string }[] = [
   }
 
   function code(s: string, o: ParseOptions, f: Record<string, unknown>): string {
-    const q = (v: string) => JSON.stringify(v);
+    const q = jsStr;
     if (lang === "js") {
       // JS literal: unquoted keys, spaces after commas and colons.
       const js = (v: unknown): string =>
@@ -854,7 +911,9 @@ const listExamples: { label: string; title: string; text: string }[] = [
           ? `[${v.map(js).join(", ")}]`
           : v && typeof v === "object"
             ? `{ ${Object.entries(v).map(([k, x]) => `${k}: ${js(x)}`).join(", ")} }`
-            : JSON.stringify(v);
+            : typeof v === "string"
+              ? jsStr(v)
+              : JSON.stringify(v);
       const opts = Object.keys(o).length ? `, ${js(o)}` : "";
       const fopts = Object.keys(f).length ? `, ${js(f)}` : "";
       return `import { parse, format } from "trackparse";\n\nconst track = parse(${q(s)}${opts});\nformat(track${fopts});`;
@@ -862,31 +921,31 @@ const listExamples: { label: string; title: string; text: string }[] = [
     if (lang === "rs") {
       // A whole program: options are builders, and the `_with` functions take them by reference.
       const names: string[] = [];
-      let popts = "";
-      if (o.mode) popts += `.mode(ModeOption::${variant(o.mode)})`;
-      if (o.knownArtists) popts += `.known_artists([${o.knownArtists.map(rsStr).join(", ")}])`;
-      if (o.uploader) popts += `.uploader(${rsStr(o.uploader)})`;
-      if (o.splitAnd) popts += `.split_and(SplitAnd::${variant(o.splitAnd)})`;
+      const popts: string[] = [];
+      if (o.mode) popts.push(`.mode(ModeOption::${variant(o.mode)})`);
+      if (o.knownArtists) popts.push(`.known_artists([${o.knownArtists.map(rsStr).join(", ")}])`);
+      if (o.uploader) popts.push(`.uploader(${rsStr(o.uploader)})`);
+      if (o.splitAnd) popts.push(`.split_and(SplitAnd::${variant(o.splitAnd)})`);
       if (o.mode) names.push("ModeOption");
       if (o.splitAnd) names.push("SplitAnd");
-      let fopts = "";
-      if (f.feat) fopts += `.feat(FeatPlacement::${variant(f.feat)})`;
-      if (f.joiners) fopts += `.joiners(JoinerStyle::${variant(f.joiners)})`;
-      if (f.versions) fopts += `.versions(VersionsOption::${variant(f.versions)})`;
+      const fopts: string[] = [];
+      if (f.feat) fopts.push(`.feat(FeatPlacement::${variant(f.feat)})`);
+      if (f.joiners) fopts.push(`.joiners(JoinerStyle::${variant(f.joiners)})`);
+      if (f.versions) fopts.push(`.versions(VersionsOption::${variant(f.versions)})`);
       if (f.feat) names.push("FeatPlacement");
       if (f.joiners) names.push("JoinerStyle");
       if (f.versions) names.push("VersionsOption");
       const body: string[] = [];
-      if (popts) {
+      if (popts.length) {
         names.push("parse_with", "ParseOptions");
-        body.push(`let options = ParseOptions::new()${popts};`, `let track = parse_with(${rsStr(s)}, &options);`);
+        body.push(rsChain("let options = ", "ParseOptions::new()", popts), rsCall("let track = ", "parse_with", [rsStr(s), "&options"]));
       } else {
         names.push("parse");
         body.push(`let track = parse(${rsStr(s)});`);
       }
-      if (fopts) {
+      if (fopts.length) {
         names.push("format_track_with", "FormatOptions");
-        body.push(`let format = FormatOptions::new()${fopts};`, 'println!("{}", format_track_with(&track, &format));');
+        body.push(rsChain("let format = ", "FormatOptions::new()", fopts), 'println!("{}", format_track_with(&track, &format));');
       } else {
         names.push("format_track");
         body.push('println!("{}", format_track(&track));');
@@ -916,7 +975,7 @@ const listExamples: { label: string; title: string; text: string }[] = [
     }
     const snake = (k: string) => k.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`);
     const py = (v: unknown): string =>
-      Array.isArray(v) ? `[${v.map(py).join(", ")}]` : typeof v === "boolean" ? (v ? "True" : "False") : JSON.stringify(v);
+      Array.isArray(v) ? `[${v.map(py).join(", ")}]` : typeof v === "boolean" ? (v ? "True" : "False") : typeof v === "string" ? jsStr(v) : JSON.stringify(v);
     const kw = (obj: Record<string, unknown>) =>
       Object.entries(obj).map(([k, v]) => `, ${snake(k)}=${py(v)}`).join("");
     return `from trackparse import format_track, parse\n\ntrack = parse(${q(s)}${kw(o as Record<string, unknown>)})\nformat_track(track${kw(f)})`;
@@ -1066,6 +1125,8 @@ const listExamples: { label: string; title: string; text: string }[] = [
     return `${h ? `${h}:` : ""}${String(m).padStart(h ? 2 : 1, "0")}:${String(sec).padStart(2, "0")}`;
   }
 
+  /** "Shift by": an empty or unreadable box is 0, in the button and in the generated code. */
+  const shiftSeconds = () => Number(($("tl-shift") as HTMLInputElement).value) || 0;
   const lineCount = () => tl.value.split(/\r\n|\r|\n/).length;
   /** "from line", kept between 1 and the last line. */
   function shiftFrom(): number {
@@ -1079,7 +1140,7 @@ const listExamples: { label: string; title: string; text: string }[] = [
 
   /** JS / Python / Rust / Go for the current text, options and edit inputs. */
   function listCode(text: string, list: Tracklist): string {
-    const q = (v: string) => JSON.stringify(v);
+    const q = jsStr;
     const lines = text.split("\n");
     // Lists without CR line endings are written one line per row; anything else as one string.
     const literal = (indent: string, open: string, close: string) =>
@@ -1088,7 +1149,7 @@ const listExamples: { label: string; title: string; text: string }[] = [
         : `${open}\n${lines.map((l) => `${indent}${q(l)},`).join("\n")}\n${close}`;
     const { audioSeconds, knownArtists } = listOptions();
     const hasOptions = audioSeconds !== undefined || knownArtists !== undefined;
-    const seconds = Number(($("tl-shift") as HTMLInputElement).value) || 0;
+    const seconds = shiftSeconds();
     const from = shiftFrom();
     const fix = list.warnings.find((w) => w.suggestion)?.suggestion;
     if (lang === "js") {
@@ -1116,22 +1177,29 @@ const listExamples: { label: string; title: string; text: string }[] = [
       const t = joined ? "&text" : "text";
       const names = ["apply_edits", "Edit", hasOptions ? "parse_tracklist_with" : "parse_tracklist"];
       if (hasOptions) names.push("TracklistOptions");
-      let rsOpts = "";
-      if (audioSeconds !== undefined) rsOpts += `.audio_seconds(${rsNum(audioSeconds)})`;
-      if (knownArtists) rsOpts += `.known_artists([${knownArtists.map(rsStr).join(", ")}])`;
+      const rsOpts: string[] = [];
+      if (audioSeconds !== undefined) rsOpts.push(`.audio_seconds(${rsNum(audioSeconds)})`);
+      if (knownArtists) rsOpts.push(`.known_artists([${knownArtists.map(rsStr).join(", ")}])`);
+      // rustfmt keeps an array on one line when it is at most 60 columns wide.
+      const items = lines.map(rsStr);
+      const array = `[${items.join(", ")}]`;
       const body = [
-        joined ? `let text = [\n${lines.map((l) => `        ${rsStr(l)},`).join("\n")}\n    ]\n    .join("\\n");` : `let text = ${rsStr(text)};`,
+        !joined
+          ? `let text = ${rsStr(text)};`
+          : rsWidth(array) <= 60
+            ? `let text = ${array}.join("\\n");`
+            : `let text = [\n${items.map((l) => `        ${l},`).join("\n")}\n    ]\n    .join("\\n");`,
         "",
         hasOptions
-          ? `let options = TracklistOptions::new()${rsOpts};\n    let list = parse_tracklist_with(${t}, &options);`
+          ? `${rsChain("let options = ", "TracklistOptions::new()", rsOpts)}\n    let list = parse_tracklist_with(${t}, &options);`
           : `let list = parse_tracklist(${t});`,
-        'println!("{:#?}", list.entries);   // one entry per line',
-        'println!("{:#?}", list.warnings);  // the checks, with line numbers',
+        'println!("{:#?}", list.entries); // one entry per line',
+        'println!("{:#?}", list.warnings); // the checks, with line numbers',
         "",
         `let shifted = apply_edits(${t}, &[Edit::shift_from(${rsNum(seconds)}, ${from})]);`,
         `let sorted = apply_edits(${t}, &[Edit::sort_by_time()]);`,
       ];
-      if (fix) body.push(`let fixed = apply_edits(${t}, &[Edit::set_time(${fix.line}, ${rsNum(fix.seconds)})]);  // the suggested fix`);
+      if (fix) body.push(`let fixed = apply_edits(${t}, &[Edit::set_time(${fix.line}, ${rsNum(fix.seconds)})]); // the suggested fix`);
       body.push(`println!("{}\\n\\n{}${fix ? "\\n\\n{}" : ""}", shifted.text, sorted.text${fix ? ", fixed.text" : ""});`);
       return `${rsUse("trackparse::tracklist", names)}\n\nfn main() {\n${body.map((l) => (l ? `    ${l}` : "")).join("\n")}\n}`;
     }
@@ -1288,7 +1356,7 @@ const listExamples: { label: string; title: string; text: string }[] = [
   audio.addEventListener("input", renderList);
   tlKnown.addEventListener("input", renderList);
   $("tl-do-shift").addEventListener("click", () => {
-    const seconds = Number(($("tl-shift") as HTMLInputElement).value);
+    const seconds = shiftSeconds();
     const from = shiftFrom();
     edit([{ op: "shift", seconds, from }], `Shift ${seconds >= 0 ? "+" : ""}${seconds} s from line ${from}`);
   });
