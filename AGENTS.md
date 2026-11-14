@@ -133,7 +133,7 @@ go/                       Go module `github.com/4matic/trackparse/go`, package `
   scripts/gen_data.mjs    codegen for data_gen.go (--check for CI)
   scripts/gen_unicode.mjs codegen for unicode_gen.go and testdata/unicode/ (--check for CI)
   scripts/dump_artist_cases.mjs  JS values for the artist-side unit tests, into testdata/
-  cmd/dump/               Go side of compare-ports (JSONL in, JSON out, through internal/wire)
+  internal/cmd/dump/      Go side of compare-ports (JSONL in, JSON out, through internal/wire)
   internal/wire/          the JSON door's package
   *_test.go               fixtures_test.go (every shared fixture + the conformance report; skipped
                           when ../spec is absent, as in the module zip), match_test.go, schema_test.go,

@@ -7,7 +7,7 @@
 //
 // JS is the reference and runs in this process from js/dist. Python gets one process per call
 // (scripts/dump_py.py, JSONL over stdin/stdout). Rust and Go read one case per line and write
-// one JSON result per line, in order (rust/examples/dump.rs, go/cmd/dump).
+// one JSON result per line, in order (rust/examples/dump.rs, go/internal/cmd/dump).
 
 import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";

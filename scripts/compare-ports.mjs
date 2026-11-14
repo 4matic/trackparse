@@ -8,7 +8,7 @@
 //   node scripts/compare-ports.mjs        # needs `uv` (Python), `cargo` (Rust) and `go` (Go)
 //   node scripts/compare-ports.mjs --only=python   # or --only=rust, --only=go
 //
-// Rust runs `cargo run --release --example dump` in rust/ and Go runs `go run ./cmd/dump` in go/
+// Rust runs `cargo run --release --example dump` in rust/ and Go runs `go run ./internal/cmd/dump` in go/
 // (both JSONL in, one JSON result per line, the same protocol).
 // Options are merged like js/test/runner.ts ({...defaults.options, ...case.options}, same for
 // formatOptions). Python gets one process for all cases (JSONL over stdin/stdout); dump_py.py maps
@@ -58,7 +58,7 @@ for (const full of walk(fixturesDir)) {
 }
 
 const runRust = runLines("Rust", "cargo", ["run", "--quiet", "--release", "--example", "dump"], join(root, "rust"));
-const runGo = runLines("Go", "go", ["run", "./cmd/dump"], join(root, "go"));
+const runGo = runLines("Go", "go", ["run", "./internal/cmd/dump"], join(root, "go"));
 
 const only = process.argv.find((a) => a.startsWith("--only="))?.slice(7);
 const ports = [
