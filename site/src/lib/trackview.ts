@@ -127,37 +127,105 @@ export function segmentsHtml(segs: Segment[]): string {
     .join("");
 }
 
-export function chip(text: string, kind: string, title?: string): string {
+export function chip(text: string, kind: string, title?: string, href?: string): string {
   const t = title ? ` title="${escapeHtml(title)}"` : "";
+  if (href) return `<a class="tp-chip tp-${kind}" href="${escapeHtml(href)}"${t}>${escapeHtml(text)}</a>`;
   return `<span class="tp-chip tp-${kind}"${t}>${escapeHtml(text)}</span>`;
 }
 
-function versionLine(v: Version): string {
-  const bits: string[] = [chip(v.type, "version")];
+// ---- links into the docs ----------------------------------------------------------------------
+// The output names things the docs explain. With the site base (`/trackparse`), the playground
+// and the landing demo link each field name to its row in the reference and each value (a role,
+// a version type, a junk kind) to the guide section that explains it.
+
+/** A text fragment (`:~:text=start,-suffix`): the browser scrolls to and marks that text. */
+export function textFragment(start: string, suffix?: string, prefix?: string): string {
+  const enc = (x: string) => encodeURIComponent(x).replace(/-/g, "%2D");
+  return `:~:text=${prefix ? `${enc(prefix)}-,` : ""}${enc(start)}${suffix ? `,-${enc(suffix)}` : ""}`;
+}
+
+/**
+ * Each ParsedTrack field and the text that follows its name in the ParsedTrack table of
+ * reference/parse (the start of the type column), so the fragment lands on that row.
+ */
+const FIELD_ROW: Record<string, string> = {
+  artists: "Artist[]",
+  title: "string",
+  versions: "Version[]",
+  junk: "{ raw",
+  position: "{ raw",
+  timestamp: "{ raw",
+  year: "number",
+  flags: "{ explicit",
+  mode: '"clean"',
+  warnings: "Warning[]",
+};
+
+/** The row of a ParsedTrack field in the reference. */
+export function fieldUrl(base: string, field: string): string {
+  const suffix = FIELD_ROW[field];
+  return `${base}/reference/parse/#parsedtrack${suffix ? textFragment(field, suffix) : ""}`;
+}
+
+/** Guide sections, relative to the site base. */
+export const GUIDE = {
+  role: {
+    primary: "guides/artists/#joiners",
+    featured: "guides/artists/#features",
+    producer: "guides/artists/#producers",
+    remixer: "guides/versions/",
+  } as Record<string, string>,
+  versionType: "guides/versions/#the-27-types",
+  modifiers: "guides/versions/#generic-words-borrow-their-meaning",
+  unknownRemixer: "guides/versions/#unknown-remixers",
+  unknownArtist: "guides/artists/#unknown-artists",
+  junk: "guides/junk-and-flags/#junk",
+  flags: "guides/junk-and-flags/#flags",
+  year: "guides/junk-and-flags/#year",
+  position: "guides/junk-and-flags/#track-numbers",
+  timestamp: "guides/junk-and-flags/#cue-times",
+  mode: {
+    clean: "guides/modes/#how-auto-decides",
+    youtube: "guides/modes/#youtube-mode",
+    filename: "guides/modes/#filename-mode",
+    tracklist: "guides/modes/#tracklist-mode",
+  } as Record<string, string>,
+};
+
+/** `path` under the site base, or nothing when there is no base (no links wanted). */
+const at = (base: string | undefined, path: string | undefined) =>
+  base === undefined || path === undefined ? undefined : `${base}/${path}`;
+
+function versionLine(v: Version, base?: string): string {
+  const bits: string[] = [chip(v.type, "version", "The version types", at(base, GUIDE.versionType))];
   for (const a of v.artists) bits.push(`by <strong>${escapeHtml(a.name)}</strong>`);
-  for (const m of v.modifiers) bits.push(chip(`+${m}`, "version"));
+  for (const m of v.modifiers) bits.push(chip(`+${m}`, "version", "Modifiers: type words that didn't win", at(base, GUIDE.modifiers)));
   if (v.descriptor) bits.push(`<em>${escapeHtml(v.descriptor)}</em>`);
   if (v.year !== null) bits.push(chip(String(v.year), "year"));
-  if (v.unknownArtist) bits.push(chip("unknown remixer", "junk"));
+  if (v.unknownArtist) bits.push(chip("unknown remixer", "junk", "Unknown remixers", at(base, GUIDE.unknownRemixer)));
   return bits.join(" ");
 }
 
 /**
  * The field cards shown under the highlighted string. `base` is the site base (`/trackparse`):
- * with it, each warning links to its row in the warnings reference.
+ * with it, each field name links to its row in the reference, each value to the guide that
+ * explains it, and each warning to its row in the warnings reference.
  */
 export function fieldsHtml(t: ParsedTrack, base?: string): string {
   const rows: [string, string][] = [];
+  const role = (a: Artist) => chip(a.role, roleKind(a), `The ${a.role} role`, at(base, GUIDE.role[a.role]));
   rows.push([
     "Artists",
     t.artists.length
       ? t.artists
           .map(
             (a) =>
-              `<span class="tp-artist">${a.joiner ? `<span class="tp-joiner">${escapeHtml(a.joiner)}</span>` : ""}<strong>${escapeHtml(a.name)}</strong> ${chip(a.role, roleKind(a))}</span>`,
+              `<span class="tp-artist">${a.joiner ? `<span class="tp-joiner">${escapeHtml(a.joiner)}</span>` : ""}<strong>${escapeHtml(a.name)}</strong> ${role(a)}</span>`,
           )
           .join("")
-      : `<span class="tp-none">${t.flags.unknownArtist ? "unknown (ID)" : "none"}</span>`,
+      : t.flags.unknownArtist
+        ? chip("unknown (ID)", "junk", "Unknown artists", at(base, GUIDE.unknownArtist))
+        : `<span class="tp-none">none</span>`,
   ]);
   rows.push([
     "Title",
@@ -166,19 +234,25 @@ export function fieldsHtml(t: ParsedTrack, base?: string): string {
       : `<span class="tp-none">empty</span>`,
   ]);
   if (t.versions.length)
-    rows.push(["Versions", t.versions.map((v) => `<div>${versionLine(v)}</div>`).join("")]);
+    rows.push(["Versions", t.versions.map((v) => `<div>${versionLine(v, base)}</div>`).join("")]);
   if (t.junk.length)
     rows.push([
       "Junk",
-      t.junk.map((j) => `${chip(j.kind, "junk")} <s>${escapeHtml(j.raw)}</s>`).join("<br>"),
+      t.junk
+        .map((j) => `${chip(j.kind, "junk", "The junk kinds", at(base, GUIDE.junk))} <s>${escapeHtml(j.raw)}</s>`)
+        .join("<br>"),
     ]);
-  if (t.position) rows.push(["Position", chip(`#${t.position.number}`, "position")]);
+  if (t.position) rows.push(["Position", chip(`#${t.position.number}`, "position", "Track numbers", at(base, GUIDE.position))]);
   if (t.timestamp)
-    rows.push(["Timestamp", chip(`${t.timestamp.raw} = ${t.timestamp.seconds} s`, "position")]);
-  if (t.year !== null) rows.push(["Year", chip(String(t.year), "year")]);
+    rows.push([
+      "Timestamp",
+      chip(`${t.timestamp.raw} = ${t.timestamp.seconds} s`, "position", "Cue times", at(base, GUIDE.timestamp)),
+    ]);
+  if (t.year !== null) rows.push(["Year", chip(String(t.year), "year", "Years", at(base, GUIDE.year))]);
   const flags = (["explicit", "clean"] as const).filter((f) => t.flags[f]);
-  if (flags.length) rows.push(["Flags", flags.map((f) => chip(f, "year")).join(" ")]);
-  rows.push(["Mode", `<code>${t.mode}</code>`]);
+  if (flags.length) rows.push(["Flags", flags.map((f) => chip(f, "year", "Flags", at(base, GUIDE.flags))).join(" ")]);
+  const mode = at(base, GUIDE.mode[t.mode]);
+  rows.push(["Mode", mode ? `<a class="tp-mode" href="${mode}" title="The ${t.mode} mode"><code>${t.mode}</code></a>` : `<code>${t.mode}</code>`]);
   if (t.warnings.length)
     rows.push([
       "Warnings",
@@ -191,8 +265,11 @@ export function fieldsHtml(t: ParsedTrack, base?: string): string {
         })
         .join(" "),
     ]);
+  // The field name links to its row in the ParsedTrack reference.
+  const dt = (k: string) =>
+    base === undefined ? k : `<a href="${fieldUrl(base, k.toLowerCase())}" title="${k.toLowerCase()} in the ParsedTrack reference">${k}</a>`;
   return `<dl class="tp-fields">${rows
-    .map(([k, v]) => `<div class="tp-field"><dt>${k}</dt><dd>${v}</dd></div>`)
+    .map(([k, v]) => `<div class="tp-field"><dt>${dt(k)}</dt><dd>${v}</dd></div>`)
     .join("")}</dl>`;
 }
 

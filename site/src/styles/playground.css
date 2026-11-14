@@ -201,6 +201,38 @@ select.tp-input option {
   color: var(--sl-color-gray-3);
   margin: 0;
 }
+/* A field name links to its row in the ParsedTrack reference. */
+.tp-field dt a {
+  color: inherit;
+  text-decoration: underline dotted;
+  text-decoration-color: var(--tp-border-strong);
+  text-underline-offset: 0.25em;
+}
+.tp-field dt a:hover {
+  color: var(--sl-color-white);
+  text-decoration-style: solid;
+  text-decoration-color: var(--sl-color-accent);
+}
+/* Values that link to the guide explaining them (a role, a version type, a junk kind): the chip
+   stays as it is, its border firms up on hover. */
+a.tp-chip {
+  text-decoration: none;
+  transition: border-color 0.12s;
+}
+a.tp-chip:hover {
+  border-color: color-mix(in srgb, var(--tp-c) 70%, transparent);
+}
+a.tp-mode {
+  color: inherit;
+  text-decoration: none;
+}
+a.tp-mode code {
+  color: var(--sl-color-gray-1);
+  border-bottom: 1px dotted var(--tp-border-strong);
+}
+a.tp-mode:hover code {
+  border-bottom: 1px solid var(--sl-color-accent);
+}
 .tp-field dd {
   margin: 0;
   font-size: 0.9rem;

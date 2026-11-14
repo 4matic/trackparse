@@ -4,11 +4,38 @@ import Copy from "@lucide/astro/icons/copy";
 import Timer from "@lucide/astro/icons/timer";
 import Redo2 from "@lucide/astro/icons/redo-2";
 import Undo2 from "@lucide/astro/icons/undo-2";
+import { fieldUrl, textFragment as frag } from "../lib/trackview";
 import "../styles/playground.css";
 
 // Docs links next to the controls they explain.
 const base = import.meta.env.BASE_URL.replace(/\/$/, "");
 const doc = (path: string) => `${base}/${path}`;
+// Each option name links to its row in an options table: the JavaScript name, then the Python
+// and Rust name and the Go name in the next cells, so the text fragment finds that row only.
+const opt = (js: string, py: string, go: string, section = "") => doc(`reference/options/#${section}${frag(py, go, js)}`);
+const ref = {
+  mode: opt("mode", "mode", "Mode"),
+  splitAnd: opt("splitAnd", "split_and", "SplitAnd"),
+  knownArtists: opt("knownArtists", "known_artists", "KnownArtists"),
+  uploader: opt("uploader", "uploader", "Uploader"),
+  audioSeconds: opt("audioSeconds", "audio_seconds", "AudioSeconds", "tracklist-options"),
+  // The format options are listed in the formatting guide, name then values.
+  feat: doc(`guides/formatting/#options${frag("feat", '"source"')}`),
+  joiners: doc(`guides/formatting/#options${frag("joiners", '"original"')}`),
+  versions: doc(`guides/formatting/#options${frag("versions", '"all"')}`),
+  shift: doc(`reference/tracklist/#edits${frag("Edit::shift_from")}`),
+  edits: doc("guides/editing-tracklists/#the-edits"),
+};
+// The tracklist table's columns: entry fields in reference/tracklist, track fields in reference/parse.
+const entry = (field: string, type: string) => doc(`reference/tracklist/#tracklistentry${frag(field, type)}`);
+const columns: { label: string; href: string; title: string }[] = [
+  { label: "#", href: entry("line", "number"), title: "line: the 1-based line number" },
+  { label: "kind", href: entry("kind", '"track"'), title: "kind: what the line is" },
+  { label: "time", href: entry("time", "{ raw"), title: "time: the start time" },
+  { label: "artists", href: fieldUrl(base, "artists"), title: "track.artists" },
+  { label: "title", href: fieldUrl(base, "title"), title: "track.title" },
+  { label: "versions", href: fieldUrl(base, "versions"), title: "track.versions" },
+];
 
 const trackExamples = [
   "01. Wilkinson ft. Becky Hill & Tom Cane - Afterglow (Sub Focus VIP Remix) [Official Video]",
@@ -110,7 +137,7 @@ const listExamples: { label: string; title: string; text: string }[] = [
       </ul>
       <div class="tp-row pg-options">
         <div>
-          <label class="tp-label" for="pg-mode">Mode</label>
+          <label class="tp-label" for="pg-mode"><a class="pg-opt" href={ref.mode}>mode</a></label>
           <select id="pg-mode" class="tp-input">
             <option value="auto">auto</option>
             <option value="clean">clean</option>
@@ -120,7 +147,7 @@ const listExamples: { label: string; title: string; text: string }[] = [
           </select>
         </div>
         <div>
-          <label class="tp-label" for="pg-split">splitAnd</label>
+          <label class="tp-label" for="pg-split"><a class="pg-opt" href={ref.splitAnd}>splitAnd</a></label>
           <select id="pg-split" class="tp-input">
             <option value="auto">auto</option>
             <option value="always">always</option>
@@ -128,11 +155,11 @@ const listExamples: { label: string; title: string; text: string }[] = [
           </select>
         </div>
         <div class="tp-grow">
-          <label class="tp-label" for="pg-known">knownArtists (comma-separated)</label>
+          <label class="tp-label" for="pg-known"><a class="pg-opt" href={ref.knownArtists}>knownArtists</a> <span class="pg-hint">(comma-separated)</span></label>
           <input id="pg-known" class="tp-input" type="text" spellcheck="false" autocomplete="off" placeholder="Chase & Status, Camo & Krooked" />
         </div>
         <div class="tp-grow">
-          <label class="tp-label" for="pg-uploader">uploader (youtube mode)</label>
+          <label class="tp-label" for="pg-uploader"><a class="pg-opt" href={ref.uploader}>uploader</a> <span class="pg-hint">(youtube mode)</span></label>
           <input id="pg-uploader" class="tp-input" type="text" spellcheck="false" autocomplete="off" placeholder="Daft Punk - Topic" />
         </div>
       </div>
@@ -159,7 +186,7 @@ const listExamples: { label: string; title: string; text: string }[] = [
         </div>
         <div class="tp-row">
           <div>
-            <label class="tp-label" for="pg-feat">feat</label>
+            <label class="tp-label" for="pg-feat"><a class="pg-opt" href={ref.feat}>feat</a></label>
             <select id="pg-feat" class="tp-input">
               <option value="source">source</option>
               <option value="artist">artist</option>
@@ -168,14 +195,14 @@ const listExamples: { label: string; title: string; text: string }[] = [
             </select>
           </div>
           <div>
-            <label class="tp-label" for="pg-joiners">joiners</label>
+            <label class="tp-label" for="pg-joiners"><a class="pg-opt" href={ref.joiners}>joiners</a></label>
             <select id="pg-joiners" class="tp-input">
               <option value="original">original</option>
               <option value="canonical">canonical</option>
             </select>
           </div>
           <div>
-            <label class="tp-label" for="pg-versions">versions</label>
+            <label class="tp-label" for="pg-versions"><a class="pg-opt" href={ref.versions}>versions</a></label>
             <select id="pg-versions" class="tp-input">
               <option value="all">all</option>
               <option value="none">none</option>
@@ -197,6 +224,7 @@ const listExamples: { label: string; title: string; text: string }[] = [
           <button type="button" class="tp-btn small" data-copy="pg-code"><Copy size={14} aria-hidden="true" /><span>Copy code</span></button>
           <p class="pg-install" data-install></p>
         </div>
+        <p class="pg-install pg-api" id="pg-api"></p>
       </div>
     </div>
   </section>
@@ -230,23 +258,23 @@ const listExamples: { label: string; title: string; text: string }[] = [
         </ul>
         <div class="tp-row">
           <div>
-            <label class="tp-label" for="tl-audio">audioSeconds <span class="pg-hint">(length of the mix)</span></label>
+            <label class="tp-label" for="tl-audio"><a class="pg-opt" href={ref.audioSeconds}>audioSeconds</a> <span class="pg-hint">(length of the mix)</span></label>
             <input id="tl-audio" class="tp-input pg-num" type="number" min="0" placeholder="–" />
           </div>
           <div class="tp-grow">
-            <label class="tp-label" for="tl-known">knownArtists (comma-separated)</label>
+            <label class="tp-label" for="tl-known"><a class="pg-opt" href={ref.knownArtists}>knownArtists</a> <span class="pg-hint">(comma-separated)</span></label>
             <input id="tl-known" class="tp-input" type="text" spellcheck="false" autocomplete="off" placeholder="Chase & Status, Camo & Krooked" />
           </div>
         </div>
         <fieldset class="pg-edit">
-          <legend class="tp-label">Edit the text</legend>
+          <legend class="tp-label"><a class="pg-opt" href={ref.edits}>Edit the text</a></legend>
           <div class="tp-row">
             <div>
-              <label class="tp-label" for="tl-shift">Shift by (s)</label>
+              <label class="tp-label" for="tl-shift"><a class="pg-opt" href={ref.shift}>Shift by</a> <span class="pg-hint">(s)</span></label>
               <input id="tl-shift" class="tp-input pg-num" type="number" value="45" />
             </div>
             <div>
-              <label class="tp-label" for="tl-from">from line</label>
+              <label class="tp-label" for="tl-from"><a class="pg-opt" href={ref.shift}>from line</a></label>
               <input id="tl-from" class="tp-input pg-num" type="number" min="1" value="5" />
             </div>
             <button type="button" class="tp-btn" id="tl-do-shift"><Timer size={15} aria-hidden="true" /> Shift</button>
@@ -285,10 +313,11 @@ const listExamples: { label: string; title: string; text: string }[] = [
           <pre class="tp-json" id="tl-json" hidden></pre>
           <pre class="tp-json tp-code" id="tl-code" hidden></pre>
           <p class="pg-install" id="tl-install" data-install hidden></p>
+          <p class="pg-install pg-api" id="tl-api" hidden></p>
           <div class="pg-tablebox" id="tl-tablebox">
           <table class="tl-table">
             <thead>
-              <tr><th>#</th><th>kind</th><th>time</th><th>artists</th><th>title</th><th>versions</th></tr>
+              <tr>{columns.map((c) => <th><a href={c.href} title={c.title}>{c.label}</a></th>)}</tr>
             </thead>
             <tbody id="tl-rows"></tbody>
           </table>
@@ -408,6 +437,49 @@ const listExamples: { label: string; title: string; text: string }[] = [
   }
   .pg-doc {
     font-size: 0.78rem;
+  }
+  /* Option names and column heads link to their reference rows: the label colour, a quiet
+     dotted rule, the accent on hover. */
+  .pg-opt,
+  .tl-table th a,
+  .tl-table :global(.tl-kind a) {
+    color: inherit;
+    text-decoration: underline dotted;
+    text-decoration-color: var(--tp-border-strong);
+    text-underline-offset: 0.25em;
+  }
+  .pg-opt:hover,
+  .tl-table th a:hover,
+  .tl-table :global(.tl-kind a:hover) {
+    color: var(--sl-color-white);
+    text-decoration-style: solid;
+    text-decoration-color: var(--sl-color-accent);
+  }
+  /* Every row has a kind: its link shows only on hover, so the column stays quiet. */
+  .tl-table :global(.tl-kind a) {
+    text-decoration-line: none;
+  }
+  .tl-table :global(.tl-kind a:hover) {
+    text-decoration-line: underline;
+  }
+  /* The API names under a code panel. */
+  .pg-api :global(a) {
+    text-decoration: none;
+  }
+  .pg-api :global(a code) {
+    color: var(--sl-color-gray-2);
+    border-bottom: 1px solid var(--tp-border-strong);
+    border-radius: 4px 4px 0 0;
+  }
+  .pg-api :global(a:hover code) {
+    color: var(--sl-color-white);
+    border-bottom-color: var(--sl-color-accent);
+  }
+  .pg-api[hidden] {
+    display: none;
+  }
+  .pg-api:empty {
+    display: none;
   }
   /* Generated Go is indented with tabs, as gofmt writes it. */
   .tp-code {
@@ -624,7 +696,8 @@ const listExamples: { label: string; title: string; text: string }[] = [
   import { applyEdits, parseTracklist, type Edit, type Tracklist, type TracklistEntry, type TracklistOptions } from "trackparse/tracklist";
   import { icon } from "../lib/icons";
   import { getLang, PACKAGE, setLang, type Lang } from "../lib/lang";
-  import { chip, codeHtml, escapeHtml, fieldsHtml, highlight, jsonHtml, KIND_LABEL, roleKind, segmentsHtml, type Kind } from "../lib/trackview";
+  import { apiUrl, listCode, trackCode, type Snippet } from "../lib/codegen";
+  import { chip, codeHtml, GUIDE, escapeHtml, fieldsHtml, highlight, jsonHtml, KIND_LABEL, roleKind, segmentsHtml, type Kind } from "../lib/trackview";
 
   const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
   /** The site base (`/trackparse`), for links into the docs. */
@@ -752,144 +825,24 @@ const listExamples: { label: string; title: string; text: string }[] = [
       `<span>Install: <code>${escapeHtml(p.install)}</code></span>` +
       `<a href="${base}/start/getting-started/">Getting started</a>` +
       `<a href="${p.url}">${p.registry}</a>` +
-      (lang === "rs" ? '<a href="https://docs.rs/trackparse">docs.rs</a>' : "");
+      // The API docs: docs.rs for the crate, pkg.go.dev (the link above) for the module, and
+      // this site's reference for the npm and PyPI packages.
+      (lang === "rs"
+        ? '<a href="https://docs.rs/trackparse">docs.rs</a>'
+        : lang === "go"
+          ? ""
+          : `<a href="${base}/reference/parse/">API reference</a>`);
     for (const el of document.querySelectorAll<HTMLElement>("[data-install]")) el.innerHTML = html;
   }
 
-  // ---- Rust literals for the generated code -------------------------------------------------
-  /** Control, invisible and bidi characters, written as escapes in the generated literals. */
-  function invisible(cp: number): boolean {
-    return (
-      cp < 0x20 ||
-      (cp >= 0x7f && cp <= 0x9f) ||
-      cp === 0xad ||
-      cp === 0x34f ||
-      cp === 0x61c ||
-      cp === 0x180e ||
-      (cp >= 0x200b && cp <= 0x200f) ||
-      (cp >= 0x2028 && cp <= 0x202e) ||
-      (cp >= 0x2060 && cp <= 0x206f) ||
-      cp === 0xfeff ||
-      (cp >= 0xfff9 && cp <= 0xfffb)
-    );
-  }
-  /** A JavaScript or Python string literal: JSON, plus `\uXXXX` for invisible characters. */
-  function jsStr(s: string): string {
-    let out = "";
-    for (const ch of JSON.stringify(s)) {
-      const cp = ch.codePointAt(0)!;
-      out += cp >= 0x7f && invisible(cp) ? `\\u${cp.toString(16).padStart(4, "0")}` : ch;
-    }
-    return out;
-  }
-  /** A Rust string literal. Control, invisible and bidi characters are written as `\u{…}`. */
-  function rsStr(s: string): string {
-    let out = '"';
-    for (const ch of s) {
-      const cp = ch.codePointAt(0)!;
-      if (ch === '"' || ch === "\\") out += `\\${ch}`;
-      else if (ch === "\n") out += "\\n";
-      else if (ch === "\r") out += "\\r";
-      else if (ch === "\t") out += "\\t";
-      // A lone surrogate cannot be in a Rust string: U+FFFD, as a lossy conversion would give.
-      else if (cp >= 0xd800 && cp <= 0xdfff) out += "\\u{fffd}";
-      else if (invisible(cp))
-        out += `\\u{${cp.toString(16)}}`;
-      else out += ch;
-    }
-    return `${out}"`;
-  }
-  /** An `f64` literal: `45.0`, `7.5`, `1e21`. */
-  function rsNum(n: number): string {
-    if (!Number.isFinite(n)) return Number.isNaN(n) ? "f64::NAN" : n > 0 ? "f64::INFINITY" : "f64::NEG_INFINITY";
-    const s = String(n).replace("e+", "e");
-    return /[.e]/.test(s) ? s : `${s}.0`;
-  }
-  /** `youtube` → `Youtube`: the enum variant of an option value. */
-  const variant = (v: unknown) => String(v).charAt(0).toUpperCase() + String(v).slice(1);
-  /** `use` items in rustfmt order: functions first, then types. */
-  function rsUse(path: string, names: string[]): string {
-    const lower = (n: string) => n[0] === n[0].toLowerCase();
-    const sorted = [...names.filter(lower).sort(), ...names.filter((n) => !lower(n)).sort()];
-    const line = `use ${path}::${sorted.length === 1 ? sorted[0] : `{${sorted.join(", ")}}`};`;
-    if (line.length <= 100) return line;
-    // Too long: the names fill lines of at most 100 columns inside braces.
-    const rows: string[] = [];
-    for (const n of sorted) {
-      const last = rows.length - 1;
-      if (last >= 0 && `${rows[last]} ${n},`.length <= 100) rows[last] += ` ${n},`;
-      else rows.push(`    ${n},`);
-    }
-    return `use ${path}::{\n${rows.join("\n")}\n};`;
-  }
-  // rustfmt's main width rules, so the common programs come out as `cargo fmt` writes them.
-  /** Columns a line takes: wide characters (emoji, CJK) count two. */
-  function rsWidth(s: string): number {
-    let w = 0;
-    for (const ch of s) {
-      const cp = ch.codePointAt(0)!;
-      w += (cp >= 0x1100 && cp <= 0x115f) || (cp >= 0x2e80 && cp <= 0xa4cf) || (cp >= 0xac00 && cp <= 0xd7a3) || (cp >= 0xf900 && cp <= 0xfaff) || (cp >= 0xfe30 && cp <= 0xfe4f) || (cp >= 0xff00 && cp <= 0xff60) || (cp >= 0xffe0 && cp <= 0xffe6) || (cp >= 0x1f300 && cp <= 0x1faff) || cp >= 0x20000 ? 2 : 1;
-    }
-    return w;
-  }
-  /** `let x = Root::new().a().b();`: a chain wider than 60 columns gets one call per line. */
-  function rsChain(lhs: string, root: string, calls: string[], indent = "    "): string {
-    const chain = root + calls.join("");
-    if (calls.length < 2 || rsWidth(chain) <= 60) return `${lhs}${chain};`;
-    return `${lhs}${root}\n${calls.map((c) => `${indent}    ${c}`).join("\n")};`;
-  }
-  /** `let x = f(a, b);`: arguments wider than 60 columns go one per line, if each then fits. */
-  function rsCall(lhs: string, fn: string, args: string[], indent = "    "): string {
-    const flat = `${lhs}${fn}(${args.join(", ")});`;
-    const fits = args.every((a) => indent.length + 4 + rsWidth(a) + 1 <= 100);
-    if (rsWidth(args.join(", ")) <= 60 || !fits) return flat;
-    return `${lhs}${fn}(\n${args.map((a) => `${indent}    ${a},`).join("\n")}\n${indent});`;
-  }
-
-  // ---- Go literals for the generated code ---------------------------------------------------
-  /** A Go string literal. Control, invisible and bidi characters are written as escapes. */
-  function goStr(s: string): string {
-    let out = '"';
-    for (const ch of s) {
-      const cp = ch.codePointAt(0)!;
-      if (ch === '"' || ch === "\\") out += `\\${ch}`;
-      else if (ch === "\n") out += "\\n";
-      else if (ch === "\r") out += "\\r";
-      else if (ch === "\t") out += "\\t";
-      // A Go string cannot spell a lone surrogate: U+FFFD, as the module reads invalid UTF-8.
-      else if (cp >= 0xd800 && cp <= 0xdfff) out += "\\ufffd";
-      else if (invisible(cp))
-        out += `\\u${cp.toString(16).padStart(4, "0")}`;
-      else out += ch;
-    }
-    return `${out}"`;
-  }
-  /** A float64 constant: `45`, `7.5`, `1e+21`; `math.Inf(1)` and `math.NaN()` need the math import. */
-  function goNum(n: number): string {
-    if (!Number.isFinite(n)) return Number.isNaN(n) ? "math.NaN()" : n > 0 ? "math.Inf(1)" : "math.Inf(-1)";
-    return String(n);
-  }
-  /** A float64 value for trackparse.Ptr: `3600.0`, `7.5`, so the type parameter is float64, not int. */
-  function goFloat(n: number): string {
-    const s = goNum(n);
-    return /^-?\d+$/.test(s) ? `${s}.0` : s;
-  }
-  /** The exported constant of an option value: `youtube` → `ModeYouTube`, `never` → `SplitAndNever`. */
-  function goConst(prefix: string, v: unknown): string {
-    const name = String(v) === "youtube" ? "YouTube" : variant(v);
-    return `trackparse.${prefix}${name}`;
-  }
-  /** A struct literal as gofmt writes it: one line for one field, else one aligned field per line. */
-  function goStruct(type: string, fields: [string, string][], indent: string): string {
-    if (fields.length === 0) return `trackparse.${type}{}`;
-    if (fields.length === 1) return `trackparse.${type}{${fields[0][0]}: ${fields[0][1]}}`;
-    const w = Math.max(...fields.map(([k]) => k.length));
-    return `trackparse.${type}{\n${fields.map(([k, v]) => `${indent}\t${`${k}:`.padEnd(w + 2)}${v},`).join("\n")}\n${indent}}`;
-  }
-  /** A Go program around `body` (lines, one tab of indentation added). */
-  function goMain(body: string[], extra: string[] = []): string {
-    const std = ['"fmt"', ...extra].sort();
-    return `package main\n\nimport (\n${std.map((x) => `\t${x}`).join("\n")}\n\n\t"github.com/4matic/trackparse/go"\n)\n\nfunc main() {\n${body.map((l) => (l ? `\t${l}` : "")).join("\n")}\n}`;
+  /** Under a code panel: each function and type the snippet uses, linked to its API docs. */
+  function apiHtml(snippet: Snippet): string {
+    const where = lang === "rs" ? "docs.rs" : lang === "go" ? "pkg.go.dev" : "the reference";
+    const links = snippet.api
+      .map((name) => [name, apiUrl(lang, name, base)] as const)
+      .filter(([, url]) => url)
+      .map(([name, url]) => `<a href="${url}" title="${escapeHtml(name)} on ${where}"><code>${escapeHtml(name)}</code></a>`);
+    return links.length ? `<span>API docs:</span>${links.join("")}` : "";
   }
 
   function options(): ParseOptions {
@@ -900,85 +853,6 @@ const listExamples: { label: string; title: string; text: string }[] = [
     if (names.length) o.knownArtists = names;
     if (uploader.value.trim()) o.uploader = uploader.value.trim();
     return o;
-  }
-
-  function code(s: string, o: ParseOptions, f: Record<string, unknown>): string {
-    const q = jsStr;
-    if (lang === "js") {
-      // JS literal: unquoted keys, spaces after commas and colons.
-      const js = (v: unknown): string =>
-        Array.isArray(v)
-          ? `[${v.map(js).join(", ")}]`
-          : v && typeof v === "object"
-            ? `{ ${Object.entries(v).map(([k, x]) => `${k}: ${js(x)}`).join(", ")} }`
-            : typeof v === "string"
-              ? jsStr(v)
-              : JSON.stringify(v);
-      const opts = Object.keys(o).length ? `, ${js(o)}` : "";
-      const fopts = Object.keys(f).length ? `, ${js(f)}` : "";
-      return `import { parse, format } from "trackparse";\n\nconst track = parse(${q(s)}${opts});\nformat(track${fopts});`;
-    }
-    if (lang === "rs") {
-      // A whole program: options are builders, and the `_with` functions take them by reference.
-      const names: string[] = [];
-      const popts: string[] = [];
-      if (o.mode) popts.push(`.mode(ModeOption::${variant(o.mode)})`);
-      if (o.knownArtists) popts.push(`.known_artists([${o.knownArtists.map(rsStr).join(", ")}])`);
-      if (o.uploader) popts.push(`.uploader(${rsStr(o.uploader)})`);
-      if (o.splitAnd) popts.push(`.split_and(SplitAnd::${variant(o.splitAnd)})`);
-      if (o.mode) names.push("ModeOption");
-      if (o.splitAnd) names.push("SplitAnd");
-      const fopts: string[] = [];
-      if (f.feat) fopts.push(`.feat(FeatPlacement::${variant(f.feat)})`);
-      if (f.joiners) fopts.push(`.joiners(JoinerStyle::${variant(f.joiners)})`);
-      if (f.versions) fopts.push(`.versions(VersionsOption::${variant(f.versions)})`);
-      if (f.feat) names.push("FeatPlacement");
-      if (f.joiners) names.push("JoinerStyle");
-      if (f.versions) names.push("VersionsOption");
-      const body: string[] = [];
-      if (popts.length) {
-        names.push("parse_with", "ParseOptions");
-        body.push(rsChain("let options = ", "ParseOptions::new()", popts), rsCall("let track = ", "parse_with", [rsStr(s), "&options"]));
-      } else {
-        names.push("parse");
-        body.push(`let track = parse(${rsStr(s)});`);
-      }
-      if (fopts.length) {
-        names.push("format_track_with", "FormatOptions");
-        body.push(rsChain("let format = ", "FormatOptions::new()", fopts), 'println!("{}", format_track_with(&track, &format));');
-      } else {
-        names.push("format_track");
-        body.push('println!("{}", format_track(&track));');
-      }
-      return `${rsUse("trackparse", names)}\n\nfn main() {\n${body.map((l) => `    ${l}`).join("\n")}\n}`;
-    }
-    if (lang === "go") {
-      // A whole program: options are structs whose zero value means the default.
-      const popts: [string, string][] = [];
-      if (o.mode) popts.push(["Mode", goConst("Mode", o.mode)]);
-      if (o.uploader) popts.push(["Uploader", goStr(o.uploader)]);
-      if (o.knownArtists) popts.push(["KnownArtists", `[]string{${o.knownArtists.map(goStr).join(", ")}}`]);
-      if (o.splitAnd) popts.push(["SplitAnd", goConst("SplitAnd", o.splitAnd)]);
-      const fopts: [string, string][] = [];
-      if (f.feat) fopts.push(["Feat", goConst("Feat", f.feat)]);
-      if (f.joiners) fopts.push(["Joiners", goConst("Joiners", f.joiners)]);
-      if (f.versions) fopts.push(["Versions", goConst("Versions", f.versions)]);
-      const body = [
-        popts.length
-          ? `track := trackparse.ParseWith(${goStr(s)}, ${goStruct("ParseOptions", popts, "\t")})`
-          : `track := trackparse.Parse(${goStr(s)})`,
-        fopts.length
-          ? `fmt.Println(trackparse.FormatWith(track, ${goStruct("FormatOptions", fopts, "\t")}))`
-          : "fmt.Println(trackparse.Format(track))",
-      ];
-      return goMain(body);
-    }
-    const snake = (k: string) => k.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`);
-    const py = (v: unknown): string =>
-      Array.isArray(v) ? `[${v.map(py).join(", ")}]` : typeof v === "boolean" ? (v ? "True" : "False") : typeof v === "string" ? jsStr(v) : JSON.stringify(v);
-    const kw = (obj: Record<string, unknown>) =>
-      Object.entries(obj).map(([k, v]) => `, ${snake(k)}=${py(v)}`).join("");
-    return `from trackparse import format_track, parse\n\ntrack = parse(${q(s)}${kw(o as Record<string, unknown>)})\nformat_track(track${kw(f)})`;
   }
 
   function renderTrack() {
@@ -996,7 +870,9 @@ const listExamples: { label: string; title: string; text: string }[] = [
     if (joiners.value !== "original") f.joiners = joiners.value;
     if (versions.value !== "all") f.versions = versions.value;
     $("pg-formatted").textContent = format(track, f) || "–";
-    $("pg-code").innerHTML = codeHtml(code(s, o, f), lang);
+    const snippet = trackCode(lang, s, o, f);
+    $("pg-code").innerHTML = codeHtml(snippet.src, lang);
+    $("pg-api").innerHTML = apiHtml(snippet);
     for (const b of document.querySelectorAll<HTMLButtonElement>("#panel-track [data-example]")) {
       b.setAttribute("aria-pressed", String(b.dataset.example === s));
     }
@@ -1091,14 +967,20 @@ const listExamples: { label: string; title: string; text: string }[] = [
 
   function row(e: TracklistEntry, warn: boolean): string {
     const t = e.track;
-    const artists = t ? t.artists.map((a) => (a.role !== "primary" ? `${escapeHtml(a.name)} ${chip(a.role, roleKind(a))}` : escapeHtml(a.name))).join(", ") : "";
+    const artists = t
+      ? t.artists
+          .map((a) => (a.role !== "primary" ? `${escapeHtml(a.name)} ${chip(a.role, roleKind(a), `The ${a.role} role`, `${base}/${GUIDE.role[a.role]}`)}` : escapeHtml(a.name)))
+          .join(", ")
+      : "";
     const title = t ? escapeHtml(t.title) : `<span class="tp-none">${escapeHtml(e.raw.trim())}</span>`;
-    const vers = t ? t.versions.map((v) => chip(v.artists[0] ? `${v.type} · ${v.artists[0].name}` : v.type, "version")).join(" ") : "";
-    const pos = t?.position ? `${chip(`#${t.position.number}`, "position")} ` : "";
+    const vers = t
+      ? t.versions.map((v) => chip(v.artists[0] ? `${v.type} · ${v.artists[0].name}` : v.type, "version", "The version types", `${base}/${GUIDE.versionType}`)).join(" ")
+      : "";
+    const pos = t?.position ? `${chip(`#${t.position.number}`, "position", "Track numbers in a tracklist", `${base}/guides/tracklists/#bare-track-numbers`)} ` : "";
     // R13.13: a `w/` line plays over the previous track.
-    const layered = e.layered ? `${chip("w/", "layered", "Layered: played over the previous track")} ` : "";
+    const layered = e.layered ? `${chip("w/", "layered", "Layered: played over the previous track", `${base}/guides/tracklists/#layered-tracks`)} ` : "";
     const cls = [warn ? "is-warn" : "", changed.has(e.line) ? "is-changed" : ""].join(" ").trim();
-    return `<tr class="${cls}" id="tl-line-${e.line}"><td class="tl-num">${e.line}</td><td class="tl-kind${e.kind === "track" ? "" : " is-other"}">${e.kind}</td><td class="tl-time">${e.time ? escapeHtml(e.time.raw) : ""}</td><td>${layered}${pos}${artists}</td><td>${title}</td><td>${vers}</td></tr>`;
+    return `<tr class="${cls}" id="tl-line-${e.line}"><td class="tl-num">${e.line}</td><td class="tl-kind${e.kind === "track" ? "" : " is-other"}"><a href="${base}/guides/tracklists/#line-kinds" title="Line kinds">${e.kind}</a></td><td class="tl-time">${e.time ? escapeHtml(e.time.raw) : ""}</td><td>${layered}${pos}${artists}</td><td>${title}</td><td>${vers}</td></tr>`;
   }
 
   function plural(n: number, word: string): string {
@@ -1138,120 +1020,6 @@ const listExamples: { label: string; title: string; text: string }[] = [
   type View = "table" | "json" | "code";
   let view: View = "table";
 
-  /** JS / Python / Rust / Go for the current text, options and edit inputs. */
-  function listCode(text: string, list: Tracklist): string {
-    const q = jsStr;
-    const lines = text.split("\n");
-    // Lists without CR line endings are written one line per row; anything else as one string.
-    const literal = (indent: string, open: string, close: string) =>
-      text.includes("\r") || lines.length < 2
-        ? q(text)
-        : `${open}\n${lines.map((l) => `${indent}${q(l)},`).join("\n")}\n${close}`;
-    const { audioSeconds, knownArtists } = listOptions();
-    const hasOptions = audioSeconds !== undefined || knownArtists !== undefined;
-    const seconds = shiftSeconds();
-    const from = shiftFrom();
-    const fix = list.warnings.find((w) => w.suggestion)?.suggestion;
-    if (lang === "js") {
-      const jsOpts: string[] = [];
-      if (audioSeconds !== undefined) jsOpts.push(`audioSeconds: ${audioSeconds}`);
-      if (knownArtists) jsOpts.push(`knownArtists: [${knownArtists.map(q).join(", ")}]`);
-      const out = [
-        'import { applyEdits, parseTracklist } from "trackparse/tracklist";',
-        "",
-        `const text = ${literal("  ", "[", '].join("\\n")')};`,
-        "",
-        `const list = parseTracklist(text${hasOptions ? `, { ${jsOpts.join(", ")} }` : ""});`,
-        "list.entries;   // one entry per line",
-        "list.warnings;  // the checks, with line numbers",
-        "",
-        `applyEdits(text, [{ op: "shift", seconds: ${seconds}, from: ${from} }]);`,
-        'applyEdits(text, [{ op: "sort-by-time" }]);',
-      ];
-      if (fix) out.push(`applyEdits(text, [{ op: "set-time", line: ${fix.line}, seconds: ${fix.seconds} }]);  // the suggested fix`);
-      return out.join("\n");
-    }
-    if (lang === "rs") {
-      // A whole program. A list without CR line endings is an array of lines joined into a String.
-      const joined = !(text.includes("\r") || lines.length < 2);
-      const t = joined ? "&text" : "text";
-      const names = ["apply_edits", "Edit", hasOptions ? "parse_tracklist_with" : "parse_tracklist"];
-      if (hasOptions) names.push("TracklistOptions");
-      const rsOpts: string[] = [];
-      if (audioSeconds !== undefined) rsOpts.push(`.audio_seconds(${rsNum(audioSeconds)})`);
-      if (knownArtists) rsOpts.push(`.known_artists([${knownArtists.map(rsStr).join(", ")}])`);
-      // rustfmt keeps an array on one line when it is at most 60 columns wide.
-      const items = lines.map(rsStr);
-      const array = `[${items.join(", ")}]`;
-      const body = [
-        !joined
-          ? `let text = ${rsStr(text)};`
-          : rsWidth(array) <= 60
-            ? `let text = ${array}.join("\\n");`
-            : `let text = [\n${items.map((l) => `        ${l},`).join("\n")}\n    ]\n    .join("\\n");`,
-        "",
-        hasOptions
-          ? `${rsChain("let options = ", "TracklistOptions::new()", rsOpts)}\n    let list = parse_tracklist_with(${t}, &options);`
-          : `let list = parse_tracklist(${t});`,
-        'println!("{:#?}", list.entries); // one entry per line',
-        'println!("{:#?}", list.warnings); // the checks, with line numbers',
-        "",
-        `let shifted = apply_edits(${t}, &[Edit::shift_from(${rsNum(seconds)}, ${from})]);`,
-        `let sorted = apply_edits(${t}, &[Edit::sort_by_time()]);`,
-      ];
-      if (fix) body.push(`let fixed = apply_edits(${t}, &[Edit::set_time(${fix.line}, ${rsNum(fix.seconds)})]); // the suggested fix`);
-      body.push(`println!("{}\\n\\n{}${fix ? "\\n\\n{}" : ""}", shifted.text, sorted.text${fix ? ", fixed.text" : ""});`);
-      return `${rsUse("trackparse::tracklist", names)}\n\nfn main() {\n${body.map((l) => (l ? `    ${l}` : "")).join("\n")}\n}`;
-    }
-    if (lang === "go") {
-      // A whole program. A list without CR line endings is a slice of lines joined with "\n".
-      const joined = !(text.includes("\r") || lines.length < 2);
-      const opts: [string, string][] = [];
-      // AudioSeconds is a *float64: nil is unknown, a pointer to 0 an audio of length 0.
-      if (audioSeconds !== undefined) opts.push(["AudioSeconds", `trackparse.Ptr(${goFloat(audioSeconds)})`]);
-      if (knownArtists) opts.push(["KnownArtists", `[]string{${knownArtists.map(goStr).join(", ")}}`]);
-      const nums = [audioSeconds ?? 0, seconds, fix?.seconds ?? 0];
-      const extra = ['"encoding/json"', '"os"'];
-      if (joined) extra.push('"strings"');
-      if (nums.some((n) => !Number.isFinite(n))) extra.push('"math"');
-      const body = [
-        joined ? `text := strings.Join([]string{\n${lines.map((l) => `\t${goStr(l)},`).join("\n")}\n}, "\\n")` : `text := ${goStr(text)}`,
-        "",
-        hasOptions
-          ? `list := trackparse.ParseTracklistWith(text, ${goStruct("TracklistOptions", opts, "")})`
-          : "list := trackparse.ParseTracklist(text)",
-        "enc := json.NewEncoder(os.Stdout)",
-        'enc.SetIndent("", "  ")',
-        "enc.SetEscapeHTML(false)  // & < > as written, as JSON.stringify does",
-        "enc.Encode(list.Entries)  // one entry per line",
-        "enc.Encode(list.Warnings) // the checks, with line numbers",
-        "",
-        `shifted := trackparse.ApplyEdits(text, []trackparse.Edit{trackparse.ShiftFrom(${goNum(seconds)}, ${from})})`,
-        "sorted := trackparse.ApplyEdits(text, []trackparse.Edit{trackparse.SortByTime()})",
-      ];
-      if (fix) body.push(`fixed := trackparse.ApplyEdits(text, []trackparse.Edit{trackparse.SetTime(${fix.line}, ${goNum(fix.seconds)})}) // the suggested fix`);
-      body.push(`fmt.Print(shifted.Text, "\\n\\n", sorted.Text${fix ? ', "\\n\\n", fixed.Text' : ""}, "\\n")`);
-      return goMain(body.flatMap((l) => l.split("\n")), extra);
-    }
-    const pyOpts =
-      (audioSeconds !== undefined ? `, audio_seconds=${audioSeconds}` : "") +
-      (knownArtists ? `, known_artists=[${knownArtists.map(q).join(", ")}]` : "");
-    const out = [
-      "from trackparse.tracklist import apply_edits, parse_tracklist",
-      "",
-      `text = ${literal("    ", '"\\n".join([', "])")}`,
-      "",
-      `tl = parse_tracklist(text${pyOpts})`,
-      "tl.entries   # one entry per line",
-      "tl.warnings  # the checks, with line numbers",
-      "",
-      `apply_edits(text, [{"op": "shift", "seconds": ${seconds}, "from": ${from}}])`,
-      'apply_edits(text, [{"op": "sort-by-time"}])',
-    ];
-    if (fix) out.push(`apply_edits(text, [{"op": "set-time", "line": ${fix.line}, "seconds": ${fix.seconds}}])  # the suggested fix`);
-    return out.join("\n");
-  }
-
   function showView() {
     for (const b of document.querySelectorAll<HTMLElement>("[data-view]")) b.setAttribute("aria-pressed", String(b.dataset.view === view));
     $("tl-tablebox").hidden = view !== "table";
@@ -1259,6 +1027,7 @@ const listExamples: { label: string; title: string; text: string }[] = [
     $("tl-code").hidden = view !== "code";
     $("tl-lang").hidden = view !== "code";
     $("tl-install").hidden = view !== "code";
+    $("tl-api").hidden = view !== "code";
     $("tl-copy-out").hidden = view === "table";
   }
 
@@ -1271,7 +1040,18 @@ const listExamples: { label: string; title: string; text: string }[] = [
     $("tl-rows").innerHTML = list.entries.map((e) => row(e, warned.has(e.line))).join("");
     // Only the visible view is rendered: JSON of a long list is large.
     if (view === "json") $("tl-json").innerHTML = jsonHtml(list);
-    if (view === "code") $("tl-code").innerHTML = codeHtml(listCode(text, list), lang);
+    if (view === "code") {
+      const fix = list.warnings.find((w) => w.suggestion)?.suggestion;
+      const snippet = listCode(lang, {
+        text,
+        ...listOptions(),
+        seconds: shiftSeconds(),
+        from: shiftFrom(),
+        fix: fix && { line: fix.line, seconds: fix.seconds },
+      });
+      $("tl-code").innerHTML = codeHtml(snippet.src, lang);
+      $("tl-api").innerHTML = apiHtml(snippet);
+    }
     for (const b of document.querySelectorAll<HTMLButtonElement>("[data-list-example]"))
       b.setAttribute("aria-pressed", String(b.dataset.listExample === text));
     const st = list.stats;

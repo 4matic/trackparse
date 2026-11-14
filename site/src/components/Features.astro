@@ -3,6 +3,8 @@
 interface Item {
   title: string;
   body: string;
+  /** The guide that explains the item: the title links there. */
+  href?: string;
 }
 const { items } = Astro.props as { items: Item[] };
 ---
@@ -12,7 +14,7 @@ const { items } = Astro.props as { items: Item[] };
     items.map((it, i) => (
       <li>
         <span class="n" aria-hidden="true">{String(i + 1).padStart(2, "0")}</span>
-        <h3>{it.title}</h3>
+        <h3>{it.href ? <a href={it.href}>{it.title}</a> : it.title}</h3>
         <p set:html={it.body} />
       </li>
     ))
@@ -48,6 +50,15 @@ const { items } = Astro.props as { items: Item[] };
     font-weight: 600;
     letter-spacing: -0.01em;
     color: var(--sl-color-white);
+  }
+  h3 a {
+    color: inherit;
+    text-decoration: none;
+  }
+  h3 a:hover {
+    text-decoration: underline;
+    text-decoration-color: var(--sl-color-accent);
+    text-underline-offset: 0.2em;
   }
   p {
     margin: 0.35rem 0 0;
