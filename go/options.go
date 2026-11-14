@@ -69,8 +69,8 @@ const (
 	VersionsNone VersionsOption = "none"
 )
 
-// VersionHead is an extra version head word and the version type it means
-// (`{Key: "rerub", Type: VersionTypeRemix}`).
+// VersionHead is an extra version head word and the version type it means, such as
+// VersionHead{Key: "rerub", Type: VersionTypeRework}.
 type VersionHead struct {
 	// Key is the word or phrase, matched with ASCII lowercasing.
 	Key string
@@ -78,7 +78,8 @@ type VersionHead struct {
 	Type VersionType
 }
 
-// JunkPhrase is an extra junk phrase and its kind (`{Phrase: "out now", Kind: JunkKindPromo}`).
+// JunkPhrase is an extra junk phrase and its kind, such as
+// JunkPhrase{Phrase: "out now", Kind: JunkKindPromo}.
 type JunkPhrase struct {
 	// Phrase is the phrase, matched with ASCII lowercasing.
 	Phrase string

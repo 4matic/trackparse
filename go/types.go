@@ -361,7 +361,8 @@ type Entry struct {
 	Time *TracklistTime
 	// Track is the parse of the line text, for track and marker entries.
 	Track *Track
-	// Layered is true when the line starts with w/: played over the previous track (R13.13).
+	// Layered is true when the line's text after any time starts with w/: a track played over
+	// the previous one (R13.13).
 	Layered bool
 }
 
