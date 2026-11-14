@@ -31,6 +31,14 @@ export default defineConfig({
       customCss: ["./src/styles/custom.css"],
       components: { SocialIcons: "./src/components/SocialIcons.astro" },
       head: [
+        // With site data blocked, reading localStorage or sessionStorage throws, and Starlight's
+        // theme, tabs and sidebar scripts stop there. An in-memory store keeps them working for
+        // the visit. It runs before Starlight's own head scripts.
+        {
+          tag: "script",
+          content:
+            'for(const n of["localStorage","sessionStorage"]){try{window[n].getItem("tp")}catch{const m=new Map();const s={getItem:k=>m.has(String(k))?m.get(String(k)):null,setItem:(k,v)=>{m.set(String(k),String(v))},removeItem:k=>{m.delete(String(k))},clear:()=>m.clear(),key:i=>[...m.keys()][i]??null,get length(){return m.size}};try{Object.defineProperty(window,n,{value:s,configurable:true})}catch{}}}',
+        },
         { tag: "meta", attrs: { property: "og:image", content: "https://4matic.github.io/trackparse/og.png" } },
         { tag: "meta", attrs: { property: "og:image:width", content: "1200" } },
         { tag: "meta", attrs: { property: "og:image:height", content: "630" } },

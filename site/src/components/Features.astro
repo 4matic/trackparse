@@ -55,6 +55,16 @@ const { items } = Astro.props as { items: Item[] };
     line-height: 1.6;
     color: var(--sl-color-gray-3);
   }
+  p :global(a) {
+    color: var(--sl-color-gray-2);
+    text-decoration: underline;
+    text-decoration-color: var(--tp-border-strong);
+    text-underline-offset: 0.2em;
+  }
+  p :global(a:hover) {
+    color: var(--sl-color-white);
+    text-decoration-color: var(--sl-color-accent);
+  }
   p :global(code) {
     font: 0.86em var(--sl-font-mono);
     color: var(--sl-color-gray-2);
