@@ -36,11 +36,13 @@ the enum `ModeOption` and the resolved mode is `Mode`, which has no `Auto`. In G
 ```js
 import { parse } from "trackparse";
 
-parse("07_Burial_-_Archangel.mp3");
-// mode 'filename', position 7, artist 'Burial', title 'Archangel'
+const file = parse("07_Burial_-_Archangel.mp3");
+[file.mode, file.position, file.artists[0].name, file.title];
+// [ 'filename', { raw: '07', number: 7 }, 'Burial', 'Archangel' ]
 
-parse("Noisia - Stigma | Official Video");
-// mode 'youtube', title 'Stigma', junk [ { raw: 'Official Video', kind: 'video' } ]
+const video = parse("Noisia - Stigma | Official Video");
+[video.mode, video.title, video.junk];
+// [ 'youtube', 'Stigma', [ { raw: 'Official Video', kind: 'video' } ] ]
 ```
 
 </TabItem>
@@ -49,11 +51,13 @@ parse("Noisia - Stigma | Official Video");
 ```python
 from trackparse import parse
 
-parse("07_Burial_-_Archangel.mp3")
-# mode 'filename', position 7, artist 'Burial', title 'Archangel'
+file = parse("07_Burial_-_Archangel.mp3")
+(file.mode, file.position, file.artists[0].name, file.title)
+# ('filename', Position(raw='07', number=7), 'Burial', 'Archangel')
 
-parse("Noisia - Stigma | Official Video")
-# mode 'youtube', title 'Stigma', junk (Junk(raw='Official Video', kind='video'),)
+video = parse("Noisia - Stigma | Official Video")
+(video.mode, video.title, video.junk)
+# ('youtube', 'Stigma', (Junk(raw='Official Video', kind='video'),))
 ```
 
 </TabItem>
@@ -62,11 +66,13 @@ parse("Noisia - Stigma | Official Video")
 ```rust
 use trackparse::parse;
 
-parse("07_Burial_-_Archangel.mp3");
-// mode Filename, position 7, artist "Burial", title "Archangel"
+let file = parse("07_Burial_-_Archangel.mp3");
+(file.mode, &file.position, &file.artists[0].name, &file.title);
+// (Filename, Some(Position { raw: "07", number: 7 }), "Burial", "Archangel")
 
-parse("Noisia - Stigma | Official Video");
-// mode Youtube, title "Stigma", junk [Junk { raw: "Official Video", kind: Video }]
+let video = parse("Noisia - Stigma | Official Video");
+(video.mode, &video.title, &video.junk);
+// (Youtube, "Stigma", [Junk { raw: "Official Video", kind: Video }])
 ```
 
 </TabItem>
@@ -100,46 +106,52 @@ won't, and every guess shows up in [`warnings`](/trackparse/reference/warnings/#
 <TabItem label="JavaScript">
 
 ```js
-parse('"Numb" by Linkin Park', { mode: "youtube" });
-// artists [ 'Linkin Park' ], title 'Numb', warnings [ 'bySplit' ]
+const show = (t) => [t.artists.map((a) => a.name), t.title, t.warnings];
 
-parse('Linkin Park: "Numb"', { mode: "youtube" });
-// artists [ 'Linkin Park' ], title 'Numb', warnings [ 'quotedTitleSplit' ]
+show(parse('"Numb" by Linkin Park', { mode: "youtube" }));
+// [ [ 'Linkin Park' ], 'Numb', [ 'bySplit' ] ]
 
-parse("Blink-182-All The Small Things", { mode: "youtube" });
-// artists [ 'Blink-182' ], title 'All The Small Things', warnings [ 'unspacedDashSplit' ]
+show(parse('Linkin Park: "Numb"', { mode: "youtube" }));
+// [ [ 'Linkin Park' ], 'Numb', [ 'quotedTitleSplit' ] ]
+
+show(parse("Blink-182-All The Small Things", { mode: "youtube" }));
+// [ [ 'Blink-182' ], 'All The Small Things', [ 'unspacedDashSplit' ] ]
 ```
 
 </TabItem>
 <TabItem label="Python">
 
 ```python
-parse('"Numb" by Linkin Park', mode="youtube")
-# artists ['Linkin Park'], title 'Numb', warnings ('bySplit',)
+def show(t):
+    return [a.name for a in t.artists], t.title, t.warnings
 
-parse('Linkin Park: "Numb"', mode="youtube")
-# artists ['Linkin Park'], title 'Numb', warnings ('quotedTitleSplit',)
+show(parse('"Numb" by Linkin Park', mode="youtube"))
+# (['Linkin Park'], 'Numb', ('bySplit',))
 
-parse("Blink-182-All The Small Things", mode="youtube")
-# artists ['Blink-182'], title 'All The Small Things', warnings ('unspacedDashSplit',)
+show(parse('Linkin Park: "Numb"', mode="youtube"))
+# (['Linkin Park'], 'Numb', ('quotedTitleSplit',))
+
+show(parse("Blink-182-All The Small Things", mode="youtube"))
+# (['Blink-182'], 'All The Small Things', ('unspacedDashSplit',))
 ```
 
 </TabItem>
 <TabItem label="Rust">
 
 ```rust
-use trackparse::{parse_with, ModeOption, ParseOptions};
+use trackparse::{parse_with, ModeOption, ParseOptions, ParsedTrack};
 
+let show = |t: ParsedTrack| (t.artists.into_iter().map(|a| a.name).collect::<Vec<_>>(), t.title, t.warnings);
 let youtube = ParseOptions::new().mode(ModeOption::Youtube);
 
-parse_with("\"Numb\" by Linkin Park", &youtube);
-// artists ["Linkin Park"], title "Numb", warnings [BySplit]
+show(parse_with("\"Numb\" by Linkin Park", &youtube));
+// (["Linkin Park"], "Numb", [BySplit])
 
-parse_with("Linkin Park: \"Numb\"", &youtube);
-// artists ["Linkin Park"], title "Numb", warnings [QuotedTitleSplit]
+show(parse_with("Linkin Park: \"Numb\"", &youtube));
+// (["Linkin Park"], "Numb", [QuotedTitleSplit])
 
-parse_with("Blink-182-All The Small Things", &youtube);
-// artists ["Blink-182"], title "All The Small Things", warnings [UnspacedDashSplit]
+show(parse_with("Blink-182-All The Small Things", &youtube));
+// (["Blink-182"], "All The Small Things", [UnspacedDashSplit])
 ```
 
 </TabItem>
@@ -180,16 +192,16 @@ like `- Topic` and `VEVO` are dropped:
 <TabItem label="JavaScript">
 
 ```js
-parse("Around the World", { mode: "youtube", uploader: "Daft Punk - Topic" });
-// artists [ 'Daft Punk' ], title 'Around the World'
+show(parse("Around the World", { mode: "youtube", uploader: "Daft Punk - Topic" }));
+// [ [ 'Daft Punk' ], 'Around the World', [] ]
 ```
 
 </TabItem>
 <TabItem label="Python">
 
 ```python
-parse("Around the World", mode="youtube", uploader="Daft Punk - Topic")
-# artists ['Daft Punk'], title 'Around the World'
+show(parse("Around the World", mode="youtube", uploader="Daft Punk - Topic"))
+# (['Daft Punk'], 'Around the World', ())
 ```
 
 </TabItem>
@@ -197,8 +209,8 @@ parse("Around the World", mode="youtube", uploader="Daft Punk - Topic")
 
 ```rust
 let options = ParseOptions::new().mode(ModeOption::Youtube).uploader("Daft Punk - Topic");
-parse_with("Around the World", &options);
-// artists ["Daft Punk"], title "Around the World"
+show(parse_with("Around the World", &options));
+// (["Daft Punk"], "Around the World", [])
 ```
 
 </TabItem>
@@ -220,7 +232,7 @@ fmt.Printf("%q %q\n", t.Artists[0].Name, t.Title)
 <TabItem label="JavaScript">
 
 ```js
-parse("07_Burial_-_Archangel.mp3");                    // position 7, Burial / Archangel
+parse("02_Aphex_Twin_-_Xtal.flac").artists[0].name;   // 'Aphex Twin'
 parse("311 - Amber.mp3").position;                     // { raw: '311', number: 311 }
 parse("311 - Amber").artists[0].name;                  // '311'
 ```
@@ -229,7 +241,7 @@ parse("311 - Amber").artists[0].name;                  // '311'
 <TabItem label="Python">
 
 ```python
-parse("07_Burial_-_Archangel.mp3")                     # position 7, Burial / Archangel
+parse("02_Aphex_Twin_-_Xtal.flac").artists[0].name    # 'Aphex Twin'
 parse("311 - Amber.mp3").position                      # Position(raw='311', number=311)
 parse("311 - Amber").artists[0].name                   # '311'
 ```
@@ -238,7 +250,7 @@ parse("311 - Amber").artists[0].name                   # '311'
 <TabItem label="Rust">
 
 ```rust
-parse("07_Burial_-_Archangel.mp3");                    // position 7, Burial / Archangel
+&parse("02_Aphex_Twin_-_Xtal.flac").artists[0].name;  // "Aphex Twin"
 parse("311 - Amber.mp3").position;                     // Some(Position { raw: "311", number: 311 })
 &parse("311 - Amber").artists[0].name;                 // "311"
 ```
@@ -247,8 +259,7 @@ parse("311 - Amber.mp3").position;                     // Some(Position { raw: "
 <TabItem label="Go">
 
 ```go
-t = trackparse.Parse("07_Burial_-_Archangel.mp3")
-fmt.Println(t.Position.Number, t.Artists[0].Name, "/", t.Title)                  // 7 Burial / Archangel
+fmt.Printf("%q\n", trackparse.Parse("02_Aphex_Twin_-_Xtal.flac").Artists[0].Name)   // "Aphex Twin"
 fmt.Printf("%+v\n", *trackparse.Parse("311 - Amber.mp3").Position)             // {Raw:311 Number:311}
 fmt.Printf("%q\n", trackparse.Parse("311 - Amber").Artists[0].Name)            // "311"
 ```
@@ -256,7 +267,7 @@ fmt.Printf("%q\n", trackparse.Parse("311 - Amber").Artists[0].Name)            /
 </TabItem>
 </Tabs>
 
-The last two show why the mode matters. In a file name a leading number with a dash is a track
+The `311` lines show why the mode matters. In a file name a leading number with a dash is a track
 number. Anywhere else, `311` could be a band.
 
 ## tracklist mode
@@ -268,33 +279,36 @@ A single string doesn't get that benefit of the doubt:
 <TabItem label="JavaScript">
 
 ```js
-parse("Electrosoul System - Liquid Metal");
-// title 'Electrosoul System', junk [ { raw: 'Liquid Metal', kind: 'genre' } ]
+const plain = parse("Electrosoul System - Liquid Metal");
+[plain.artists, plain.title, plain.junk];
+// [ [], 'Electrosoul System', [ { raw: 'Liquid Metal', kind: 'genre' } ] ]
 
-parse("Electrosoul System - Liquid Metal", { mode: "tracklist" });
-// artists [ 'Electrosoul System' ], title 'Liquid Metal'
+show(parse("Electrosoul System - Liquid Metal", { mode: "tracklist" }));
+// [ [ 'Electrosoul System' ], 'Liquid Metal', [] ]
 ```
 
 </TabItem>
 <TabItem label="Python">
 
 ```python
-parse("Electrosoul System - Liquid Metal")
-# title 'Electrosoul System', junk (Junk(raw='Liquid Metal', kind='genre'),)
+plain = parse("Electrosoul System - Liquid Metal")
+(plain.artists, plain.title, plain.junk)
+# ((), 'Electrosoul System', (Junk(raw='Liquid Metal', kind='genre'),))
 
-parse("Electrosoul System - Liquid Metal", mode="tracklist")
-# artists ['Electrosoul System'], title 'Liquid Metal'
+show(parse("Electrosoul System - Liquid Metal", mode="tracklist"))
+# (['Electrosoul System'], 'Liquid Metal', ())
 ```
 
 </TabItem>
 <TabItem label="Rust">
 
 ```rust
-parse("Electrosoul System - Liquid Metal");
-// title "Electrosoul System", junk [Junk { raw: "Liquid Metal", kind: Genre }]
+let plain = parse("Electrosoul System - Liquid Metal");
+(&plain.artists, &plain.title, &plain.junk);
+// ([], "Electrosoul System", [Junk { raw: "Liquid Metal", kind: Genre }])
 
-parse_with("Electrosoul System - Liquid Metal", &ParseOptions::new().mode(ModeOption::Tracklist));
-// artists ["Electrosoul System"], title "Liquid Metal"
+show(parse_with("Electrosoul System - Liquid Metal", &ParseOptions::new().mode(ModeOption::Tracklist)));
+// (["Electrosoul System"], "Liquid Metal", [])
 ```
 
 </TabItem>

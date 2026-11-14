@@ -10,7 +10,7 @@ three kinds: on a single track, on a tracklist, and on an edit.
 
 In JavaScript and Python a warning code is a string. In Rust it is an enum variant, and `as_str()`
 or `Display` gives the same string. In Go it is a constant of a string type, whose value is the
-string. The tables below list all three.
+string. The tables below give the string, the Rust variant and the Go constant for each code.
 
 ## Track warnings
 
@@ -320,7 +320,7 @@ let result = apply_edits(text, &[
 
 &result.warnings;
 // [EditWarning { code: EditInvalid, edit: 0, line: Some(9) }, EditWarning { code: TimeClamped, edit: 1, line: Some(2) }]
-result.changed;                  // [2]
+&result.changed;                 // [2]
 result.text.split('\n').nth(1);  // Some("00:00 Mefjus - Sleepless")
 
 result.warnings.iter().any(|w| w.code == EditWarningCode::EditInvalid);   // true

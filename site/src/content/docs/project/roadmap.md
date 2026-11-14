@@ -33,5 +33,6 @@ explains what a useful report looks like.
 The changelogs list what has shipped so far:
 [JavaScript](https://github.com/4matic/trackparse/blob/main/js/CHANGELOG.md),
 [Python](https://github.com/4matic/trackparse/blob/main/python/CHANGELOG.md),
-[Rust](https://github.com/4matic/trackparse/blob/main/rust/CHANGELOG.md) and the
+[Rust](https://github.com/4matic/trackparse/blob/main/rust/CHANGELOG.md),
+[Go](https://github.com/4matic/trackparse/blob/main/go/CHANGELOG.md) and the
 [spec](https://github.com/4matic/trackparse/blob/main/spec/CHANGELOG.md).

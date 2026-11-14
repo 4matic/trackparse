@@ -216,21 +216,30 @@ an invariant (R11.6, under [R11](/trackparse/reference/spec/#r11-format)), and t
 <TabItem label="JavaScript">
 
 ```js
-parse(format(parse(s)))  // same artists, title and versions as parse(s)
+const s = "Noisia feat. Foreign Beggars - Shellshock (Phace Remix)";
+// same artists, title and versions as parse(s):
+const again = parse(format(parse(s)));
+again.fullTitle;   // 'Shellshock (Phace Remix)'
 ```
 
 </TabItem>
 <TabItem label="Python">
 
 ```python
-parse(format_track(parse(s)))  # same artists, title and versions as parse(s)
+s = "Noisia feat. Foreign Beggars - Shellshock (Phace Remix)"
+# same artists, title and versions as parse(s):
+again = parse(format_track(parse(s)))
+again.full_title   # 'Shellshock (Phace Remix)'
 ```
 
 </TabItem>
 <TabItem label="Rust">
 
 ```rust
-parse(&format_track(&parse(s)));  // same artists, title and versions as parse(s)
+let s = "Noisia feat. Foreign Beggars - Shellshock (Phace Remix)";
+// same artists, title and versions as parse(s):
+let again = parse(&format_track(&parse(s)));
+&again.full_title;   // "Shellshock (Phace Remix)"
 ```
 
 </TabItem>
@@ -238,7 +247,8 @@ parse(&format_track(&parse(s)));  // same artists, title and versions as parse(s
 
 ```go
 s := "Noisia feat. Foreign Beggars - Shellshock (Phace Remix)"
-again := trackparse.Parse(trackparse.Format(trackparse.Parse(s)))   // same artists, title and versions as Parse(s)
+// same artists, title and versions as Parse(s):
+again := trackparse.Parse(trackparse.Format(trackparse.Parse(s)))
 fmt.Printf("%q\n", again.FullTitle)   // "Shellshock (Phace Remix)"
 ```
 
