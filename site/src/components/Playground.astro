@@ -812,6 +812,11 @@ const listExamples: { label: string; title: string; text: string }[] = [
     if (!Number.isFinite(n)) return Number.isNaN(n) ? "math.NaN()" : n > 0 ? "math.Inf(1)" : "math.Inf(-1)";
     return String(n);
   }
+  /** A float64 value for trackparse.Ptr: `3600.0`, `7.5`, so the type parameter is float64, not int. */
+  function goFloat(n: number): string {
+    const s = goNum(n);
+    return /^-?\d+$/.test(s) ? `${s}.0` : s;
+  }
   /** The exported constant of an option value: `youtube` → `ModeYouTube`, `never` → `SplitAndNever`. */
   function goConst(prefix: string, v: unknown): string {
     const name = String(v) === "youtube" ? "YouTube" : variant(v);
@@ -1134,8 +1139,8 @@ const listExamples: { label: string; title: string; text: string }[] = [
       // A whole program. A list without CR line endings is a slice of lines joined with "\n".
       const joined = !(text.includes("\r") || lines.length < 2);
       const opts: [string, string][] = [];
-      // AudioSeconds 0 means unknown in Go; JavaScript takes 0 as an audio of length 0.
-      if (audioSeconds !== undefined) opts.push(["AudioSeconds", goNum(audioSeconds)]);
+      // AudioSeconds is a *float64: nil is unknown, a pointer to 0 an audio of length 0.
+      if (audioSeconds !== undefined) opts.push(["AudioSeconds", `trackparse.Ptr(${goFloat(audioSeconds)})`]);
       if (knownArtists) opts.push(["KnownArtists", `[]string{${knownArtists.map(goStr).join(", ")}}`]);
       const nums = [audioSeconds ?? 0, seconds, fix?.seconds ?? 0];
       const extra = ['"encoding/json"'];
@@ -1144,7 +1149,6 @@ const listExamples: { label: string; title: string; text: string }[] = [
       const body = [
         joined ? `text := strings.Join([]string{\n${lines.map((l) => `\t${goStr(l)},`).join("\n")}\n}, "\\n")` : `text := ${goStr(text)}`,
         "",
-        ...(audioSeconds === 0 ? ["// AudioSeconds 0 means unknown in Go; JavaScript reads it as an audio of length 0."] : []),
         hasOptions
           ? `list := trackparse.ParseTracklistWith(text, ${goStruct("TracklistOptions", opts, "")})`
           : "list := trackparse.ParseTracklist(text)",

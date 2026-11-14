@@ -95,7 +95,7 @@ Since a Go `bool` field defaults to `false`, `producers` becomes `OmitProducers`
 | Option | Python | Rust | Go |
 |---|---|---|---|
 | `feat` | `feat="title"` | `.feat(FeatPlacement::Title)`: `Source`, `Artist`, `Title`, `Omit` | `Feat: trackparse.FeatTitle`: `FeatSource`, `FeatArtist`, `FeatTitle`, `FeatOmit` |
-| `featMarker` | `feat_marker="featuring"` | `.feat_marker("featuring")` | `FeatMarker: "featuring"` |
+| `featMarker` | `feat_marker="featuring"` | `.feat_marker("featuring")` | `FeatMarker: trackparse.Ptr("featuring")` (a `*string`) |
 | `joiners` | `joiners="canonical"` | `.joiners(JoinerStyle::Canonical)`: `Original`, `Canonical` | `Joiners: trackparse.JoinersCanonical`: `JoinersOriginal`, `JoinersCanonical` |
 | `versions` | `versions="none"` | `.versions(VersionsOption::None)`: `All`, `None` | `Versions: trackparse.VersionsNone`: `VersionsAll`, `VersionsNone` |
 | `producers` | `producers=False` | `.producers(false)` | `OmitProducers: true` |
@@ -185,7 +185,7 @@ fmt.Printf("%q\n", trackparse.FormatWith(t, trackparse.FormatOptions{
 }))
 // "Wilkinson - Afterglow (feat. Becky Hill & Tom Cane) (Sub Focus VIP Remix)"
 
-fmt.Printf("%q\n", trackparse.FormatWith(t, trackparse.FormatOptions{Feat: trackparse.FeatArtist, FeatMarker: "featuring"}))
+fmt.Printf("%q\n", trackparse.FormatWith(t, trackparse.FormatOptions{Feat: trackparse.FeatArtist, FeatMarker: trackparse.Ptr("featuring")}))
 // "Wilkinson featuring Becky Hill & Tom Cane - Afterglow (Sub Focus VIP Remix)"
 
 fmt.Printf("%q\n", trackparse.FormatWith(t, trackparse.FormatOptions{Feat: trackparse.FeatOmit}))

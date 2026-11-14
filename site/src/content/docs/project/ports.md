@@ -109,11 +109,13 @@ typing questions. What was new:
   subpart with one U+FFFD before parsing, the WHATWG rule that Rust's `from_utf8_lossy` and
   `TextDecoder` follow, so the Go and Rust ports read the same bytes as the same text. Go's own
   decoding would give one U+FFFD per bad byte.
-- **Zero-value options.** The option structs mean the defaults when left empty, which covers
-  almost every case. Three cannot be written that way: a tracklist parsed in auto mode (the zero
-  `Mode` there means tracklist, so write `Mode("auto")`), an audio length of exactly 0 seconds (zero
-  means unknown), and an option set to the empty string, which in Go is the zero value and means the
-  default.
+- **Zero-value options.** The option structs mean the defaults when left empty. A field whose
+  zero value is also a real setting must be a pointer, or that setting cannot be written: an
+  audio length of 0 seconds (`AudioSeconds *float64`) and an empty feat marker
+  (`FeatMarker *string`), both set with `trackparse.Ptr`. `ModeAuto` is `"auto"`, not the empty
+  string, so `TracklistOptions{Mode: ModeAuto}` means auto while an empty `Mode` keeps the
+  tracklist default. A test maps the options of every fixture to the typed structs and checks that
+  the output equals the JSON door's.
 - **NUL is real input.** A scanner that reads past the end of a string must not see a character.
   The Go helpers return -1 out of range, not 0, because U+0000 can appear in the input.
 

@@ -157,7 +157,7 @@ Tracklists are in the same package; there is no subpackage.
 
 | Field | Zero value means | |
 |---|---|---|
-| `Mode` | `ModeAuto` (`""`) | `ModeClean`, `ModeYouTube`, `ModeFilename`, `ModeTracklist`, or `ModeAuto` to detect from the string. See [Modes](#modes) |
+| `Mode` | `ModeAuto` | `ModeClean`, `ModeYouTube`, `ModeFilename`, `ModeTracklist`, or `ModeAuto` to detect from the string. See [Modes](#modes) |
 | `Uploader` | none | YouTube channel name, used as the artist when there's no separator (`- Topic` and `VEVO` are dropped) |
 | `KnownArtists` | none | Names that are never split. There is no built-in list |
 | `SplitAnd` | `SplitAndAuto` | `SplitAndAuto` splits on `and` only after a comma (`A, B and C`), so `Simon and Garfunkel` stays whole. Also `SplitAndAlways`, `SplitAndNever` |
@@ -209,21 +209,23 @@ fmt.Println(track.Title)                           // Song
 fmt.Println(track.Junk[0].Raw, track.Junk[0].Kind) // Some Label Rip label
 ```
 
-#### What a zero value cannot say
+#### Pointer fields and `Ptr`
 
-Because the zero value means "the default", three settings of the other ports have no Go
-spelling, or a different one:
+Every option value of the other ports has a Go spelling. Where the zero value of a field is also
+a value someone may want to pass, the field is a pointer, and `nil` means "not set":
 
-- **An empty feat marker.** `FormatOptions{FeatMarker: ""}` keeps the marker of the input. In
-  JavaScript, `featMarker: ""` writes an empty marker (`Wilkinson  Becky Hill - Afterglow`, two
-  spaces); Go has no way to ask for that.
-- **An audio length of 0.** `TracklistOptions.AudioSeconds` of zero, a negative value or a
-  non-finite one means "unknown", so `time-after-audio-end` is off. JavaScript takes
-  `audioSeconds: 0` as an audio of length 0 and flags every time after `0:00`.
-- **Auto mode for tracklists.** The zero `TracklistOptions.Mode` is `ModeTracklist`, the default
-  of `ParseTracklist` in every port. To parse each line in auto mode, pass the string:
-  `TracklistOptions{Mode: trackparse.Mode("auto")}`. (In `ParseOptions`, `ModeAuto` is already
-  the zero value.)
+- `FormatOptions.FeatMarker` is a `*string`. `nil` keeps the input's marker; a pointer to `""`
+  writes an empty marker, as `featMarker: ""` does in JavaScript.
+- `TracklistOptions.AudioSeconds` is a `*float64`. `nil` means the length is unknown; a pointer to
+  `0` is an audio of length 0, which flags every time after `0:00`.
+
+`trackparse.Ptr(v)` returns a pointer to a copy of `v`, so a literal fits in one expression:
+`FormatOptions{FeatMarker: trackparse.Ptr("featuring")}`,
+`TracklistOptions{AudioSeconds: trackparse.Ptr(3600.0)}`.
+
+`Mode` is a string field whose zero value `""` means the default of the function: `ModeAuto`
+(`"auto"`) for `ParseWith`, `ModeTracklist` for `ParseTracklistWith`. Both constants can also be
+passed explicitly, so `TracklistOptions{Mode: trackparse.ModeAuto}` parses each line in auto mode.
 
 Option values are typed strings, so a value outside the constants compiles. It behaves as the
 JavaScript package behaves with that value, as the doc comment of each type says: an unknown
@@ -350,7 +352,7 @@ Renders a track back to a string.
 | Field | Zero value means | |
 |---|---|---|
 | `Feat` | `FeatSource` | Where featured artists go: `FeatSource` (where they were), `FeatArtist`, `FeatTitle` (`(feat. X)` after the title) or `FeatOmit` |
-| `FeatMarker` | the input's marker | Marker for featured artists, such as `"featuring"` |
+| `FeatMarker` | `nil`: the input's marker | Marker for featured artists, such as `trackparse.Ptr("featuring")`. A pointer to `""` writes an empty marker |
 | `Joiners` | `JoinersOriginal` | `JoinersOriginal` keeps the joiners as written. `JoinersCanonical` writes `and` as `&`, `vs` as `vs.` and every feat marker as `feat.` |
 | `Versions` | `VersionsAll` | `VersionsAll` or `VersionsNone` |
 | `OmitProducers` | `false` | Leave out `(prod. ...)` credits (`producers: false` in JavaScript) |
@@ -373,7 +375,7 @@ fmt.Println(trackparse.FormatWith(track, trackparse.FormatOptions{
 // Wilkinson - Afterglow
 fmt.Println(trackparse.FormatWith(track, trackparse.FormatOptions{Position: true}))
 // 01. Wilkinson ft. Becky Hill - Afterglow (Sub Focus Remix)
-fmt.Println(trackparse.FormatWith(track, trackparse.FormatOptions{FeatMarker: "featuring"}))
+fmt.Println(trackparse.FormatWith(track, trackparse.FormatOptions{FeatMarker: trackparse.Ptr("featuring")}))
 // Wilkinson featuring Becky Hill - Afterglow (Sub Focus Remix)
 ```
 
@@ -576,12 +578,13 @@ Edits are built with `SetTime(line, seconds)`, `Shift(seconds)` (all timed lines
 `Edit` is a plain struct with an `Op` field, so you can also fill it yourself; each operation reads
 only its own fields. Line numbers are 1-based.
 
-`TracklistOptions` has `Mode` (zero value: `ModeTracklist`), `KnownArtists`, `SplitAnd`,
-`Keywords`, `AudioSeconds` (enables `time-after-audio-end`) and `MarkerWords`:
+`TracklistOptions` has `Mode` (zero value: `ModeTracklist`; `ModeAuto` picks a mode per line),
+`KnownArtists`, `SplitAnd`, `Keywords`, `AudioSeconds` (a `*float64`; it enables
+`time-after-audio-end`) and `MarkerWords`:
 
 ```go
 list := trackparse.ParseTracklistWith("00:00 A - B\n1:02:03 C - D", trackparse.TracklistOptions{
-	AudioSeconds: 3600,
+	AudioSeconds: trackparse.Ptr(3600.0),
 })
 fmt.Println(list.Warnings[0].Code, list.Warnings[0].Line) // time-after-audio-end 2
 ```
@@ -737,8 +740,6 @@ difference is described under [Unicode version](#unicode-version).
 - Catalog numbers, key and BPM are not fields. They stay in the title.
 - There is no artist database. Pass `KnownArtists` for names that contain a joiner
   (`Earth, Wind & Fire`).
-- Three option values of the other ports have no Go spelling: see
-  [What a zero value cannot say](#what-a-zero-value-cannot-say).
 
 ## Development
 

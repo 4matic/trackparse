@@ -9,7 +9,19 @@ import "math"
 // which is resolved with exactly the fallbacks of the JS reference (a bad value means the
 // default, R0.8). The typed enums are strings, so the typed door applies the same fallbacks to
 // a string the JSON door would get: an unknown name behaves as it does in JavaScript. Only the
-// empty string differs: it is the zero value, which means the default. Resolution never fails.
+// empty string differs: it is the zero value, which means the default (JavaScript reads an
+// empty string as an unknown name; any other unknown name says that here). Fields whose zero
+// value is also a meaningful JavaScript value are pointers ([FormatOptions].FeatMarker,
+// [TracklistOptions].AudioSeconds), set with [Ptr]. So every JavaScript option value has a
+// typed equivalent. Resolution never fails.
+
+// Ptr returns a pointer to a copy of v. It sets the pointer fields of the options:
+//
+//	trackparse.FormatOptions{FeatMarker: trackparse.Ptr("ft.")}
+//	trackparse.TracklistOptions{AudioSeconds: trackparse.Ptr(3600.0)}
+func Ptr[T any](v T) *T {
+	return &v
+}
 
 // SplitAnd is when the word "and" splits a credit list (R7.3). "&" and the other joiners always
 // split. The zero value means [SplitAndAuto].
@@ -100,7 +112,7 @@ func (k *Keywords) isEmpty() bool {
 // ParseOptions are the options of [ParseWith], [ParseArtistsWith] and [NewParser] (R12). The
 // zero value is what [Parse] uses.
 type ParseOptions struct {
-	// Mode is the mode; the zero value [ModeAuto] picks one from the string.
+	// Mode is the mode; the zero value means [ModeAuto], which picks one from the string.
 	Mode Mode
 	// Uploader is the channel name, used in youtube mode as the artist when the title has no
 	// separator (R6.8). Empty means none.
@@ -119,8 +131,9 @@ type FormatOptions struct {
 	// found).
 	Feat FeatPlacement
 	// FeatMarker is the marker written in front of featured lists instead of the one in the
-	// input. Empty means the input's marker.
-	FeatMarker string
+	// input. Nil means the input's marker; a pointer to "" writes an empty marker, as the
+	// JavaScript option featMarker: "" does. Set it with [Ptr].
+	FeatMarker *string
 	// Joiners is the joiner style; the zero value means [JoinersOriginal].
 	Joiners JoinerStyle
 	// Versions is whether versions are written; the zero value means [VersionsAll].
@@ -134,8 +147,8 @@ type FormatOptions struct {
 // TracklistOptions are the options of [ParseTracklistWith] and [ApplyEditsWith] (R13.10). The
 // zero value is what [ParseTracklist] uses.
 type TracklistOptions struct {
-	// Mode is the per-line parse mode; the zero value means [ModeTracklist]. [ModeAuto] cannot
-	// be asked for with the zero value: use the string "auto" (Mode("auto")).
+	// Mode is the per-line parse mode; the zero value means [ModeTracklist]. [ModeAuto] picks
+	// a mode per line.
 	Mode Mode
 	// KnownArtists are names that must never be split (R7.3a).
 	KnownArtists []string
@@ -144,9 +157,9 @@ type TracklistOptions struct {
 	// Keywords is extra vocabulary for the per-line parse.
 	Keywords Keywords
 	// AudioSeconds is the length of the audio in seconds; it enables time-after-audio-end.
-	// Zero, negative and non-finite values mean unknown. (The JavaScript package takes 0 as an
-	// audio of length 0; the zero value cannot say that here.)
-	AudioSeconds float64
+	// Nil means unknown, and so do negative and non-finite values. A pointer to 0 is an audio
+	// of length 0, as the JavaScript option audioSeconds: 0. Set it with [Ptr].
+	AudioSeconds *float64
 	// MarkerWords are extra marker words (R13.3): a line that is only such a word is a marker.
 	MarkerWords []string
 }
@@ -433,7 +446,7 @@ func resolveParse(o *ParseOptions) resolvedOptions {
 		knownArtists: sanitizeAll(o.KnownArtists),
 		keywords:     resolveKeywords(&o.Keywords),
 	}
-	if o.Mode != ModeAuto {
+	if o.Mode != "" {
 		r.mode = requestFor(string(o.Mode))
 	}
 	if o.SplitAnd != "" {
@@ -460,19 +473,23 @@ func resolveFormat(o *FormatOptions) resolvedFormat {
 	default:
 		r.feat = featOmit
 	}
-	if o.FeatMarker != "" {
-		m := sanitize(o.FeatMarker)
+	if o.FeatMarker != nil {
+		m := sanitize(*o.FeatMarker)
 		r.featMarker = &m
 	}
 	return r
 }
 
-// audio is the R13.10 audio length: nil unless finite and not negative.
-func audio(seconds float64, given bool) *float64 {
-	if !given || math.IsNaN(seconds) || math.IsInf(seconds, 0) || seconds < 0 {
+// audio is the R13.10 audio length: nil unless given, finite and not negative.
+func audio(seconds *float64) *float64 {
+	if seconds == nil {
 		return nil
 	}
-	return &seconds
+	v := *seconds
+	if math.IsNaN(v) || math.IsInf(v, 0) || v < 0 {
+		return nil
+	}
+	return &v
 }
 
 // resolveTracklist is the typed door to resolvedTracklist.
@@ -483,7 +500,7 @@ func resolveTracklist(o *TracklistOptions) resolvedTracklist {
 			knownArtists: sanitizeAll(o.KnownArtists),
 			keywords:     resolveKeywords(&o.Keywords),
 		},
-		audioSeconds: audio(o.AudioSeconds, o.AudioSeconds != 0),
+		audioSeconds: audio(o.AudioSeconds),
 		markerWords:  sanitizeAll(o.MarkerWords),
 	}
 	if o.Mode != "" {
@@ -688,10 +705,13 @@ func resolveTracklistJSON(o jsonValue) resolvedTracklist {
 	if s, ok := o.get("splitAnd"); ok && s.kind == jsonString {
 		parse.splitAnd = tracklistSplitAnd(s.str)
 	}
-	n, ok := jsNumber(o.get("audioSeconds"))
+	var seconds *float64
+	if n, ok := jsNumber(o.get("audioSeconds")); ok {
+		seconds = &n
+	}
 	return resolvedTracklist{
 		parse:        parse,
-		audioSeconds: audio(n, ok),
+		audioSeconds: audio(seconds),
 		markerWords:  stringList(o.get("markerWords")),
 	}
 }

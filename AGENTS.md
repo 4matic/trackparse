@@ -115,7 +115,8 @@ go/                       Go module `github.com/4matic/trackparse/go`, package `
   types.go                public structs and typed-string enums (mirror the schemas); nullable
                           fields are pointers
   options.go              ParseOptions, FormatOptions, Keywords, TracklistOptions (zero value = the
-                          defaults), the Edit constructors, and the resolved forms
+                          defaults; FeatMarker and AudioSeconds are pointers), Ptr, the Edit
+                          constructors, and the resolved forms
   json.go                 MarshalJSON / UnmarshalJSON with JSON.stringify's bytes, and the JSON reader
   *.go                    one file per js/src file, same rule IDs in comments: parser, normalize,
                           mode, scanner, prefix, classify, separator, artists, credits, title,
@@ -595,8 +596,8 @@ Checklist:
 7. **API** idiomatic for the language but equivalent: Python `parse`, `parse_artists`,
    `format_track`, `normalize` (snake_case fields are fine only if the JSON output keeps the spec's
    keys); Rust with `serde` behind a feature flag and `unicode-normalization` as the only required
-   dependency; Go with exported fields, option structs whose zero value is the default, and
-   `MarshalJSON` writing the spec's JSON.
+   dependency; Go with exported fields, option structs whose zero value is the default (a pointer
+   where the zero value is also a real setting), and `MarshalJSON` writing the spec's JSON.
 8. **Conformance report** script and a CI workflow mirroring `js.yml`.
 9. **Cross-port diff.** Extend `scripts/compare-ports.mjs` (or write the same thing) so every
    fixture's full output is compared with JS, not only the fields the fixture asserts.
@@ -663,11 +664,14 @@ port started, the rest by compare-ports and the differential run against JS:
 - **Typed strings remove Rust's `RawTrack` split.** Enums are `type VersionType string` and so on,
   so a version type or junk kind introduced by `Keywords` travels to the output unchanged; the
   typed API needs no "unknown name" mapping.
-- **Zero-value options cannot say everything JS can.** An option struct's zero value means the
-  default, so three JS settings have no typed form: an explicit empty `featMarker` (empty means
-  "keep the input's marker"), `audioSeconds: 0` (zero means unknown here), and `mode: "auto"` in
-  tracklist options (the zero value means `ModeTracklist`; pass `Mode("auto")`). The JSON door
-  (`internal/wire`) keeps the JS meaning for the fixtures and compare-ports.
+- **Zero-value options must not hide a setting.** An option struct's zero value means the
+  default, so a field whose zero value is also a real JS setting is a pointer: `FeatMarker
+  *string` (a pointer to `""` is JS `featMarker: ""`) and `AudioSeconds *float64` (a pointer to 0
+  is JS `audioSeconds: 0`), set with `trackparse.Ptr`. `ModeAuto` is `"auto"` and `""` means the
+  function's default (auto for a parse, tracklist for a tracklist), so both can be asked for. JS
+  reads an empty string as an unknown name; in Go any other unknown name says that.
+  `TestTypedOptionsExpressEveryFixture` (`options_test.go`) maps every fixture's JSON options to
+  the typed structs and requires the same output bytes as the JSON door.
 - **Ordered slices for the two keyword maps.** `Keywords.VersionHeads` and `Keywords.Junk` are
   slices, read in JS `Object.entries` order (integer-like keys first, ascending, then insertion
   order; a repeated key keeps its first place and the last value). A Go map has no insertion order.

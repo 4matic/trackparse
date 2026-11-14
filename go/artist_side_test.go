@@ -160,7 +160,7 @@ func TestFormatDefaults(t *testing.T) {
 		{FormatOptions{Feat: FeatArtist}, "Sub Focus ft. Alice Gold & Kele - Out the Blue (Wilkinson Remix)"},
 		{FormatOptions{Feat: FeatOmit, Versions: VersionsNone, Position: true}, "03. Sub Focus - Out the Blue"},
 		{FormatOptions{Joiners: JoinersCanonical}, "Sub Focus - Out the Blue (feat. Alice Gold & Kele) (Wilkinson Remix)"},
-		{FormatOptions{FeatMarker: "with"}, "Sub Focus - Out the Blue (with Alice Gold & Kele) (Wilkinson Remix)"},
+		{FormatOptions{FeatMarker: Ptr("with")}, "Sub Focus - Out the Blue (with Alice Gold & Kele) (Wilkinson Remix)"},
 	}
 	for _, c := range cases {
 		if got := FormatWith(track, c.o); got != c.want {
