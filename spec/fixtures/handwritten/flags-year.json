@@ -19,6 +19,7 @@
         "fullTitle": "Lose Yourself",
         "versions": [],
         "year": null,
+        "label": null,
         "flags": { "explicit": true, "clean": false, "unknownArtist": false, "unknownTitle": false },
         "junk": [],
         "warnings": []
@@ -147,6 +148,7 @@
         "fullTitle": "Rumble",
         "versions": [],
         "year": 2023,
+        "label": null,
         "flags": { "explicit": false, "clean": false, "unknownArtist": false, "unknownTitle": false },
         "junk": [],
         "warnings": []
@@ -196,6 +198,7 @@
           }
         ],
         "year": null,
+        "label": null,
         "flags": { "explicit": false, "clean": false, "unknownArtist": false, "unknownTitle": false },
         "junk": [],
         "warnings": []

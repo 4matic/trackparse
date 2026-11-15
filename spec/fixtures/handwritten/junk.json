@@ -154,6 +154,7 @@
         "fullTitle": "Stigma",
         "versions": [],
         "year": null,
+        "label": null,
         "flags": { "explicit": false, "clean": false, "unknownArtist": false, "unknownTitle": false },
         "junk": [{ "raw": "Drum & Bass", "kind": "genre" }],
         "warnings": []
@@ -222,6 +223,7 @@
         "fullTitle": "Stigma",
         "versions": [],
         "year": null,
+        "label": null,
         "flags": { "explicit": false, "clean": false, "unknownArtist": false, "unknownTitle": false },
         "junk": [
           { "raw": "Official Music Video", "kind": "video" },
@@ -260,6 +262,7 @@
         "fullTitle": "Hero",
         "versions": [],
         "year": null,
+        "label": null,
         "flags": { "explicit": false, "clean": false, "unknownArtist": false, "unknownTitle": false },
         "junk": [
           { "raw": "Monstercat Release", "kind": "label" },

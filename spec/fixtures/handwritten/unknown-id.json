@@ -17,6 +17,7 @@
         "fullTitle": "ID",
         "versions": [],
         "year": null,
+        "label": null,
         "flags": { "explicit": false, "clean": false, "unknownArtist": true, "unknownTitle": true },
         "junk": [],
         "warnings": []
@@ -73,6 +74,7 @@
           }
         ],
         "year": null,
+        "label": null,
         "flags": { "explicit": false, "clean": false, "unknownArtist": false, "unknownTitle": true },
         "junk": [],
         "warnings": []
@@ -188,6 +190,7 @@
         "fullTitle": "ID",
         "versions": [],
         "year": null,
+        "label": null,
         "flags": { "explicit": false, "clean": false, "unknownArtist": true, "unknownTitle": true },
         "junk": [],
         "warnings": []

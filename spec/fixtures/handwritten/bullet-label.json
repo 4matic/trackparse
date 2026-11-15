@@ -1,0 +1,780 @@
+{
+  "$schema": "../../schema/fixture-file.schema.json",
+  "description": "Bullet suffix (R8.7): the record label after a spaced bullet on the title side becomes `label`, later segments junk kind note; junk-only segments are junk; near misses; format writes the label back (R11.3, R11.6)",
+  "defaults": { "fn": "parse" },
+  "cases": [
+    {
+      "id": "bullet-label-001",
+      "input": "Tom Finster - Age Of Spin • WEAREHUMANS",
+      "match": "exact",
+      "expected": {
+        "input": "Tom Finster - Age Of Spin • WEAREHUMANS",
+        "mode": "clean",
+        "position": null,
+        "timestamp": null,
+        "artists": [{ "name": "Tom Finster", "role": "primary", "joiner": null, "source": "artist" }],
+        "title": "Age Of Spin",
+        "fullTitle": "Age Of Spin",
+        "versions": [],
+        "year": null,
+        "label": "WEAREHUMANS",
+        "flags": { "explicit": false, "clean": false, "unknownArtist": false, "unknownTitle": false },
+        "junk": [],
+        "warnings": []
+      },
+      "rules": ["R8.7", "R6.3", "R2.1"],
+      "tags": ["label", "exact"],
+      "source": "public YouTube description: VISION Radio S06E44"
+    },
+    {
+      "id": "bullet-label-002",
+      "input": "Cesco - Raymondo • 1985",
+      "expected": { "artists": ["Cesco"], "title": "Raymondo", "year": null, "label": "1985", "junk": [] },
+      "rules": ["R8.7"],
+      "tags": ["label", "year"],
+      "source": "public YouTube description: VISION Radio S06E44",
+      "note": "A tail segment is never scanned for years, and a lone year word is not a junk phrase: the label is 1985."
+    },
+    {
+      "id": "bullet-label-003",
+      "input": "Scrufizzer & Machinedrum - WHO (K-LONE VIP) • IAMSIAM",
+      "expected": {
+        "artists": ["Scrufizzer", { "name": "Machinedrum", "role": "primary", "joiner": "&" }],
+        "title": "WHO",
+        "fullTitle": "WHO (K-LONE VIP)",
+        "versions": [{ "type": "vip", "raw": "K-LONE VIP", "artists": ["K-LONE"], "delimiter": "(" }],
+        "label": "IAMSIAM",
+        "junk": []
+      },
+      "rules": ["R8.7", "R8.1", "R5.7", "R9.4"],
+      "tags": ["label", "version"],
+      "source": "public YouTube description: VISION Radio S06E44",
+      "note": "The version comes from the head, so fullTitle no longer puts it after the label."
+    },
+    {
+      "id": "bullet-label-004",
+      "input": "Flava D & Stush - Energy (Napes Remix) • DRUM&BASSARENA",
+      "expected": {
+        "artists": ["Flava D", "Stush"],
+        "title": "Energy",
+        "fullTitle": "Energy (Napes Remix)",
+        "versions": [{ "type": "remix", "raw": "Napes Remix", "artists": ["Napes"], "delimiter": "(" }],
+        "label": "DRUM&BASSARENA",
+        "junk": []
+      },
+      "rules": ["R8.7", "R8.1", "R5.7"],
+      "tags": ["label", "remix"],
+      "source": "public YouTube description: VISION Radio S06E39"
+    },
+    {
+      "id": "bullet-label-005",
+      "input": "Noisia - concussion • VISION • VISION RADIO RELOAD",
+      "match": "exact",
+      "expected": {
+        "input": "Noisia - concussion • VISION • VISION RADIO RELOAD",
+        "mode": "clean",
+        "position": null,
+        "timestamp": null,
+        "artists": [{ "name": "Noisia", "role": "primary", "joiner": null, "source": "artist" }],
+        "title": "concussion",
+        "fullTitle": "concussion",
+        "versions": [],
+        "year": null,
+        "label": "VISION",
+        "flags": { "explicit": false, "clean": false, "unknownArtist": false, "unknownTitle": false },
+        "junk": [{ "raw": "VISION RADIO RELOAD", "kind": "note" }],
+        "warnings": []
+      },
+      "rules": ["R8.7", "R2.1"],
+      "tags": ["label", "note", "exact"],
+      "source": "public YouTube description: VISION Radio S06E44",
+      "note": "The first tail segment is the label, the second is junk kind note."
+    },
+    {
+      "id": "bullet-label-006",
+      "input": "Tipper - Meadow Foam • TIPPERMUSIC • VISION RADIO RELOAD",
+      "expected": {
+        "artists": ["Tipper"],
+        "title": "Meadow Foam",
+        "label": "TIPPERMUSIC",
+        "junk": [{ "raw": "VISION RADIO RELOAD", "kind": "note" }]
+      },
+      "rules": ["R8.7"],
+      "tags": ["label", "note"],
+      "source": "public YouTube description: VISION Radio S06E41"
+    },
+    {
+      "id": "bullet-label-007",
+      "input": "Thread & Objectiv - This That - Louder • GEMINI GEMINI",
+      "expected": {
+        "artists": ["Thread", "Objectiv"],
+        "title": "This That - Louder",
+        "versions": [],
+        "label": "GEMINI GEMINI",
+        "warnings": []
+      },
+      "rules": ["R8.7", "R6.3", "R8.2"],
+      "tags": ["label", "dash"],
+      "source": "public YouTube description: VISION Radio S06E44",
+      "note": "Later dashes stay in the title; R8.2 does not peel Louder (Unknown)."
+    },
+    {
+      "id": "bullet-label-008",
+      "input": "Sustance ft T-Man - Try Me • NONE LEFT",
+      "expected": {
+        "artists": ["Sustance", { "name": "T-Man", "role": "featured", "joiner": "ft", "source": "artist" }],
+        "title": "Try Me",
+        "label": "NONE LEFT"
+      },
+      "rules": ["R8.7", "R7.2"],
+      "tags": ["label", "feat"],
+      "source": "public YouTube description: VISION Radio S06E44"
+    },
+    {
+      "id": "bullet-label-009",
+      "input": "Zunfo Ft. Entranas - Calambre • SIX EIGHT",
+      "expected": {
+        "artists": ["Zunfo", { "name": "Entranas", "role": "featured", "joiner": "Ft.", "source": "artist" }],
+        "title": "Calambre",
+        "label": "SIX EIGHT"
+      },
+      "rules": ["R8.7", "R7.2"],
+      "tags": ["label", "feat"],
+      "source": "public YouTube description: VISION Radio S06E41"
+    },
+    {
+      "id": "bullet-label-010",
+      "input": "Qo, Neonlight - Dark Room • HOOFBEATS",
+      "expected": {
+        "artists": ["Qo", { "name": "Neonlight", "role": "primary", "joiner": "," }],
+        "title": "Dark Room",
+        "label": "HOOFBEATS"
+      },
+      "rules": ["R8.7", "R7.3"],
+      "tags": ["label", "joiner"],
+      "source": "public YouTube description: VISION Radio S06E39"
+    },
+    {
+      "id": "bullet-label-011",
+      "input": "US + THEM - Osiris • HOSPITAL",
+      "expected": {
+        "artists": ["US", { "name": "THEM", "role": "primary", "joiner": "+" }],
+        "title": "Osiris",
+        "label": "HOSPITAL"
+      },
+      "rules": ["R8.7", "R7.3"],
+      "tags": ["label", "joiner"],
+      "source": "public YouTube description: VISION Radio S06E44"
+    },
+    {
+      "id": "bullet-label-012",
+      "input": "US + THEM - Osiris • HOSPITAL",
+      "options": { "knownArtists": ["US + THEM"] },
+      "expected": {
+        "artists": [{ "name": "US + THEM", "role": "primary", "joiner": null }],
+        "title": "Osiris",
+        "label": "HOSPITAL"
+      },
+      "rules": ["R8.7", "R7.3"],
+      "tags": ["label", "known-artists"],
+      "source": "public YouTube description: VISION Radio S06E44"
+    },
+    {
+      "id": "bullet-label-013",
+      "input": "Erotic Cafe' - VIRUS MENTALE • VISION",
+      "expected": { "artists": ["Erotic Cafe'"], "title": "VIRUS MENTALE", "label": "VISION" },
+      "rules": ["R8.7", "R7.4"],
+      "tags": ["label", "quote"],
+      "source": "public YouTube description: VISION Radio S06E44"
+    },
+    {
+      "id": "bullet-label-014",
+      "input": "Quentin Hiatus - Spookiest Jungle Ish • FREE LOVE DIGI",
+      "expected": {
+        "mode": "clean",
+        "artists": ["Quentin Hiatus"],
+        "title": "Spookiest Jungle Ish",
+        "label": "FREE LOVE DIGI",
+        "junk": []
+      },
+      "rules": ["R8.7", "R5.1"],
+      "tags": ["label", "near-junk"],
+      "source": "public YouTube description: VISION Radio S06E39",
+      "note": "FREE alone is not a junk phrase (free download, free dl are), so the segment is a label."
+    },
+    {
+      "id": "bullet-label-015",
+      "input": "Mono Code - Traced • DUB",
+      "expected": {
+        "mode": "clean",
+        "artists": ["Mono Code"],
+        "title": "Traced",
+        "fullTitle": "Traced",
+        "versions": [],
+        "label": "DUB",
+        "warnings": []
+      },
+      "rules": ["R8.7", "R6", "R6.2"],
+      "tags": ["label", "behaviour-change"],
+      "source": "public YouTube description: VISION Radio S06E42",
+      "note": "R6 splits the head at its first dash without the R6.2 peel, so Traced is not taken as a version and no noSeparator is warned. The tail is never scanned for versions: DUB is the label."
+    },
+    {
+      "id": "bullet-label-016",
+      "input": "Mono Code - Traced • DUB",
+      "options": { "mode": "tracklist" },
+      "expected": {
+        "mode": "tracklist",
+        "artists": ["Mono Code"],
+        "title": "Traced",
+        "versions": [],
+        "label": "DUB",
+        "warnings": []
+      },
+      "rules": ["R8.7", "R6.10", "R13.6"],
+      "tags": ["label", "tracklist-mode"],
+      "source": "public YouTube description: VISION Radio S06E42"
+    },
+    {
+      "id": "bullet-label-017",
+      "input": "HØST - BLOODHOUND VIP • Ø",
+      "expected": {
+        "artists": ["HØST"],
+        "title": "BLOODHOUND VIP",
+        "versions": [],
+        "label": "Ø",
+        "warnings": []
+      },
+      "rules": ["R8.7", "R6", "R8.2"],
+      "tags": ["label", "unicode"],
+      "source": "public YouTube description: VISION Radio S06E40",
+      "note": "The head is split without the R6.2 peel; R8.2 has a single title segment, nothing to peel."
+    },
+    {
+      "id": "bullet-label-018",
+      "input": "Karabin - Delusional Ft. Rider Shafique (Harley D Remix) • YAMATAI",
+      "expected": {
+        "artists": ["Karabin", { "name": "Rider Shafique", "role": "featured", "joiner": "Ft.", "source": "title" }],
+        "title": "Delusional",
+        "fullTitle": "Delusional (Harley D Remix)",
+        "versions": [{ "type": "remix", "raw": "Harley D Remix", "artists": ["Harley D"] }],
+        "label": "YAMATAI"
+      },
+      "rules": ["R8.7", "R8.3", "R8.1"],
+      "tags": ["label", "feat", "remix"],
+      "source": "public YouTube description: VISION Radio S06E43"
+    },
+    {
+      "id": "bullet-label-019",
+      "input": "Tom Finster - Not Dead; Not Born (ft. Tasha Baxter) • DUB",
+      "expected": {
+        "artists": ["Tom Finster", { "name": "Tasha Baxter", "role": "featured", "joiner": "ft.", "source": "title" }],
+        "title": "Not Dead; Not Born",
+        "versions": [],
+        "label": "DUB"
+      },
+      "rules": ["R8.7", "R8.1", "R5.2"],
+      "tags": ["label", "feat"],
+      "source": "public YouTube description: VISION Radio S06E42"
+    },
+    {
+      "id": "bullet-label-020",
+      "input": "Noisia - Stigma ft. X • VISION",
+      "expected": {
+        "artists": ["Noisia", { "name": "X", "role": "featured", "joiner": "ft.", "source": "title" }],
+        "title": "Stigma",
+        "label": "VISION"
+      },
+      "rules": ["R8.7", "R8.3"],
+      "tags": ["label", "feat", "behaviour-change"],
+      "note": "R8.3's credit list runs to the end of the head, not into the label."
+    },
+    {
+      "id": "bullet-label-021",
+      "input": "Noisia - Stigma - VIP • VISION",
+      "expected": {
+        "artists": ["Noisia"],
+        "title": "Stigma",
+        "fullTitle": "Stigma - VIP",
+        "versions": [{ "type": "vip", "raw": "VIP", "artists": [], "delimiter": "-" }],
+        "label": "VISION"
+      },
+      "rules": ["R8.7", "R8.2"],
+      "tags": ["label", "dash-suffix"],
+      "note": "R8.2 still peels later dash suffixes of the head."
+    },
+    {
+      "id": "bullet-label-022",
+      "input": "Noisia - Stigma • HOSPITAL (2024)",
+      "expected": {
+        "mode": "clean",
+        "artists": ["Noisia"],
+        "title": "Stigma",
+        "year": null,
+        "label": "HOSPITAL (2024)",
+        "junk": []
+      },
+      "rules": ["R8.7", "R5.5"],
+      "tags": ["label", "year", "behaviour-change"],
+      "note": "A Year group in the tail is not junk: it stays in the label verbatim and sets no year."
+    },
+    {
+      "id": "bullet-label-023",
+      "input": "Noisia - Stigma • FREE DOWNLOAD",
+      "match": "exact",
+      "expected": {
+        "input": "Noisia - Stigma • FREE DOWNLOAD",
+        "mode": "youtube",
+        "position": null,
+        "timestamp": null,
+        "artists": [{ "name": "Noisia", "role": "primary", "joiner": null, "source": "artist" }],
+        "title": "Stigma",
+        "fullTitle": "Stigma",
+        "versions": [],
+        "year": null,
+        "label": null,
+        "flags": { "explicit": false, "clean": false, "unknownArtist": false, "unknownTitle": false },
+        "junk": [{ "raw": "FREE DOWNLOAD", "kind": "promo" }],
+        "warnings": []
+      },
+      "rules": ["R8.7", "R2.1", "R5.1"],
+      "tags": ["label", "junk", "exact", "behaviour-change"],
+      "note": "R2.1 sees the whole string (ends with a junk phrase: youtube). The segment is only junk phrases, so it is junk promo and no bullet is left in the title; label stays null."
+    },
+    {
+      "id": "bullet-label-024",
+      "input": "Noisia - Stigma • HOSPITAL [Official Video]",
+      "expected": {
+        "mode": "youtube",
+        "artists": ["Noisia"],
+        "title": "Stigma",
+        "label": "HOSPITAL",
+        "junk": [{ "raw": "Official Video", "kind": "video" }]
+      },
+      "rules": ["R8.7", "R2.1", "R5.1"],
+      "tags": ["label", "junk"],
+      "note": "A junk group in a tail segment is removed to junk; the rest of the segment is the label."
+    },
+    {
+      "id": "bullet-label-025",
+      "input": "Noisia - ID • VISION",
+      "expected": {
+        "artists": ["Noisia"],
+        "title": "ID",
+        "label": "VISION",
+        "flags": { "unknownArtist": false, "unknownTitle": true }
+      },
+      "rules": ["R8.7", "R8.6"],
+      "tags": ["label", "id"]
+    },
+    {
+      "id": "bullet-label-026",
+      "input": "Noisia • Phace - Stigma • VISION",
+      "expected": { "artists": ["Noisia • Phace"], "title": "Stigma", "label": "VISION" },
+      "rules": ["R8.7", "R7.3"],
+      "tags": ["label", "artist-side"],
+      "note": "Only bullets after the first spaced dash cut; a bullet on the artist side is not a joiner."
+    },
+    {
+      "id": "bullet-label-027",
+      "input": "TIPPER - Little Peeks • TIPPER",
+      "expected": { "artists": ["TIPPER"], "title": "Little Peeks", "label": "TIPPER" },
+      "rules": ["R8.7"],
+      "tags": ["label"],
+      "source": "public YouTube description: VISION Radio S06E39",
+      "note": "A label equal to the artist name is still the label (no lookup, no dedup with artists)."
+    },
+    {
+      "id": "bullet-label-028",
+      "input": "Noisia - (VIP) • VISION",
+      "expected": {
+        "artists": ["Noisia"],
+        "title": "",
+        "fullTitle": "(VIP)",
+        "versions": [{ "type": "vip", "raw": "VIP", "delimiter": "(" }],
+        "label": "VISION"
+      },
+      "rules": ["R8.7", "R8.1", "R9.4"],
+      "tags": ["label", "version"]
+    },
+    {
+      "id": "bullet-label-029",
+      "input": "Hey Jude - Remastered 2015 • X",
+      "expected": {
+        "artists": ["Hey Jude"],
+        "title": "Remastered 2015",
+        "versions": [],
+        "year": null,
+        "label": "X",
+        "warnings": []
+      },
+      "rules": ["R8.7", "R6", "R8.2"],
+      "tags": ["label", "trade-off"],
+      "note": "Accepted trade-off: the head is split at its first dash without the R6.2 peel, and R8.2 has one title segment, nothing to peel. Without the bullet, R6.2 peels the remaster (dash-suffix cases)."
+    },
+    {
+      "id": "bullet-label-030",
+      "input": "KROON ‘All The King’s Men’ EP Minimix • VISION",
+      "expected": {
+        "mode": "clean",
+        "artists": [],
+        "title": "KROON 'All The King's Men' EP Minimix • VISION",
+        "label": null,
+        "junk": [],
+        "warnings": ["noSeparator"]
+      },
+      "rules": ["R8.7", "R6.8", "R1.4"],
+      "tags": ["label", "near-miss"],
+      "source": "public YouTube description: VISION Radio S06E41",
+      "note": "Near miss: no spaced dash, so the rule does not fire. Curly quotes are folded by R1."
+    },
+    {
+      "id": "bullet-label-031",
+      "input": "VISION Radio Intro",
+      "expected": { "artists": [], "title": "VISION Radio Intro", "label": null, "warnings": ["noSeparator"] },
+      "rules": ["R8.7", "R6.8"],
+      "tags": ["label", "near-miss"],
+      "source": "public YouTube description: VISION Radio S06E44",
+      "note": "Near miss: no bullet, no separator."
+    },
+    {
+      "id": "bullet-label-032",
+      "input": "Noisia - Stigma•VISION",
+      "expected": { "artists": ["Noisia"], "title": "Stigma•VISION", "label": null },
+      "rules": ["R8.7"],
+      "tags": ["label", "near-miss"],
+      "note": "Near miss: the bullet is not spaced."
+    },
+    {
+      "id": "bullet-label-033",
+      "input": "Noisia - Stigma (A • B Remix)",
+      "expected": {
+        "artists": ["Noisia"],
+        "title": "Stigma",
+        "versions": [{ "type": "remix", "raw": "A • B Remix", "artists": ["A • B"] }],
+        "label": null
+      },
+      "rules": ["R8.7", "R3.4", "R5.7"],
+      "tags": ["label", "near-miss"],
+      "note": "Near miss: a bullet inside a group is a placeholder in the skeleton."
+    },
+    {
+      "id": "bullet-label-034",
+      "input": "Noisia - Stigma • ",
+      "expected": { "artists": ["Noisia"], "title": "Stigma •", "label": null },
+      "rules": ["R8.7", "R1.6"],
+      "tags": ["label", "near-miss"],
+      "note": "Near miss: R1 trims the trailing space, and the end of the string does not count as a space."
+    },
+    {
+      "id": "bullet-label-035",
+      "input": "Noisia - Stigma •  • VISION",
+      "expected": { "artists": ["Noisia"], "title": "Stigma • • VISION", "label": null, "junk": [] },
+      "rules": ["R8.7", "R1.6"],
+      "tags": ["label", "near-miss"],
+      "note": "Near miss: the segment between the two bullets is empty, so the rule does not fire."
+    },
+    {
+      "id": "bullet-label-036",
+      "input": "Noisia • Stigma - VISION",
+      "expected": { "artists": ["Noisia • Stigma"], "title": "VISION", "label": null },
+      "rules": ["R8.7", "R6.3"],
+      "tags": ["label", "near-miss"],
+      "note": "Near miss: the only bullet comes before the first spaced dash."
+    },
+    {
+      "id": "bullet-label-037",
+      "input": "Noisia - Stigma · VISION",
+      "expected": { "artists": ["Noisia"], "title": "Stigma · VISION", "label": null },
+      "rules": ["R8.7"],
+      "tags": ["label", "near-miss"],
+      "note": "Near miss: U+00B7 is not a bullet."
+    },
+    {
+      "id": "bullet-label-038",
+      "input": "Noisia - Stigma ∙ VISION",
+      "expected": { "artists": ["Noisia"], "title": "Stigma ∙ VISION", "label": null },
+      "rules": ["R8.7"],
+      "tags": ["label", "near-miss"],
+      "note": "Near miss: U+2219 is not a bullet."
+    },
+    {
+      "id": "bullet-label-039",
+      "input": "Noisia - Stigma ● VISION",
+      "expected": { "artists": ["Noisia"], "title": "Stigma ● VISION", "label": null },
+      "rules": ["R8.7"],
+      "tags": ["label", "near-miss"],
+      "note": "Near miss: U+25CF is not a bullet."
+    },
+    {
+      "id": "bullet-label-040",
+      "input": "Noisia | Stigma • VISION",
+      "expected": {
+        "mode": "youtube",
+        "artists": ["Noisia"],
+        "title": "Stigma • VISION",
+        "label": null,
+        "warnings": ["ambiguousSeparator"]
+      },
+      "rules": ["R8.7", "R2.4"],
+      "tags": ["label", "near-miss", "pipe"],
+      "note": "Near miss: a pipe title (R2.4.3) has no spaced dash."
+    },
+    {
+      "id": "bullet-label-041",
+      "input": "Noisia -Stigma • VISION",
+      "expected": {
+        "artists": ["Noisia"],
+        "title": "Stigma • VISION",
+        "label": null,
+        "warnings": ["asymmetricDashSplit"]
+      },
+      "rules": ["R8.7", "R6.4"],
+      "tags": ["label", "near-miss"],
+      "note": "Near miss: a one-sided dash is not D."
+    },
+    {
+      "id": "bullet-label-042",
+      "input": "Noisia-Stigma • VISION",
+      "options": { "mode": "tracklist" },
+      "expected": {
+        "mode": "tracklist",
+        "artists": [],
+        "title": "Noisia-Stigma • VISION",
+        "label": null,
+        "warnings": ["noSeparator"]
+      },
+      "rules": ["R8.7", "R6.10"],
+      "tags": ["label", "near-miss", "tracklist-mode"],
+      "note": "Near miss: no spaced dash, and parse() alone does not enable the tight dash. In a list context it splits, still without a label (tracklist-lines)."
+    },
+    {
+      "id": "bullet-label-043",
+      "input": "ID - Stigma • VISION",
+      "expected": {
+        "artists": [],
+        "title": "Stigma",
+        "label": "VISION",
+        "flags": { "unknownArtist": true, "unknownTitle": false }
+      },
+      "rules": ["R8.7", "R7.5"],
+      "tags": ["label", "id"],
+      "note": "The text before D is not empty (ID), so the rule fires; the artist is dropped as unknown afterwards."
+    },
+    {
+      "id": "bullet-label-044",
+      "input": "Noisia - Stigma • OUT NOW",
+      "expected": {
+        "mode": "youtube",
+        "artists": ["Noisia"],
+        "title": "Stigma",
+        "label": null,
+        "junk": [{ "raw": "OUT NOW", "kind": "promo" }]
+      },
+      "rules": ["R8.7", "R2.1", "R5.1"],
+      "tags": ["label", "junk"],
+      "note": "Every tail segment became junk: label null, the cut still counts."
+    },
+    {
+      "id": "bullet-label-045",
+      "input": "Noisia - Stigma • HOSPITAL • OUT NOW",
+      "expected": {
+        "mode": "youtube",
+        "artists": ["Noisia"],
+        "title": "Stigma",
+        "label": "HOSPITAL",
+        "junk": [{ "raw": "OUT NOW", "kind": "promo" }]
+      },
+      "rules": ["R8.7", "R2.1", "R5.1"],
+      "tags": ["label", "junk"],
+      "note": "A later segment made only of junk phrases is junk with its phrase's kind, not a note."
+    },
+    {
+      "id": "bullet-label-046",
+      "input": "Noisia - Stigma • VISION (VIP)",
+      "expected": {
+        "artists": ["Noisia"],
+        "title": "Stigma",
+        "fullTitle": "Stigma",
+        "versions": [],
+        "label": "VISION (VIP)"
+      },
+      "rules": ["R8.7"],
+      "tags": ["label", "version"],
+      "note": "Only Junk groups leave a tail segment; a Versions group stays in the label verbatim."
+    },
+    {
+      "id": "bullet-label-047",
+      "input": "Noisia - Stigma • VISION.mp3",
+      "expected": { "mode": "filename", "artists": ["Noisia"], "title": "Stigma", "label": "VISION" },
+      "rules": ["R8.7", "R2.1", "R2.3"],
+      "tags": ["label", "filename"],
+      "note": "R2.3 strips the extension before R8.7."
+    },
+    {
+      "id": "bullet-label-048",
+      "input": "Tom Finster - Age Of Spin • WEAREHUMANS",
+      "options": { "mode": "tracklist" },
+      "expected": {
+        "mode": "tracklist",
+        "artists": ["Tom Finster"],
+        "title": "Age Of Spin",
+        "label": "WEAREHUMANS",
+        "warnings": []
+      },
+      "rules": ["R8.7", "R13.6"],
+      "tags": ["label", "tracklist-mode"],
+      "source": "public YouTube description: VISION Radio S06E44"
+    },
+    {
+      "id": "bullet-label-049",
+      "input": "Noisia - Stigma • Hospital Records",
+      "expected": { "mode": "clean", "artists": ["Noisia"], "title": "Stigma", "label": "Hospital Records", "junk": [] },
+      "rules": ["R8.7", "R5.1", "R2.1"],
+      "tags": ["label", "near-junk"],
+      "note": "The tail junk test leaves out the label-suffix rule: a label name ending in Records is the label."
+    },
+    {
+      "id": "bullet-label-050",
+      "input": "Noisia - Stigma • Drum & Bass",
+      "expected": { "mode": "clean", "artists": ["Noisia"], "title": "Stigma", "label": "Drum & Bass", "junk": [] },
+      "rules": ["R8.7", "R5.1"],
+      "tags": ["label", "near-junk"],
+      "note": "The tail junk test leaves out genres."
+    },
+    {
+      "id": "bullet-label-051",
+      "input": "Noisia - Stigma • OUT NOW 2024",
+      "expected": {
+        "mode": "clean",
+        "artists": ["Noisia"],
+        "title": "Stigma",
+        "year": null,
+        "label": null,
+        "junk": [{ "raw": "OUT NOW 2024", "kind": "promo" }]
+      },
+      "rules": ["R8.7", "R5.1", "R2.1"],
+      "tags": ["label", "junk", "year"],
+      "note": "Phrases plus a year word are junk (the year stays in raw). The string does not end with a junk phrase, so auto stays clean: the tail test does not depend on the mode."
+    },
+    {
+      "id": "bullet-label-052",
+      "input": "Noisia - Stigma • VISION • VISION RADIO RELOAD [HD]",
+      "expected": {
+        "mode": "youtube",
+        "artists": ["Noisia"],
+        "title": "Stigma",
+        "label": "VISION",
+        "junk": [
+          { "raw": "VISION RADIO RELOAD", "kind": "note" },
+          { "raw": "HD", "kind": "quality" }
+        ]
+      },
+      "rules": ["R8.7", "R9.7", "R5.1", "R2.1"],
+      "tags": ["label", "note", "junk-order"],
+      "note": "The junk group leaves the note segment; junk is in text order."
+    },
+    {
+      "id": "bullet-label-053",
+      "input": "Noisia - Stigma [Official Video] • VISION",
+      "expected": {
+        "mode": "youtube",
+        "artists": ["Noisia"],
+        "title": "Stigma",
+        "label": "VISION",
+        "junk": [{ "raw": "Official Video", "kind": "video" }]
+      },
+      "rules": ["R8.7", "R8.1", "R2.1"],
+      "tags": ["label", "junk"],
+      "note": "Junk in the head is R8.1's as usual."
+    },
+    {
+      "id": "bullet-label-054",
+      "fn": "format",
+      "input": "Tom Finster - Age Of Spin • WEAREHUMANS",
+      "expected": "Tom Finster - Age Of Spin • WEAREHUMANS",
+      "rules": ["R11.3", "R11.4", "R11.6", "R8.7"],
+      "tags": ["label", "format", "round-trip"],
+      "source": "public YouTube description: VISION Radio S06E44"
+    },
+    {
+      "id": "bullet-label-055",
+      "fn": "format",
+      "input": "Scrufizzer & Machinedrum - WHO (K-LONE VIP) • IAMSIAM",
+      "expected": "Scrufizzer & Machinedrum - WHO (K-LONE VIP) • IAMSIAM",
+      "rules": ["R11.3", "R11.6", "R8.7"],
+      "tags": ["label", "format", "round-trip"],
+      "source": "public YouTube description: VISION Radio S06E44",
+      "note": "The label goes after the versions."
+    },
+    {
+      "id": "bullet-label-056",
+      "fn": "format",
+      "input": "Noisia - concussion • VISION • VISION RADIO RELOAD",
+      "expected": "Noisia - concussion • VISION",
+      "rules": ["R11.3", "R8.7"],
+      "tags": ["label", "format", "note"],
+      "source": "public YouTube description: VISION Radio S06E44",
+      "note": "Notes are junk and are not written."
+    },
+    {
+      "id": "bullet-label-057",
+      "fn": "format",
+      "input": "Tom Finster - Age Of Spin • WEAREHUMANS",
+      "formatOptions": { "label": false },
+      "expected": "Tom Finster - Age Of Spin",
+      "rules": ["R11.3", "R8.7"],
+      "tags": ["label", "format", "options"],
+      "source": "public YouTube description: VISION Radio S06E44"
+    },
+    {
+      "id": "bullet-label-058",
+      "fn": "format",
+      "input": "ID - Stigma • VISION",
+      "expected": "Stigma • VISION",
+      "rules": ["R11.4", "R11.6", "R11.3", "R8.7"],
+      "tags": ["label", "format", "id"],
+      "note": "No artist part, so the R11.6 round trip does not hold for the label: Stigma • VISION re-parses as a title without a separator."
+    },
+    {
+      "id": "bullet-label-059",
+      "fn": "format",
+      "input": "Noisia - Stigma ft. X • VISION",
+      "expected": "Noisia - Stigma (ft. X) • VISION",
+      "rules": ["R11.2", "R11.3", "R8.7"],
+      "tags": ["label", "format", "feat"],
+      "note": "The title-featured group, then the label."
+    },
+    {
+      "id": "bullet-label-060",
+      "fn": "format",
+      "input": "Noisia - Stigma • FREE DOWNLOAD",
+      "expected": "Noisia - Stigma",
+      "rules": ["R11.3", "R8.7"],
+      "tags": ["label", "format", "junk"],
+      "note": "Junk from the tail is not written; there is no label."
+    },
+    {
+      "id": "bullet-label-061",
+      "input": "Noisia - • VISION",
+      "expected": { "artists": ["Noisia"], "title": "• VISION", "label": null, "warnings": [] },
+      "rules": ["R8.7"],
+      "tags": ["label", "near-miss"],
+      "note": "The title part between the dash and the first bullet is empty, so the rule does not fire (R8.7.2)."
+    },
+    {
+      "id": "bullet-label-062",
+      "input": "Noisia - Stigma • [Official Video]",
+      "expected": {
+        "mode": "youtube",
+        "artists": ["Noisia"],
+        "title": "Stigma",
+        "label": null,
+        "junk": [{ "raw": "Official Video", "kind": "video" }]
+      },
+      "rules": ["R8.7", "R2.1"],
+      "tags": ["label", "junk"],
+      "note": "The tail segment is only a junk group: it goes to junk and nothing is left for the label. The segment was not empty before the group was removed, so the rule fires."
+    }
+  ]
+}

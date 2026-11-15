@@ -1898,6 +1898,59 @@
         "R13.13"
       ],
       "note": "An untimed layered line moves with the timed line above it."
+    },
+    {
+      "id": "tracklist-edits-080",
+      "input": "00:00 VISION Radio Intro\n00:48 Tom Finster - Age Of Spin • WEAREHUMANS\n03:14 Erotic Cafe' - VIRUS MENTALE • VISION",
+      "edits": [
+        {
+          "op": "set-rest",
+          "line": 2,
+          "rest": "Tom Finster - Age Of Spin • WEAREHUMANS • VISION RADIO RELOAD"
+        }
+      ],
+      "expected": {
+        "text": "00:00 VISION Radio Intro\n00:48 Tom Finster - Age Of Spin • WEAREHUMANS • VISION RADIO RELOAD\n03:14 Erotic Cafe' - VIRUS MENTALE • VISION",
+        "changed": [
+          2
+        ],
+        "warnings": []
+      },
+      "rules": [
+        "R13.9",
+        "R13.9.1",
+        "R8.7"
+      ],
+      "source": "public YouTube description: VISION Radio S06E44",
+      "note": "set-rest on a labelled line replaces rest byte for byte; the other lines are untouched."
+    },
+    {
+      "id": "tracklist-edits-081",
+      "input": "00:00 VISION Radio Intro\n00:48 Tom Finster - Age Of Spin • WEAREHUMANS\n03:14 Erotic Cafe' - VIRUS MENTALE • VISION\n52:29 Noisia - concussion • VISION • VISION RADIO RELOAD",
+      "edits": [
+        {
+          "op": "shift",
+          "seconds": 30,
+          "from": 2
+        }
+      ],
+      "expected": {
+        "text": "00:00 VISION Radio Intro\n01:18 Tom Finster - Age Of Spin • WEAREHUMANS\n03:44 Erotic Cafe' - VIRUS MENTALE • VISION\n52:59 Noisia - concussion • VISION • VISION RADIO RELOAD",
+        "changed": [
+          2,
+          3,
+          4
+        ],
+        "warnings": []
+      },
+      "rules": [
+        "R13.9",
+        "R13.9.1",
+        "R13.9.2",
+        "R8.7"
+      ],
+      "source": "public YouTube description: VISION Radio S06E44",
+      "note": "shift rewrites only the times; the bullet suffixes stay byte for byte."
     }
   ]
 }

@@ -491,6 +491,7 @@
           }
         ],
         "year": null,
+        "label": null,
         "flags": {
           "explicit": false,
           "clean": false,
@@ -706,6 +707,7 @@
         "fullTitle": "Dark Message",
         "versions": [],
         "year": null,
+        "label": null,
         "flags": {
           "explicit": false,
           "clean": false,
@@ -1246,6 +1248,7 @@
           }
         ],
         "year": null,
+        "label": null,
         "flags": {
           "explicit": false,
           "clean": false,
@@ -1378,6 +1381,7 @@
           }
         ],
         "year": null,
+        "label": null,
         "flags": {
           "explicit": false,
           "clean": false,
@@ -1537,6 +1541,7 @@
         "fullTitle": "Away Form Me",
         "versions": [],
         "year": null,
+        "label": null,
         "flags": {
           "explicit": false,
           "clean": false,
