@@ -19,6 +19,7 @@
         "fullTitle": "Tentacles",
         "versions": [],
         "year": null,
+        "label": null,
         "flags": { "explicit": false, "clean": false, "unknownArtist": false, "unknownTitle": false },
         "junk": [{ "raw": "Official Video", "kind": "video" }],
         "warnings": []
@@ -43,6 +44,7 @@
         "fullTitle": "Tentacles",
         "versions": [],
         "year": null,
+        "label": null,
         "flags": { "explicit": false, "clean": false, "unknownArtist": false, "unknownTitle": false },
         "junk": [],
         "warnings": ["ambiguousSeparator"]
@@ -124,6 +126,7 @@
         "fullTitle": "Shake It Off",
         "versions": [],
         "year": null,
+        "label": null,
         "flags": { "explicit": false, "clean": false, "unknownArtist": false, "unknownTitle": false },
         "junk": [],
         "warnings": ["quotedTitleSplit"]

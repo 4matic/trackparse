@@ -355,6 +355,7 @@
         "fullTitle": "Stigma",
         "versions": [],
         "year": null,
+        "label": null,
         "flags": {
           "explicit": false,
           "clean": false,
@@ -569,6 +570,7 @@
           }
         ],
         "year": null,
+        "label": null,
         "flags": {
           "explicit": false,
           "clean": false,

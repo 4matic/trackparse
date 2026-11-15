@@ -95,6 +95,7 @@
         "fullTitle": "Desire (With You)",
         "versions": [],
         "year": null,
+        "label": null,
         "flags": { "explicit": false, "clean": false, "unknownArtist": false, "unknownTitle": false },
         "junk": [],
         "warnings": []
@@ -134,6 +135,7 @@
         "fullTitle": "Away From Me",
         "versions": [],
         "year": null,
+        "label": null,
         "flags": { "explicit": false, "clean": false, "unknownArtist": false, "unknownTitle": false },
         "junk": [],
         "warnings": []
@@ -247,6 +249,7 @@
           }
         ],
         "year": null,
+        "label": null,
         "flags": { "explicit": false, "clean": false, "unknownArtist": false, "unknownTitle": false },
         "junk": [],
         "warnings": []

@@ -557,6 +557,7 @@
         "fullTitle": "",
         "versions": [],
         "year": null,
+        "label": null,
         "flags": {
           "explicit": false,
           "clean": false,
@@ -1464,6 +1465,7 @@
           }
         ],
         "year": null,
+        "label": null,
         "flags": {
           "explicit": false,
           "clean": false,
@@ -2047,6 +2049,7 @@
           }
         ],
         "year": null,
+        "label": null,
         "flags": {
           "explicit": false,
           "clean": false,
@@ -2261,6 +2264,7 @@
         "fullTitle": "track name",
         "versions": [],
         "year": null,
+        "label": null,
         "flags": {
           "explicit": false,
           "clean": false,

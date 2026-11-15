@@ -83,6 +83,7 @@
         "fullTitle": "Stigma",
         "versions": [],
         "year": null,
+        "label": null,
         "flags": { "explicit": false, "clean": false, "unknownArtist": false, "unknownTitle": false },
         "junk": [],
         "warnings": ["asymmetricDashSplit"]
@@ -130,6 +131,7 @@
         "fullTitle": "All The Small Things",
         "versions": [],
         "year": null,
+        "label": null,
         "flags": { "explicit": false, "clean": false, "unknownArtist": false, "unknownTitle": false },
         "junk": [],
         "warnings": ["unspacedDashSplit"]
@@ -218,6 +220,7 @@
         "fullTitle": "",
         "versions": [],
         "year": null,
+        "label": null,
         "flags": { "explicit": false, "clean": false, "unknownArtist": false, "unknownTitle": false },
         "junk": [],
         "warnings": []

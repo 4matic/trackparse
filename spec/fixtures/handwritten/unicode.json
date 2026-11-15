@@ -19,6 +19,7 @@
         "fullTitle": "Группа крови",
         "versions": [],
         "year": null,
+        "label": null,
         "flags": { "explicit": false, "clean": false, "unknownArtist": false, "unknownTitle": false },
         "junk": [],
         "warnings": []
@@ -53,6 +54,7 @@
           }
         ],
         "year": null,
+        "label": null,
         "flags": { "explicit": false, "clean": false, "unknownArtist": false, "unknownTitle": false },
         "junk": [],
         "warnings": []

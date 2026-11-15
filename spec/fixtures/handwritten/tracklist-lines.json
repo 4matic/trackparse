@@ -792,6 +792,7 @@
               "fullTitle": "Intro",
               "versions": [],
               "year": null,
+              "label": null,
               "flags": {
                 "explicit": false,
                 "clean": false,
@@ -840,6 +841,7 @@
               "fullTitle": "ID",
               "versions": [],
               "year": null,
+              "label": null,
               "flags": {
                 "explicit": false,
                 "clean": false,
@@ -1922,6 +1924,529 @@
         "R13.13"
       ],
       "note": "Near miss: nothing after w/."
+    },
+    {
+      "id": "tracklist-lines-055",
+      "input": "00:00 VISION Radio Intro\n00:48 GLM & Teej - Replicant • NYX\n03:23 Harley D & Arkaik - Count Us Off • FLEXOUT\n07:05 Wingz - Encounter • OVERVIEW\n10:44 VACES - VALANGST • VACES\n\n12:57 KROON ‘All The King’s Men’ EP Minimix • VISION\n\n39:50 Indukt - Cauldron • DELTA9\n42:08 Nemy - Frustrating Situation • SINUOUS\n43:59 Noisia & Phace - Floating Zero • VISION • VISION RADIO RELOAD\n47:02 Kompact - Blow Ya Head Off • OCC\n48:53 Tatora - Thoughts • INTEGRAL\n52:37 Zunfo Ft. Entranas - Calambre • SIX EIGHT\n56:11 Tipper - Meadow Foam • TIPPERMUSIC • VISION RADIO RELOAD\n",
+      "expected": {
+        "entries": [
+          {
+            "line": 1,
+            "kind": "marker",
+            "eol": "\n",
+            "raw": "00:00 VISION Radio Intro",
+            "parts": {
+              "lead": "",
+              "time": "00:00",
+              "gap": " ",
+              "rest": "VISION Radio Intro"
+            },
+            "time": {
+              "raw": "00:00",
+              "seconds": 0
+            },
+            "track": {
+              "mode": "tracklist",
+              "artists": [],
+              "title": "VISION Radio Intro",
+              "label": null,
+              "warnings": [
+                "noSeparator"
+              ]
+            }
+          },
+          {
+            "line": 2,
+            "kind": "track",
+            "eol": "\n",
+            "raw": "00:48 GLM & Teej - Replicant • NYX",
+            "parts": {
+              "lead": "",
+              "time": "00:48",
+              "gap": " ",
+              "rest": "GLM & Teej - Replicant • NYX"
+            },
+            "time": {
+              "raw": "00:48",
+              "seconds": 48
+            },
+            "track": {
+              "artists": [
+                "GLM",
+                "Teej"
+              ],
+              "title": "Replicant",
+              "label": "NYX",
+              "junk": []
+            }
+          },
+          {
+            "line": 3,
+            "kind": "track",
+            "eol": "\n",
+            "raw": "03:23 Harley D & Arkaik - Count Us Off • FLEXOUT",
+            "parts": {
+              "lead": "",
+              "time": "03:23",
+              "gap": " ",
+              "rest": "Harley D & Arkaik - Count Us Off • FLEXOUT"
+            },
+            "time": {
+              "raw": "03:23",
+              "seconds": 203
+            },
+            "track": {
+              "artists": [
+                "Harley D",
+                "Arkaik"
+              ],
+              "title": "Count Us Off",
+              "label": "FLEXOUT",
+              "junk": []
+            }
+          },
+          {
+            "line": 4,
+            "kind": "track",
+            "eol": "\n",
+            "raw": "07:05 Wingz - Encounter • OVERVIEW",
+            "parts": {
+              "lead": "",
+              "time": "07:05",
+              "gap": " ",
+              "rest": "Wingz - Encounter • OVERVIEW"
+            },
+            "time": {
+              "raw": "07:05",
+              "seconds": 425
+            },
+            "track": {
+              "artists": [
+                "Wingz"
+              ],
+              "title": "Encounter",
+              "label": "OVERVIEW",
+              "junk": []
+            }
+          },
+          {
+            "line": 5,
+            "kind": "track",
+            "eol": "\n",
+            "raw": "10:44 VACES - VALANGST • VACES",
+            "parts": {
+              "lead": "",
+              "time": "10:44",
+              "gap": " ",
+              "rest": "VACES - VALANGST • VACES"
+            },
+            "time": {
+              "raw": "10:44",
+              "seconds": 644
+            },
+            "track": {
+              "artists": [
+                "VACES"
+              ],
+              "title": "VALANGST",
+              "label": "VACES",
+              "junk": []
+            }
+          },
+          {
+            "line": 6,
+            "kind": "blank",
+            "eol": "\n",
+            "raw": "",
+            "time": null,
+            "track": null
+          },
+          {
+            "line": 7,
+            "kind": "track",
+            "eol": "\n",
+            "raw": "12:57 KROON ‘All The King’s Men’ EP Minimix • VISION",
+            "parts": {
+              "lead": "",
+              "time": "12:57",
+              "gap": " ",
+              "rest": "KROON ‘All The King’s Men’ EP Minimix • VISION"
+            },
+            "time": {
+              "raw": "12:57",
+              "seconds": 777
+            },
+            "track": {
+              "artists": [],
+              "title": "KROON 'All The King's Men' EP Minimix • VISION",
+              "label": null,
+              "warnings": [
+                "noSeparator"
+              ]
+            }
+          },
+          {
+            "line": 8,
+            "kind": "blank",
+            "eol": "\n",
+            "raw": "",
+            "time": null,
+            "track": null
+          },
+          {
+            "line": 9,
+            "kind": "track",
+            "eol": "\n",
+            "raw": "39:50 Indukt - Cauldron • DELTA9",
+            "parts": {
+              "lead": "",
+              "time": "39:50",
+              "gap": " ",
+              "rest": "Indukt - Cauldron • DELTA9"
+            },
+            "time": {
+              "raw": "39:50",
+              "seconds": 2390
+            },
+            "track": {
+              "artists": [
+                "Indukt"
+              ],
+              "title": "Cauldron",
+              "label": "DELTA9",
+              "junk": []
+            }
+          },
+          {
+            "line": 10,
+            "kind": "track",
+            "eol": "\n",
+            "raw": "42:08 Nemy - Frustrating Situation • SINUOUS",
+            "parts": {
+              "lead": "",
+              "time": "42:08",
+              "gap": " ",
+              "rest": "Nemy - Frustrating Situation • SINUOUS"
+            },
+            "time": {
+              "raw": "42:08",
+              "seconds": 2528
+            },
+            "track": {
+              "artists": [
+                "Nemy"
+              ],
+              "title": "Frustrating Situation",
+              "label": "SINUOUS",
+              "junk": []
+            }
+          },
+          {
+            "line": 11,
+            "kind": "track",
+            "eol": "\n",
+            "raw": "43:59 Noisia & Phace - Floating Zero • VISION • VISION RADIO RELOAD",
+            "parts": {
+              "lead": "",
+              "time": "43:59",
+              "gap": " ",
+              "rest": "Noisia & Phace - Floating Zero • VISION • VISION RADIO RELOAD"
+            },
+            "time": {
+              "raw": "43:59",
+              "seconds": 2639
+            },
+            "track": {
+              "artists": [
+                "Noisia",
+                "Phace"
+              ],
+              "title": "Floating Zero",
+              "label": "VISION",
+              "junk": [
+                {
+                  "raw": "VISION RADIO RELOAD",
+                  "kind": "note"
+                }
+              ]
+            }
+          },
+          {
+            "line": 12,
+            "kind": "track",
+            "eol": "\n",
+            "raw": "47:02 Kompact - Blow Ya Head Off • OCC",
+            "parts": {
+              "lead": "",
+              "time": "47:02",
+              "gap": " ",
+              "rest": "Kompact - Blow Ya Head Off • OCC"
+            },
+            "time": {
+              "raw": "47:02",
+              "seconds": 2822
+            },
+            "track": {
+              "artists": [
+                "Kompact"
+              ],
+              "title": "Blow Ya Head Off",
+              "label": "OCC",
+              "junk": []
+            }
+          },
+          {
+            "line": 13,
+            "kind": "track",
+            "eol": "\n",
+            "raw": "48:53 Tatora - Thoughts • INTEGRAL",
+            "parts": {
+              "lead": "",
+              "time": "48:53",
+              "gap": " ",
+              "rest": "Tatora - Thoughts • INTEGRAL"
+            },
+            "time": {
+              "raw": "48:53",
+              "seconds": 2933
+            },
+            "track": {
+              "artists": [
+                "Tatora"
+              ],
+              "title": "Thoughts",
+              "label": "INTEGRAL",
+              "junk": []
+            }
+          },
+          {
+            "line": 14,
+            "kind": "track",
+            "eol": "\n",
+            "raw": "52:37 Zunfo Ft. Entranas - Calambre • SIX EIGHT",
+            "parts": {
+              "lead": "",
+              "time": "52:37",
+              "gap": " ",
+              "rest": "Zunfo Ft. Entranas - Calambre • SIX EIGHT"
+            },
+            "time": {
+              "raw": "52:37",
+              "seconds": 3157
+            },
+            "track": {
+              "artists": [
+                "Zunfo",
+                {
+                  "name": "Entranas",
+                  "role": "featured",
+                  "joiner": "Ft."
+                }
+              ],
+              "title": "Calambre",
+              "label": "SIX EIGHT",
+              "junk": []
+            }
+          },
+          {
+            "line": 15,
+            "kind": "track",
+            "eol": "\n",
+            "raw": "56:11 Tipper - Meadow Foam • TIPPERMUSIC • VISION RADIO RELOAD",
+            "parts": {
+              "lead": "",
+              "time": "56:11",
+              "gap": " ",
+              "rest": "Tipper - Meadow Foam • TIPPERMUSIC • VISION RADIO RELOAD"
+            },
+            "time": {
+              "raw": "56:11",
+              "seconds": 3371
+            },
+            "track": {
+              "artists": [
+                "Tipper"
+              ],
+              "title": "Meadow Foam",
+              "label": "TIPPERMUSIC",
+              "junk": [
+                {
+                  "raw": "VISION RADIO RELOAD",
+                  "kind": "note"
+                }
+              ]
+            }
+          }
+        ],
+        "warnings": [
+          {
+            "code": "line-unparsed",
+            "line": 7,
+            "severity": "warning",
+            "suggestion": null
+          }
+        ],
+        "stats": {
+          "lines": 15,
+          "tracks": 12,
+          "markers": 1,
+          "timed": 13,
+          "firstTime": 0,
+          "lastTime": 3371
+        }
+      },
+      "rules": [
+        "R8.7",
+        "R13.3",
+        "R13.4.2",
+        "R13.1.2",
+        "R13.7"
+      ],
+      "source": "public YouTube description: VISION Radio S06E41",
+      "note": "Every Artist - Title • LABEL line is a track with a label (a second bullet segment is a note); the intro stays a marker and the Minimix line, without a spaced dash, stays line-unparsed with the bullet in its title. Blank lines are kept."
+    },
+    {
+      "id": "tracklist-lines-056",
+      "input": "• Noisia - Stigma • VISION",
+      "expected": {
+        "entries": [
+          {
+            "kind": "track",
+            "parts": {
+              "lead": "• ",
+              "time": "",
+              "gap": "",
+              "rest": "Noisia - Stigma • VISION"
+            },
+            "time": null,
+            "track": {
+              "artists": [
+                "Noisia"
+              ],
+              "title": "Stigma",
+              "label": "VISION"
+            }
+          }
+        ],
+        "warnings": []
+      },
+      "rules": [
+        "R8.7",
+        "R13.2.1",
+        "R13.1.3"
+      ],
+      "note": "On a line without a time a leading bullet is lead (R13.2.1), so only the suffix bullet reaches the parse."
+    },
+    {
+      "id": "tracklist-lines-057",
+      "input": "00:00 • Noisia - Stigma • VISION",
+      "expected": {
+        "entries": [
+          {
+            "kind": "track",
+            "parts": {
+              "lead": "",
+              "time": "00:00",
+              "gap": " ",
+              "rest": "• Noisia - Stigma • VISION"
+            },
+            "time": {
+              "raw": "00:00",
+              "seconds": 0
+            },
+            "track": {
+              "artists": [
+                "• Noisia"
+              ],
+              "title": "Stigma",
+              "label": "VISION"
+            }
+          }
+        ],
+        "warnings": []
+      },
+      "rules": [
+        "R8.7",
+        "R13.2.1",
+        "R13.2.3"
+      ],
+      "note": "A bullet after the time is not lead and not a gap separator: it stays on the artist side (bullets before the first spaced dash do not cut)."
+    },
+    {
+      "id": "tracklist-lines-058",
+      "input": "05:00 Intro • VISION",
+      "expected": {
+        "entries": [
+          {
+            "kind": "marker",
+            "time": {
+              "raw": "05:00",
+              "seconds": 300
+            },
+            "track": {
+              "artists": [],
+              "title": "Intro • VISION",
+              "label": null,
+              "warnings": [
+                "noSeparator"
+              ]
+            }
+          }
+        ],
+        "warnings": [
+          {
+            "code": "no-start-at-zero",
+            "line": 1,
+            "severity": "info",
+            "suggestion": null
+          }
+        ]
+      },
+      "rules": [
+        "R8.7",
+        "R13.3",
+        "R13.3.5"
+      ],
+      "note": "Near miss: no spaced dash, so no cut; the line stays a marker."
+    },
+    {
+      "id": "tracklist-lines-059",
+      "input": "00:00 Noisia-Stigma • VISION\n01:00 Phace - Psycho • VISION",
+      "expected": {
+        "entries": [
+          {
+            "kind": "track",
+            "track": {
+              "artists": [
+                "Noisia"
+              ],
+              "title": "Stigma • VISION",
+              "label": null,
+              "warnings": [
+                "unspacedDashSplit"
+              ]
+            }
+          },
+          {
+            "kind": "track",
+            "track": {
+              "artists": [
+                "Phace"
+              ],
+              "title": "Psycho",
+              "label": "VISION",
+              "warnings": []
+            }
+          }
+        ],
+        "warnings": []
+      },
+      "rules": [
+        "R8.7",
+        "R6.10",
+        "R13.4.2"
+      ],
+      "note": "Near miss: in list context the tight dash splits line 1, but it is not a spaced dash, so R8.7 does not fire there."
     }
   ]
 }

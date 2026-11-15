@@ -20,6 +20,7 @@
         "fullTitle": "Blind Faith",
         "versions": [],
         "year": null,
+        "label": null,
         "flags": { "explicit": false, "clean": false, "unknownArtist": false, "unknownTitle": false },
         "junk": [],
         "warnings": []
@@ -110,6 +111,7 @@
         "fullTitle": "Boogie Wonderland",
         "versions": [],
         "year": null,
+        "label": null,
         "flags": { "explicit": false, "clean": false, "unknownArtist": false, "unknownTitle": false },
         "junk": [],
         "warnings": []
