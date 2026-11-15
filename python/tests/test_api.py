@@ -46,7 +46,7 @@ def test_parse_returns_every_key_in_schema_order() -> None:
     r = parse("")
     assert list(r.to_dict()) == [
         "input", "mode", "position", "timestamp", "artists", "title", "fullTitle",
-        "versions", "year", "flags", "junk", "warnings",
+        "versions", "year", "label", "flags", "junk", "warnings",
     ]  # fmt: skip
     assert r.mode == "clean"
     assert r.artists == () and r.versions == () and r.junk == () and r.warnings == ()
@@ -82,6 +82,7 @@ def test_to_dict_is_canonical_json() -> None:
         "[1:02:03] 01. A & B ft. C - T (X Remix) [Official Video] (2015) (Explicit) prod. by D",
         "Hey Jude - Remastered 2015",
         "Band | Song",
+        "Noisia - concussion • VISION • VISION RADIO RELOAD",
     ],
 )
 def test_round_trip_from_dict(s: str) -> None:
@@ -206,3 +207,33 @@ def test_format_track_defaults_and_options() -> None:
     assert format_track(r, joiners="canonical") == "A, B feat. C - T (D Remix)"
     assert format_track(r, versions="none", feat="omit") == "A; B - T"
     assert format_track(r, feat="title", feat_marker="with") == "A; B - T (with C) (D Remix)"
+
+
+def test_label_follows_year_in_the_key_order() -> None:
+    # R8.7
+    keys = list(parse("A - T • L").to_dict())
+    assert keys.index("label") == keys.index("year") + 1
+
+
+def test_format_writes_the_label_back_unless_label_false() -> None:
+    # R11.3
+    t = parse("Noisia - concussion • VISION • VISION RADIO RELOAD")
+    assert t.label == "VISION"
+    assert [j.to_dict() for j in t.junk] == [{"raw": "VISION RADIO RELOAD", "kind": "note"}]
+    assert format_track(t) == "Noisia - concussion • VISION"
+    assert format_track(t, label=False) == "Noisia - concussion"
+    assert format_track(dataclasses.replace(t, label=None)) == "Noisia - concussion"
+
+
+def test_keywords_junk_phrases_make_a_bullet_segment_junk() -> None:
+    # R8.7
+    p = create_parser(keywords={"junk": {"radio reload": "promo"}})
+    t = p.parse("Noisia - Stigma • VISION • Radio Reload")
+    assert t.label == "VISION"
+    assert [j.to_dict() for j in t.junk] == [{"raw": "Radio Reload", "kind": "promo"}]
+
+
+def test_from_dict_without_label_reads_none() -> None:
+    d = parse("A - T").to_dict()
+    del d["label"]
+    assert ParsedTrack.from_dict(d).label is None

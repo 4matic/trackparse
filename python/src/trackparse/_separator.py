@@ -108,12 +108,19 @@ def find_separator(
     uploader: Optional[Skel],
     ctx: Ctx,
     list_context: bool = False,
+    bullet_head: bool = False,
 ) -> SeparatorResult:
     """``list_context`` is the R13.4.2 list context (internal, set only by the tracklist
-    module): it enables the R6.10 tight ``letter-Uppercase`` dash in tracklist mode."""
+    module): it enables the R6.10 tight ``letter-Uppercase`` dash in tracklist mode.
+    ``bullet_head`` (R8.7): ``skel`` is the head before a bullet suffix. Its first spaced dash
+    always separates, as in R6.10 (no R6.2 peeling), in every mode."""
     segments = split_at_spaced_dashes(skel, True)
+    if mode == "tracklist" or bullet_head:
+        first_split = _first_dash_split(skel, segments)
+        if first_split is not None:
+            return first_split
     if mode == "tracklist":
-        return _tracklist_separator(skel, segments, list_context, ctx)
+        return _tracklist_separator(segments[0].skel, list_context, ctx)
     remaining, peeled = peel_suffixes(segments, False, ctx)
 
     # R6.3
@@ -137,21 +144,23 @@ def find_separator(
     return SeparatorResult(artist, rest, False, peeled)
 
 
-def _tracklist_separator(
-    skel: Skel, segments: list[Segment], list_context: bool, ctx: Ctx
-) -> SeparatorResult:
-    """R6.10: tracklist mode. The first spaced dash always separates (no R6.2 peeling; R8.2
-    still peels later suffixes on the title side). Without one: R6.4, then the first ``_-_``,
-    then (list context only) the last tight ``letter-Uppercase`` dash; both of these warn
-    ``unspacedDashSplit``."""
-    if len(segments) >= 2:
-        first = segments[0]
-        second = segments[1]
-        last_seg = segments[-1]
-        artist = first.skel if len(first.skel.text) > 0 else None
-        title = slice_skel(skel, second.start, last_seg.end)
-        return SeparatorResult(artist, title, artist is not None, [])
-    rest = segments[0].skel
+def _first_dash_split(skel: Skel, segments: list[Segment]) -> Optional[SeparatorResult]:
+    """R6.10 / R8.7: the first spaced dash always separates (no R6.2 peeling; R8.2 still peels
+    later suffixes on the title side). None without a spaced dash."""
+    if len(segments) < 2:
+        return None
+    first = segments[0]
+    second = segments[1]
+    last_seg = segments[-1]
+    artist = first.skel if len(first.skel.text) > 0 else None
+    title = slice_skel(skel, second.start, last_seg.end)
+    return SeparatorResult(artist, title, artist is not None, [])
+
+
+def _tracklist_separator(rest: Skel, list_context: bool, ctx: Ctx) -> SeparatorResult:
+    """R6.10: tracklist mode without a spaced dash (``_first_dash_split`` handles one): R6.4,
+    then the first ``_-_``, then (list context only) the last tight ``letter-Uppercase`` dash;
+    both of these warn ``unspacedDashSplit``."""
     asym = _asymmetric_dash(rest.text)
     if asym >= 0:
         warn(ctx, "asymmetricDashSplit")
