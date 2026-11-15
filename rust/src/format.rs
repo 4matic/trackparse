@@ -4,6 +4,7 @@ use std::collections::HashSet;
 
 use crate::assemble::render_version;
 use crate::options::{FeatMode, ResolvedFormat};
+use crate::scanner::BULLET;
 use crate::tables::{default_tables, Tables};
 use crate::types::{Artist, ArtistRole, ArtistSource, VersionDelimiter};
 use crate::words::{dedup_key, word_matches};
@@ -14,6 +15,7 @@ pub(crate) struct FormatInput<'a> {
     pub title: &'a str,
     pub versions: Vec<(&'a str, VersionDelimiter)>,
     pub position_raw: Option<&'a str>,
+    pub label: Option<&'a str>,
 }
 
 fn is_feat_marker(raw: &str, t: &Tables) -> bool {
@@ -129,6 +131,10 @@ pub(crate) fn format(track: &FormatInput<'_>, o: &ResolvedFormat) -> String {
     if let (true, Some(first)) = (o.producers, producers.first()) {
         let marker = first.joiner.as_deref().unwrap_or("prod.");
         pieces.push(format!("({marker} {})", join_names(&producers, o, t)));
+    }
+    // R11.3: the label after a spaced bullet (R8.7).
+    if let (true, Some(label)) = (o.label, track.label.filter(|l| !l.is_empty())) {
+        pieces.push(format!("{BULLET} {label}"));
     }
     let title_part = pieces.join(" ");
 

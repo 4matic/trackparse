@@ -105,6 +105,7 @@ println!("{}", track.to_json());
     }
   ],
   "year": null,
+  "label": null,
   "flags": { "explicit": false, "clean": false, "unknownArtist": false, "unknownTitle": false },
   "junk": [{ "raw": "HD", "kind": "quality" }],
   "warnings": []
@@ -216,6 +217,7 @@ assert_eq!(track.junk[0].kind, JunkKind::Label);
 | `full_title` | `String` | `title` with the versions re-attached |
 | `versions` | `Vec<Version>` | Remixes and other versions, left to right |
 | `year` | `Option<u32>` | From `(2015)` or `- 2015` |
+| `label` | `Option<String>` | Record label after a spaced bullet: `Stigma • VISION` gives `Some("VISION")` |
 | `flags` | `Flags` | `explicit`, `clean`, `unknown_artist`, `unknown_title` |
 | `junk` | `Vec<Junk>` | What was taken out, each with a `kind` |
 | `warnings` | `Vec<Warning>` | Heuristics that fired |
@@ -351,6 +353,7 @@ Renders a track back to a string ([format options](https://4matic.github.io/trac
 | `versions` | `VersionsOption::All` | `All` or `None` |
 | `producers` | `true` | Include `(prod. ...)` credits |
 | `position` | `false` | Include the track number (`01. `) |
+| `label` | `true` | Include the label after a spaced bullet (` • VISION`) |
 
 ```rust
 use trackparse::{
@@ -380,6 +383,10 @@ assert_eq!(
     format_track_with(&track, &options),
     "Wilkinson featuring Becky Hill - Afterglow (Sub Focus Remix)"
 );
+
+let track = parse("Noisia - concussion • VISION • VISION RADIO RELOAD");
+assert_eq!(format_track(&track), "Noisia - concussion • VISION");
+assert_eq!(format_track_with(&track, &FormatOptions::new().label(false)), "Noisia - concussion");
 ```
 
 ### `normalize`

@@ -29,6 +29,7 @@ const INPUTS: &[&str] = &[
     "Title prod. by Someone (Explicit)",
     "Unbalanced (group - Title",
     "🎵 Emoji 🎵 - 𝐀𝐁 (👨‍👩‍👧 Remix)",
+    "Noisia - concussion • VISION • VISION RADIO RELOAD",
 ];
 
 fn json(text: &str) -> Json {
@@ -140,6 +141,8 @@ fn typed_format_options_match_the_wire() {
             FormatOptions::new().producers(false).position(true),
             r#"{"producers":false,"position":true}"#,
         ),
+        (FormatOptions::new().label(false), r#"{"label":false}"#),
+        (FormatOptions::new().label(true), r#"{"label":true}"#),
         (
             FormatOptions::new()
                 .feat(FeatPlacement::Title)
@@ -181,6 +184,43 @@ fn fields_are_typed() {
 
     let names: Vec<String> = all_artists(&track).into_iter().map(|a| a.name).collect();
     assert_eq!(names, ["Noisia", "Foreign Beggars", "Rockwell"]);
+}
+
+#[test]
+fn label_follows_year_in_the_json() {
+    let json = parse("A - T \u{2022} L").to_json();
+    assert!(json.contains(r#""year":null,"label":"L","flags":"#), "{json}");
+}
+
+#[test]
+fn format_writes_the_label_back_unless_label_false() {
+    // R8.7, R11.3
+    let mut track = parse("Noisia - concussion \u{2022} VISION \u{2022} VISION RADIO RELOAD");
+    assert_eq!(track.label.as_deref(), Some("VISION"));
+    assert_eq!(track.junk.len(), 1);
+    assert_eq!(track.junk[0].raw, "VISION RADIO RELOAD");
+    assert_eq!(track.junk[0].kind, JunkKind::Note);
+    assert_eq!(format_track(&track), "Noisia - concussion \u{2022} VISION");
+    assert_eq!(
+        format_track_with(&track, &FormatOptions::new().label(false)),
+        "Noisia - concussion"
+    );
+    track.label = None;
+    assert_eq!(format_track(&track), "Noisia - concussion");
+}
+
+#[test]
+fn keywords_junk_phrases_make_a_bullet_segment_junk() {
+    // R8.7
+    let parser = Parser::new(
+        &ParseOptions::new().keywords(KeywordOptions::new().junk("radio reload", JunkKind::Promo)),
+    );
+    let track = parser.parse("Noisia - Stigma \u{2022} VISION \u{2022} Radio Reload");
+    assert_eq!(track.label.as_deref(), Some("VISION"));
+    assert_eq!(track.junk.len(), 1);
+    assert_eq!(track.junk[0].raw, "Radio Reload");
+    assert_eq!(track.junk[0].kind, JunkKind::Promo);
+    assert_eq!(JunkKind::from_name("note"), Some(JunkKind::Note));
 }
 
 #[test]

@@ -9,7 +9,8 @@ use crate::tables::{is_unknown_token, RunInfo};
 use crate::types::{ArtistRole, ArtistSource, VersionDelimiter};
 use crate::words::{
     ascii_lower, at, before, chars, dedup_key, in_vocab, is_all_digits, js_trim, span_texts,
-    split_words, string, sub, tail, utf16_off, word_key, word_spans, year_of, WordSpan,
+    split_words, string, sub, tail, utf16_off, word_key, word_spans, year_of, PhraseTable,
+    WordSpan,
 };
 
 #[derive(Debug, Clone)]
@@ -87,11 +88,25 @@ pub(crate) fn classify(inner: &str, site: Site, ctx: &mut Ctx<'_>) -> Classifica
 
 /// R5.1: the junk kind if the whole word list is junk vocabulary, else `None`.
 pub(crate) fn junk_kind_of(words: &[String], ctx: &Ctx<'_>) -> Option<String> {
+    if let Some(kind) = phrase_kind_of(words, &ctx.t.junk_or_genre, ctx) {
+        return Some(kind);
+    }
+    let last = words.last()?;
+    (words.len() >= 2 && in_vocab(last, &ctx.t.label_suffixes)).then(|| "label".to_string())
+}
+
+/// R5.1 tokenization over `phrases` (greedy, longest first) with connectors and year words, at
+/// least one phrase: the kind of the first phrase, else `None`. R8.7 uses it without genres.
+pub(crate) fn phrase_kind_of(
+    words: &[String],
+    phrases: &PhraseTable<String>,
+    ctx: &Ctx<'_>,
+) -> Option<String> {
     let t = ctx.t;
     let mut first_kind: Option<&String> = None;
     let mut i = 0;
     while let Some(w) = words.get(i) {
-        if let Some(m) = t.junk_or_genre.match_at(words, i) {
+        if let Some(m) = phrases.match_at(words, i) {
             first_kind = first_kind.or(Some(m.value));
             i += m.length;
             continue;
@@ -104,15 +119,10 @@ pub(crate) fn junk_kind_of(words: &[String], ctx: &Ctx<'_>) -> Option<String> {
             i += 1;
             continue;
         }
-        first_kind = None;
-        break;
+        return None;
     }
     // JS truthiness: an empty kind (possible through `keywords.junk`) does not count.
-    if let Some(kind) = first_kind.filter(|k| !k.is_empty()) {
-        return Some(kind.clone());
-    }
-    let last = words.last()?;
-    (words.len() >= 2 && in_vocab(last, &t.label_suffixes)).then(|| "label".to_string())
+    first_kind.filter(|k| !k.is_empty()).cloned()
 }
 
 // ---------------------------------------------------------------------------

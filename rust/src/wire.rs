@@ -17,6 +17,7 @@ fn format_raw(track: &RawTrack, format_options: &Json) -> String {
         title: &track.title,
         versions: track.versions.iter().map(|v| (v.raw.as_str(), v.delimiter)).collect(),
         position_raw: track.position.as_ref().map(|p| p.raw.as_str()),
+        label: track.label.as_deref(),
     };
     format(&input, &ResolvedFormat::from_json(format_options))
 }

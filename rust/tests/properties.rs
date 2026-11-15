@@ -10,9 +10,9 @@ use std::time::{Duration, Instant};
 
 use trackparse::{
     all_artists, format_track, format_track_with, normalize, parse, parse_artists,
-    parse_artists_with, parse_with, ArtistRole, FeatPlacement, FormatOptions, JoinerStyle, Junk,
-    JunkKind, Mode, ModeOption, ParseOptions, ParsedTrack, Parser, Position, SplitAnd,
-    VersionDelimiter,
+    parse_artists_with, parse_with, ArtistRole, ArtistSource, FeatPlacement, FormatOptions,
+    JoinerStyle, Junk, JunkKind, Mode, ModeOption, ParseOptions, ParsedTrack, Parser, Position,
+    SplitAnd, VersionDelimiter,
 };
 
 /// mulberry32.
@@ -135,6 +135,9 @@ const ARTISTS: &[&str] =
     &["Noisia", "Phace", "Fox Stevenson", "Sub Focus", "Mefjus", "Camo & Krooked", "Alix Perez"];
 const TITLES: &[&str] =
     &["Tentacles", "Bruises", "Out the Blue", "Dead Limit", "Stigma", "Blind Faith"];
+/// R8.7 record labels after a spaced bullet.
+const RECORD_LABELS: &[&str] = &["VISION", "HOSPITAL", "GEMINI GEMINI", "SIX EIGHT", "\u{d8}"];
+
 const REMIXERS: &[&str] = &["Skrillex", "Magnetude", "Wilkinson", "Break"];
 const JOINERS: &[&str] = &[" & ", ", ", " x ", " vs. "];
 
@@ -157,6 +160,9 @@ fn track_string(rng: &mut Rng) -> String {
     s.push_str(&format!(" - {}", rng.pick(TITLES)));
     if rng.chance(50) {
         s.push_str(&format!(" ({} Remix)", rng.pick(REMIXERS)));
+    }
+    if rng.chance(30) {
+        s.push_str(&format!(" \u{2022} {}", rng.pick(RECORD_LABELS)));
     }
     s
 }
@@ -361,7 +367,8 @@ fn artist_hygiene() {
 fn content_words(normalized: &str) -> Vec<String> {
     normalized
         .split(is_ws)
-        .filter(|w| !matches!(*w, "-" | "&" | "x" | "vs." | "feat."))
+        // R8.7: a spaced bullet counts as a separator.
+        .filter(|w| !matches!(*w, "-" | "&" | "x" | "vs." | "feat." | "\u{2022}"))
         .map(|w| w.trim_matches(|c| matches!(c, '(' | ')' | '[' | ']' | ',' | '.')).to_string())
         .filter(|w| !w.is_empty())
         .collect()
@@ -375,6 +382,7 @@ fn output_strings(track: &ParsedTrack) -> Vec<&str> {
         out.extend(version.artists.iter().map(|a| a.name.as_str()));
     }
     out.extend(track.junk.iter().map(|j| j.raw.as_str()));
+    out.extend(track.label.as_deref());
     out.extend(track.position.iter().map(|p| p.raw.as_str()));
     out.extend(track.timestamp.iter().map(|t| t.raw.as_str()));
     out
@@ -480,13 +488,16 @@ fn metamorphic_keyword_case_changes_only_raw() {
     }
 }
 
-/// What R11.6 promises to keep: names with roles, the title, and each version's type and names.
-type Shape = (Vec<(String, ArtistRole)>, String, Vec<(String, Vec<String>)>);
+/// What R11.6 promises to keep: names with roles, the title, each version's type and names, and
+/// the label. The title and the label count only when the formatted string has an artist part
+/// or there is no label (`ID - T \u{2022} L` formats to `T \u{2022} L`, which has no separator).
+type Shape =
+    (Vec<(String, ArtistRole)>, Option<String>, Vec<(String, Vec<String>)>, Option<String>);
 
-fn shape(track: &ParsedTrack) -> Shape {
+fn shape(track: &ParsedTrack, both: bool) -> Shape {
     (
         track.artists.iter().map(|a| (a.name.clone(), a.role)).collect(),
-        track.title.clone(),
+        both.then(|| track.title.clone()),
         track
             .versions
             .iter()
@@ -494,6 +505,7 @@ fn shape(track: &ParsedTrack) -> Shape {
                 (v.version_type.to_string(), v.artists.iter().map(|a| a.name.clone()).collect())
             })
             .collect(),
+        if both { track.label.clone() } else { None },
     )
 }
 
@@ -505,6 +517,15 @@ fn round_trip_through_format_track() {
         let first = parse(&s);
         let formatted = format_track(&first);
         let second = parse(&formatted);
-        assert_eq!(shape(&second), shape(&first), "case {case}: {s:?} -> {formatted:?}");
+        let artist_part = first.artists.iter().any(|a| {
+            a.role == ArtistRole::Primary
+                || (a.role == ArtistRole::Featured && a.source == ArtistSource::Artist)
+        });
+        let both = artist_part || first.label.is_none();
+        assert_eq!(
+            shape(&second, both),
+            shape(&first, both),
+            "case {case}: {s:?} -> {formatted:?}"
+        );
     }
 }
