@@ -88,6 +88,8 @@ const titleWords = fc.constantFrom(
   "Blind Faith",
 );
 const remixer = fc.constantFrom("Skrillex", "Magnetude", "Wilkinson", "Break");
+/** R8.7 record labels after a spaced bullet. */
+const recordLabel = fc.constantFrom("VISION", "HOSPITAL", "GEMINI GEMINI", "SIX EIGHT", "Ø");
 const track = fc
   .record({
     artists: fc.array(artist, { minLength: 1, maxLength: 3 }),
@@ -95,13 +97,15 @@ const track = fc
     feat: fc.option(artist, { nil: undefined }),
     title: titleWords,
     remix: fc.option(remixer, { nil: undefined }),
+    label: fc.option(recordLabel, { nil: undefined }),
   })
-  .map(({ artists, joiner, feat, title, remix }) => {
+  .map(({ artists, joiner, feat, title, remix, label }) => {
     const unique = [...new Set(artists)];
     let s = unique.join(joiner);
     if (feat && !unique.includes(feat)) s += ` feat. ${feat}`;
     s += ` - ${title}`;
     if (remix) s += ` (${remix} Remix)`;
+    if (label) s += ` • ${label}`;
     return s;
   });
 
@@ -273,10 +277,16 @@ describe("invariants", () => {
         const a = parse(s);
         if (a.warnings.length > 0) return;
         const b = parse(format(a));
+        // R11.6: label (and title) only count when the formatted string has an artist part.
+        const artistPart = a.artists.some(
+          (x) => x.role === "primary" || (x.role === "featured" && x.source === "artist"),
+        );
+        const both = artistPart || a.label === null;
         const shape = (t: ParsedTrack) => ({
           artists: t.artists.map((x) => [x.name, x.role]),
-          title: t.title,
+          title: both ? t.title : null,
           versions: t.versions.map((v) => [v.type, v.artists.map((x) => x.name)]),
+          label: both ? t.label : null,
         });
         expect(shape(b)).toEqual(shape(a));
       }),

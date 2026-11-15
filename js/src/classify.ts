@@ -9,6 +9,7 @@ import {
   dedupKey,
   inVocab,
   isAllDigits,
+  type PhraseTable,
   splitWords,
   type WordSpan,
   wordKey,
@@ -75,10 +76,26 @@ export function classify(inner: string, site: Site, ctx: Ctx): Classification {
 
 /** R5.1: the junk kind if the whole word list is junk vocabulary, else null. */
 export function junkKindOf(words: readonly string[], ctx: Ctx): JunkKind | null {
+  const firstKind = phraseKindOf(words, ctx.t.junkOrGenre, ctx);
+  if (firstKind) return firstKind;
+  const last = words[words.length - 1];
+  if (words.length >= 2 && last !== undefined && inVocab(last, ctx.t.labelSuffixes)) return "label";
+  return null;
+}
+
+/**
+ * R5.1 tokenization over `phrases` (greedy, longest first) with connectors and year words, at
+ * least one phrase: the kind of the first phrase, else null. R8.7 uses it without genres.
+ */
+export function phraseKindOf(
+  words: readonly string[],
+  phrases: PhraseTable<JunkKind>,
+  ctx: Ctx,
+): JunkKind | null {
   let firstKind: JunkKind | null = null;
   let i = 0;
   while (i < words.length) {
-    const m = ctx.t.junkOrGenre.matchAt(words, i);
+    const m = phrases.matchAt(words, i);
     if (m) {
       firstKind ??= m.entry.value;
       i += m.length;
@@ -90,13 +107,9 @@ export function junkKindOf(words: readonly string[], ctx: Ctx): JunkKind | null 
       i++;
       continue;
     }
-    firstKind = null;
-    break;
+    return null;
   }
-  if (firstKind) return firstKind;
-  const last = words[words.length - 1];
-  if (words.length >= 2 && last !== undefined && inVocab(last, ctx.t.labelSuffixes)) return "label";
-  return null;
+  return firstKind;
 }
 
 // ---------------------------------------------------------------------------

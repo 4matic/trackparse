@@ -66,7 +66,8 @@ export type JunkKind =
   | "platform"
   | "label"
   | "genre"
-  | "other";
+  | "other"
+  | "note";
 
 export interface Junk {
   raw: string;
@@ -110,6 +111,8 @@ export interface ParsedTrack {
   fullTitle: string;
   versions: Version[];
   year: number | null;
+  /** R8.7: the record label after a spaced bullet on the title side. */
+  label: string | null;
   flags: Flags;
   junk: Junk[];
   warnings: Warning[];
@@ -142,4 +145,6 @@ export interface FormatOptions {
   versions?: "all" | "none";
   producers?: boolean;
   position?: boolean;
+  /** R11.3: append `" • " + label` (default true). */
+  label?: boolean;
 }
