@@ -1,4 +1,4 @@
-/* test_oom.c: allocation failure at every n (PLAN.md hazard 10).
+/* test_oom.c: allocation failure at every n (PORTING.md hazard 10).
  *
  * A counting allocator (trackparse_set_allocator) fails the n-th allocation. For a set of about
  * 50 fixture inputs and every public function (and the JSON door, which reports out of memory by

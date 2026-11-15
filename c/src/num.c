@@ -1,7 +1,7 @@
 /* num.c: exact, locale-independent numbers (rt.h "Numbers").
  *
  * - tp_parse_number: decimal string to the correctly rounded double, for any digit count, without
- *   strtod (locale, PLAN.md hazard 2 and 4).
+ *   strtod (locale, PORTING.md hazards 2 and 4).
  * - tp_buf_number: JS Number#toString (shortest round-trip digits, closest of those, ties to an
  *   even digit, as V8's bignum-dtoa), without printf (hazard 3).
  * - tp_half_up_units / tp_round_half_up: floor(v * scale + 0.5) as Go formatTime and JS
@@ -25,7 +25,7 @@
 
 #include "rt.h"
 
-/* FMA contraction would fuse v * scale + 0.5 (PLAN.md hazard 1). The pragma is standard C, but
+/* FMA contraction would fuse v * scale + 0.5 (PORTING.md hazard 1). The pragma is standard C, but
  * GCC ignores it (and defaults to -ffp-contract=fast in GNU mode), so the build also passes
  * -ffp-contract=off (MSVC: /fp:precise), and tp_half_up_units rounds the product through a
  * volatile so even a build without the flag cannot fuse it. */
@@ -35,7 +35,7 @@
 #pragma fp_contract(off)
 #endif
 
-/* x87 excess precision would make the fast path double-round (PLAN.md hazard 5). */
+/* x87 excess precision would make the fast path double-round (PORTING.md hazard 5). */
 #if !defined(FLT_EVAL_METHOD) || FLT_EVAL_METHOD != 0
 #error "trackparse needs FLT_EVAL_METHOD == 0 (on 32-bit x86: -msse2 -mfpmath=sse)"
 #endif

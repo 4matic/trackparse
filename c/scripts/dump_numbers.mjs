@@ -10,7 +10,7 @@
 // patterns, subnormals, powers of ten and their neighbours, integers, exact halfway points between
 // neighbouring doubles (and one unit above and below in a far digit), long digit strings, short
 // decimals like the R13.2 times, and exponent forms.
-// The committed sample c/tests/data/numbers_sample.jsonl is --n 2000 --seed 1.
+// The committed sample c/tests/data/numbers_sample.jsonl is --n 1400 --seed 1.
 
 import { createWriteStream } from "node:fs";
 

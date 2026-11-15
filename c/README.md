@@ -49,6 +49,10 @@ There is no package registry for C. Each release attaches two files to its
 
 Release files are never replaced: a fix is a new version, so a pinned hash keeps working.
 
+The first release with the C library is 0.7.0. Until the releases page lists `c-v0.7.0`, the
+download URLs below do not exist yet: build [from source](#from-source) instead, and leave the
+version out of `find_package` (a checkout from before that release still says 0.6.1).
+
 ### CMake FetchContent
 
 ```cmake
@@ -78,7 +82,7 @@ c++ -std=c++17 -O2 -I. app.cpp trackparse.o -lm -pthread -o app   # with trackpa
 
 `-ffp-contract=off` (MSVC: `/fp:precise`) keeps the compiler from fusing a multiply and an add,
 which would round some edited tracklist times differently. The file also sets
-`#pragma STDC FP_CONTRACT OFF` for the compilers that honour it (GCC ignores it) and rounds that
+`#pragma STDC FP_CONTRACT OFF` for the compilers that honor it (GCC ignores it) and rounds that
 product through a `volatile`, so a build without the flag gives the same times. On Windows, define `TRACKPARSE_STATIC` in the files that include
 the header, or it declares DLL imports. On 32-bit x86, compile with `-msse2 -mfpmath=sse`: the
 library refuses to build with x87 arithmetic.
@@ -223,7 +227,7 @@ are all defaults.
 | [`_set_mode`](https://4matic.github.io/trackparse/guides/modes/) | `TRACKPARSE_MODE_AUTO` | `_CLEAN`, `_YOUTUBE`, `_FILENAME`, `_TRACKLIST`, or `_AUTO` to detect from the string. See [Modes](#modes) |
 | [`_set_uploader`](https://4matic.github.io/trackparse/guides/modes/#the-uploader-fallback) | none | YouTube channel name, used as the artist when there's no separator (`- Topic` and `VEVO` are dropped) |
 | [`_add_known_artist`](https://4matic.github.io/trackparse/guides/artists/#knownartists) | none | A name that is never split; call it once per name. There is no built-in list |
-| [`_set_split_and`](https://4matic.github.io/trackparse/guides/artists/#and-is-special) | `TRACKPARSE_SPLIT_AND_AUTO` | `_AUTO` splits on `and` only after a comma (`A, B and C`), so `Simon and Garfunkel` stays whole. Also `_ALWAYS`, `_NEVER` |
+| [`_set_split_and`](https://4matic.github.io/trackparse/guides/artists/#and-is-special) | `TRACKPARSE_SPLIT_AND_AUTO` | `_AUTO` splits on `and` only after a comma or semicolon (`A, B and C`), so `Simon and Garfunkel` stays whole. Also `_ALWAYS`, `_NEVER` |
 | [`_add_version_head`](https://4matic.github.io/trackparse/guides/versions/#your-own-words), `_add_descriptor`, `_add_genre`, `_add_junk`, `_add_feat_marker` | none | Extra vocabulary ([`keywords`](https://4matic.github.io/trackparse/reference/options/#keywords)), added to the built-in lists |
 
 Each setter's full name starts with `trackparse_parse_options`. Setters copy what they are given,
@@ -587,7 +591,7 @@ trackparse_tracklist_free(list);
 ```
 
 The [suggestion](https://4matic.github.io/trackparse/reference/warnings/#suggestions) exists
-because exactly one time, one digit away from `00:11:02`, fits between its neighbours. With
+because exactly one time, one digit away from `00:11:02`, fits between its neighbors. With
 several candidates or none, `suggestion` is `NULL`.
 [Open this list in the playground](https://4matic.github.io/trackparse/playground/#list=Hour%202%0A48%3A20%20Noisia%20-%20Stigma%0A52%3A47%20Mefjus%20%26%20Kasra%20-%20Bandwagon%20%28Phace%20Remix%29%0A56%3A05%20Black%20Sun%20Empire%20-%20ID%0A59%3A31%20Alix%20Perez%20-%20Fade%20Away%0A01%3A03%3A10%20Interview%20with%20Hybris%0A01%3A07%3A44%20Imanu%20-%20Sacrifice%0A00%3A11%3A02%20Current%20Value%20feat.%20Teddy%20Killerz%20-%20Payload%0A01%3A15%3A36%20Hybris%20-%20Spinning%20Top).
 
@@ -636,7 +640,8 @@ gets hours, with a `style-upgraded` warning. A time pushed below zero stops at z
 ([edit warnings](https://4matic.github.io/trackparse/reference/warnings/#edit-warnings)).
 
 `trackparse_tracklist_options` ([options](https://4matic.github.io/trackparse/reference/options/#tracklist-options))
-has the parse options' setters (`_set_mode` defaults to `TRACKPARSE_MODE_TRACKLIST` here), plus
+has the parse options' setters except `_set_uploader` (`_set_mode` defaults to
+`TRACKPARSE_MODE_TRACKLIST` here), plus
 `_set_audio_seconds` (the length of the mix; it enables `time-after-audio-end`, and 0 is a valid
 length) and `_add_marker_word`:
 
@@ -676,8 +681,9 @@ the same output. It is installed and shipped next to `trackparse.h`, and links a
 
 - Results (`track`, `artists`, `tracklist`, `edit_result`), `parser` and the option builders are
   move-only owners that free their C object in the destructor.
-- Strings are `std::string_view`, nullable fields `std::optional`, arrays ranges with `begin`,
-  `end`, `size` and `operator[]`. Views borrow from their owner and are valid while it lives.
+- Strings read from results are `std::string_view` (`format`, `normalize` and `to_json` return
+  `std::string`), nullable fields `std::optional`, arrays ranges with `begin`, `end`, `size` and
+  `operator[]`. Views borrow from their owner and are valid while it lives.
 - Option builders chain: `parse_options{}.mode(mode::youtube).known_artist("Chase & Status")`.
 - The enums are `enum class` (`trackparse::role::featured`), and `trackparse::name(value)` gives
   the spec name.
@@ -736,13 +742,14 @@ MSVC in C++17 and C++20.
 **Docs:** [How it's tested](https://4matic.github.io/trackparse/project/testing/) · [Ports](https://4matic.github.io/trackparse/project/ports/)
 
 From `c/` in the [repository](https://github.com/4matic/trackparse) (CMake 3.16 or later; Node
-for the codegen scripts, the amalgamation and the schema check):
+for the codegen scripts, the amalgamation and the schema check). Use a build directory other than
+`c/build`: `scripts/compare-ports.mjs` configures that one with the tests off.
 
 ```sh
-cmake -S . -B build -DCMAKE_BUILD_TYPE=RelWithDebInfo
-cmake --build build
-ctest --test-dir build --output-on-failure
-TRACKPARSE_REPORT=1 ./build/trackparse-fixtures ../spec/fixtures/*/*.json   # pass rate per file and rule
+cmake -S . -B build-test -DCMAKE_BUILD_TYPE=RelWithDebInfo
+cmake --build build-test
+ctest --test-dir build-test --output-on-failure
+TRACKPARSE_REPORT=1 ./build-test/trackparse-fixtures ../spec/fixtures/*/*.json   # pass rate per file and rule
 node scripts/gen_data.mjs --check        # spec/data codegen is up to date
 node scripts/gen_unicode.mjs --check     # Unicode tables are up to date
 ```
@@ -775,7 +782,7 @@ Sanitizers and fuzzing are CMake options:
 cmake -S . -B build-asan -DTRACKPARSE_SANITIZE=ON          # AddressSanitizer + UBSan
 cmake -S . -B build-tsan -DTRACKPARSE_SANITIZE_THREAD=ON   # ThreadSanitizer
 CC=clang CXX=clang++ cmake -S . -B build-msan -DTRACKPARSE_SANITIZE_MEMORY=ON
-cmake --build build-msan --target trackparse-fixtures test_api test_properties test_oom
+cmake --build build-msan --target trackparse-fixtures test_api test_properties test_oom test_rt test_num
 CC=clang CXX=clang++ cmake -S . -B build-fuzz -DTRACKPARSE_FUZZ=ON -DTRACKPARSE_BUILD_TESTS=OFF
 cmake --build build-fuzz                                    # libFuzzer targets fuzz_*
 node scripts/fuzz_corpus.mjs corpus                         # seed corpus from the fixture inputs
@@ -785,8 +792,8 @@ node scripts/fuzz_corpus.mjs corpus                         # seed corpus from t
 Under a sanitizer the property tests run a quarter of their cases and the time ceilings are ten
 times wider. MemorySanitizer builds only the C programs: the C++ tests would need an instrumented
 libc++. There is a libFuzzer target for each of `parse`, `parse_artists`, `format`,
-`parse_tracklist` and `apply_edits` (`fuzz_parse` and so on) and one for the JSON reader the tests
-use (`fuzz_wire`).
+`parse_tracklist` and `apply_edits` (`fuzz_parse` and so on) and one for the JSON door the fixture
+runner and compare-ports use (`fuzz_wire`: a JSON call line through the reader and `tp_wire_line`).
 
 CI ([`c.yml`](https://github.com/4matic/trackparse/blob/main/.github/workflows/c.yml)) builds and
 tests with GCC and Clang on Linux x86-64, GCC on ARM64 and on 32-bit x86, GCC 9 with CMake 3.16, a
@@ -807,7 +814,7 @@ the spec, not here: see [AGENTS.md](https://github.com/4matic/trackparse/blob/ma
 There are no regular expressions, so there is no regex backtracking. On an Intel i7-4770S with
 GCC 9 (a CMake Release build, `-O3`), with other programs running: 1 to 6 ms for 10,000 code points
 of one repeated block (the blocks of the other ports' time ceilings), and 0.34 to 0.39 s for a
-10,000-line tracklist (`build/test_bench` prints these). The Go port takes 3 to 7 ms and 0.33 to 0.38 s for the same
+10,000-line tracklist (`test_bench` in a Release build prints these). The Go port takes 3 to 7 ms and 0.33 to 0.38 s for the same
 kinds of input on the same machine.
 
 ## Unicode version
@@ -821,7 +828,7 @@ combining marks can come out in another order there
 
 ## Versioning
 
-**Changelog:** [c/CHANGELOG.md](https://github.com/4matic/trackparse/blob/main/c/CHANGELOG.md)
+**Changelog:** [c/CHANGELOG.md](https://github.com/4matic/trackparse/blob/main/c/CHANGELOG.md) (written by the release that first ships the C library, 0.7.0)
 
 The library version is the spec version. All five ports and the spec are released together and
 share one version number; C releases are tagged `c-vX.Y.Z`. While it is 0.x, a release that

@@ -1,4 +1,4 @@
-# The C port of trackparse. See PLAN.md (repo root) and AGENTS.md.
+# The C port of trackparse. See AGENTS.md and src/PORTING.md.
 #
 #   cmake -S c -B c/build -DCMAKE_BUILD_TYPE=Release
 #   cmake --build c/build
@@ -56,7 +56,7 @@ set(TRACKPARSE_SPEC_DIR "${TRACKPARSE_REPO_DIR}/spec")
 
 add_library(trackparse_flags INTERFACE)
 if(MSVC)
-  # /fp:precise: no contraction into FMA (PLAN.md hazard 1). /utf-8: hazard 12.
+  # /fp:precise: no contraction into FMA (PORTING.md hazard 1). /utf-8: hazard 12.
   target_compile_options(trackparse_flags INTERFACE /W4 /fp:precise /utf-8)
   target_compile_definitions(trackparse_flags INTERFACE _CRT_SECURE_NO_WARNINGS)
   if(TRACKPARSE_WERROR)
@@ -64,7 +64,7 @@ if(MSVC)
   endif()
 else()
   # -ffp-contract=off: GCC's GNU-mode default is fast, which can fuse floor(v * p + 0.5) into an
-  # FMA and change the rounding (PLAN.md hazard 1).
+  # FMA and change the rounding (PORTING.md hazard 1).
   target_compile_options(trackparse_flags INTERFACE
     -ffp-contract=off
     -Wall -Wextra -Wpedantic -Wshadow
@@ -77,7 +77,7 @@ else()
       -fsanitize=address,undefined -fno-sanitize-recover=all -fno-omit-frame-pointer)
     target_link_options(trackparse_flags INTERFACE -fsanitize=address,undefined)
   endif()
-  # 32-bit x86 without SSE2 computes in 80-bit x87 registers (PLAN.md hazard 5).
+  # 32-bit x86 without SSE2 computes in 80-bit x87 registers (PORTING.md hazard 5).
   if(CMAKE_SIZEOF_VOID_P EQUAL 4 AND CMAKE_SYSTEM_PROCESSOR MATCHES "^(i.86|x86|X86|AMD64|x86_64)$")
     target_compile_options(trackparse_flags INTERFACE -msse2 -mfpmath=sse)
   endif()

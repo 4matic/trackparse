@@ -1,7 +1,7 @@
 /* json_read.h: the JSON reader of the wire door (go/json.go parseJSON).
  *
  * Never part of the installed library: only the wire library, the fixture runner, the dump tool
- * and the fuzzers read JSON (PLAN.md decision 5).
+ * and the fuzzers read JSON (the installed library writes JSON but never reads it).
  */
 #ifndef TP_JSON_READ_H
 #define TP_JSON_READ_H

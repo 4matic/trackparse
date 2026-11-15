@@ -23,7 +23,7 @@
  * is ever visible to users, even in a static library. Tests and wire/ use the separate-files
  * build, where TP_PRIVATE is empty.
  *
- * Determinism rules (AGENTS.md, PLAN.md hazards)
+ * Determinism rules (AGENTS.md, PORTING.md hazards)
  * -----------------------------------------------
  * - No <ctype.h>, no strtod/atof/strtol, no printf-family on floats, no locale-dependent call.
  * - No qsort: use tp_sort_stable.
