@@ -109,7 +109,7 @@ track.position;                     // { raw: '01', number: 1 }
 Every key is always present ([field reference](https://4matic.github.io/trackparse/reference/parse/#parsedtrack),
 [JSON Schema](spec/schema/parsed-track.schema.json)). When a guess was involved, `warnings` says
 which one. Python's [`to_dict()`](https://4matic.github.io/trackparse/reference/parse/#serializing-to-json),
-Rust's [`to_json()`](https://docs.rs/trackparse/latest/trackparse/struct.ParsedTrack.html#method.to_json)
+Rust's [`to_json()`](https://docs.rs/trackparse/latest/trackparse/struct.ParsedTrack.html#method.to_json),
 Go's [`MarshalJSON`](https://pkg.go.dev/github.com/4matic/trackparse/go#Track.MarshalJSON)
 and C's [`trackparse_track_to_json`](c/README.md#json) give this same JSON.
 
@@ -130,7 +130,7 @@ and C's [`trackparse_track_to_json`](c/README.md#json) give this same JSON.
 | **Python 3.9+** | 1,342 pytest tests on 3.9 to 3.14, plus every fixture against the built wheel. Output is byte-identical to JS |
 | **Rust 1.74+** | Every fixture, the tracklist invariants and the typed API tests on stable and on 1.74. Output is byte-identical to JS on every fixture and on about 790,000 random inputs |
 | **Go 1.22+** | Every fixture, the spec invariants and the examples with `go test -race` on 1.22 and on the latest stable. Output is byte-identical to JS on every fixture and on about 790,000 random inputs |
-| **C11, C++17** | Every fixture, the spec invariants, threads, locales and allocation failure at every step with GCC, Clang (x86-64, ARM64, 32-bit), Apple Clang and MSVC, under AddressSanitizer, UBSan, ThreadSanitizer and MemorySanitizer, plus libFuzzer targets. A header-only C++17 wrapper on top. Output is byte-identical to JS on every fixture |
+| **C11, C++17** | Every fixture, the spec invariants, threads, locales and allocation failure at every step. GCC and Clang on x86-64, GCC on ARM64 and 32-bit x86, GCC 9 with CMake 3.16, Apple Clang and MSVC; AddressSanitizer, UBSan, ThreadSanitizer, MemorySanitizer and Valgrind; libFuzzer targets. A header-only C++17 wrapper on top. Output is byte-identical to JS on every fixture and on 60,000 random inputs on every push and pull request |
 | **5,031** real tracklist lines | 117 podcast tracklists the tracklist rules were [checked against](https://4matic.github.io/trackparse/project/testing/#real-tracklists). Every line round-trips byte for byte |
 | **1** spec | [`spec/SPEC.md`](spec/SPEC.md) defines the behaviour ([on the site](https://4matic.github.io/trackparse/reference/spec/)). The five packages share its version number and are released together |
 
@@ -179,6 +179,9 @@ FetchContent_Declare(trackparse
 FetchContent_MakeAvailable(trackparse)
 target_link_libraries(app PRIVATE trackparse::trackparse)
 ```
+
+0.7.0 is not out yet; until the releases page lists `c-v0.7.0`, build from a clone as in
+[the C README](c/README.md#from-source).
 
 ## Quick start
 
@@ -280,7 +283,7 @@ Rust API is in [`rust/README.md`](rust/README.md#api) and on [docs.rs](https://d
 
 Results are structs with exported fields ([`Track`](https://pkg.go.dev/github.com/4matic/trackparse/go#Track)); fields that can be `null` are
 pointers. Roles, version types and junk kinds are typed strings with constants
-(`trackparse.RoleFeatured`). `json.Marshal` gives the spec's JSON, with `&`, `<` and `>` escaped as `&`, `<` and `>`: the same
+(`trackparse.RoleFeatured`). `json.Marshal` gives the spec's JSON, with `&`, `<` and `>` escaped as `\u0026`, `\u003c` and `\u003e`: the same
 values in different bytes. For the exact bytes of `JSON.stringify`, call
 [`MarshalJSON`](https://pkg.go.dev/github.com/4matic/trackparse/go#Track.MarshalJSON) directly.
 
@@ -383,6 +386,27 @@ Options are opaque objects filled by setters
 `trackparse_parse_options_add_known_artist(o, "Chase & Status", TRACKPARSE_NUL_TERMINATED)`, then
 `trackparse_parse_with(s, len, o)`. `trackparse_track_to_json` writes the bytes `JSON.stringify`
 writes. The full C API, memory rules and the C++ wrapper are in [`c/README.md`](c/README.md#api).
+
+In C++17, `trackparse.hpp` wraps the same calls: results free themselves, strings read from
+results are `std::string_view` (`format`, `normalize` and `to_json` return `std::string`), fields
+that can be `null` are `std::optional`, and options chain. The only exception it throws is
+`std::bad_alloc`.
+
+```cpp
+#include <iostream>
+#include <trackparse.hpp>
+
+auto track = trackparse::parse("Noisia feat. Foreign Beggars - Shellshock");
+for (const auto &a : track.artists())
+  std::cout << a.name() << ' ' << trackparse::name(a.role()) << '\n';
+// Noisia primary
+// Foreign Beggars featured
+
+trackparse::parser parser(trackparse::parse_options{}.known_artist("Chase & Status"));
+auto t = parser.parse("Chase & Status - Baddadan (Extended Mix)");
+std::cout << t.artists()[0].name() << ", " << t.versions()[0].type_name() << '\n';
+// Chase & Status, extended
+```
 
 Every example on the [documentation site](https://4matic.github.io/trackparse/) has JavaScript,
 Python, Rust, Go and C tabs.
@@ -621,14 +645,14 @@ dash as a version or a genre. `parseTracklist` parses each line with
 | `8 Linkin Park_-_Points Of Authority (Gydra Bootleg)` | no separator | position 8, Linkin Park / `Points Of Authority`, bootleg by Gydra |
 | `10 Optiv & BTK-Inception (Gydra remix)` | no separator | position 10, Optiv, BTK / `Inception`, remix by Gydra |
 
-The last two rows need the neighbours. A bare `8 ` only counts as a position when the nearest line
+The last two rows need the neighbors. A bare `8 ` only counts as a position when the nearest line
 before or after it that has a time or a spaced dash starts with a bare 7 or 9
 ([bare track numbers](https://4matic.github.io/trackparse/guides/tracklists/#bare-track-numbers),
 [R13.5](https://4matic.github.io/trackparse/reference/spec/#r135-bare-positions)). Dotted numbers like `01.` never count as
-neighbours, so `2 Unlimited - No Limit` between `01.` and `03.` stays an artist. The tight
+neighbors, so `2 Unlimited - No Limit` between `01.` and `03.` stays an artist. The tight
 `BTK-Inception` dash only splits on a timed line without a marker word, and only when at least half
 of the list uses spaced dashes ([R6.10](https://4matic.github.io/trackparse/reference/spec/#r6-artisttitle-separator)).
-[Try both lines with their neighbours](https://4matic.github.io/trackparse/playground/#list=00%3A00%207%20Noisia%20-%20Stigma%0A03%3A00%208%20Linkin%20Park_-_Points%20Of%20Authority%20%28Gydra%20Bootleg%29%0A06%3A00%209%20Optiv%20%26%20BTK-Inception%20%28Gydra%20remix%29%0A09%3A00%2010%20Imanu%20-%20Sacrifice) in the playground.
+[Try both lines with their neighbors](https://4matic.github.io/trackparse/playground/#list=00%3A00%207%20Noisia%20-%20Stigma%0A03%3A00%208%20Linkin%20Park_-_Points%20Of%20Authority%20%28Gydra%20Bootleg%29%0A06%3A00%209%20Optiv%20%26%20BTK-Inception%20%28Gydra%20remix%29%0A09%3A00%2010%20Imanu%20-%20Sacrifice) in the playground.
 
 ## How it's tested
 
@@ -645,7 +669,8 @@ Passing a fixture only checks the fields the case asserts ([matching rules](spec
 five ports and diffs the complete outputs, tracklists and edits included. Result: 0 differences,
 byte for byte. [`scripts/fuzz-ports.mjs`](scripts/fuzz-ports.mjs) does the same with random input.
 The Rust crate and the Go module were each compared with JS on about 500,000 random single-track
-cases and 290,000 random tracklists with edits: 0 differences
+cases and 290,000 random tracklists with edits: 0 differences. CI runs the C library against JS
+on 50,000 random tracks and 10,000 random tracklists on every push
 ([port against port](https://4matic.github.io/trackparse/project/testing/#port-against-port)).
 
 ### Handwritten: 1,203 cases in 27 files
@@ -700,7 +725,7 @@ uses [fast-check](https://github.com/dubzzz/fast-check), the Python suite
 [Hypothesis](https://hypothesis.works), and the Rust crate, the Go module and the C library small
 seeded generators of their own, so they need no extra dev dependency. The Go module also has fuzz
 targets for `go test -fuzz`, and the C library libFuzzer targets. The C suite also runs under
-AddressSanitizer, UBSan, ThreadSanitizer and MemorySanitizer, fails every allocation in turn, and
+AddressSanitizer, UBSan, ThreadSanitizer, MemorySanitizer and Valgrind, fails every allocation in turn, and
 compares the output under German and Turkish locales with the `C` locale's. The invariants:
 
 - it never throws or panics, on any input;
@@ -718,7 +743,8 @@ For tracklists, on random multi-line text and random edit lists
 - `raw + eol` over all entries gives the input back, and `lead + time + gap + rest` gives `raw`;
 - `applyEdits(t, [])` returns `t`, and an edit never touches a line it doesn't name;
 - `shift(+s)` then `shift(-s)` restores the text when nothing was clamped or upgraded;
-- 10,000 lines parse inside each suite's ceiling (3 s in JS, Go and C);
+- 10,000 lines parse inside each suite's ceiling (3 s in JS, Go, C and a Rust release build,
+  18 s in a Rust debug build, 15 s in Python);
 - a one-line list gives the same track as `parse()` in tracklist mode on its text without Markdown
   emphasis or a leading `w/`;
 - Markdown emphasis around a time or a track line gives the same kind, time and track as the plain
@@ -752,7 +778,7 @@ pnpm conformance                # pass rate per fixture file and per spec rule
 (cd python && uv run pytest)    # the same fixtures and invariants in Python
 (cd rust && cargo test)         # and in Rust
 (cd go && go test ./...)        # and in Go
-(cd c && cmake -S . -B build && cmake --build build && ctest --test-dir build)   # and in C
+(cd c && cmake -S . -B build-test && cmake --build build-test && ctest --test-dir build-test)   # and in C
 
 pnpm --filter trackparse build
 node scripts/compare-ports.mjs  # all five ports on every fixture; must print "differences: 0"
@@ -798,8 +824,8 @@ types: [JavaScript](js/README.md#api), [Python](python/README.md#api), [Rust](ru
 [Go](go/README.md#api), [C](c/README.md#api).
 
 No function throws or panics on any string, and bad options fall back to the defaults. The
-exceptions: Python raises `TypeError` when the input is not a `str`, and the C functions return
-`NULL` when memory runs out.
+exceptions: Python raises `TypeError` when the input is not a `str`, the C functions return
+`NULL` when memory runs out, and the C++ wrapper throws `std::bad_alloc` then.
 
 ### `parse(input, options?)` → `ParsedTrack`
 
@@ -862,7 +888,7 @@ The JSON shape is fixed by [`spec/schema/parsed-track.schema.json`](spec/schema/
 | [`mode`](https://4matic.github.io/trackparse/guides/modes/) | `"auto"` | `"clean"`, `"youtube"`, `"filename"`, `"tracklist"`, or detect from the string |
 | [`knownArtists`](https://4matic.github.io/trackparse/guides/artists/#knownartists) | `[]` | Names that are never split (`Chase & Status`, `Earth, Wind & Fire`) |
 | [`uploader`](https://4matic.github.io/trackparse/guides/modes/#the-uploader-fallback) | – | YouTube channel; in youtube mode it's used as the artist when there's no separator (`- Topic` and `VEVO` are dropped) |
-| [`splitAnd`](https://4matic.github.io/trackparse/guides/artists/#and-is-special) | `"auto"` | `and` splits only after a comma (`A, B and C`), so `Simon and Garfunkel` stays whole |
+| [`splitAnd`](https://4matic.github.io/trackparse/guides/artists/#and-is-special) | `"auto"` | `and` splits only after a comma or semicolon (`A, B and C`), so `Simon and Garfunkel` stays whole |
 | [`keywords`](https://4matic.github.io/trackparse/reference/options/#keywords) | – | Extra vocabulary: `versionHeads`, `descriptors`, `genres`, `junk`, `featMarkers` |
 
 JavaScript takes an options object, Python takes keyword arguments
@@ -930,6 +956,22 @@ parser := trackparse.NewParser(trackparse.ParseOptions{
 })
 
 fmt.Println(parser.Parse("Chase & Status x Camo & Krooked - Track (Alix Perez Rerub)").Versions[0].Type) // rework
+```
+
+```c
+trackparse_parse_options *o = trackparse_parse_options_new();
+trackparse_parse_options_add_known_artist(o, "Chase & Status", TRACKPARSE_NUL_TERMINATED);
+trackparse_parse_options_add_known_artist(o, "Camo & Krooked", TRACKPARSE_NUL_TERMINATED);
+trackparse_parse_options_add_version_head(o, "rerub", TRACKPARSE_NUL_TERMINATED, "rework",
+                                          TRACKPARSE_NUL_TERMINATED);
+trackparse_parser *parser = trackparse_parser_new(o);
+trackparse_parse_options_free(o);
+
+trackparse_track *t = trackparse_parser_parse(
+    parser, "Chase & Status x Camo & Krooked - Track (Alix Perez Rerub)", TRACKPARSE_NUL_TERMINATED);
+printf("%s\n", t->versions[0].type_name.ptr); // rework
+trackparse_track_free(t);
+trackparse_parser_free(parser);
 ```
 
 ### Modes
@@ -1055,9 +1097,11 @@ are built with [`SetTime(line, seconds)`](https://pkg.go.dev/github.com/4matic/t
 each line in auto mode ([details](go/README.md#pointer-fields-and-ptr)).
 
 C has `trackparse_parse_tracklist_with`, which takes a `trackparse_tracklist_options`
-(`trackparse_tracklist_options_set_audio_seconds(o, 3600)`), and edit lists filled with
-`trackparse_edits_set_time`, `_shift`, `_shift_from`, `_shift_lines`, `_sort_by_time`,
-`_set_rest`, `_insert` and `_delete` ([details](c/README.md#tracklists-and-edits)).
+(`trackparse_tracklist_options_set_audio_seconds(o, 3600)`,
+`trackparse_tracklist_options_add_marker_word(o, "drop", TRACKPARSE_NUL_TERMINATED)`).
+`trackparse_apply_edits` takes no options, since edits don't depend on them. Its edit list is
+filled with `trackparse_edits_set_time`, `_shift`, `_shift_from`, `_shift_lines`,
+`_sort_by_time`, `_set_rest`, `_insert` and `_delete` ([details](c/README.md#tracklists-and-edits)).
 
 More on the options: [Tracklist options](https://4matic.github.io/trackparse/reference/options/#tracklist-options).
 
@@ -1092,7 +1136,7 @@ are in [spec/SPEC.md](spec/SPEC.md), which the site also shows as a
 
 Tracklists ([R13](https://4matic.github.io/trackparse/reference/spec/#r13-tracklists)) sit on top of that. The text is split into lines with their terminators, a small
 scanner reads the time at the start of each line, and the rest goes through the same pipeline in
-tracklist mode. Two things look across lines: bare track numbers are only accepted when a neighbour
+tracklist mode. Two things look across lines: bare track numbers are only accepted when a neighbor
 continues the sequence, and the unspaced-dash split is only switched on when most of the list uses
 spaced dashes. The checks run last, over the finished entries.
 
@@ -1125,7 +1169,7 @@ Changes to the rules and the fixtures are in [spec/CHANGELOG.md](spec/CHANGELOG.
 
 Want another language? Start with
 [Adding a language](https://4matic.github.io/trackparse/project/ports/#adding-a-language). The
-full porting checklist is in [AGENTS.md](AGENTS.md#porting-guide-rust-go-others), along with the
+full porting checklist is in [AGENTS.md](AGENTS.md#porting-guide-rust-go-c-others), along with the
 problems the earlier ports ran into.
 
 ## Compared to other libraries

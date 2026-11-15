@@ -121,7 +121,7 @@ parse(input, *, mode="auto", uploader=None, known_artists=(), split_and="auto", 
 parse_artists(input, *, <same options>) -> list[Artist]
 format_track(track, *, feat="source", feat_marker=None, joiners="original",
              versions="all", producers=True, position=False) -> str
-normalize(s) -> str
+normalize(input) -> str
 all_artists(track) -> list[Artist]
 create_parser(**options) -> Parser   # Parser.parse(...), Parser.parse_artists(...)
 SPEC_VERSION, __version__
@@ -147,7 +147,7 @@ spec in order.
 | [`mode`](https://4matic.github.io/trackparse/guides/modes/) | `"auto"` | `"clean"`, `"youtube"`, `"filename"`, `"tracklist"`, or `"auto"` to detect from the string. See [Modes](#modes) |
 | [`uploader`](https://4matic.github.io/trackparse/guides/modes/#the-uploader-fallback) | `None` | YouTube channel name, used as the artist when there's no separator (`- Topic` and `VEVO` are dropped) |
 | [`known_artists`](https://4matic.github.io/trackparse/guides/artists/#knownartists) | `()` | Names that are never split. There is no built-in list |
-| [`split_and`](https://4matic.github.io/trackparse/guides/artists/#and-is-special) | `"auto"` | `"auto"` splits on `and` only after a comma (`A, B and C`), so `Simon and Garfunkel` stays whole. Also `"always"`, `"never"` |
+| [`split_and`](https://4matic.github.io/trackparse/guides/artists/#and-is-special) | `"auto"` | `"auto"` splits on `and` only after a comma or semicolon (`A, B and C`), so `Simon and Garfunkel` stays whole. Also `"always"`, `"never"` |
 | [`keywords`](https://4matic.github.io/trackparse/reference/options/#keywords) | `None` | Extra vocabulary, added to the built-in lists (see below) |
 
 ```python
@@ -284,7 +284,7 @@ format_track(t, feat_marker="featuring")
 format_track(t, position=True)  # '01. Wilkinson ft. Becky Hill - Afterglow (Sub Focus Remix)'
 ```
 
-### `normalize(s)`
+### `normalize(input)`
 
 **Docs:** [normalize](https://4matic.github.io/trackparse/reference/functions/#normalizeinput)
 
@@ -444,7 +444,7 @@ tl.stats
 ```
 
 The [suggestion](https://4matic.github.io/trackparse/reference/warnings/#suggestions) exists because exactly one time, one digit away from `00:11:02`,
-fits between its neighbours. With several candidates or none, `suggestion` is `None`.
+fits between its neighbors. With several candidates or none, `suggestion` is `None`.
 [Open this list in the playground](https://4matic.github.io/trackparse/playground/#list=Hour%202%0A48%3A20%20Noisia%20-%20Stigma%0A52%3A47%20Mefjus%20%26%20Kasra%20-%20Bandwagon%20%28Phace%20Remix%29%0A56%3A05%20Black%20Sun%20Empire%20-%20ID%0A59%3A31%20Alix%20Perez%20-%20Fade%20Away%0A01%3A03%3A10%20Interview%20with%20Hybris%0A01%3A07%3A44%20Imanu%20-%20Sacrifice%0A00%3A11%3A02%20Current%20Value%20feat.%20Teddy%20Killerz%20-%20Payload%0A01%3A15%3A36%20Hybris%20-%20Spinning%20Top).
 
 `apply_edits` takes a list of dicts with the [spec's keys](https://4matic.github.io/trackparse/reference/tracklist/#edits) (`op`, `line`, `seconds`, `lines`, `from`,
@@ -597,7 +597,7 @@ fixture input. You can parse in one language and read the result in another.
 | Python | [trackparse on PyPI](https://pypi.org/project/trackparse/) | `pip install trackparse` | [README](https://github.com/4matic/trackparse/blob/main/python/README.md) · [changelog](https://github.com/4matic/trackparse/blob/main/python/CHANGELOG.md) · [API](https://4matic.github.io/trackparse/reference/parse/) |
 | Rust | [trackparse on crates.io](https://crates.io/crates/trackparse) | `cargo add trackparse` | [README](https://github.com/4matic/trackparse/blob/main/rust/README.md) · [changelog](https://github.com/4matic/trackparse/blob/main/rust/CHANGELOG.md) · [API on docs.rs](https://docs.rs/trackparse) |
 | Go | [github.com/4matic/trackparse/go](https://pkg.go.dev/github.com/4matic/trackparse/go) | `go get github.com/4matic/trackparse/go` | [README](https://github.com/4matic/trackparse/blob/main/go/README.md) · [changelog](https://github.com/4matic/trackparse/blob/main/go/CHANGELOG.md) · [API on pkg.go.dev](https://pkg.go.dev/github.com/4matic/trackparse/go) |
-| C / C++ | [C library and C++ header](https://github.com/4matic/trackparse/blob/main/c/README.md) | CMake FetchContent from the [release tarball](https://github.com/4matic/trackparse/releases), or the amalgamation | [README](https://github.com/4matic/trackparse/blob/main/c/README.md) · [changelog](https://github.com/4matic/trackparse/blob/main/c/CHANGELOG.md) · [header](https://github.com/4matic/trackparse/blob/main/c/include/trackparse.h) |
+| C / C++ | [C library and C++ header](https://github.com/4matic/trackparse/blob/main/c/README.md) | CMake FetchContent from the [release tarball](https://github.com/4matic/trackparse/releases), or the amalgamation (from 0.7.0) | [README](https://github.com/4matic/trackparse/blob/main/c/README.md) · [changelog](https://github.com/4matic/trackparse/blob/main/c/CHANGELOG.md) · [header](https://github.com/4matic/trackparse/blob/main/c/include/trackparse.h) |
 
 ## Limitations
 

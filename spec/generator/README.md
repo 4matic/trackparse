@@ -95,5 +95,6 @@ pnpm --filter @trackparse/fixture-gen typecheck
    atom's expectation is wrong or the reference implementation disagrees with the spec. Fix the
    one that is wrong. Never edit generated files by hand.
 5. Run the other ports on the new files (`cd python && uv run pytest`, `cd rust && cargo test`,
-   `cd go && go test ./...`), then [`node scripts/compare-ports.mjs`](../../scripts/compare-ports.mjs)
+   `cd go && go test ./...`, and in `c/` a CMake build with `ctest`, as in
+   [`../fixtures/README.md`](../fixtures/README.md#running-the-fixtures)), then [`node scripts/compare-ports.mjs`](../../scripts/compare-ports.mjs)
    from the repository root. It must print `differences: 0`.

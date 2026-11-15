@@ -43,11 +43,12 @@
 // # Spec and other languages
 //
 // This is the Go port of a spec-driven parser. The JavaScript (npm), Python (PyPI), Rust
-// (crates.io) and Go packages implement one spec, pass the same shared fixtures, give the same
-// output on every fixture input, and are released together under one version number
-// ([SpecVersion]). Comments in the source cite the spec's rule IDs (R0 to R13).
+// (crates.io) and Go packages and the C library (with a C++17 header) implement one spec, pass
+// the same shared fixtures, give the same output on every fixture input, and are released
+// together under one version number ([SpecVersion]). Comments in the source cite the spec's rule
+// IDs (R0 to R13).
 //
-//   - Documentation, with every example in all four languages: https://4matic.github.io/trackparse/
+//   - Documentation, with every example in all five languages: https://4matic.github.io/trackparse/
 //   - Playground: https://4matic.github.io/trackparse/playground/
 //   - Spec: https://github.com/4matic/trackparse/blob/main/spec/SPEC.md
 //   - Repository and README: https://github.com/4matic/trackparse/tree/main/go
