@@ -158,20 +158,90 @@ go/                       Go module `github.com/4matic/trackparse/go`, package `
                           artist_cases.json (git-ignored: dump_artist_cases.mjs writes it; the
                           tests skip without it, CI writes it and requires it), fuzz/ (failing
                           fuzz inputs land here)
+c/                        C11 library `libtrackparse` plus a header-only C++17 wrapper (GCC, Clang,
+                          MSVC; no dependencies beyond libc, libm and the system's threads; a
+                          release-please component, tagged c-vX.Y.Z, released as files attached
+                          to the GitHub Release: no registry)
+  include/trackparse.h    the whole public C API with doc comments; TRACKPARSE_VERSION and
+                          _MAJOR/_MINOR/_PATCH carry the x-release-please markers
+  include/trackparse.hpp  header-only C++17 wrapper (namespace trackparse: move-only owners,
+                          string_view, optional, chained option builders; throws only bad_alloc)
+  src/rt.h, src/rt.c      the internal runtime: arenas and out-of-memory scopes (setjmp/longjmp),
+                          tp_str, runes, TP_VEC vectors, tp_buf, tp_map, tp_sort_stable, tp_once,
+                          and the TP_PRIVATE / TP_PRIVATE_DATA linkage macros
+  src/internal.h          every internal type and prototype, one section per Go file
+  src/PORTING.md          Go file to C file map and the translation rules (integer widths, nil and
+                          empty, slices, maps, closures, names that deviate)
+  src/*.c                 one file per go/*.go file, same rule IDs in comments: parser, normalize,
+                          mode, scanner, prefix, classify, separator, artists, credits, title,
+                          assemble, format, words, digits, tables, context, options, types
+  src/tl_*.c              one file per go/tl_*.go file
+  src/trackparse.c        the public functions: input sanitizing (WHATWG), scopes, result blocks,
+                          option handles
+  src/json.c              the JSON writer (JSON.stringify's bytes)
+  src/num.c               correctly rounded decimal to double, JS Number#toString, half-up rounding,
+                          all by hand (no strtod, no float printf)
+  src/unicode.c           L and Lu (R0.6), JS toLowerCase (R0.4), NFC/NFD (R1) over the generated tables
+  src/data_gen.h, .c      GENERATED from spec/data + spec/VERSION (never edit); TP_SPEC_VERSION in
+                          data_gen.h carries the x-release-please-version marker
+  src/unicode_gen.h, .c   GENERATED from Node with the derivation of go/unicode_gen.go (never edit)
+  wire/                   the JSON door, a static library that is never installed: json_read.c (the
+                          JSON reader), wire.c (every function with loose JSON arguments),
+                          wire_line.c (one JSONL case in, one JSON result out)
+  tools/dump.c            C side of compare-ports and fuzz-ports (JSONL in, JSON out, through wire/),
+                          built as trackparse-dump
+  tests/                  runner.c + match.c (every shared fixture and the conformance report; the
+                          `schema` test checks its TRACKPARSE_OUTPUT file), test_match.c,
+                          test_rt.c, test_num.c (numbers against Node), test_unicode.c,
+                          test_primitives.c (R0 values from rust/tests/data/primitives.json),
+                          test_api.c, test_properties.c (SPEC invariants, R13.11, time ceilings),
+                          test_threads.c (16 threads against a sequential run), test_locale.c,
+                          test_oom.c (allocation failure at every n), test_bench.c (benchmarks, not
+                          a CTest test), test_cpp.cpp (the wrapper in C++17 and C++20),
+                          hardening.c (the generator and checks shared with fuzz/), data/
+                          (numbers_sample.jsonl, unicode/), skip.json (only ever shrinks)
+  fuzz/                   libFuzzer targets: fuzz_parse, fuzz_parse_artists, fuzz_format,
+                          fuzz_parse_tracklist, fuzz_apply_edits, fuzz_wire
+  examples/               basic.c, options.c, tracklist.c, json.c, cpp.cpp, each with a .expected
+                          file that CTest compares its output with
+  cmake/                  hardening.cmake (properties, threads, locale, oom, bench, the fuzz targets,
+                          the TSan and MSan options), package.cmake (the installed library, built
+                          from the amalgamation; install rules, CMake package, pkg-config, the C++
+                          tests, examples, exports and consumer checks), check_exports.cmake,
+                          consumer_check.cmake, run_example.cmake, trackparseConfig.cmake.in
+  scripts/gen_data.mjs    codegen for src/data_gen.* (--check for CI)
+  scripts/gen_unicode.mjs codegen for src/unicode_gen.* and the sample tests/data/unicode/ (--check
+                          for CI), through unicode_derive.mjs (a copy of Go's derivation; c_lit.mjs
+                          writes the C literals)
+  scripts/amalgamate.mjs  writes dist/trackparse.c, .h and .hpp (git-ignored): one translation unit
+                          with every internal name static; fails when two files define the same
+                          file-local name
+  scripts/fuzz_corpus.mjs the seed corpus of fuzz/ from every fixture input
+  scripts/dump_numbers.mjs  number cases from Node for test_num (the committed sample is --n 2000)
+  scripts/validate_outputs.mjs  the `schema` test: the runner's outputs against spec/schema, with
+                          the ajv of js/
+  CMakeLists.txt          project(trackparse VERSION X.Y.Z) # x-release-please-version; the options
+                          TRACKPARSE_WERROR, _SANITIZE, _FUZZ, _BUILD_TESTS (_SHARED, _INSTALL in
+                          package.cmake; _SANITIZE_THREAD, _SANITIZE_MEMORY in hardening.cmake)
+  VERSION                 the component's version file (release-type simple)
+  LICENSE                 a copy of the root MIT license: the tarball and the amalgamation hold only c/
+  trackparse.pc.in        the pkg-config template
 site/                     documentation site + playground (Astro + Starlight, GitHub Pages)
   astro.config.mjs        base /trackparse, sidebar
-  src/content/docs/       the pages (Markdown/MDX, JS + Python + Rust + Go tabs on every example);
+  src/content/docs/       the pages (Markdown/MDX, JS + Python + Rust + Go + C tabs on every example);
                           reference/spec.md is generated from spec/SPEC.md
   src/components/         HeroDemo, Playground (runs js/ in the browser), Install (the install
                           switch), Features, Compare, Stats, SocialIcons
   src/lib/                trackview.ts (highlight + field rendering), icons.ts (Lucide SVG strings),
                           lang.ts (one language choice for docs tabs, install switch, playground)
   scripts/sync-spec.mjs   copies spec/SPEC.md into the docs at build time
-scripts/compare-ports.mjs every fixture through js/dist, the Python port, the Rust crate and the Go
-                          module, diffs the full outputs (parseTracklist and applyEdits included);
-                          --only=python, --only=rust or --only=go for one port
+scripts/compare-ports.mjs every fixture through js/dist, the Python port, the Rust crate, the Go
+                          module and the C library, diffs the full outputs (parseTracklist and
+                          applyEdits included); --only=python, --only=rust, --only=go or --only=c
+                          for one port. C runs c/build/trackparse-dump, rebuilt (Release, tests off)
+                          when a source is newer; without a `cmake` on PATH it runs `uvx cmake`
 scripts/fuzz-ports.mjs    random differential run: single tracks and tracklists with edits through
-                          all four ports (--n, --lists, --seed, --only=go|rust|python, --out)
+                          all five ports (--n, --lists, --seed, --only=go|rust|python|c, --out)
 scripts/lib/ports.mjs     runners and the JSON diff shared by compare-ports and fuzz-ports
 scripts/corpus-check.mjs  R13 against a private tracklist corpus (JSONL in spec/corpus/), via js/dist
 scripts/dump_py.py        Python side of compare-ports (JSONL in, to_dict() JSON out)
@@ -183,15 +253,22 @@ scripts/dump_py.py        Python side of compare-ports (JSONL in, to_dict() JSON
                           no-require greps, go test -race on stable and 1.22, the full Unicode
                           sweep on stable; compare: Go vs built JS; module-zip: go/ alone, as the
                           proxy serves it; fuzz: each target, weekly and by hand),
+                          c.yml (codegen drift, the Unicode sample against Go's, the bans grep,
+                          clang-format, the amalgamation; ctest with -Werror on GCC, Clang, ARM64,
+                          shared, macOS, MSVC, 32-bit x86, GCC 9 with CMake 3.16; ASan + UBSan on
+                          GCC and Clang, TSan, MSan; Valgrind and the de_DE / tr_TR locales;
+                          compare: C vs built JS on every fixture and 50,000 random tracks; fuzz:
+                          each libFuzzer target, weekly and by hand),
                           spec.yml (fixture validation, generated/codegen drift, generator tests,
-                          js/python/rust/go/spec version link), release.yml (release-please + npm,
-                          PyPI and crates.io publish, Go tag checks through the module proxy),
+                          js/python/rust/go/c/spec version link), release.yml (release-please + npm,
+                          PyPI and crates.io publish, Go tag checks through the module proxy, C
+                          tarball and amalgamation on the GitHub Release),
                           pages.yml (build site/, deploy to GitHub Pages),
                           pr-title.yml (conventional PR titles)
 .github/release-notes/    optional hand-written highlights prepended to a GitHub Release
 release-please-config.json, .release-please-manifest.json   release automation (never hand-edit the manifest)
-js/CHANGELOG.md, spec/CHANGELOG.md, python/CHANGELOG.md, rust/CHANGELOG.md, go/CHANGELOG.md
-                          generated by release-please
+js/CHANGELOG.md, spec/CHANGELOG.md, python/CHANGELOG.md, rust/CHANGELOG.md, go/CHANGELOG.md,
+c/CHANGELOG.md            generated by release-please
 ```
 
 ## Golden rule
@@ -202,7 +279,8 @@ js/CHANGELOG.md, spec/CHANGELOG.md, python/CHANGELOG.md, rust/CHANGELOG.md, go/C
   fixture change, it is a bug fix; if an existing `expected` changes, it is a behaviour change.
 - Never hand-edit `spec/fixtures/generated/**`, `js/src/data.generated.ts`,
   `python/src/trackparse/_data.py`, `rust/src/data.rs`, `rust/src/unicode_tables.rs`,
-  `go/data_gen.go` or `go/unicode_gen.go`. Regenerate them.
+  `go/data_gen.go`, `go/unicode_gen.go`, `c/src/data_gen.*` or `c/src/unicode_gen.*`. Regenerate
+  them.
 - Word lists live **only** in `spec/data/`. Ports compile them into source with codegen; never copy
   a list into port code by hand, never hard-code a keyword in a scanner.
 - The fixtures, not any one implementation, are the source of truth. When SPEC.md and a fixture
@@ -228,18 +306,20 @@ js/CHANGELOG.md, spec/CHANGELOG.md, python/CHANGELOG.md, rust/CHANGELOG.md, go/C
    ambiguous, reject it in `model.ts` (`problem()`) instead of guessing. Then
    `pnpm gen:fixtures` and commit the output.
 4. **Codegen.** If `spec/data` or `spec/VERSION` changed: `pnpm gen:data`, in `python/`
-   `uv run python scripts/gen_data.py`, in `rust/` `node scripts/gen_data.mjs`, and in `go/`
-   `node scripts/gen_data.mjs`.
-5. **Implementation.** Change every port (JS, Python, Rust and Go). Cite rule IDs in comments.
+   `uv run python scripts/gen_data.py`, in `rust/` `node scripts/gen_data.mjs`, in `go/`
+   `node scripts/gen_data.mjs`, and in `c/` `node scripts/gen_data.mjs`.
+5. **Implementation.** Change every port (JS, Python, Rust, Go and C). Cite rule IDs in comments.
+   The C change usually mirrors the Go diff file for file (`c/src/PORTING.md`).
 6. **Conformance.** `pnpm test` and `pnpm conformance` must be green: 100% of fixtures, schema-valid
    output, property tests passing, `pnpm gen:check` clean. Same for Python (`uv run pytest`,
    `uv run python scripts/conformance.py`), Rust (`cargo test`, and the report with
-   `TRACKPARSE_REPORT=1`) and Go (`go test ./...`, and the report with
-   `TRACKPARSE_REPORT=1 go test -run TestFixtures -v`), then `node scripts/compare-ports.mjs` must
-   report 0 differences.
+   `TRACKPARSE_REPORT=1`), Go (`go test ./...`, and the report with
+   `TRACKPARSE_REPORT=1 go test -run TestFixtures -v`) and C (`ctest` in a build directory, and
+   the report with `TRACKPARSE_REPORT=1 <build>/trackparse-fixtures spec/fixtures/*/*.json`), then
+   `node scripts/compare-ports.mjs` must report 0 differences.
 7. **Docs.** Update the site pages and README sections that describe the rule (see
    [Documentation site and READMEs](#documentation-site-and-readmes)), with JavaScript, Python,
-   Rust and Go examples whose outputs you ran, and `pnpm docs:build` green.
+   Rust, Go and C examples whose outputs you ran, and `pnpm docs:build` green.
 8. **Commit message.** Conventional commits; the message *is* the changelog entry (see
    [Versioning and release](#versioning-and-release)). Any change to an existing `expected` value is
    a behaviour change and must be a `feat` (or carry `!`), never a `fix`/`chore`. Don't touch
@@ -256,7 +336,8 @@ Every port must produce byte-identical output. The full text is SPEC.md R0; in s
   and combining marks. The second, R0.6 "uppercase letter" used only by R6.10, is category Lu: JS
   `/\p{Lu}/u`, Python `unicodedata.category(c) == "Lu"`. Go's `unicode.IsLetter` and `IsUpper`
   are category L and Lu, but of Go's Unicode version, so the Go port uses tables generated from
-  Node instead.)
+  Node instead. C's `isalpha` and `isupper` follow the locale and know only one byte; the C port
+  generates the same tables as Go, with the same derivation.)
 - **Explicit whitespace set** (R0.2): U+0009–U+000D, U+0020, U+0085, U+00A0, U+1680,
   U+2000–U+200A, U+2028, U+2029, U+202F, U+205F, U+3000. Never use a language's `\s` or `trim()`
   semantics without checking they match.
@@ -267,8 +348,8 @@ Every port must produce byte-identical output. The full text is SPEC.md R0; in s
 - *Digit* means ASCII `0`–`9` only.
 - **Total** (R0.8): any string returns a ParsedTrack. Never throw or panic, including on bad
   options. No backtracking blowups: a 10,000-code-point input takes tens of milliseconds at most in
-  JS, Rust and Go and well under a second in Python (the suites enforce 1 s in JS and Python, 2 s
-  in Rust and Go).
+  JS, Rust, Go and C and well under a second in Python (the suites enforce 1 s in JS and Python, 2 s
+  in Rust, Go and C). In C, running out of memory is the one failure: the call returns `NULL`.
 
 ## Commands
 
@@ -330,12 +411,37 @@ Go (run inside `go/`; Go 1.22 or newer, Node for the codegen):
 | `pnpm --filter trackparse build && node scripts/dump_artist_cases.mjs` | Write `testdata/artist_cases.json` (2.3 MB, git-ignored) for the artist-side tests; without it they skip, and `TRACKPARSE_REQUIRE_ARTIST_CASES=1` (set in CI) makes that a failure |
 | `TRACKPARSE_UNICODE_FULL=1 go test -run TestUnicodeFull` | The full NFC/NFD and lowercase sweep against Node (about 20 s; CI runs it on stable). The committed sample in `testdata/unicode/` is a small subset |
 
-Cross-port check, from the repo root (needs `uv`, `cargo` and `go`):
+C (run inside `c/`; CMake 3.16 or newer and a C11 compiler, C++17 for the wrapper tests, Node for
+the codegen, the amalgamation and the `schema` test). This machine has no `cmake` install: run
+`uvx cmake` (and `uvx cmake --build`, `uvx --from cmake ctest`) wherever the table says `cmake`:
+
+| Command | What it does |
+|---|---|
+| `cmake -S . -B build-<name>` · `cmake --build build-<name> -j4` · `ctest --test-dir build-<name> --output-on-failure` | Configure (RelWithDebInfo by default), build and run every test: fixtures, schema, match, rt, num, unicode, primitives, api, properties, threads, locale, oom, cpp17, cpp20, example_*, exports, and the `consumer` checks (install, find_package, pkg-config, amalgamation, FetchContent; `-LE consumer` skips them, they are the slow part). Use a directory of your own: `c/build` belongs to compare-ports (below) |
+| `TRACKPARSE_REPORT=1 build-<name>/trackparse-fixtures ../spec/fixtures/*/*.json` | Pass rate per fixture file and per rule ID |
+| `TRACKPARSE_ONLY=<text> build-<name>/trackparse-fixtures ../spec/fixtures/*/*.json` | Only the cases whose id or file name contains the text |
+| `cmake -S . -B build-asan -DTRACKPARSE_SANITIZE=ON` | Everything under ASan + UBSan (`-fno-sanitize-recover=all`) |
+| `cmake -S . -B build-tsan -DTRACKPARSE_SANITIZE_THREAD=ON` | ThreadSanitizer, for `threads`; it cannot be combined with another sanitizer option |
+| `CC=clang CXX=clang++ cmake -S . -B build-msan -DTRACKPARSE_SANITIZE_MEMORY=ON`, then `cmake --build build-msan --target trackparse-fixtures test_api test_properties test_oom test_rt test_num` and `ctest --test-dir build-msan -R '^(fixtures\|api\|properties\|oom\|rt\|num)$'` | MemorySanitizer (Clang). Only the C programs: the C++ targets would need an instrumented libc++ |
+| `CC=clang CXX=clang++ cmake -S . -B build-fuzz -DTRACKPARSE_FUZZ=ON -DTRACKPARSE_BUILD_TESTS=OFF` · `cmake --build build-fuzz --target fuzz_parse` · `node scripts/fuzz_corpus.mjs corpus` · `build-fuzz/fuzz_parse -max_total_time=60 corpus/parse` | Fuzz one libFuzzer target (parse, parse_artists, format, parse_tracklist, apply_edits, wire), seeded from every fixture input; crashes land as `crash-*` files in the working directory |
+| `node scripts/gen_data.mjs` · `node scripts/gen_unicode.mjs` | Regenerate `src/data_gen.*` / `src/unicode_gen.*` (and `tests/data/unicode/`); `--check` fails if stale. CI also `cmp`s the sample with `go/testdata/unicode/cases.jsonl` |
+| `node scripts/amalgamate.mjs --out <dir>` | Write `trackparse.c`, `.h`, `.hpp` (default `c/dist`); fails on a file-local name defined in two files |
+| `git ls-files '*.c' '*.h' '*.cpp' '*.hpp' \| grep -vE '_gen\.(c\|h)$' \| xargs uvx clang-format==19.1.7 --dry-run --Werror` | The format check CI runs (clang-format 19.1.7, the pinned version; `-i` instead of `--dry-run --Werror` fixes). Generated files are left as the generators write them |
+| `build-<name>/test_bench [-benchtime <s>] [--fixtures ../spec/fixtures/*/*.json]` | Benchmarks printed like `go test -bench` (ns/op, allocs/op), the 10k inputs, tracklists and the scaling ratios. Not a CTest test; use a Release build |
+| `TRACKPARSE_SHORT=1 valgrind --error-exitcode=1 --leak-check=full --errors-for-leak-kinds=definite,indirect build-<name>/test_properties` | What the Valgrind job runs (also on `trackparse-fixtures` with the handwritten files and on `test_api`); `TRACKPARSE_SLOWDOWN=40` widens the ceilings |
+| `TRACKPARSE_UNICODE_FULL=1 ctest --test-dir build-<name> -R unicode` | The full NFC/NFD and lowercase sweep against Node (runs `gen_unicode.mjs --cases`; not in CI) |
+| `build-<name>/trackparse-dump < cases.jsonl` | The JSON door on JSONL (what compare-ports and fuzz-ports run) |
+
+Cross-port check, from the repo root (needs `uv`, `cargo`, `go`, and CMake with a C compiler):
 
 ```sh
-pnpm --filter trackparse build && node scripts/compare-ports.mjs   # four ports; must print "differences: 0"
-node scripts/compare-ports.mjs --only=go                           # one port against JS (or python, rust)
+pnpm --filter trackparse build && node scripts/compare-ports.mjs   # five ports; must print "differences: 0"
+node scripts/compare-ports.mjs --only=go                           # one port against JS (or python, rust, c)
 ```
+
+For C, compare-ports and fuzz-ports configure `c/build` (Release, `TRACKPARSE_BUILD_TESTS=OFF`)
+the first time and rebuild `trackparse-dump` there when a file in `c/src`, `c/wire`, `c/tools` or
+`c/include` is newer than the binary. Keep test builds out of `c/build`.
 
 Corpus check for R13 changes, when you have the private corpus (JSONL, one object per tracklist
 with `title` and `track_list`, kept in the git-ignored `spec/corpus/`):
@@ -355,6 +461,7 @@ Run a single fixture case (tests are named by case id):
 pnpm --filter trackparse exec vitest run test/fixtures.test.ts -t "brackets-version-001"
 cd python && uv run pytest tests/test_fixtures.py -k "brackets-version-001"
 cd go && TRACKPARSE_ONLY=brackets-version-001 go test -run TestFixtures -v
+cd c && TRACKPARSE_ONLY=brackets-version-001 build-<name>/trackparse-fixtures ../spec/fixtures/*/*.json
 ```
 
 Before pushing, mirror CI: `pnpm lint && pnpm --filter trackparse typecheck && pnpm test &&
@@ -366,7 +473,15 @@ uv run mypy --strict src && uv run pytest && uv build`, and in `rust/`
 cargo clippy --all-targets --all-features -- -D warnings && cargo test && cargo test --all-features`, and in `go/`
 `node scripts/gen_data.mjs --check && node scripts/gen_unicode.mjs --check && test -z "$(gofmt -l .)" &&
 go vet ./... && go vet -tags trackparse_wire ./... && go run honnef.co/go/tools/cmd/staticcheck@2026.2.2 ./... &&
-go test -race ./...`.
+go test -race ./...`, and in `c/`
+`node scripts/gen_data.mjs --check && node scripts/gen_unicode.mjs --check &&
+cmp tests/data/unicode/cases.jsonl ../go/testdata/unicode/cases.jsonl`, the clang-format check
+from the table, the bans grep of `c.yml` (its "No locale-dependent or unstable calls" step, run from
+the root), `node scripts/amalgamate.mjs --out /tmp/amal`, then
+`cmake -S . -B build-ci -DTRACKPARSE_WERROR=ON && cmake --build build-ci -j4 &&
+ctest --test-dir build-ci --output-on-failure`, and the same `ctest -LE consumer` in an ASan build
+(`-DTRACKPARSE_SANITIZE=ON`). MSVC, macOS, ARM64, 32-bit x86, TSan, MSan and Valgrind only run in
+CI unless you set them up.
 
 ## Fixture authoring
 
@@ -388,7 +503,7 @@ Format and matcher: [`spec/fixtures/README.md`](spec/fixtures/README.md). Schema
   (see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)).
 - Defaults (`fn`, `options`) go in the file's `defaults`; options merge shallowly per case.
 - `js/test/skip.json` (and `python/tests/skip.json`, `rust/tests/skip.json`,
-  `go/testdata/skip.json`) is for port-specific gaps only, keyed by case id with a reason. It can only
+  `go/testdata/skip.json`, `c/tests/skip.json`) is for port-specific gaps only, keyed by case id with a reason. It can only
   shrink: a skip-listed case that passes fails the run. Shared "known wrong" belongs in `xfail`.
 
 ## Documentation site and READMEs
@@ -403,14 +518,14 @@ PR:
 |---|---|
 | a rule's behaviour (R1–R12) | the guide for that area (`guides/what-it-understands`, `artists`, `versions`, `junk-and-flags`, `modes`, `formatting`), the root README tables |
 | tracklists (R13) | `guides/tracklists`, `guides/editing-tracklists`, `reference/tracklist`, `reference/warnings` |
-| a function, option, field or type | `reference/parse`, `reference/options`, `reference/functions` or `reference/tracklist`; the API sections of `js/README.md`, `python/README.md`, `rust/README.md` and `go/README.md`, and the Go doc comments and `go/example_test.go` |
+| a function, option, field or type | `reference/parse`, `reference/options`, `reference/functions` or `reference/tracklist`; the API sections of `js/README.md`, `python/README.md`, `rust/README.md`, `go/README.md` and `c/README.md`, the Go doc comments and `go/example_test.go`, the comments in `c/include/trackparse.h`, the C++ wrapper `trackparse.hpp` and `c/examples/` (each with its `.expected` output) |
 | a warning code | `reference/warnings` |
 | fixture counts, file counts, the size budget | `components/Stats.astro`, `index.mdx`, `start/introduction`, `project/testing`, `project/ports`, the root README "At a glance" and "How it's tested" |
 | a port, a command, CI or the release flow | `project/ports`, `project/contributing`, `project/testing` ("Run it yourself") |
 | `spec/SPEC.md` | nothing by hand: `reference/spec` is generated from it at build time |
 
-**Every code example is in four languages.** There are no per-language pages. Each example on the
-site is four synced tabs, in the order JavaScript, Python, Rust, Go:
+**Every code example is in five languages.** There are no per-language pages. Each example on the
+site is five synced tabs, in the order JavaScript, Python, Rust, Go, C:
 
 ````mdx
 <Tabs syncKey="lang">
@@ -442,6 +557,15 @@ fmt.Println(*trackparse.Parse("Noisia - Stigma (2015)").Year)   // 2015
 ```
 
 </TabItem>
+<TabItem label="C">
+
+```c
+trackparse_track *t = trackparse_parse("Noisia - Stigma (2015)", TRACKPARSE_NUL_TERMINATED);
+printf("%d\n", *t->year);   // 2015
+trackparse_track_free(t);
+```
+
+</TabItem>
 </Tabs>
 ````
 
@@ -464,21 +588,41 @@ fmt.Println(*trackparse.Parse("Noisia - Stigma (2015)").Year)   // 2015
   `["Chase" "Status"]`), `%+v` for structs and slices of structs
   (`[{Raw:HD Kind:quality}]`), and `json.Marshal` when the page is about the JSON form. Don't
   print a pointer field without `*`: `%+v` writes its address.
+- Write the C version in C terms: statements from inside a `main`, with `#include <trackparse.h>`
+  in the first block of a page that shows includes. Strings go in with `TRACKPARSE_NUL_TERMINATED`
+  as the length; the `_with` functions take option handles built with setters
+  (`trackparse_parse_options_new()`, `trackparse_parse_options_set_mode(o, TRACKPARSE_MODE_YOUTUBE)`,
+  `_add_known_artist`), and every result and handle is freed with its own `_free` in the same
+  block. Fields are snake_case (`full_title`, `type_name`, `explicit_`), arrays are a pointer and
+  a `_count` (`t->artists_count`, `list->count` / `list->items` for `trackparse_artists`), and
+  nullable fields are pointers (`*t->year`, `e->time ? … : …`). Every output is printed with
+  `printf` and written as a `//` comment after it, one comment line per output line: `%s` on
+  `.ptr`, `%d` for ints, `%g` for seconds, `%zu` for counts, `%lld` for edit line numbers, and the
+  enum's `trackparse_<enum>_name()` for roles, modes, warnings and codes (`trackparse_role_name(a->role)`
+  prints `featured`). Use `trackparse_track_to_json` when the page is about the JSON form. Leave
+  out the `NULL` checks (`start/getting-started` and `c/README.md` say once to check for it in
+  real code); a variable declared in one block (`t`, `list`)
+  is reassigned in a later one on the same page. Type listings (`typedef struct … {…}`) go in
+  their own block with the field comments of the header. The C++ wrapper has no tab: its examples
+  live in `c/README.md` and `c/examples/cpp.cpp`.
 - Run every example and paste the real output; never write an output by hand. For Rust, a scratch
   cargo project that depends on the crate by path (`trackparse = { path = "…/rust" }`) is enough. For Go,
   a scratch module with `go mod edit -replace=github.com/4matic/trackparse/go=…/go` and
-  `GOFLAGS=-mod=mod`. Language-specific
+  `GOFLAGS=-mod=mod`. For C, the amalgamation (`node c/scripts/amalgamate.mjs --out <dir>`)
+  compiled next to the program is enough. Language-specific
   notes (typing, `to_dict()`, `TypeError`) go on the page they concern, not on a separate page.
 - The playground and the landing demo import `js/` directly, so they follow the code automatically;
   check them in a browser when the output shape changes. The playground's code panels generate
-  JS, Python, Rust and Go (`code()` and `listCode()` in `Playground.astro`): when an option or an
-  edit changes, update all four generators and compile a generated Rust and Go snippet.
+  JS, Python, Rust, Go and C (`trackCode()` and `listCode()` in `site/src/lib/codegen.ts`, laid out
+  as each language's formatter writes it, plus `apiUrl()` for the API links): when an option or an
+  edit changes, update all five generators and compile a generated Rust, Go and C snippet.
 
 **READMEs link to the site.** Each README section opens with a `**Docs:**` line that links the
 matching site pages (`README.md`, `js/README.md`, `python/README.md`, `rust/README.md`,
-`go/README.md`, `spec/fixtures/README.md`, `spec/generator/README.md`). Add one for a new section, and fix the links
+`go/README.md`, `c/README.md`, `spec/fixtures/README.md`, `spec/generator/README.md`). Add one for a new section, and fix the links
 when a page or heading moves. Use full `https://4matic.github.io/trackparse/...` URLs: npm, PyPI,
-crates.io and pkg.go.dev render the package READMEs where relative links break.
+crates.io and pkg.go.dev render the package READMEs where relative links break, and the C README
+is read from the release tarball and on GitHub.
 
 **Link the first mention.** In each section of a README or a site page, link the first mention of
 a rule, option, field, warning or function to the place that explains it, and only the first:
@@ -494,6 +638,10 @@ a rule, option, field, warning or function to the place that explains it, and on
   `…/tracklist/enum.Edit.html`, `…/struct.ParsedTrack.html#method.to_json`) and pkg.go.dev
   anchors (`https://pkg.go.dev/github.com/4matic/trackparse/go#ParseWith`, `#Track.MarshalJSON`).
   Check the anchor on the live page; pkg.go.dev ids are the identifier, `Type.Method` for methods.
+  C has no hosted API reference yet: link the header on GitHub
+  (`https://github.com/4matic/trackparse/blob/main/c/include/trackparse.h`, no line anchor,
+  since lines move) once per page, at the first C name, and the site reference pages for the
+  rest. The playground's C links (`C_REF` in `codegen.ts`) point at the site's reference.
 
 Give an example a prefilled playground link when seeing the whole output helps ("try it", "open
 this list in the playground"). The hash is `#track=<input>` with optional `mode`, `splitAnd`,
@@ -520,27 +668,31 @@ Each of these was written wrong at least once and caught in review. Check them w
 
 | Don't write | Write instead, and why |
 |---|---|
-| "linear time" | Hand-written scanners, no regex backtracking. The R9.2 dedup in JS and Python is quadratic on thousands of repeated `feat.` credits (Rust and Go are near-linear). |
-| "under 100 ms" for every port | True for JS (10 to 70 ms on 10,000 code points) and Rust (under 20 ms, release build). Python takes 40 to 170 ms. The suites enforce 1 s (JS, Python) and 2 s (Rust). Go: 3 to 7 ms (`go test -bench Parse10k` in `go/`, on an i7-4770S, Go 1.24, with other jobs running; JS on the same inputs 4 to 18 ms), ceiling 2 s. So "at most tens of milliseconds" holds for JS, Rust and Go, not Python. A 10,000-line tracklist: Go 0.33 to 0.38 s, JS 0.8 to 0.9 s. |
+| "linear time" | Hand-written scanners, no regex backtracking. The R9.2 dedup in JS and Python is quadratic on thousands of repeated `feat.` credits (Rust, Go and C are near-linear). In every port a long `knownArtists` name is slow on a long input (see Known gaps). |
+| "under 100 ms" for every port | True for JS (10 to 70 ms on 10,000 code points) and Rust (under 20 ms, release build). Python takes 40 to 170 ms. The suites enforce 1 s (JS, Python) and 2 s (Rust). Go: 3 to 7 ms (`go test -bench Parse10k` in `go/`, on an i7-4770S, Go 1.24, with other jobs running; JS on the same inputs 4 to 18 ms), ceiling 2 s. C: 1.4 to 5.7 ms (`test_bench` from a CMake Release build, GCC 9 at `-O3`, same i7-4770S, load average 6 from other jobs), ceiling 2 s. So "at most tens of milliseconds" holds for JS, Rust, Go and C, not Python. A 10,000-line tracklist: Go 0.33 to 0.38 s, C 0.34 to 0.39 s, JS 0.8 to 0.9 s. |
 | "identical output for any input" | Identical on every fixture input. The Rust crate takes NFC from `unicode-normalization` (Unicode 18), Node 24 has Unicode 17, so 32 new combining marks can be ordered differently. Link `project/ports/#what-the-rust-port-taught`. |
-| "zero dependencies" for the project | Zero in JS, Python and Go (the Go tables are generated from Node, not taken from `golang.org/x/text`). Rust has one, `unicode-normalization`. |
+| "zero dependencies" for the project | Zero in JS, Python and Go (the Go tables are generated from Node, not taken from `golang.org/x/text`). Rust has one, `unicode-normalization`. C needs only the C standard library, `libm` and the system's threads (pthreads, or Windows SRW locks); C++ is needed only for the wrapper's tests. |
+| "on vcpkg / Conan", "install the C library with a package manager" | No package manager carries it. FetchContent from the release tarball, the amalgamation, or an install from source with `find_package` and pkg-config, all three from the first C release, 0.7.0. |
+| "no recursion" for C | One recursive function, the JSON writer `tp_json_write`, bounded by the reader's `TP_JSON_MAX_DEPTH` (200). The pipeline has none. |
 | a size in mixed units | Core: about 18 kB gzip. Tracklist entry: about 8.4 KiB (8,606 B), budget 9 KiB. Re-measure with `pnpm --filter trackparse build && pnpm --filter trackparse size`. |
-| every suite checks "no word goes missing" | Only `rust/tests/properties.rs` and `go/properties_test.go` have that test today. |
+| every suite checks "no word goes missing" | Only `rust/tests/properties.rs`, `go/properties_test.go` and `c/tests/test_properties.c` (the check is in `c/tests/hardening.c`) have that test today. |
 | "Neuropunk" on the site | "a private corpus of real podcast tracklists". Fixture file names and `source` values keep the name; the site and READMEs don't. |
 
 Numbers that appear in many files (grep all of them when one changes): fixture counts (13,130 =
 1,203 handwritten + 11,927 generated), test counts (vitest 1,352, pytest 1,342), CI matrices
-(Node 22/24 + 18/20, Python 3.9 to 3.14, Rust stable + 1.74, Go stable + 1.22), the 27 version types, the sizes
+(Node 22/24 + 18/20, Python 3.9 to 3.14, Rust stable + 1.74, Go stable + 1.22, C: GCC, Clang,
+ARM64, shared, macOS, MSVC, 32-bit x86 and GCC 9 with CMake 3.16), the 27 version types, the sizes
 above. `spec/generator/README.md` links the site anchor `#generated-11927-cases`, which changes
 with the count.
 
 ### Checking examples and links
 
 - **Run every block, in every language.** A harness that extracts the fenced `js` / `python` /
-  `rust` / `go` blocks per file, runs them and compares each `expr // output` line takes minutes to
+  `rust` / `go` / `c` blocks per file, runs them and compares each `expr // output` line takes minutes to
   write and has caught every wrong output so far. JS runs against `js/dist` after a build, Python
   with `uv run python`, Rust in a scratch cargo project with a path dependency
-  (`features = ["serde"]`, plus `serde_json`), Go in a scratch module with a `replace` to `go/`.
+  (`features = ["serde"]`, plus `serde_json`), Go in a scratch module with a `replace` to `go/`,
+  C compiled against the amalgamation (below).
 - **Rust blocks must compile as written, in page order.** A bare `value;` moves a non-`Copy`
   value, so a later line that uses it fails (E0382, E0507). Borrow instead: `&track.artists;`,
   `&list.warnings;`, `&parse(…).versions[0];`. Type listings (`pub struct …`) go in their own block,
@@ -551,6 +703,15 @@ with the count.
   run them, in page order; a variable declared with `:=` in one block is reassigned with `=` in a
   later one on the same page. The pkg.go.dev examples are `Example` functions in
   `go/example_test.go` with an `// Output:` block, so `go test` checks them.
+- **C blocks are statements too.** Concatenate a page's `c` blocks in page order into one
+  `int main(void) { … return 0; }` with `<stdio.h>`, `<string.h>` and `<trackparse.h>` included
+  (skip the type listings and drop a repeated `#include` line), compile it with
+  `cc -std=c11 -ffp-contract=off -I<amal> page.c <amal>/trackparse.c -lm -pthread`, run it, and
+  compare its stdout line by line with the `//` comments that follow the `printf` calls. A block
+  that redeclares a variable an earlier block declared fails to compile, which is the point:
+  later blocks reassign. Build with `-fsanitize=address,undefined` to catch a missing `_free` or a
+  read through a `NULL` the example forgot. The README examples run the same way, and
+  `c/examples/` is built and compared by CTest (`example_*`).
 - **Python examples need their imports** (`from trackparse import ParsedTrack`). Functions that
   take a string raise `TypeError` on other input; `format_track` and `all_artists` take a
   `ParsedTrack` unchecked.
@@ -594,31 +755,67 @@ with the count.
   `test_ten_thousand_lines_are_fast` in the Python suite can fail on a busy machine. Re-run it alone
   before believing it.
 - A reviewer should run the examples, not read them. Ask for file, line and the concrete fix.
+- What worked for the C port: header first. One session wrote the runtime (`c/src/rt.h`), the
+  public header and `c/src/internal.h` with every internal type and prototype (one section per Go
+  file) plus `c/src/PORTING.md` with the translation rules, and the harness (runner, dump tool,
+  compare-ports runner) so the conformance report worked as a progress bar. Then agents worked in
+  parallel tracks by area (artist side, title side, tracklists, API) against those fixed
+  prototypes, each owning its `.c` files and changing no header without asking. Then a reviewer
+  that ran compare-ports, the fuzz-ports run and the sanitizer builds, and a fixer.
+- Agents in the same tree each use their own CMake build directory (`c/build-<name>`); the
+  build trees are git-ignored. `c/build` belongs to compare-ports and fuzz-ports, which configure
+  it with tests off and rebuild only `trackparse-dump`: don't run test builds there, and don't
+  delete it while another agent's compare run is going.
+- Timings from a sanitizer build are several times those of a Release build (8.7 s against 2.5 s
+  on the `knownArtists` reproducer under Known gaps); benchmark only a Release build
+  (`test_bench` warns when it was built with sanitizers).
 
 ## Known gaps (not yet fixed)
 
-- R9.2 dedup is quadratic in JS and Python on thousands of repeated credits (Rust and Go are
+- R9.2 dedup is quadratic in JS and Python on thousands of repeated credits (Rust, Go and C are
   near-linear).
+- `knownArtists` is slow with a long name on a long input, in every port: at each start position
+  `matchKnownAt` (R7.3a, `js/src/context.ts`) builds the dedup key of every slice that ends at a
+  boundary inside the `2 * longest + 8` window, so the cost grows with the input length times
+  about the square of the window. The reproducer is
+  `{"fn":"parseArtists","input":<"a feat. B & C (x) - " repeated 500 times, 10,000 code points>,
+  "options":{"knownArtists":[<its first 300 characters>]}}` through each dump tool. Measured on
+  the i7-4770S under load: C 2.3 to 2.6 s (Release) with 1.07 GB peak memory, Rust 1.9 s, Go 4.2 s,
+  JS 5.3 to 7.2 s, all with the same output. Half the input halves the time; a 150-character name
+  takes C 0.84 s and 285 MB. C's memory is the arena: scratch is never freed within a call, so
+  every candidate string the search builds stays until the call returns.
 - `format(track, { feat: "nope" })` drops the featured artists in JS and Python (and in Go, which
-  matches JS: `FormatOptions{Feat: "nope"}`) instead of falling
-  back to the default, unlike other bad options. Needs a spec decision and a fixture first.
-- `format(track, { featMarker: null })` writes the literal marker `null` in JS, Rust and Go;
-  Python falls back to the input's marker (found by `scripts/fuzz-ports.mjs`). Needs a spec
-  decision and a fixture.
+  matches JS: `FormatOptions{Feat: "nope"}`, and in C's JSON door, which matches JS too) instead of
+  falling back to the default, unlike other bad options. The typed C setter takes an enum, so a
+  C program cannot ask for it. Needs a spec decision and a fixture first.
+- `format(track, { featMarker: null })` writes the literal marker `null` in JS, Rust, Go and C's
+  JSON door; Python falls back to the input's marker (found by `scripts/fuzz-ports.mjs`). The
+  typed C API has no way to pass null. Needs a spec decision and a fixture.
 - R13.9.5: `insert` next to a bare CR can merge the new line with an empty LF line on re-read
   (`"\r\r\n\n\r"`, insert after 2 gives 4 lines). All ports agree; no fixture pins it yet.
 - Python tracklist types have `to_dict()` but no `from_dict()`; `ParsedTrack` has both.
-- JS and Python do not test invariant 6 ("no word goes missing"); only Rust and Go do.
+- JS and Python do not test invariant 6 ("no word goes missing"); only Rust, Go and C do.
+- C has no `trackparse_apply_edits_with`. JS `applyEdits(text, edits, options)`, Python's keyword
+  options, Rust `apply_edits_with` and Go `ApplyEditsWith` accept tracklist options and ignore them
+  (R13.10: edits do not depend on them), so nothing is lost, but the C API is not symmetric with
+  `trackparse_parse_tracklist_with`. Adding it later is ABI compatible.
+- The C library has no hosted API reference (the plan's Doxygen pages were not built): docs link
+  the header on GitHub.
 - The npm, PyPI and crates.io publish jobs use actions by tag (only the crates.io auth action is
   pinned by SHA); the Go job and `go.yml` pin every action by SHA.
-- The playground's Rust and Go snippets are whole programs, the JS and Python ones are bare
+- The playground's Rust, Go and C snippets are whole programs, the JS and Python ones are bare
   expressions.
+- The C full Unicode sweep (`TRACKPARSE_UNICODE_FULL=1`) is not in CI, while Go's is. CI checks
+  the C tables with `gen_unicode.mjs --check` and the committed sample (equal to Go's, `cmp` in
+  `c.yml`), so C's own normalization and lowercasing code meets every code point only when someone
+  runs the sweep by hand.
 
 ## Porting guide (Rust, Go, others)
 
-A port is done when it passes every fixture and every invariant. The Python, Rust and Go ports are
-done and are good second references next to JS: their modules map one to one onto `js/src`.
-Checklist:
+A port is done when it passes every fixture and every invariant. The Python, Rust, Go and C ports
+are done and are good second references next to JS: the Python, Rust and Go modules map one to one
+onto `js/src`, and the C files onto the Go files (`c/src/PORTING.md`). A port to a language without
+garbage collection or generics should start from the C port. Checklist:
 
 1. **Codegen from `spec/data` and `spec/VERSION`** into a source file (like
    `js/scripts/gen-data.ts`), with a `--check` mode wired into CI. Expose `SPEC_VERSION`.
@@ -635,14 +832,17 @@ Checklist:
    file against the fixture schema, each output against `parsed-track.schema.json` (or
    `tracklist.schema.json` for `fn: "parseTracklist"`; `applyEdits` cases also check `text`), honour
    `status` (pass / xfail / ambiguous), and keep a port-local skip list that can only shrink.
-6. **Property tests** for the SPEC invariants (Hypothesis for Python; the Rust crate and the Go
-   module use a small seeded generator of their own, to stay free of dev dependencies; Go adds
-   `go test -fuzz` targets).
+6. **Property tests** for the SPEC invariants (Hypothesis for Python; the Rust crate, the Go
+   module and the C library use a small seeded generator of their own, to stay free of dev
+   dependencies; Go adds `go test -fuzz` targets, C libFuzzer targets).
 7. **API** idiomatic for the language but equivalent: Python `parse`, `parse_artists`,
    `format_track`, `normalize` (snake_case fields are fine only if the JSON output keeps the spec's
    keys); Rust with `serde` behind a feature flag and `unicode-normalization` as the only required
    dependency; Go with exported fields, option structs whose zero value is the default (a pointer
-   where the zero value is also a real setting), and `MarshalJSON` writing the spec's JSON.
+   where the zero value is also a real setting), and `MarshalJSON` writing the spec's JSON; C
+   with read-only result structs in one block per result, opaque option handles with setters (so
+   "not set" and "set to zero" differ), enums plus `_name()` functions and the name strings for
+   keyword-made values, and `_to_json` writing the spec's JSON.
 8. **Conformance report** script and a CI workflow mirroring `js.yml`.
 9. **Cross-port diff.** Extend `scripts/compare-ports.mjs` (or write the same thing) so every
    fixture's full output is compared with JS, not only the fields the fixture asserts.
@@ -730,6 +930,87 @@ port started, the rest by compare-ports and the differential run against JS:
 - **Rounding.** Half up is `math.Floor(v*10^d + 0.5)`. `math.Round` differs on values such as
   `0.49999999999999994` and on negatives.
 
+Hazards the C port ran into. Some were planned for before the port started, the rest were found by the
+sanitizers, the 32-bit, ARM64 and MSVC builds, the amalgamation, compare-ports and fuzz-ports:
+
+- **FMA contraction.** GCC in GNU mode defaults to `-ffp-contract=fast`, so
+  `floor(v * 10^d + 0.5)` can become a fused multiply-add (ARM64, or x86 with FMA) and round
+  differently. GCC also ignores `#pragma STDC FP_CONTRACT OFF`. CMake passes `-ffp-contract=off`
+  (`/fp:precise` on MSVC), `num.c` sets the pragma for Clang and `fp_contract(off)` for MSVC, and
+  `tp_half_up_units` stores the product in a `volatile` before the add (as `tl_times.c` does for
+  its scaled whole seconds), so an amalgamation compiled without the flag rounds the same.
+- **Locale.** `strtod`, `printf("%g")`, `isalpha` and `tolower` follow `LC_NUMERIC` / `LC_CTYPE`:
+  a German locale writes `3167,5`, a Turkish one lowercases `I` to dotless `ı`. `src/` has no
+  `<ctype.h>`, no `strto*` / `ato*`, no `printf` family and no `setlocale` (the bans grep in
+  `c.yml`; comments are exempt). `test_locale` compares every fixture output after
+  `setlocale(LC_ALL, "")` and under `de_DE.UTF-8` / `tr_TR.UTF-8` with the `C` locale's.
+- **Numbers by hand.** No C function writes JavaScript's shortest round-trip digits, and `strtod`
+  is out (locale). `num.c` parses decimal strings to the correctly rounded double (a fast path
+  when the digits fit in 2^53 and the power of ten is exact, exact big-integer arithmetic
+  otherwise, the dropped digits as one sticky digit) and writes `Number#toString` (shortest
+  digits, then JS's exponent rules: `1e+21`, `5e-324`, `-0` as `0`). `test_num` checks both
+  against Node (`scripts/dump_numbers.mjs`; the committed sample is 2,000 cases, run it with a
+  larger `--n` after touching `num.c`).
+- **x87 excess precision.** 32-bit x86 without SSE2 computes in 80 bits (`FLT_EVAL_METHOD == 2`)
+  and double-rounds. `num.c` has an `#error` unless `FLT_EVAL_METHOD` is 0, CMake adds
+  `-msse2 -mfpmath=sse` on 32-bit x86, and CI has an `-m32` job.
+- **`char` signedness.** `char` is signed on x86 and unsigned on ARM. Every byte the pipeline
+  inspects is `unsigned char`; ARM64 CI catches a slip.
+- **`qsort` is not stable.** `tp_sort_stable` (a merge sort) everywhere; the bans grep rejects
+  `qsort(`.
+- **Out of memory with `setjmp` / `longjmp`, not sticky arenas.** The plan had arenas that stay
+  failed and a pipeline that finishes on empty data. What shipped: each public call opens a
+  `tp_scope` (an arena plus a `jmp_buf`), `tp_alloc` never returns `NULL` and `longjmp`s to the
+  scope when the system allocator fails, and the scope frees the arena and returns `NULL`. So the
+  pipeline has no `NULL` checks and no `free`, and must never hold anything but arena memory (no
+  `malloc`, no `FILE *`). Scratch memory is never freed within a call, which is why the
+  `knownArtists` case under Known gaps peaks at 1 GB. A function that calls `setjmp` must keep no
+  local that changes between `setjmp` and the `longjmp` (GCC's `-Wclobbered`): put the armed body
+  in a function of its own, or make the local `volatile` (`void *volatile built` in
+  `tp_once_get`). Setters build what they add under a scope and commit only when every allocation
+  succeeded. `test_oom` fails the n-th allocation for every n on about 50 inputs, also with the
+  default tables not built yet ("cold"), and checks the result or `NULL` and that every block is
+  freed.
+- **Result blocks in two passes.** Each result is one allocation that its `_free` releases: the
+  same fill code runs once to measure (its writes land in the scratch arena) and once into a block
+  of exactly that size. Nothing in a result points into another result or into the input.
+- **Lazy tables without `pthread_once`.** `PTHREAD_ONCE_INIT` is not all-zero bytes everywhere
+  (macOS), and a table build that ran out of memory must be retried by a later call. `tp_once_get`
+  uses one process-wide mutex (an SRW lock on Windows) to read and publish the value, runs the
+  build outside the lock, and lets the loser of a race free its arena. `test_threads` runs under
+  ThreadSanitizer in CI.
+- **One translation unit.** The installed library is built from the amalgamation, where
+  `TP_PRIVATE` is `static`, so only `trackparse_*` leaves even a static library (the `exports` test
+  checks with `nm`, CI with the shared build too). Consequences: two files may not define the same
+  file-local name, struct tag or typedef (`amalgamate.mjs` fails and names both files); unused
+  static functions need `TP_UNUSED` (and MSVC's C4505 is off there); and the generated tables use
+  `TP_PRIVATE_DATA`, because a `static` tentative declaration in a header needs the complete type,
+  so the arrays are declared with their `_N` sizes.
+- **Source charset and trigraphs.** MSVC reads source files in the system code page, so every
+  generated string and every non-ASCII literal is a `\xNN` escape (and the build passes `/utf-8`
+  anyway). A hex escape swallows the hex digits after it, so `c_lit.mjs` splits the literal
+  (`"\xc3" "a"`). GCC in ISO mode (`-std=c11`) reads trigraphs, and the data has `??` (the
+  unknown tokens `?`, `??`, `???`), so `c_lit.mjs` writes every `?` as `\?`.
+- **C++ keywords in a C header.** The header is also compiled as C++ (by the wrapper and by C++
+  users), so no name may be a C++ keyword: the flag is `explicit_`, the wrapper's enum values are
+  `auto_`, and its delete edit is `delete_line()`.
+- **Name clashes inside the API.** `trackparse_version` is the type of a track's version, so the
+  library's version function is `trackparse_library_version()`; check a new function name
+  against the type names first.
+- **Unicode tables shared with Go.** `unicode_derive.mjs` is a copy of the derivation in
+  `go/scripts/gen_unicode.mjs`; both generators write the same sample, and `c.yml` `cmp`s
+  `c/tests/data/unicode/cases.jsonl` with `go/testdata/unicode/cases.jsonl`. Change both together.
+- **Typed edits to loose ones.** Go turns a typed edit into its JSON form and parses it back; C
+  has no JSON reader in the library, so `tp_edit_json` builds that value directly: a NaN or
+  infinite `seconds` becomes null (`edit-invalid`, as `JSON.stringify` would make it), `-0`
+  becomes `0`, and `lines` is present only when `has_lines` is set.
+- **32-bit widths.** Go's `int` is `ptrdiff_t`, the JS-number edit fields are `int64_t`; they
+  differ on 32-bit, so every mix needs a cast, and `-Wconversion` with `-Werror` on the `-m32` job
+  holds the line.
+- **Sanitizer combinations.** ThreadSanitizer cannot run with ASan, and MemorySanitizer needs an
+  instrumented C++ standard library for the C++ targets, so TSan and MSan are separate CMake
+  options and the MSan job builds the C programs only.
+
 R13 (tracklists) notes for a new port:
 
 - **Two passes per text.** First a cheap *probe* per line: the R13.2 time scan, then R1, R2 and R4
@@ -755,8 +1036,9 @@ R13 (tracklists) notes for a new port:
   hazard above does not apply here.
 - **Time ceilings.** R13.11 asks for linear time; each port's suite picks its own 10,000-line
   ceilings: `parseTracklist` JS 3 s, Python 15 s; `applyEdits` (shift + sort, 2,000 edits) JS 1 s,
-  Python 2 s / 5 s; Go 3 s and 1 s, ten times that under `-race` (`go/bench_test.go`). The Rust
-  ceilings are in `rust/tests/tracklist_properties.rs`.
+  Python 2 s / 5 s; Go 3 s and 1 s, ten times that under `-race` (`go/bench_test.go`); C 3 s and
+  1 s, ten times that in a sanitizer build or with `TRACKPARSE_SLOWDOWN=<n>`
+  (`c/tests/test_properties.c`). The Rust ceilings are in `rust/tests/tracklist_properties.rs`.
 
 ## Versioning and release
 
@@ -765,17 +1047,18 @@ Releases are automated with [release-please](https://github.com/googleapis/relea
 1. Feature PRs are **rebase-merged**, so every commit lands on `main` and becomes its own
    changelog line: each commit message must be a conventional commit, and so must the PR title
    (`pr-title.yml` enforces the title). Release PRs (`chore: release main`) are squash-merged. Types: `feat`, `fix`, `perf`, `revert`, `docs` (shown in the changelog) and `refactor`,
-   `test`, `build`, `ci`, `chore` (hidden). Scopes: `js`, `python`, `rust`, `go`, `spec`, `generator`, `fixtures`, `site`, `ci`, `deps`…
+   `test`, `build`, `ci`, `chore` (hidden). Scopes: `js`, `python`, `rust`, `go`, `c`, `spec`, `generator`, `fixtures`, `site`, `ci`, `deps`…
 2. On every push to `main`, `release.yml` updates a **release PR** (`chore: release main`) that
    bumps `js/package.json`, `spec/VERSION`, `SPEC_VERSION` in `js/src/data.generated.ts`, the
-   Python, Rust and Go version files (below), and writes `js/CHANGELOG.md` / `spec/CHANGELOG.md` /
-   `python/CHANGELOG.md` / `rust/CHANGELOG.md` / `go/CHANGELOG.md`.
+   Python, Rust, Go and C version files (below), and writes `js/CHANGELOG.md` / `spec/CHANGELOG.md` /
+   `python/CHANGELOG.md` / `rust/CHANGELOG.md` / `go/CHANGELOG.md` / `c/CHANGELOG.md`.
 3. **Merging the release PR** creates tags `js-vX.Y.Z`, `spec-vX.Y.Z`, `python-vX.Y.Z`,
-   `rust-vX.Y.Z` and `go/vX.Y.Z`, GitHub Releases with the changelog as notes, then publishes
+   `rust-vX.Y.Z`, `go/vX.Y.Z` and `c-vX.Y.Z`, GitHub Releases with the changelog as notes, then publishes
    `trackparse` to npm and to PyPI via trusted publishing (OIDC, no stored token), attaches the
    tarball / wheel + sdist and appends install instructions to each release. The crates.io job
    (`publish-crates`) runs only when the repository variable `CRATES_PUBLISH` is `true` (see
-   below). The Go module needs no upload: the tag is the release (see below). For a bigger
+   below). The Go module needs no upload: the tag is the release (see below). The C library has
+   no registry: `publish-c` attaches its files to the GitHub Release (see below). For a bigger
    release, add `.github/release-notes/X.Y.Z.md` beforehand: it is prepended to the notes.
 
 Version rules:
@@ -789,8 +1072,9 @@ Version rules:
   `python/pyproject.toml`, `__version__` in `python/src/trackparse/__init__.py`, `SPEC_VERSION`
   in `python/src/trackparse/_data.py` and the package's own entry in `python/uv.lock`, and writes `python/CHANGELOG.md`. Merging it tags
   `python-vX.Y.Z` and publishes to PyPI via trusted publishing (environment `pypi`), with the wheel
-  and sdist attached to the release. `spec.yml` checks that all five versions match (js, spec,
-  python, rust, go).
+  and sdist attached to the release. `spec.yml` checks that all six versions match (js, spec,
+  python, rust, go, c; for c it reads `c/VERSION`, `CMakeLists.txt`, `TRACKPARSE_VERSION`, the
+  `_MAJOR` / `_MINOR` / `_PATCH` macros and `TP_SPEC_VERSION`).
 - `rust` is **linked** as well: a release-please component (`release-type: rust`) in the same
   `linked-versions` group. The release PR bumps `rust/Cargo.toml` (the line marked
   `x-release-please-version`) and `SPEC_VERSION` in `rust/src/data.rs`, and writes
@@ -825,16 +1109,40 @@ Version rules:
   checksum database keep the tag's content forever, even if the tag is deleted or moved. Never
   move or re-create a `go/v…` tag. A bad version can only be marked with a `retract` directive in
   `go/go.mod`, released in a new version.
+- `c` is **linked** as well: a release-please component (`release-type: simple`,
+  `version-file: VERSION`, so `c/VERSION`) in the same `linked-versions` group, with `extra-files`
+  `CMakeLists.txt` (the `project(trackparse VERSION …)` line marked `x-release-please-version`),
+  `include/trackparse.h` (`TRACKPARSE_VERSION` with `x-release-please-version`, and
+  `TRACKPARSE_VERSION_MAJOR` / `_MINOR` / `_PATCH` with `x-release-please-major` / `-minor` /
+  `-patch`) and `src/data_gen.h` (`TP_SPEC_VERSION`, which `c/scripts/gen_data.mjs` writes with the
+  marker, so `--check` stays clean after the bump). The release PR writes `c/CHANGELOG.md`, and
+  merging it tags `c-vX.Y.Z` (the default `-` separator). The first C release is 0.7.0. The
+  manifest starts C at the linked 0.6.1, so expect its first changelog to link a `c-v0.6.1` tag
+  that never existed, as Go's and Rust's first entries did, and to list every commit under `c/`.
+- **C publishing is files on the GitHub Release.** The `publish-c` job in `release.yml`
+  (environment `c`, every action pinned by SHA) checks out the tag, checks that `c/VERSION`, the
+  CMake version, `TRACKPARSE_VERSION`, `TP_SPEC_VERSION`, `spec/VERSION` and the tag agree and that
+  both codegen `--check`s pass, runs the CMake build and `ctest` from the repository, then builds
+  `trackparse-c-X.Y.Z.tar.gz` (`git archive` of `c/` plus the amalgamation in `dist/`, so it
+  builds without Node and without `../spec`, where the fixture tests skip) and
+  `trackparse-c-X.Y.Z-amalgamation.zip` (`trackparse.c`, `.h`, `.hpp`, `LICENSE`), writes
+  `SHA256SUMS`, builds and tests the tarball alone, installs it and builds a program with
+  pkg-config, builds the amalgamation alone with `-Wall -Wextra -Werror`, attests build
+  provenance, uploads the three files and appends a FetchContent snippet with the tarball's hash
+  to the release notes. **Release files are permanent**: package recipes and FetchContent users
+  pin the tarball's hash, so the job never replaces a file that is already attached, and a bad
+  release gets a new patch version, never a re-upload.
 - **A publish job failed after the tags were created?** Fix the cause on `main` with a hidden commit
   type (`ci`/`chore`, so no new release), then re-run publishing for the existing tag:
   `gh workflow run release.yml -f python_tag=python-vX.Y.Z` (PyPI) or
   `-f rust_tag=rust-vX.Y.Z` (crates.io) or `-f go_tag=go/vX.Y.Z` (the Go checks, proxy request
-  and release notes; the module itself was published by the tag). The npm job always republishes from a fresh release; a
+  and release notes; the module itself was published by the tag) or `-f c_tag=c-vX.Y.Z` (builds
+  the C files again and uploads only the ones that are missing). The npm job always republishes from a fresh release; a
   failed npm publish needs the same treatment by hand.
 - **Things the 0.5.0 and 0.6.0 releases taught:**
   - The release PR is opened with `GITHUB_TOKEN`, so no CI runs on it and GitHub shows it as
     `UNSTABLE`. That is expected; `main` was green when it was generated.
-  - A `docs:` commit under `js/`, `python/`, `rust/` or `go/` (a package README) opens a release PR. A
+  - A `docs:` commit under `js/`, `python/`, `rust/`, `go/` or `c/` (a package README) opens a release PR. A
     commit that touches only the root README, `AGENTS.md`, `site/` or `.github/` does not.
   - A component's first changelog lists every commit that ever touched its folder, because there
     is no earlier tag to start from.
@@ -874,8 +1182,22 @@ Version rules:
   `init()` except `wire_hook.go`, which only `-tags trackparse_wire` builds. Go has
   no lint against indexing, so look up code points with `at()` (it returns -1 out of range).
   Every exported identifier has a doc comment; examples are `Example` functions with `// Output:`.
-- Public types in `js/src/types.ts`, `python/src/trackparse/types.py`, `rust/src/types.rs` and
-  `go/types.go` mirror the schemas; change them together.
+- C: C11 (`CMAKE_C_EXTENSIONS OFF`), clang-format 19.1.7 (`c/.clang-format`, 100 columns) on every
+  file except the generated `_gen.c` / `_gen.h`, and warning-free under `-Wall -Wextra -Wpedantic
+  -Wshadow -Wconversion -Wno-sign-conversion` (MSVC `/W4`), with `-Werror` / `/WX` in CI. The bans
+  grep in `c.yml` keeps `<ctype.h>`, `qsort`, `strto*`, `ato*`, the `printf` family, `setlocale`
+  and `localeconv` out of `src/`. Every internal function and global is `TP_PRIVATE` (or `static`),
+  generated tables `TP_PRIVATE_DATA`; file-local names are unique across `src/` (the amalgamation
+  shares one scope). Memory in `src/` comes from `tp_alloc` only (no `malloc` or `free` in the
+  pipeline); look up code points with `at()`-style helpers that return `TP_NORUNE` (-1) out of
+  range; no recursion except the depth-bounded JSON writer. Public names start with `trackparse_`
+  / `TRACKPARSE_` and are never C++ keywords; every public declaration has a doc comment in
+  `trackparse.h`, and a new result field is appended at the end of its struct (ABI). No `assert` or
+  `exit` in the library, and out of memory returns `NULL`; the one `abort` is `tp_alloc` called
+  outside an armed scope, which is a bug in the library, not an input.
+- Public types in `js/src/types.ts`, `python/src/trackparse/types.py`, `rust/src/types.rs`,
+  `go/types.go` and `c/include/trackparse.h` (plus the wrapper `trackparse.hpp`) mirror the schemas;
+  change them together.
 - No `throw` (or panic) on any input path. Bad options fall back to defaults.
 
 ## Definition of done
@@ -892,10 +1214,14 @@ Version rules:
 - [ ] Go: `gen_data.mjs --check`, `gen_unicode.mjs --check`, `gofmt -l` empty, `go vet`, staticcheck
       and `go test -race ./...` pass; the `TRACKPARSE_REPORT=1` report is 100%;
       `go/testdata/skip.json` did not grow
-- [ ] `node scripts/compare-ports.mjs` reports 0 differences (all four ports)
+- [ ] C: `gen_data.mjs --check`, `gen_unicode.mjs --check`, clang-format 19.1.7 and the bans grep
+      clean, the amalgamation writes, `ctest` passes with `-DTRACKPARSE_WERROR=ON` and again
+      under `-DTRACKPARSE_SANITIZE=ON`; the `TRACKPARSE_REPORT=1` report is 100%;
+      `c/tests/skip.json` did not grow
+- [ ] `node scripts/compare-ports.mjs` reports 0 differences (all five ports)
 - [ ] `pnpm --filter trackparse size` and `check:package` pass
 - [ ] R13 changes: `node scripts/corpus-check.mjs` passes when you have the corpus
 - [ ] Conventional commits and PR title; `feat` if any fixture expectation changed
 - [ ] Site pages (`site/src/content/docs`) and READMEs updated in the same PR, examples in
-      JavaScript, Python, Rust and Go tabs with real output, `**Docs:**` links still pointing at existing
+      JavaScript, Python, Rust, Go and C tabs with real output, `**Docs:**` links still pointing at existing
       pages, `pnpm docs:build` passes

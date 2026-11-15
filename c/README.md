@@ -77,8 +77,9 @@ c++ -std=c++17 -O2 -I. app.cpp trackparse.o -lm -pthread -o app   # with trackpa
 ```
 
 `-ffp-contract=off` (MSVC: `/fp:precise`) keeps the compiler from fusing a multiply and an add,
-which would round some edited tracklist times differently; the file also sets
-`#pragma STDC FP_CONTRACT OFF`. On Windows, define `TRACKPARSE_STATIC` in the files that include
+which would round some edited tracklist times differently. The file also sets
+`#pragma STDC FP_CONTRACT OFF` for the compilers that honour it (GCC ignores it) and rounds that
+product through a `volatile`, so a build without the flag gives the same times. On Windows, define `TRACKPARSE_STATIC` in the files that include
 the header, or it declares DLL imports. On 32-bit x86, compile with `-msse2 -mfpmath=sse`: the
 library refuses to build with x87 arithmetic.
 
@@ -751,14 +752,17 @@ What `ctest` runs:
 - `fixtures`: all 13,130 shared fixtures (1,203 written by hand, the rest generated from the
   rules), with an empty skip list. `schema` then checks every output against the JSON Schema with
   the validator of the JavaScript package.
+- `match`, `rt`, `api`: the fixture matcher and the JSON reader, the internal runtime (arenas,
+  strings, vectors, the stable sort), and the public C API, ownership and `NULL` handling.
 - `primitives`, `unicode`, `num`: the R0 primitives, the Unicode tables (letters, uppercase, the
   lowercase mapping, NFC and NFD) and the number code (decimal to double, JavaScript's number
   formatting, half-up rounding), each against values dumped from Node.
 - `properties`: the spec's invariants on seeded random input, among them that no word of the
   input goes missing, and the tracklist round trips of R13.11, with time ceilings for 10,000 code
   points and 10,000 lines.
-- `threads`: 16 threads against a sequential run. `locale`: every output under `de_DE.UTF-8` and
-  `tr_TR.UTF-8` equals the `C` locale's. `oom`: allocation failure at every n.
+- `threads`: 16 threads against a sequential run. `locale`: every output after
+  `setlocale(LC_ALL, "")` and under `de_DE.UTF-8` and `tr_TR.UTF-8` (when installed) equals the
+  `C` locale's. `oom`: the n-th allocation fails, for every n, on about 50 inputs across the API.
 - `cpp17`, `cpp20`, `example_*`, `exports`: the C++ wrapper, the programs in
   [`examples/`](https://github.com/4matic/trackparse/tree/main/c/examples) against their expected
   output, and a check that the library exports only `trackparse_*`. Tests labelled `consumer`
@@ -770,17 +774,25 @@ Sanitizers and fuzzing are CMake options:
 ```sh
 cmake -S . -B build-asan -DTRACKPARSE_SANITIZE=ON          # AddressSanitizer + UBSan
 cmake -S . -B build-tsan -DTRACKPARSE_SANITIZE_THREAD=ON   # ThreadSanitizer
-cmake -S . -B build-msan -DTRACKPARSE_SANITIZE_MEMORY=ON -DCMAKE_C_COMPILER=clang
-CC=clang cmake -S . -B build-fuzz -DTRACKPARSE_FUZZ=ON     # libFuzzer targets fuzz_*
+CC=clang CXX=clang++ cmake -S . -B build-msan -DTRACKPARSE_SANITIZE_MEMORY=ON
+cmake --build build-msan --target trackparse-fixtures test_api test_properties test_oom
+CC=clang CXX=clang++ cmake -S . -B build-fuzz -DTRACKPARSE_FUZZ=ON -DTRACKPARSE_BUILD_TESTS=OFF
+cmake --build build-fuzz                                    # libFuzzer targets fuzz_*
+node scripts/fuzz_corpus.mjs corpus                         # seed corpus from the fixture inputs
+./build-fuzz/fuzz_parse -max_total_time=60 corpus/parse
 ```
 
-Under a sanitizer the property tests run fewer cases and the time ceilings are ten times wider.
-There is one libFuzzer target per public entry point (`fuzz_parse`, `fuzz_parse_artists`,
-`fuzz_format`, `fuzz_parse_tracklist`, `fuzz_apply_edits`) and one for the JSON reader the tests
-use (`fuzz_wire`); run one with `./build-fuzz/fuzz_parse -max_total_time=60`.
+Under a sanitizer the property tests run a quarter of their cases and the time ceilings are ten
+times wider. MemorySanitizer builds only the C programs: the C++ tests would need an instrumented
+libc++. There is a libFuzzer target for each of `parse`, `parse_artists`, `format`,
+`parse_tracklist` and `apply_edits` (`fuzz_parse` and so on) and one for the JSON reader the tests
+use (`fuzz_wire`).
 
-CI builds and tests with GCC and Clang on Linux (x86-64, ARM64 and 32-bit x86), Apple Clang on
-macOS and MSVC on Windows, runs the sanitizer builds, and fuzzes every target.
+CI ([`c.yml`](https://github.com/4matic/trackparse/blob/main/.github/workflows/c.yml)) builds and
+tests with GCC and Clang on Linux x86-64, GCC on ARM64 and on 32-bit x86, GCC 9 with CMake 3.16, a
+shared-library build, Apple Clang on macOS and MSVC on Windows. It also runs the suite under
+ASan + UBSan (GCC and Clang), ThreadSanitizer, MemorySanitizer and Valgrind, under German and
+Turkish locales, and fuzzes every target for ten minutes once a week.
 [`scripts/compare-ports.mjs`](https://github.com/4matic/trackparse/blob/main/scripts/compare-ports.mjs)
 runs every fixture input through the JavaScript package and this library (built as
 `trackparse-dump`) and compares the complete JSON output, every field of it, not only the ones a
@@ -793,9 +805,9 @@ the spec, not here: see [AGENTS.md](https://github.com/4matic/trackparse/blob/ma
 ## Performance
 
 There are no regular expressions, so there is no regex backtracking. On an Intel i7-4770S with
-GCC 9 at `-O2`, with other programs running: 1 to 6 ms for 10,000 code points of one repeated
-block (the blocks of the other ports' time ceilings, in auto, YouTube and filename mode), and
-0.34 s for a 10,000-line tracklist. The Go port takes 3 to 7 ms and 0.33 to 0.38 s for the same
+GCC 9 (a CMake Release build, `-O3`), with other programs running: 1 to 6 ms for 10,000 code points
+of one repeated block (the blocks of the other ports' time ceilings), and 0.34 to 0.39 s for a
+10,000-line tracklist (`build/test_bench` prints these). The Go port takes 3 to 7 ms and 0.33 to 0.38 s for the same
 kinds of input on the same machine.
 
 ## Unicode version

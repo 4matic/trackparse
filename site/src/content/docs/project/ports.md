@@ -15,7 +15,7 @@ description: The JavaScript, Python, Rust, Go and C implementations, and what it
 |---|---|---|---|---|---|
 | Install | `npm install trackparse` | `pip install trackparse` | `cargo add trackparse` | `go get github.com/4matic/trackparse/go@latest` | CMake `FetchContent` from the release tarball, or copy the amalgamation |
 | Needs | Node 18 or newer, or any ES2020 runtime | Python 3.9 or newer | Rust 1.74 or newer | Go 1.22 or newer | a C11 compiler (GCC, Clang or MSVC); CMake 3.16 or newer for the CMake build |
-| Dependencies | none | none | `unicode-normalization`; `serde` is optional | none | none beyond the C standard library |
+| Dependencies | none | none | `unicode-normalization`; `serde` is optional | none | none beyond the C standard library and the system's threads |
 | Types | TypeScript types included | `py.typed`, passes `mypy --strict` | structs and enums, no `unsafe` | structs and typed string constants, no `unsafe`, no cgo | read-only structs, C enums with `_name()` functions, opaque option handles |
 | Names | [`parseArtists`](/trackparse/reference/functions/#parseartistsinput-options), [`fullTitle`](/trackparse/reference/parse/#parsedtrack) | `parse_artists`, `full_title` | `parse_artists`, `full_title` | `ParseArtists`, `FullTitle` | `trackparse_parse_artists`, `full_title` |
 | Options | one object | keyword arguments | `_with` functions and option builders | `With` functions and option structs | `_with` functions and option handles with setters |
