@@ -17,7 +17,7 @@
 #endif
 
 /* The version of the spec this library implements. */
-#define TP_SPEC_VERSION "0.6.1" /* x-release-please-version */
+#define TP_SPEC_VERSION "0.7.0" /* x-release-please-version */
 
 /* One entry of a JSON object in spec/data, in file order. */
 typedef struct tp_data_kv {

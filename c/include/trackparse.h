@@ -40,10 +40,10 @@ extern "C" {
 /* Version and linkage                                                                         */
 
 /** The library version this header belongs to. */
-#define TRACKPARSE_VERSION "0.6.1" /* x-release-please-version */
+#define TRACKPARSE_VERSION "0.7.0" /* x-release-please-version */
 #define TRACKPARSE_VERSION_MAJOR 0 /* x-release-please-major */
-#define TRACKPARSE_VERSION_MINOR 6 /* x-release-please-minor */
-#define TRACKPARSE_VERSION_PATCH 1 /* x-release-please-patch */
+#define TRACKPARSE_VERSION_MINOR 7 /* x-release-please-minor */
+#define TRACKPARSE_VERSION_PATCH 0 /* x-release-please-patch */
 
 #if defined(TRACKPARSE_STATIC) || defined(TRACKPARSE_AMALGAMATION)
 #define TRACKPARSE_API

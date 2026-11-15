@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.7.0](https://github.com/4matic/trackparse/compare/rust-v0.6.1...rust-v0.7.0) (2026-11-15)
+
+
+### Documentation
+
+* five ports in every README: C install before 0.7.0, splitAnd after a comma or semicolon, test build folders, ceilings, American spelling ([d7b92e7](https://github.com/4matic/trackparse/commit/d7b92e7c976c979944cfbd5b12c4d33ac91b85de))
+* the C port on every site page, in the playground code panels and install switch, and in the READMEs ([365e7fd](https://github.com/4matic/trackparse/commit/365e7fdd54c850f8fd8c449819932ea431b957b1))
+
 ## [0.6.1](https://github.com/4matic/trackparse/compare/rust-v0.6.0...rust-v0.6.1) (2026-11-14)
 
 
