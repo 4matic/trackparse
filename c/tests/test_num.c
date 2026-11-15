@@ -178,7 +178,8 @@ static void unit_tests(void) {
 #if defined(__GNUC__) || defined(__clang__)
 __attribute__((noinline))
 #endif
-static void file_tests(const char *path, long *cases) {
+static void
+file_tests(const char *path, long *cases) {
   tp_arena *scratch = tp_arena_current(); /* the scope's own arena, freed by main */
   FILE *f = fopen(path, "rb");
   char *line;
