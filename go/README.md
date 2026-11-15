@@ -164,7 +164,7 @@ spec in order.
 | [`Mode`](https://4matic.github.io/trackparse/guides/modes/) | `ModeAuto` | `ModeClean`, `ModeYouTube`, `ModeFilename`, `ModeTracklist`, or `ModeAuto` to detect from the string. See [Modes](#modes) |
 | [`Uploader`](https://4matic.github.io/trackparse/guides/modes/#the-uploader-fallback) | none | YouTube channel name, used as the artist when there's no separator (`- Topic` and `VEVO` are dropped) |
 | [`KnownArtists`](https://4matic.github.io/trackparse/guides/artists/#knownartists) | none | Names that are never split. There is no built-in list |
-| [`SplitAnd`](https://4matic.github.io/trackparse/guides/artists/#and-is-special) | `SplitAndAuto` | `SplitAndAuto` splits on `and` only after a comma (`A, B and C`), so `Simon and Garfunkel` stays whole. Also `SplitAndAlways`, `SplitAndNever` |
+| [`SplitAnd`](https://4matic.github.io/trackparse/guides/artists/#and-is-special) | `SplitAndAuto` | `SplitAndAuto` splits on `and` only after a comma or semicolon (`A, B and C`), so `Simon and Garfunkel` stays whole. Also `SplitAndAlways`, `SplitAndNever` |
 | [`Keywords`](https://4matic.github.io/trackparse/reference/options/#keywords) | none | Extra vocabulary, added to the built-in lists (see below) |
 
 Options are plain structs, and the zero value of every struct is the default: `Parse(s)` is
@@ -560,7 +560,7 @@ fmt.Println(s.Lines, s.Tracks, s.Markers, s.Timed, *s.FirstTime, *s.LastTime) //
 ```
 
 The [suggestion](https://4matic.github.io/trackparse/reference/warnings/#suggestions) exists because exactly one time, one digit away from `00:11:02`,
-fits between its neighbours. With several candidates or none, `Suggestion` is `nil`.
+fits between its neighbors. With several candidates or none, `Suggestion` is `nil`.
 [Open this list in the playground](https://4matic.github.io/trackparse/playground/#list=Hour%202%0A48%3A20%20Noisia%20-%20Stigma%0A52%3A47%20Mefjus%20%26%20Kasra%20-%20Bandwagon%20%28Phace%20Remix%29%0A56%3A05%20Black%20Sun%20Empire%20-%20ID%0A59%3A31%20Alix%20Perez%20-%20Fade%20Away%0A01%3A03%3A10%20Interview%20with%20Hybris%0A01%3A07%3A44%20Imanu%20-%20Sacrifice%0A00%3A11%3A02%20Current%20Value%20feat.%20Teddy%20Killerz%20-%20Payload%0A01%3A15%3A36%20Hybris%20-%20Spinning%20Top).
 
 [`ApplyEdits`](https://pkg.go.dev/github.com/4matic/trackparse/go#ApplyEdits) takes a slice of [`Edit`](https://pkg.go.dev/github.com/4matic/trackparse/go#Edit) values and only rewrites the
@@ -661,8 +661,8 @@ result is `Track.UnmarshalJSON`, which reads JSON you give it.
 
 A Go string can hold bytes that are not valid UTF-8. Every function reads such input with the
 WHATWG rule, the one `TextDecoder` uses in JavaScript and `String::from_utf8_lossy` in Rust: each
-maximal ill-formed subsequence becomes one U+FFFD. So the Go module and the Rust crate read the
-same bytes as the same text, and every output string is valid UTF-8.
+maximal ill-formed subsequence becomes one U+FFFD. So the Go module, the Rust crate and the C
+library read the same bytes as the same text, and every output string is valid UTF-8.
 
 ```go
 fmt.Printf("%q\n", trackparse.Parse("Noisia - Sti\xffgma\xe2\x82").Title) // "Sti�gma�"
@@ -763,7 +763,7 @@ difference is described under [Unicode version](#unicode-version).
 | Python | [trackparse on PyPI](https://pypi.org/project/trackparse/) | `pip install trackparse` | [README](https://github.com/4matic/trackparse/blob/main/python/README.md) · [changelog](https://github.com/4matic/trackparse/blob/main/python/CHANGELOG.md) · [API](https://4matic.github.io/trackparse/reference/parse/) |
 | Rust | [trackparse on crates.io](https://crates.io/crates/trackparse) | `cargo add trackparse` | [README](https://github.com/4matic/trackparse/blob/main/rust/README.md) · [changelog](https://github.com/4matic/trackparse/blob/main/rust/CHANGELOG.md) · [API on docs.rs](https://docs.rs/trackparse) |
 | Go | [github.com/4matic/trackparse/go](https://pkg.go.dev/github.com/4matic/trackparse/go) | `go get github.com/4matic/trackparse/go` | [README](https://github.com/4matic/trackparse/blob/main/go/README.md) · [changelog](https://github.com/4matic/trackparse/blob/main/go/CHANGELOG.md) · [API on pkg.go.dev](https://pkg.go.dev/github.com/4matic/trackparse/go) |
-| C / C++ | [C library and C++ header](https://github.com/4matic/trackparse/blob/main/c/README.md) | CMake FetchContent from the [release tarball](https://github.com/4matic/trackparse/releases), or the amalgamation | [README](https://github.com/4matic/trackparse/blob/main/c/README.md) · [changelog](https://github.com/4matic/trackparse/blob/main/c/CHANGELOG.md) · [header](https://github.com/4matic/trackparse/blob/main/c/include/trackparse.h) |
+| C / C++ | [C library and C++ header](https://github.com/4matic/trackparse/blob/main/c/README.md) | CMake FetchContent from the [release tarball](https://github.com/4matic/trackparse/releases), or the amalgamation (from 0.7.0) | [README](https://github.com/4matic/trackparse/blob/main/c/README.md) · [changelog](https://github.com/4matic/trackparse/blob/main/c/CHANGELOG.md) · [header](https://github.com/4matic/trackparse/blob/main/c/include/trackparse.h) |
 
 ## Limitations
 

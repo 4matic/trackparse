@@ -3,7 +3,7 @@
 The shared test corpus: 13,130 cases, [1,203 written by hand](https://4matic.github.io/trackparse/project/testing/#handwritten-1203-cases)
 and [11,927 generated](https://4matic.github.io/trackparse/project/testing/#generated-11927-cases). Every port
 ([JavaScript](../../js/README.md), [Python](../../python/README.md), [Rust](../../rust/README.md),
-[Go](../../go/README.md) and [C](https://github.com/4matic/trackparse/blob/main/c/README.md)) runs
+[Go](../../go/README.md) and [C](../../c/README.md)) runs
 every case here. The fixtures, not any one implementation,
 define correct behaviour.
 
@@ -64,8 +64,8 @@ The rule IDs in `rules` are the ones in [`../SPEC.md`](../SPEC.md), also shown o
 
 Every port implements this matcher (about 40 lines). It is the same everywhere:
 [`js/test/match.ts`](../../js/test/match.ts), [`python/tests/match.py`](../../python/tests/match.py),
-`matches` in [`rust/tests/fixtures.rs`](../../rust/tests/fixtures.rs) and `matches` in
-[`go/match_test.go`](../../go/match_test.go).
+`matches` in [`rust/tests/fixtures.rs`](../../rust/tests/fixtures.rs), `matches` in
+[`go/match_test.go`](../../go/match_test.go) and [`c/tests/match.c`](../../c/tests/match.c).
 
 1. **Objects:** every key in `expected` must exist in `actual` and match recursively. Keys not in
    `expected` are ignored. An explicit `null` must be `null`.
@@ -105,7 +105,7 @@ pnpm test                          # JavaScript: js/test/fixtures.test.ts
 (cd python && uv run pytest)       # Python: python/tests/test_fixtures.py
 (cd rust && cargo test)            # Rust: rust/tests/fixtures.rs
 (cd go && go test ./...)           # Go: go/fixtures_test.go
-(cd c && cmake -S . -B build && cmake --build build && ctest --test-dir build -R fixtures)
+(cd c && cmake -S . -B build-test && cmake --build build-test && ctest --test-dir build-test -R fixtures)
                                    # C: c/tests/runner.c
 
 # one case, by id
@@ -113,14 +113,14 @@ pnpm --filter trackparse exec vitest run test/fixtures.test.ts -t "brackets-vers
 (cd python && uv run pytest tests/test_fixtures.py -k "brackets-version-001")
 (cd rust && TRACKPARSE_ONLY=brackets-version-001 cargo test --test fixtures)
 (cd go && TRACKPARSE_ONLY=brackets-version-001 go test -run TestFixtures -v)
-(cd c && TRACKPARSE_ONLY=brackets-version-001 ./build/trackparse-fixtures ../spec/fixtures/*/*.json)
+(cd c && TRACKPARSE_ONLY=brackets-version-001 ./build-test/trackparse-fixtures ../spec/fixtures/*/*.json)
 
 # pass rate per fixture file and per spec rule
 pnpm conformance
 (cd python && uv run python scripts/conformance.py)
 (cd rust && TRACKPARSE_REPORT=1 cargo test --test fixtures -- --nocapture)
 (cd go && TRACKPARSE_REPORT=1 go test -run TestFixtures -v)
-(cd c && TRACKPARSE_REPORT=1 ./build/trackparse-fixtures ../spec/fixtures/*/*.json)
+(cd c && TRACKPARSE_REPORT=1 ./build-test/trackparse-fixtures ../spec/fixtures/*/*.json)
 
 # after pnpm build: the complete output of all five ports, compared
 node scripts/compare-ports.mjs
