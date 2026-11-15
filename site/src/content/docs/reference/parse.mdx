@@ -44,6 +44,17 @@ func ParseWith(input string, options ParseOptions) Track
 ```
 
 </TabItem>
+<TabItem label="C">
+
+```c
+#include <trackparse.h>
+
+trackparse_track *trackparse_parse(const char *s, size_t len);
+trackparse_track *trackparse_parse_with(const char *s, size_t len, const trackparse_parse_options *o);
+void trackparse_track_free(trackparse_track *t);
+```
+
+</TabItem>
 </Tabs>
 
 `parse` never fails on a string. Any string gives a `ParsedTrack`, the empty string included, and
@@ -59,6 +70,13 @@ unknown or malformed options fall back to their defaults. What differs between t
   [`Parse`](https://pkg.go.dev/github.com/4matic/trackparse/go#Parse) for the defaults and [`ParseWith`](https://pkg.go.dev/github.com/4matic/trackparse/go#ParseWith) to pass options. Bytes that are not valid UTF-8 are read as U+FFFD,
   one per maximal invalid sequence, as Rust's `String::from_utf8_lossy` and the browser's
   `TextDecoder` do.
+- C (one header, [`trackparse.h`](https://github.com/4matic/trackparse/blob/main/c/include/trackparse.h)): takes UTF-8 as a pointer and a byte length,
+  and returns a `trackparse_track *` that you free with `trackparse_track_free`. Pass
+  `TRACKPARSE_NUL_TERMINATED` as the length for a C string; with an explicit length, U+0000 is
+  read as a character like any other. Invalid UTF-8 is read as U+FFFD with the same rule as Go
+  and Rust. `trackparse_parse_with` takes an options handle, and `NULL` there means the
+  defaults. The only failure is running out of memory, reported as `NULL`; no input makes it
+  crash.
 
 The options are on the [Options](/trackparse/reference/options/) page. The other functions
 ([`parseArtists`](/trackparse/reference/functions/#parseartistsinput-options), [`format`](/trackparse/reference/functions/#formattrack-options), [`createParser`](/trackparse/reference/functions/#createparseroptions)) are under
@@ -152,6 +170,33 @@ type Track struct {
 ```
 
 </TabItem>
+<TabItem label="C">
+
+```c
+typedef struct trackparse_track {
+  trackparse_str input;
+  trackparse_mode mode;
+  const trackparse_position *position;     /* { trackparse_str raw; int number; } */
+  const trackparse_timestamp *timestamp;   /* { trackparse_str raw; int seconds; } */
+  const trackparse_artist *artists;
+  size_t artists_count;
+  trackparse_str title;
+  trackparse_str full_title;
+  const trackparse_version *versions;
+  size_t versions_count;
+  const int *year;
+  trackparse_flags flags;                  /* { explicit_, clean, unknown_artist, unknown_title } */
+  const trackparse_junk *junk;             /* { raw, kind, kind_name } */
+  size_t junk_count;
+  const trackparse_warning *warnings;
+  size_t warnings_count;
+} trackparse_track;
+```
+
+`flags.explicit_` has a trailing underscore because `explicit` is a C++ keyword; the JSON key is
+`explicit`.
+
+</TabItem>
 </Tabs>
 
 The table below uses the JavaScript and JSON names. Python has the same fields as attributes of a
@@ -161,7 +206,12 @@ arrays and `None` instead of `null`. Rust has a struct
 fields: `Vec<T>` for arrays, `Option<T>` where the table says `null`, and enums for `mode`, roles,
 kinds and warnings. Go has a [`Track`](https://pkg.go.dev/github.com/4matic/trackparse/go#Track) struct with exported CamelCase fields (`FullTitle`,
 `Flags.UnknownArtist`): slices for arrays, pointers where the table says `null`, and typed strings
-for `mode`, roles, kinds and warnings.
+for `mode`, roles, kinds and warnings. C has a read-only `trackparse_track` struct with the same
+snake_case names as members: a pointer and a `_count` member for arrays (`versions`,
+`versions_count`), pointers that are `NULL` where the table says `null`, C enums for `mode`,
+roles, kinds and warnings, and `trackparse_str` for strings (a `ptr` and a `len`; `ptr` is also
+NUL-terminated, so `printf("%s")` works on text without U+0000). The track owns everything it
+points to, so nothing in it outlives `trackparse_track_free`.
 
 | Field | Type | Description |
 |---|---|---|
@@ -214,6 +264,18 @@ type Artist struct { Name string; Role Role; Joiner *string; Source Source }
 ```
 
 </TabItem>
+<TabItem label="C">
+
+```c
+typedef struct trackparse_artist {
+  trackparse_str name;
+  trackparse_role role;
+  const trackparse_str *joiner;   /* NULL for the first name */
+  trackparse_source source;
+} trackparse_artist;
+```
+
+</TabItem>
 </Tabs>
 
 | Field | Values |
@@ -226,7 +288,8 @@ type Artist struct { Name string; Role Role; Joiner *string; Source Source }
 `source` are [`ArtistRole`](https://docs.rs/trackparse/latest/trackparse/enum.ArtistRole.html)`::Primary`,
 [`ArtistSource`](https://docs.rs/trackparse/latest/trackparse/enum.ArtistSource.html)`::Artist` and so on; in Go they are
 [`trackparse.RolePrimary`](https://pkg.go.dev/github.com/4matic/trackparse/go#RolePrimary), [`trackparse.SourceArtist`](https://pkg.go.dev/github.com/4matic/trackparse/go#SourceArtist) and so
-on. The splitting rules are [R7](/trackparse/reference/spec/#r7-artist-side).
+on; in C they are `TRACKPARSE_ROLE_PRIMARY`, `TRACKPARSE_SOURCE_ARTIST` and so on, and
+`trackparse_role_name()` and `trackparse_source_name()` give the spec's strings. The splitting rules are [R7](/trackparse/reference/spec/#r7-artist-side).
 [Artists and credits](/trackparse/guides/artists/) has examples.
 
 ## Version
@@ -296,6 +359,25 @@ type Version struct {
 ```
 
 </TabItem>
+<TabItem label="C">
+
+```c
+typedef struct trackparse_version {
+  trackparse_version_type type;
+  trackparse_str type_name;
+  trackparse_str raw;
+  const trackparse_artist *artists;
+  size_t artists_count;
+  const trackparse_str *modifiers;
+  size_t modifiers_count;
+  const trackparse_str *descriptor;
+  const int *year;
+  bool unknown_artist;
+  trackparse_delimiter delimiter;
+} trackparse_version;
+```
+
+</TabItem>
 </Tabs>
 
 | Field | |
@@ -313,7 +395,10 @@ Python uses `unknown_artist`. Rust uses `unknown_artist` and `version_type`, bec
 reserved word, and `delimiter` is [`VersionDelimiter`](https://docs.rs/trackparse/latest/trackparse/enum.VersionDelimiter.html)`::Paren`,
 `Square`, `Curly` or `Dash`. Go uses `Type` (a [`VersionType`](https://pkg.go.dev/github.com/4matic/trackparse/go#VersionType)), `UnknownArtist`
 and the [`Delimiter`](https://pkg.go.dev/github.com/4matic/trackparse/go#Delimiter) constants `DelimiterParen`, `DelimiterSquare`,
-`DelimiterCurly` and `DelimiterDash`. The version rules are
+`DelimiterCurly` and `DelimiterDash`. C uses `type` (a `trackparse_version_type`) and `type_name`
+(the spec's string, which differs from `trackparse_version_type_name(type)` only for a type that
+[`keywords`](/trackparse/reference/options/#keywords) introduced), `unknown_artist`, and the
+delimiters `TRACKPARSE_DELIMITER_PAREN`, `_BRACKET`, `_BRACE` and `_DASH`. The version rules are
 [R5.7](/trackparse/reference/spec/#r5-group-classification:~:text=R5.7%20Version).
 [Versions and remixes](/trackparse/guides/versions/) explains how the type is chosen.
 
@@ -323,15 +408,16 @@ and the [`Delimiter`](https://pkg.go.dev/github.com/4matic/trackparse/go#Delimit
 in [Junk, flags and prefixes](/trackparse/guides/junk-and-flags/#junk). The vocabulary is in
 [`spec/data`](https://github.com/4matic/trackparse/tree/main/spec/data). In Rust the kind is the
 enum [`JunkKind`](https://docs.rs/trackparse/latest/trackparse/enum.JunkKind.html) (`JunkKind::Video` and so on), in Go the typed string
-[`JunkKind`](https://pkg.go.dev/github.com/4matic/trackparse/go#JunkKind) (`trackparse.JunkKindVideo` and so on).
+[`JunkKind`](https://pkg.go.dev/github.com/4matic/trackparse/go#JunkKind) (`trackparse.JunkKindVideo` and so on), in C the enum
+`trackparse_junk_kind` (`TRACKPARSE_JUNK_VIDEO` and so on) plus the string `kind_name`.
 
 <a id="json-and-python-objects"></a>
 <a id="serialising-to-json"></a>
 
 ## Serializing to JSON
 
-All four packages write the same JSON, byte for byte, on every fixture input. The keys are the
-camelCase ones of the spec (`fullTitle`, [`unknownArtist`](/trackparse/guides/artists/#unknown-artists)), also in Python, Rust and Go.
+All five packages write the same JSON, byte for byte, on every fixture input. The keys are the
+camelCase ones of the spec (`fullTitle`, [`unknownArtist`](/trackparse/guides/artists/#unknown-artists)), also in Python, Rust, Go and C.
 
 <Tabs syncKey="lang">
 <TabItem label="JavaScript">
@@ -424,10 +510,31 @@ that JSON back. Nullable fields are pointers (`*Position`, `*int`), and `json.Ma
 as `null` when they are `nil`.
 
 </TabItem>
+<TabItem label="C">
+
+```c
+#include <trackparse.h>
+
+trackparse_track *track = trackparse_parse("Noisia - Stigma (2015)", TRACKPARSE_NUL_TERMINATED);
+
+trackparse_string *json = trackparse_track_to_json(track);
+printf("%s\n", json->str.ptr);
+// {"input":"Noisia - Stigma (2015)","mode":"clean","position":null,"timestamp":null,"artists":[{"name":"Noisia","role":"primary","joiner":null,"source":"artist"}],"title":"Stigma","fullTitle":"Stigma","versions":[],"year":2015,"flags":{"explicit":false,"clean":false,"unknownArtist":false,"unknownTitle":false},"junk":[],"warnings":[]}
+trackparse_string_free(json);
+trackparse_track_free(track);
+```
+
+`trackparse_track_to_json` returns a `trackparse_string` with the exact bytes `JSON.stringify`
+writes in JavaScript. You own it: free it with `trackparse_string_free`. There is one function
+per result type: `trackparse_artists_to_json`, `trackparse_tracklist_to_json` and
+`trackparse_edit_result_to_json`. The installed library writes JSON but does not read it, so
+there is no `from_json`; read the JSON with the JSON library you already use.
+
+</TabItem>
 </Tabs>
 
 Tracklist results serialize the same way: `JSON.stringify(list)`, `tl.to_dict()`,
-`list.to_json()` and `json.Marshal(list)`. See the [Tracklist API](/trackparse/reference/tracklist/)
+`list.to_json()`, `json.Marshal(list)` and `trackparse_tracklist_to_json(list)`. See the [Tracklist API](/trackparse/reference/tracklist/)
 and the [JSON section](/trackparse/guides/tracklists/#json) of the tracklist guide.
 
 ## Types
@@ -505,6 +612,38 @@ fmt.Println(len(trackparse.AllVersionTypes()))         // 27
 A later spec version can add a version type or a warning, so a `switch` on these needs a
 `default` case. The full API is on
 [pkg.go.dev](https://pkg.go.dev/github.com/4matic/trackparse/go).
+
+</TabItem>
+<TabItem label="C">
+
+All of these are declared in `trackparse.h`:
+
+- read-only result structs: `trackparse_track`, `trackparse_artist`, `trackparse_artists` (the
+  list `trackparse_parse_artists` returns), `trackparse_version`, `trackparse_junk`,
+  `trackparse_flags`, `trackparse_position`, `trackparse_timestamp`, `trackparse_str`, and
+  `trackparse_string` (an owned string from `trackparse_format`, `trackparse_normalize` or a
+  `_to_json` function);
+- enums: `trackparse_role`, `trackparse_source`, `trackparse_version_type`,
+  `trackparse_delimiter`, `trackparse_junk_kind`, `trackparse_warning`, `trackparse_mode`. Each
+  has a `_name()` function that returns the spec's name, and `trackparse_mode`,
+  `trackparse_version_type` and `trackparse_junk_kind` also have `_from_name()`;
+- opaque option handles: [`trackparse_parse_options`](/trackparse/reference/options/#parse-options) (which also holds the [keywords](/trackparse/reference/options/#keywords)) and
+  [`trackparse_format_options`](/trackparse/guides/formatting/#options), with the enums
+  [`trackparse_split_and`](/trackparse/guides/artists/#and-is-special), `trackparse_feat`,
+  `trackparse_joiners` and `trackparse_versions`;
+- `trackparse_parser`, the handle [`trackparse_parser_new`](/trackparse/reference/functions/#createparseroptions) returns.
+
+```c
+printf("%s\n", trackparse_version_type_name(TRACKPARSE_VERSION_SPED_UP));   // spedUp
+trackparse_version_type vt;
+if (trackparse_version_type_from_name("remix", TRACKPARSE_NUL_TERMINATED, &vt)) {
+  printf("%d\n", vt == TRACKPARSE_VERSION_REMIX);   // 1
+}
+printf("%d\n", TRACKPARSE_VERSION_NIGHTCORE + 1);   // 27
+```
+
+The values of each enum are in the spec's order, so the last one plus one is the count. A later
+spec version can add a version type or a warning, so a `switch` on these needs a `default` case.
 
 </TabItem>
 </Tabs>

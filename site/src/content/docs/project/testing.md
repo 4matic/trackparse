@@ -5,7 +5,7 @@ description: 13,130 shared fixtures, a generator that can't agree with the code 
 
 The fixtures in [`spec/fixtures`](https://github.com/4matic/trackparse/tree/main/spec/fixtures) are
 the source of truth. The [spec](/trackparse/reference/spec/) says what should happen, the fixtures
-pin it down, and every port has to pass all of them. The JavaScript, Python, Rust and Go ports all do:
+pin it down, and every port has to pass all of them. The JavaScript, Python, Rust, Go and C ports all do:
 **13,130 of 13,130**, with empty skip lists, in CI on every push.
 
 ## Handwritten: 1,203 cases
@@ -53,7 +53,9 @@ Each port throws thousands of random strings at the parser to check the
 [invariants](/trackparse/reference/spec/#invariants) from the spec. The JavaScript suite uses
 [fast-check](https://github.com/dubzzz/fast-check) and the Python suite uses
 [Hypothesis](https://hypothesis.works). The Rust and Go suites each have a small seeded generator
-of their own, so neither needs an extra test dependency. The Go module also has fuzz targets for
+of their own, so neither needs an extra test dependency. The C suite runs under
+AddressSanitizer and UndefinedBehaviorSanitizer (`-DTRACKPARSE_SANITIZE=ON`), so an out-of-bounds
+read, a leak or undefined behaviour on any fixture fails it. The Go module also has fuzz targets for
 `Parse`, [`ParseArtists`](/trackparse/reference/functions/#parseartistsinput-options), `Format`, [`ParseTracklist`](/trackparse/reference/tracklist/#parsetracklisttext-options), [`ApplyEdits`](/trackparse/reference/tracklist/#applyeditstext-edits-options), `Track.UnmarshalJSON` and the
 internal pipeline (`go test -fuzz`) that run the same checks on whatever the fuzzer finds, and a
 test that calls the parser, the tracklist functions and the edits from 16 goroutines at once under
@@ -68,8 +70,9 @@ the race detector.
   fail the run but a blowup does;
 - [`normalize`](/trackparse/reference/functions/#normalizeinput) is idempotent;
 - whitespace, dash and zero-width noise don't change the result;
-- every output validates against the JSON Schema (JavaScript, Python and Go; the Rust output is
-  compared with JavaScript byte for byte instead, see below);
+- every output validates against the JSON Schema (JavaScript, Python, Go and C, where the fixture
+  runner writes every output and a Node script checks it; the Rust output is compared with
+  JavaScript byte for byte instead, see below);
 - no word of the input goes missing from the output (the Rust and Go suites);
 - `parse(format(parse(s)))` round-trips.
 
@@ -87,7 +90,7 @@ For tracklists, on random multi-line text and random edit lists:
 
 A fixture only checks the fields it asserts. So
 [`compare-ports.mjs`](https://github.com/4matic/trackparse/blob/main/scripts/compare-ports.mjs) runs
-every fixture input through all four ports, JavaScript, Python, Rust and Go, and diffs the complete
+every fixture input through all five ports, JavaScript, Python, Rust, Go and C, and diffs the complete
 JSON output, tracklists and edits included. The difference count is zero.
 
 [`fuzz-ports.mjs`](https://github.com/4matic/trackparse/blob/main/scripts/fuzz-ports.mjs) does the
@@ -111,7 +114,7 @@ Every push runs one workflow per port, plus one for the spec:
 | [`python.yml`](https://github.com/4matic/trackparse/blob/main/.github/workflows/python.yml) | ruff, `mypy --strict` and pytest on Python 3.9 to 3.14, and every fixture against the installed wheel |
 | [`rust.yml`](https://github.com/4matic/trackparse/blob/main/.github/workflows/rust.yml) | `cargo test --locked` on stable and on Rust 1.74. On stable only: rustfmt, clippy, the tests with `--all-features` and a publish dry run. Also the Rust output against the built JavaScript package on every fixture |
 | [`go.yml`](https://github.com/4matic/trackparse/blob/main/.github/workflows/go.yml) | `go vet` and `go test -race` on Go 1.22 and on stable, with the artist-side test data written from the built JavaScript package. On stable only: gofmt, staticcheck and the full Unicode check against Node. Also checks that the generated data and Unicode tables are current, that `go.mod` has no dependencies and that no unstable `sort.Slice` is used, and compares the Go output with the built JavaScript package on every fixture. A separate job builds and tests `go/` on its own, as the module zip holds it. A weekly scheduled run fuzzes every fuzz target for three to five minutes |
-| [`spec.yml`](https://github.com/4matic/trackparse/blob/main/.github/workflows/spec.yml) | Fixture validation, stale generated files, the generator's own tests, and that the version numbers of the spec and the four packages match |
+| [`spec.yml`](https://github.com/4matic/trackparse/blob/main/.github/workflows/spec.yml) | Fixture validation, stale generated files, the generator's own tests, and that the version numbers of the spec and the five packages match |
 
 ## Run it yourself
 
@@ -136,8 +139,15 @@ cd ../go
 go test ./...                                        # the same fixtures, invariants and unit tests
 TRACKPARSE_REPORT=1 go test -run TestFixtures -v .   # pass rate per file and per rule
 
-# All four against each other (from the root)
+# C (a C11 compiler, CMake 3.16 or newer)
 cd ..
+cmake -S c -B c/build
+cmake --build c/build
+ctest --test-dir c/build --output-on-failure            # the same fixtures, schema check, unit tests
+TRACKPARSE_REPORT=1 c/build/trackparse-fixtures spec/fixtures/*/*.json   # pass rate per file and per rule
+cmake -S c -B c/build-asan -DTRACKPARSE_SANITIZE=ON     # the same suite under ASan and UBSan
+
+# All five against each other (from the root)
 pnpm build
 node scripts/compare-ports.mjs   # must print "differences: 0"
 node scripts/fuzz-ports.mjs      # the same diff on random tracks and tracklists with edits
@@ -147,5 +157,5 @@ node scripts/fuzz-ports.mjs      # the same diff on random tracks and tracklists
 
 - [Ports](/trackparse/project/ports/) for what each port had to get right.
 - [Contributing](/trackparse/project/contributing/) for how a rule change goes through the spec,
-  the fixtures and the four ports.
+  the fixtures and the five ports.
 - [How it works](/trackparse/project/how-it-works/) for the pipeline the fixtures exercise.

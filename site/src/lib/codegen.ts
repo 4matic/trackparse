@@ -1,6 +1,7 @@
-// The code panels of the playground: the same calls in JavaScript, Python, Rust and Go, laid out
-// as each language's formatter prints them (Biome at 100 columns, Ruff at 100 columns, rustfmt
-// and gofmt), plus a link to the API docs of every function and type a snippet uses.
+// The code panels of the playground: the same calls in JavaScript, Python, Rust, Go and C, laid
+// out as each language's formatter prints them (Biome at 100 columns, Ruff at 100 columns,
+// rustfmt, gofmt and clang-format at 100 columns), plus a link to the API docs of every function
+// and type a snippet uses.
 // Pure functions: the playground passes in what its controls hold.
 
 import type { Lang } from "./lang";
@@ -334,10 +335,311 @@ function goMain(body: string[], std: string[]): string {
   return `package main\n\n${imports}\n\nfunc main() {\n${body.map((l) => (l ? `\t${l}` : "")).join("\n")}\n}`;
 }
 
+// ---- C ------------------------------------------------------------------------------------------
+// Laid out as clang-format writes it with c/.clang-format (LLVM style, 100 columns, short ifs on
+// one line). Checked by running clang-format over generated programs: they come out unchanged.
+
+/** A C octal escape for each UTF-8 byte of `cp`: three digits, so a following digit is safe. */
+function cOctal(cp: number): string {
+  return [...new TextEncoder().encode(String.fromCodePoint(cp))].map((b) => `\\${b.toString(8).padStart(3, "0")}`).join("");
+}
+
+/**
+ * The inside of a C string literal (no quotes). Control, invisible and bidi characters are octal
+ * escapes of their UTF-8 bytes; a lone surrogate is U+FFFD, as the library reads invalid UTF-8;
+ * a `?` after a `?` is escaped, so no trigraph forms. Other text is UTF-8 as written.
+ */
+function cEsc(s: string): string {
+  let out = "";
+  let prev = "";
+  for (const ch of s) {
+    const cp = ch.codePointAt(0) ?? 0;
+    if (ch === '"' || ch === "\\") out += `\\${ch}`;
+    else if (ch === "\n") out += "\\n";
+    else if (ch === "\r") out += "\\r";
+    else if (ch === "\t") out += "\\t";
+    else if (ch === "?" && prev === "?") out += "\\?";
+    else if (cp >= 0xd800 && cp <= 0xdfff) out += cOctal(0xfffd);
+    else if (invisible(cp)) out += cOctal(cp);
+    else out += ch;
+    prev = ch;
+  }
+  return out;
+}
+/** A C string literal. */
+export const cStr = (s: string) => `"${cEsc(s)}"`;
+
+/** A double argument: `45`, `7.5`, `1e+21`; `INFINITY` and `NAN` need <math.h>. */
+function cNum(n: number): string {
+  if (!Number.isFinite(n)) return Number.isNaN(n) ? "NAN" : n > 0 ? "INFINITY" : "-INFINITY";
+  return String(n);
+}
+/** The enum constant of an option value: `youtube` → `TRACKPARSE_MODE_YOUTUBE`. */
+const cConst = (prefix: string, v: string) => `TRACKPARSE_${prefix}_${v.toUpperCase()}`;
+
+/**
+ * Rows of `args` starting at column `col`, and the number of string splits: as many arguments
+ * per row as fit in 100 columns, a comma after each but the last, `tail` after the last. When an
+ * argument cannot fit, clang-format gives each argument a row and splits the string literals that
+ * are too long. Null when that does not fit either.
+ */
+function cPack(col: number, args: string[], tail: string): { rows: string[]; splits: number } | null {
+  const rows: string[] = [];
+  const end = (i: number) => (i === args.length - 1 ? tail : ",");
+  for (let i = 0; i < args.length; i++) {
+    const last = rows.length - 1;
+    if (last >= 0 && col + cols(`${rows[last]} ${args[i]}${end(i)}`) <= WIDTH) rows[last] += ` ${args[i]}${end(i)}`;
+    else if (col + cols(`${args[i]}${end(i)}`) <= WIDTH) rows.push(`${args[i]}${end(i)}`);
+    else return cPackSplit(col, args, tail);
+  }
+  return { rows, splits: 0 };
+}
+function cPackSplit(col: number, args: string[], tail: string): { rows: string[]; splits: number } | null {
+  const rows: string[] = [];
+  let splits = 0;
+  for (let i = 0; i < args.length; i++) {
+    const a = args[i];
+    const e = i === args.length - 1 ? tail : ",";
+    if (col + cols(a + e) <= WIDTH) rows.push(a + e);
+    else if (a.length > 1 && a.startsWith('"') && a.endsWith('"')) {
+      const pieces = cSplit(a.slice(1, -1), col, e).map((p) => `"${p}"`);
+      if (col + cols(pieces[pieces.length - 1] + e) > WIDTH || pieces.some((p) => col + cols(p) > WIDTH)) return null;
+      splits += pieces.length - 1;
+      pieces[pieces.length - 1] += e;
+      rows.push(...pieces);
+    } else return null;
+  }
+  return { rows, splits };
+}
+
+/**
+ * `lhs fn(args);` at `indent`, as clang-format breaks it: flat when it fits; else the layout with
+ * the lowest penalty among the arguments aligned after the parenthesis, a break after `=`, a break
+ * after the parenthesis (arguments 4 columns in), and both. Penalties as clang-format's LLVM style
+ * weighs them: 2 for the `=`, 19 for the parenthesis, about 18 for each break between arguments and
+ * 1000 for each split of a string literal.
+ */
+function cCall(indent: string, lhs: string, fn: string, args: string[]): string {
+  const flat = `${lhs}${fn}(${args.join(", ")});`;
+  if (cols(indent + flat) <= WIDTH) return flat;
+  // Continuation rows are padded relative to `indent`, which the caller adds to every row.
+  const at = cols(indent);
+  const pad = (col: number) => `\n${" ".repeat(col - at)}`;
+  const options: { cost: number; text: string }[] = [];
+  const add = (cost: number, head: string, col: number) => {
+    const p = cPack(col, args, ");");
+    if (!p) return;
+    const breaks = p.splits ? args.length - 1 : p.rows.length - 1;
+    options.push({ cost: cost + 18 * breaks + 1000 * p.splits, text: head + p.rows.join(pad(col)) });
+  };
+  const open = `${lhs}${fn}(`;
+  // Aligned after the parenthesis, on the line of the call.
+  add(0, open, at + cols(open));
+  if (lhs) {
+    // A break after `=`: the call on its own line, aligned after its parenthesis or broken after it.
+    add(2, `${lhs.trimEnd()}${pad(at + 4)}${fn}(`, at + 4 + cols(`${fn}(`));
+    add(21, `${lhs.trimEnd()}${pad(at + 4)}${fn}(${pad(at + 8)}`, at + 8);
+  }
+  add(19, `${open}${pad(at + 4)}`, at + 4);
+  if (!options.length) return flat;
+  return options.reduce((a, b) => (b.cost < a.cost ? b : a)).text;
+}
+
+/**
+ * The pieces of one string literal at column `col`, split after a space where a piece would pass
+ * 100 columns (clang-format's string breaking); `tail` follows the last piece.
+ */
+function cSplit(text: string, col: number, tail: string): string[] {
+  const out: string[] = [];
+  let rest = text;
+  while (col + cols(`"${rest}"${tail}`) > WIDTH) {
+    let cut = -1;
+    let w = col + 1;
+    const chars = [...rest];
+    let i = 0;
+    for (let k = 0; k < chars.length; k++) {
+      w += cols(chars[k]);
+      i += chars[k].length;
+      if (w + 1 > WIDTH) break;
+      if (chars[k] === " " && k < chars.length - 1) cut = i;
+    }
+    if (cut <= 0) break;
+    out.push(rest.slice(0, cut));
+    rest = rest.slice(cut);
+  }
+  out.push(rest);
+  return out;
+}
+
+/**
+ * `lhs "…";` for a string declaration: one literal per line of `text` (a break after each `\n`,
+ * as clang-format keeps them), aligned after `=`, or on the next line when that saves a split.
+ */
+function cText(indent: string, lhs: string, text: string): string {
+  const lines = text
+    .split(/(?<=\n)/)
+    .filter((x, i, all) => x !== "" || all.length === 1)
+    .map(cEsc);
+  const layout = (col: number) => lines.flatMap((l, i) => cSplit(l, col, i === lines.length - 1 ? ";" : ""));
+  const same = layout(cols(indent + lhs));
+  const next = layout(cols(indent) + 4);
+  // Continuation rows are padded relative to `indent`, which the caller adds to every row.
+  if (lines.length === 1 && same.length > 1 && next.length < same.length) {
+    const pad = "\n    ";
+    return `${lhs.trimEnd()}${pad}${next.map((p) => `"${p}"`).join(pad)};`;
+  }
+  const pad = `\n${" ".repeat(cols(lhs))}`;
+  return `${lhs}${same.map((p) => `"${p}"`).join(pad)};`;
+}
+
+/** A C program: the includes, then `fns` (each a block of lines), then `main` around `body`. */
+function cMain(body: string[], std: string[], fns: string[] = []): string {
+  const inc = [...new Set(std)].sort().map((h) => `#include <${h}>`);
+  const out = [...inc, "#include <trackparse.h>", ""];
+  for (const f of fns) out.push(f, "");
+  out.push("int main(void) {", ...body.map((l) => (l ? `  ${l}` : "")), "}");
+  return out.join("\n");
+}
+
+/**
+ * The string variable `name` holding `s`, and the length argument for it. Text with U+0000 is a
+ * char array passed with its byte length, so the NUL stays in.
+ */
+function cInput(name: string, s: string): { decl: string; len: string } {
+  if (s.includes("\0")) return { decl: cText("  ", `const char ${name}[] = `, s), len: `sizeof ${name} - 1` };
+  return { decl: cText("  ", `const char *${name} = `, s), len: "TRACKPARSE_NUL_TERMINATED" };
+}
+
+/** `parse` and `format` as a C program. */
+function cTrackCode(s: string, o: TrackOptions, f: FormatChoice): Snippet {
+  const { decl, len } = cInput("input", s);
+  const body = [decl];
+  const api: string[] = [];
+  const ind = "  ";
+  const set: string[] = [];
+  if (o.mode) set.push(cCall(ind, "", "trackparse_parse_options_set_mode", ["options", cConst("MODE", o.mode)]));
+  if (o.uploader) set.push(cCall(ind, "", "trackparse_parse_options_set_uploader", ["options", cStr(o.uploader), "TRACKPARSE_NUL_TERMINATED"]));
+  for (const a of o.knownArtists ?? [])
+    set.push(cCall(ind, "", "trackparse_parse_options_add_known_artist", ["options", cStr(a), "TRACKPARSE_NUL_TERMINATED"]));
+  if (o.splitAnd) set.push(cCall(ind, "", "trackparse_parse_options_set_split_and", ["options", cConst("SPLIT_AND", o.splitAnd)]));
+  if (set.length) {
+    api.push("trackparse_parse_with", "trackparse_parse_options");
+    body.push(
+      "trackparse_parse_options *options = trackparse_parse_options_new();",
+      ...set,
+      cCall(ind, "trackparse_track *track = ", "trackparse_parse_with", ["input", len, "options"]),
+      "trackparse_parse_options_free(options);",
+    );
+  } else {
+    api.push("trackparse_parse");
+    body.push(cCall(ind, "trackparse_track *track = ", "trackparse_parse", ["input", len]));
+  }
+  body.push("if (!track) return 1; /* out of memory */", "");
+  const fset: string[] = [];
+  if (f.feat) fset.push(`trackparse_format_options_set_feat(format, ${cConst("FEAT", f.feat)});`);
+  if (f.joiners) fset.push(`trackparse_format_options_set_joiners(format, ${cConst("JOINERS", f.joiners)});`);
+  if (f.versions) fset.push(`trackparse_format_options_set_versions(format, ${cConst("VERSIONS", f.versions)});`);
+  if (fset.length) {
+    api.push("trackparse_format_with", "trackparse_format_options");
+    body.push(
+      "trackparse_format_options *format = trackparse_format_options_new();",
+      ...fset,
+      "trackparse_string *formatted = trackparse_format_with(track, format);",
+      "trackparse_format_options_free(format);",
+    );
+  } else {
+    api.push("trackparse_format");
+    body.push("trackparse_string *formatted = trackparse_format(track);");
+  }
+  // printf stops at U+0000; fwrite writes the whole string.
+  if (s.includes("\0"))
+    body.push(
+      "if (formatted) {",
+      "  fwrite(formatted->str.ptr, 1, formatted->str.len, stdout);",
+      "  putchar('\\n');",
+      "}",
+    );
+  else body.push('if (formatted) printf("%s\\n", formatted->str.ptr);');
+  body.push(
+    "trackparse_string_free(formatted);",
+    "trackparse_track_free(track);",
+    "return 0;",
+  );
+  return { src: cMain(body.flatMap((l) => l.split("\n")), ["stdio.h"]), api };
+}
+
+/** `parseTracklist` and `applyEdits` as a C program. */
+function cListCode(x: ListInput): Snippet {
+  const { text, audioSeconds, knownArtists, seconds, from, fix } = x;
+  const { decl, len } = cInput("text", text);
+  const hasOptions = audioSeconds !== undefined || knownArtists !== undefined;
+  const ind = "  ";
+  const body = [decl, ""];
+  if (hasOptions) {
+    body.push("trackparse_tracklist_options *options = trackparse_tracklist_options_new();");
+    // audio_seconds unset is "unknown"; set to 0 it is an audio of length 0.
+    if (audioSeconds !== undefined) body.push(cCall(ind, "", "trackparse_tracklist_options_set_audio_seconds", ["options", cNum(audioSeconds)]));
+    for (const a of knownArtists ?? [])
+      body.push(cCall(ind, "", "trackparse_tracklist_options_add_known_artist", ["options", cStr(a), "TRACKPARSE_NUL_TERMINATED"]));
+    body.push(cCall(ind, "trackparse_tracklist *list = ", "trackparse_parse_tracklist_with", ["text", len, "options"]), "trackparse_tracklist_options_free(options);");
+  } else {
+    body.push(cCall(ind, "trackparse_tracklist *list = ", "trackparse_parse_tracklist", ["text", len]));
+  }
+  body.push(
+    "if (!list) return 1; /* out of memory */",
+    "/* The entries (one per line), the warnings (with line numbers) and the stats, as JSON. */",
+    "trackparse_string *json = trackparse_tracklist_to_json(list);",
+    'if (json) printf("%s\\n\\n", json->str.ptr);',
+    "trackparse_string_free(json);",
+    "trackparse_tracklist_free(list);",
+    "",
+    "trackparse_edits *shift = trackparse_edits_new();",
+    cCall(ind, "", "trackparse_edits_shift_from", ["shift", cNum(seconds), String(from)]),
+    cCall(ind, "", "print_edited", ["text", len, "shift"]),
+    "trackparse_edits_free(shift);",
+    "",
+    "trackparse_edits *sort = trackparse_edits_new();",
+    "trackparse_edits_sort_by_time(sort);",
+    cCall(ind, "", "print_edited", ["text", len, "sort"]),
+    "trackparse_edits_free(sort);",
+  );
+  if (fix)
+    body.push(
+      "",
+      "/* The suggested fix of the first warning that has one. */",
+      "trackparse_edits *fix = trackparse_edits_new();",
+      cCall(ind, "", "trackparse_edits_set_time", ["fix", String(fix.line), cNum(fix.seconds)]),
+      cCall(ind, "", "print_edited", ["text", len, "fix"]),
+      "trackparse_edits_free(fix);",
+    );
+  body.push("return 0;");
+  const helper = [
+    "/* Apply the edits to text and print the new text. */",
+    "static void print_edited(const char *text, size_t len, const trackparse_edits *edits) {",
+    "  trackparse_edit_result *result = trackparse_apply_edits(text, len, edits);",
+    ...(text.includes("\0")
+      ? ["  if (result) {", "    fwrite(result->text.ptr, 1, result->text.len, stdout);", '    printf("\\n\\n");', "  }"]
+      : ['  if (result) printf("%s\\n\\n", result->text.ptr);']),
+    "  trackparse_edit_result_free(result);",
+    "}",
+  ].join("\n");
+  const std = ["stdio.h"];
+  if ([audioSeconds ?? 0, seconds, fix?.seconds ?? 0].some((n) => !Number.isFinite(n))) std.push("math.h");
+  const api = [
+    hasOptions ? "trackparse_parse_tracklist_with" : "trackparse_parse_tracklist",
+    ...(hasOptions ? ["trackparse_tracklist_options"] : []),
+    "trackparse_tracklist_to_json",
+    "trackparse_apply_edits",
+    "trackparse_edits",
+  ];
+  return { src: cMain(body.flatMap((l) => l.split("\n")), std, [helper]), api };
+}
+
 // ---- one track ----------------------------------------------------------------------------------
 
 /** `parse` and `format` with the playground's options, in one language. */
 export function trackCode(lang: Lang, s: string, o: TrackOptions, f: FormatChoice): Snippet {
+  if (lang === "c") return cTrackCode(s, o, f);
   if (lang === "js") {
     const po: { [k: string]: Value } = {};
     if (o.mode) po.mode = o.mode;
@@ -434,6 +736,7 @@ export function trackCode(lang: Lang, s: string, o: TrackOptions, f: FormatChoic
 
 /** `parseTracklist` and `applyEdits` for the playground's text, options and edit inputs. */
 export function listCode(lang: Lang, x: ListInput): Snippet {
+  if (lang === "c") return cListCode(x);
   const { text, audioSeconds, knownArtists, seconds, from, fix } = x;
   const lines = text.split("\n");
   // Lists without CR line endings are written one line per row; anything else as one string.
@@ -593,9 +896,21 @@ const SITE_REF: Record<string, string> = {
   apply_edits: "reference/tracklist/#applyeditstext-edits-options",
 };
 
+/** The C names: the site's reference pages have a C tab for each of these functions. */
+const C_REF: Record<string, string> = {
+  trackparse_parse: SITE_REF.parse,
+  trackparse_parse_with: SITE_REF.parse,
+  trackparse_format: SITE_REF.format,
+  trackparse_format_with: SITE_REF.format,
+  trackparse_parse_tracklist: SITE_REF.parseTracklist,
+  trackparse_parse_tracklist_with: SITE_REF.parseTracklist,
+  trackparse_apply_edits: SITE_REF.applyEdits,
+};
+
 /** Where `name` is documented for `lang`: docs.rs, pkg.go.dev, or the site's reference. */
 export function apiUrl(lang: Lang, name: string, base: string): string | null {
   if (lang === "rs") return RS_ITEM[name] ? DOCS_RS + RS_ITEM[name] : null;
+  if (lang === "c") return C_REF[name] ? `${base}/${C_REF[name]}` : null;
   if (lang === "go") return `${PKG_GO}#${name}`;
   return SITE_REF[name] ? `${base}/${SITE_REF[name]}` : null;
 }

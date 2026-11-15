@@ -23,7 +23,7 @@ doesn't recognize stays in the title, word for word
 This is the Python port of [trackparse](https://github.com/4matic/trackparse). Its behaviour is
 defined by a [shared spec](https://4matic.github.io/trackparse/reference/spec/) and pinned
 by [13,130 fixtures](https://4matic.github.io/trackparse/project/testing/). It passes all of them, and for every fixture input its output is byte-identical
-to the [JavaScript, Rust and Go packages](#other-languages).
+to the [JavaScript, Rust, Go and C packages](#other-languages).
 
 - Python 3.9 to 3.14
 - No dependencies
@@ -336,8 +336,8 @@ parser.parse("Chase & Status x Camo & Krooked - Track (Alix Perez Rerub)").versi
 **Docs:** [SPEC_VERSION](https://4matic.github.io/trackparse/reference/functions/#spec_version)
 
 The version of the [spec](https://4matic.github.io/trackparse/reference/spec/) this build implements. It equals `__version__`: the PyPI package, the npm
-package, the Rust crate, the Go module and the spec are released together and always share one
-version number.
+package, the Rust crate, the Go module, the C library and the spec are released together and
+always share one version number.
 
 ## Modes
 
@@ -570,8 +570,8 @@ The package ships `py.typed` and passes `mypy --strict`.
   the result, and `parse(format_track(parse(s)))` round-trips.
 - CI runs the suite on Python 3.9 to 3.14, and runs the fixtures again against the built wheel.
 - [`compare-ports.mjs`](https://github.com/4matic/trackparse/blob/main/scripts/compare-ports.mjs)
-  runs every fixture input through the JavaScript package, this package, the Rust crate and the
-  Go module and diffs the complete JSON output. The difference count is zero.
+  runs every fixture input through the JavaScript package, this package, the Rust crate, the Go
+  module and the C library and diffs the complete JSON output. The difference count is zero.
 
 ## Versioning
 
@@ -587,7 +587,7 @@ changelog before moving up.
 
 **Docs:** [Ports](https://4matic.github.io/trackparse/project/ports/)
 
-The same parser exists for JavaScript, Rust and Go. All four implement one spec, pass the same
+The same parser exists for JavaScript, Rust, Go and C. All five implement one spec, pass the same
 fixtures, are released together under one version number, and return identical JSON for every
 fixture input. You can parse in one language and read the result in another.
 
@@ -597,6 +597,7 @@ fixture input. You can parse in one language and read the result in another.
 | Python | [trackparse on PyPI](https://pypi.org/project/trackparse/) | `pip install trackparse` | [README](https://github.com/4matic/trackparse/blob/main/python/README.md) · [changelog](https://github.com/4matic/trackparse/blob/main/python/CHANGELOG.md) · [API](https://4matic.github.io/trackparse/reference/parse/) |
 | Rust | [trackparse on crates.io](https://crates.io/crates/trackparse) | `cargo add trackparse` | [README](https://github.com/4matic/trackparse/blob/main/rust/README.md) · [changelog](https://github.com/4matic/trackparse/blob/main/rust/CHANGELOG.md) · [API on docs.rs](https://docs.rs/trackparse) |
 | Go | [github.com/4matic/trackparse/go](https://pkg.go.dev/github.com/4matic/trackparse/go) | `go get github.com/4matic/trackparse/go` | [README](https://github.com/4matic/trackparse/blob/main/go/README.md) · [changelog](https://github.com/4matic/trackparse/blob/main/go/CHANGELOG.md) · [API on pkg.go.dev](https://pkg.go.dev/github.com/4matic/trackparse/go) |
+| C / C++ | [C library and C++ header](https://github.com/4matic/trackparse/blob/main/c/README.md) | CMake FetchContent from the [release tarball](https://github.com/4matic/trackparse/releases), or the amalgamation | [README](https://github.com/4matic/trackparse/blob/main/c/README.md) · [changelog](https://github.com/4matic/trackparse/blob/main/c/CHANGELOG.md) · [header](https://github.com/4matic/trackparse/blob/main/c/include/trackparse.h) |
 
 ## Limitations
 
@@ -629,14 +630,14 @@ same spec rule IDs. Behaviour changes start in the spec, not here: see
 ## Links
 
 - [Documentation](https://4matic.github.io/trackparse/), with every example in JavaScript, Python,
-  Rust and Go, and a [playground](https://4matic.github.io/trackparse/playground/) that runs the
+  Rust, Go and C, and a [playground](https://4matic.github.io/trackparse/playground/) that runs the
   parser in your browser
 - [Spec](https://github.com/4matic/trackparse/blob/main/spec/SPEC.md) and its
   [changelog](https://github.com/4matic/trackparse/blob/main/spec/CHANGELOG.md)
 - [Changelog](https://github.com/4matic/trackparse/blob/main/python/CHANGELOG.md)
 - [Project README](https://github.com/4matic/trackparse#readme)
 - [GitHub repository](https://github.com/4matic/trackparse)
-- [npm package](https://www.npmjs.com/package/trackparse) · [Rust crate](https://crates.io/crates/trackparse) · [Go module](https://pkg.go.dev/github.com/4matic/trackparse/go)
+- [npm package](https://www.npmjs.com/package/trackparse) · [Rust crate](https://crates.io/crates/trackparse) · [Go module](https://pkg.go.dev/github.com/4matic/trackparse/go) · [C library](https://github.com/4matic/trackparse/blob/main/c/README.md)
 
 ## License
 

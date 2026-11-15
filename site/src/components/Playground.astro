@@ -217,6 +217,7 @@ const listExamples: { label: string; title: string; text: string }[] = [
             <button type="button" class="tp-btn small" data-lang="py" aria-pressed="false">Python</button>
             <button type="button" class="tp-btn small" data-lang="rs" aria-pressed="false">Rust</button>
             <button type="button" class="tp-btn small" data-lang="go" aria-pressed="false">Go</button>
+            <button type="button" class="tp-btn small" data-lang="c" aria-pressed="false">C</button>
           </span>
         </div>
         <pre class="tp-json tp-code" id="pg-code"></pre>
@@ -307,6 +308,7 @@ const listExamples: { label: string; title: string; text: string }[] = [
               <button type="button" class="tp-btn small" data-lang="py" aria-pressed="false">Python</button>
               <button type="button" class="tp-btn small" data-lang="rs" aria-pressed="false">Rust</button>
               <button type="button" class="tp-btn small" data-lang="go" aria-pressed="false">Go</button>
+              <button type="button" class="tp-btn small" data-lang="c" aria-pressed="false">C</button>
             </span>
             <button type="button" class="tp-btn small" id="tl-copy-out" hidden><Copy size={14} aria-hidden="true" /><span>Copy</span></button>
           </div>
@@ -481,7 +483,7 @@ const listExamples: { label: string; title: string; text: string }[] = [
   .pg-api:empty {
     display: none;
   }
-  /* Generated Go is indented with tabs, as gofmt writes it. */
+  /* Generated Go is indented with tabs, as gofmt writes it (C uses spaces, as clang-format does). */
   .tp-code {
     tab-size: 4;
   }
@@ -497,7 +499,7 @@ const listExamples: { label: string; title: string; text: string }[] = [
     background: var(--tp-code-bg);
     padding: 0.1em 0.35em;
     border-radius: 4px;
-    /* The go get line is longer than a phone is wide: it may break anywhere. */
+    /* The go get and FetchContent lines are longer than a phone is wide: they may break anywhere. */
     overflow-wrap: anywhere;
   }
   .pg-install {
@@ -825,13 +827,15 @@ const listExamples: { label: string; title: string; text: string }[] = [
       `<span>Install: <code>${escapeHtml(p.install)}</code></span>` +
       `<a href="${base}/start/getting-started/">Getting started</a>` +
       `<a href="${p.url}">${p.registry}</a>` +
-      // The API docs: docs.rs for the crate, pkg.go.dev (the link above) for the module, and
-      // this site's reference for the npm and PyPI packages.
+      // The API docs: docs.rs for the crate, pkg.go.dev (the link above) for the module, the
+      // README for the C library, and this site's reference for the npm and PyPI packages.
       (lang === "rs"
         ? '<a href="https://docs.rs/trackparse">docs.rs</a>'
         : lang === "go"
           ? ""
-          : `<a href="${base}/reference/parse/">API reference</a>`);
+          : lang === "c"
+            ? '<a href="https://github.com/4matic/trackparse/tree/main/c#readme">C README</a>'
+            : `<a href="${base}/reference/parse/">API reference</a>`);
     for (const el of document.querySelectorAll<HTMLElement>("[data-install]")) el.innerHTML = html;
   }
 

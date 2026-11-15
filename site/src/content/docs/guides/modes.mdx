@@ -23,7 +23,9 @@ The resolved mode is in `track.mode`, so you can always see which one ran. You p
 [`ModeOption`](https://docs.rs/trackparse/latest/trackparse/enum.ModeOption.html) and the resolved mode is [`Mode`](https://docs.rs/trackparse/latest/trackparse/enum.Mode.html),
 which has no `Auto`. In Go both are the string type [`Mode`](https://pkg.go.dev/github.com/4matic/trackparse/go#Mode):
 [`trackparse.ModeAuto`](https://pkg.go.dev/github.com/4matic/trackparse/go#ModeAuto) (`"auto"`) asks for auto, an empty `Mode` in `ParseOptions`
-means auto too, and `Track.Mode` is never `ModeAuto`. The mode rules are
+means auto too, and `Track.Mode` is never `ModeAuto`. In C both are the enum `trackparse_mode`:
+`TRACKPARSE_MODE_AUTO` is the default of `trackparse_parse_options_set_mode`, and a result's
+`mode` is never `TRACKPARSE_MODE_AUTO`; `trackparse_mode_name` gives the name. The mode rules are
 [R2](/trackparse/reference/spec/#r2-mode-prelude) in the spec.
 
 ## How auto decides
@@ -99,6 +101,25 @@ fmt.Println(t.Mode, t.Position.Number, t.Artists[0].Name, "/", t.Title)
 t = trackparse.Parse("Noisia - Stigma | Official Video")
 fmt.Printf("%s %q %+v\n", t.Mode, t.Title, t.Junk)
 // youtube "Stigma" [{Raw:Official Video Kind:video}]
+```
+
+</TabItem>
+<TabItem label="C">
+
+```c
+#include <trackparse.h>
+
+trackparse_track *t = trackparse_parse("07_Burial_-_Archangel.mp3", TRACKPARSE_NUL_TERMINATED);
+printf("%s %d %s / %s\n", trackparse_mode_name(t->mode), t->position->number,
+       t->artists[0].name.ptr, t->title.ptr);
+// filename 7 Burial / Archangel
+trackparse_track_free(t);
+
+t = trackparse_parse("Noisia - Stigma | Official Video", TRACKPARSE_NUL_TERMINATED);
+printf("%s %s %s: %s\n", trackparse_mode_name(t->mode), t->title.ptr, t->junk[0].kind_name.ptr,
+       t->junk[0].raw.ptr);
+// youtube Stigma video: Official Video
+trackparse_track_free(t);
 ```
 
 </TabItem>
@@ -184,6 +205,32 @@ fmt.Printf("%q %q %v\n", t.Artists[0].Name, t.Title, t.Warnings)
 ```
 
 </TabItem>
+<TabItem label="C">
+
+```c
+trackparse_parse_options *youtube = trackparse_parse_options_new();
+trackparse_parse_options_set_mode(youtube, TRACKPARSE_MODE_YOUTUBE);
+
+t = trackparse_parse_with("\"Numb\" by Linkin Park", TRACKPARSE_NUL_TERMINATED, youtube);
+printf("%s / %s / %s\n", t->artists[0].name.ptr, t->title.ptr,
+       trackparse_warning_name(t->warnings[0]));
+// Linkin Park / Numb / bySplit
+trackparse_track_free(t);
+
+t = trackparse_parse_with("Linkin Park: \"Numb\"", TRACKPARSE_NUL_TERMINATED, youtube);
+printf("%s / %s / %s\n", t->artists[0].name.ptr, t->title.ptr,
+       trackparse_warning_name(t->warnings[0]));
+// Linkin Park / Numb / quotedTitleSplit
+trackparse_track_free(t);
+
+t = trackparse_parse_with("Blink-182-All The Small Things", TRACKPARSE_NUL_TERMINATED, youtube);
+printf("%s / %s / %s\n", t->artists[0].name.ptr, t->title.ptr,
+       trackparse_warning_name(t->warnings[0]));
+// Blink-182 / All The Small Things / unspacedDashSplit
+trackparse_track_free(t);
+```
+
+</TabItem>
 </Tabs>
 
 In `clean` mode the last one comes back with no artist, the whole string as the title and a
@@ -235,6 +282,18 @@ fmt.Printf("%q %q\n", t.Artists[0].Name, t.Title)
 ```
 
 </TabItem>
+<TabItem label="C">
+
+```c
+trackparse_parse_options_set_uploader(youtube, "Daft Punk - Topic", TRACKPARSE_NUL_TERMINATED);
+t = trackparse_parse_with("Around the World", TRACKPARSE_NUL_TERMINATED, youtube);
+printf("%s / %s / %zu warnings\n", t->artists[0].name.ptr, t->title.ptr, t->warnings_count);
+// Daft Punk / Around the World / 0 warnings
+trackparse_track_free(t);
+trackparse_parse_options_free(youtube);
+```
+
+</TabItem>
 </Tabs>
 
 ## filename mode
@@ -278,6 +337,23 @@ parse("311 - Amber.mp3").position;                     // Some(Position { raw: "
 fmt.Printf("%q\n", trackparse.Parse("02_Aphex_Twin_-_Xtal.flac").Artists[0].Name)   // "Aphex Twin"
 fmt.Printf("%+v\n", *trackparse.Parse("311 - Amber.mp3").Position)             // {Raw:311 Number:311}
 fmt.Printf("%q\n", trackparse.Parse("311 - Amber").Artists[0].Name)            // "311"
+```
+
+</TabItem>
+<TabItem label="C">
+
+```c
+t = trackparse_parse("02_Aphex_Twin_-_Xtal.flac", TRACKPARSE_NUL_TERMINATED);
+printf("%s\n", t->artists[0].name.ptr);   // Aphex Twin
+trackparse_track_free(t);
+
+t = trackparse_parse("311 - Amber.mp3", TRACKPARSE_NUL_TERMINATED);
+printf("%s %d\n", t->position->raw.ptr, t->position->number);   // 311 311
+trackparse_track_free(t);
+
+t = trackparse_parse("311 - Amber", TRACKPARSE_NUL_TERMINATED);
+printf("%s\n", t->artists[0].name.ptr);   // 311
+trackparse_track_free(t);
 ```
 
 </TabItem>
@@ -342,9 +418,28 @@ fmt.Printf("%q %q\n", t.Artists[0].Name, t.Title)
 ```
 
 </TabItem>
+<TabItem label="C">
+
+```c
+t = trackparse_parse("Electrosoul System - Liquid Metal", TRACKPARSE_NUL_TERMINATED);
+printf("%zu artists / %s / %s: %s\n", t->artists_count, t->title.ptr, t->junk[0].kind_name.ptr,
+       t->junk[0].raw.ptr);
+// 0 artists / Electrosoul System / genre: Liquid Metal
+trackparse_track_free(t);
+
+trackparse_parse_options *tracklist = trackparse_parse_options_new();
+trackparse_parse_options_set_mode(tracklist, TRACKPARSE_MODE_TRACKLIST);
+t = trackparse_parse_with("Electrosoul System - Liquid Metal", TRACKPARSE_NUL_TERMINATED, tracklist);
+printf("%s / %s / %zu junk\n", t->artists[0].name.ptr, t->title.ptr, t->junk_count);
+// Electrosoul System / Liquid Metal / 0 junk
+trackparse_track_free(t);
+trackparse_parse_options_free(tracklist);
+```
+
+</TabItem>
 </Tabs>
 
-[`parseTracklist`](/trackparse/guides/tracklists/) (`parse_tracklist` in Python and Rust, `ParseTracklist` in Go) uses this
+[`parseTracklist`](/trackparse/guides/tracklists/) (`parse_tracklist` in Python and Rust, `ParseTracklist` in Go, `trackparse_parse_tracklist` in C) uses this
 mode for every line. You only need to set it yourself when you parse tracklist lines one at a time.
 The playground can show [this line in tracklist mode](/trackparse/playground/#track=Electrosoul%20System%20-%20Liquid%20Metal&mode=tracklist).
 [Tracklist mode](/trackparse/guides/tracklists/#tracklist-mode) in the tracklist guide has more

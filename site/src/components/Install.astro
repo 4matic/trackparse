@@ -1,16 +1,19 @@
 ---
-// One install line under the hero, switchable between npm, pip, cargo and go, with a copy button.
+// One install line under the hero, switchable between npm, pip, cargo, go and CMake, with a copy
+// button. C has no registry: its "line" is the CMake FetchContent block, shown on several lines.
 // The switch shares its choice with the docs' language tabs and the playground (lib/lang.ts).
 import Check from "@lucide/astro/icons/check";
 import Copy from "@lucide/astro/icons/copy";
-import { PACKAGE } from "../lib/lang";
+import { C_FETCHCONTENT, PACKAGE } from "../lib/lang";
 
 const pms = [
   { lang: "js", label: "npm" },
   { lang: "py", label: "pip" },
   { lang: "rs", label: "cargo" },
   { lang: "go", label: "go" },
+  { lang: "c", label: "cmake" },
 ] as const;
+const command = (lang: (typeof pms)[number]["lang"]) => (lang === "c" ? C_FETCHCONTENT : PACKAGE[lang].install);
 ---
 
 <div class="install-wrap not-content">
@@ -18,19 +21,21 @@ const pms = [
     <div class="seg" role="group" aria-label="Package manager">
       {
         pms.map((p, i) => (
-          <button type="button" data-pm={p.lang} data-cmd={PACKAGE[p.lang].install} aria-pressed={i === 0 ? "true" : "false"}>
+          <button type="button" data-pm={p.lang} data-cmd={command(p.lang)} aria-pressed={i === 0 ? "true" : "false"}>
             {p.label}
           </button>
         ))
       }
     </div>
-    <code><span class="prompt" aria-hidden="true">$</span> <span class="cmd">{PACKAGE.js.install}</span></code>
+    <code><span class="prompt" aria-hidden="true">$ </span><span class="cmd">{PACKAGE.js.install}</span></code>
     <button type="button" class="copy" aria-label="Copy the install command"><Copy size={15} class="i-copy" aria-hidden="true" /><Check size={15} class="i-check" aria-hidden="true" /></button>
   </div>
   <p class="pkgs">
     Published on <a href={PACKAGE.js.url}>npm</a>, <a href={PACKAGE.py.url}>PyPI</a>,{" "}
-    <a href={PACKAGE.rs.url}>crates.io</a> and the Go module proxy. The Rust API docs are on{" "}
-    <a href="https://docs.rs/trackparse">docs.rs</a>, the Go API docs on <a href={PACKAGE.go.url}>pkg.go.dev</a>.
+    <a href={PACKAGE.rs.url}>crates.io</a> and the Go module proxy; the C library is a tarball on{" "}
+    <a href={PACKAGE.c.url}>GitHub Releases</a>. The Rust API docs are on{" "}
+    <a href="https://docs.rs/trackparse">docs.rs</a>, the Go API docs on <a href={PACKAGE.go.url}>pkg.go.dev</a>, the C
+    API in the <a href="https://github.com/4matic/trackparse/tree/main/c#readme">C README</a>.
   </p>
 </div>
 
@@ -79,6 +84,21 @@ const pms = [
   .prompt {
     color: var(--sl-color-gray-4);
   }
+  /* CMake for C: several lines, no prompt, scrolled sideways when a line is wider than the box. */
+  .install.multi {
+    align-items: stretch;
+  }
+  .install.multi code {
+    white-space: pre;
+    overflow-x: auto;
+    text-overflow: clip;
+    padding-block: 0.8rem;
+    line-height: 1.5;
+    min-width: 0;
+  }
+  .install.multi .prompt {
+    display: none;
+  }
   .copy {
     display: grid;
     place-items: center;
@@ -117,7 +137,7 @@ const pms = [
     color: var(--sl-color-white);
     text-decoration-color: var(--sl-color-accent);
   }
-  /* Four package managers and a command don't fit one row on a phone: the switch gets its own. */
+  /* Five package managers and a command don't fit one row on a phone: the switch gets its own. */
   @media (max-width: 26rem) {
     .install {
       flex-wrap: wrap;
@@ -146,6 +166,7 @@ const pms = [
         b.setAttribute("aria-pressed", String(b.dataset.pm === lang));
         if (b.dataset.pm === lang) cmd.textContent = b.dataset.cmd ?? "";
       }
+      root.classList.toggle("multi", lang === "c");
     };
     for (const b of buttons) {
       b.addEventListener("click", () => {

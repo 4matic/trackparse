@@ -12,8 +12,8 @@ it belongs to.
 
 Open an issue on [GitHub](https://github.com/4matic/trackparse/issues). You can paste a
 [playground](/trackparse/playground/) link: the URL contains the input. It doesn't matter which
-language you use. The four packages share the rules, so a wrong result in one is a wrong result in
-all of them. If JavaScript, Python, Rust and Go ever disagree with each other, that is a bug of its own,
+language you use. The five packages share the rules, so a wrong result in one is a wrong result in
+all of them. If JavaScript, Python, Rust, Go and C ever disagree with each other, that is a bug of its own,
 and worth reporting with the two outputs.
 
 ## Change a rule
@@ -27,8 +27,8 @@ Behaviour starts in the spec, not in the code:
    trigger, and one exact case if the rule touches many fields.
 3. If the rule is combinatorial (a new joiner, a new version word), teach the generator the atom
    and regenerate.
-4. Change every port, JavaScript, Python, Rust and Go, and cite the rule ID in a comment.
-5. Check that every fixture passes in all four ports and that the cross-port diff reports zero
+4. Change every port, JavaScript, Python, Rust, Go and C, and cite the rule ID in a comment.
+5. Check that every fixture passes in all five ports and that the cross-port diff reports zero
    differences.
 6. Update the pages of this site that describe the rule, with an example in each language.
 
@@ -46,6 +46,7 @@ js/          the npm package (reference implementation)
 python/      the PyPI package
 rust/        the crates.io package
 go/          the Go module
+c/           the C library
 site/        this website
 scripts/     cross-port diff and other tools
 ```
@@ -112,21 +113,43 @@ The artist-side tests compare with values from the JavaScript package. Their dat
 to ship in the module, so it is not committed: the last command writes it, and without it those
 tests are skipped. CI writes it and requires it.
 
+## Working on the C library
+
+A C11 compiler, CMake 3.16 or newer, and Node 24 for the codegen: as in Go, the Unicode tables come
+from Node, not from the C library or the platform. The C code is a translation of the Go port, file
+by file; [`c/src/PORTING.md`](https://github.com/4matic/trackparse/blob/main/c/src/PORTING.md) has
+the conventions.
+
+```sh
+cmake -S c -B c/build -DTRACKPARSE_WERROR=ON
+cmake --build c/build
+ctest --test-dir c/build --output-on-failure                  # fixtures, schema check, unit tests
+TRACKPARSE_REPORT=1 c/build/trackparse-fixtures spec/fixtures/*/*.json   # pass rate per file and per rule
+TRACKPARSE_ONLY=brackets-version-001 c/build/trackparse-fixtures spec/fixtures/*/*.json   # one case
+cmake -S c -B c/build-asan -DTRACKPARSE_SANITIZE=ON           # the same suite under ASan and UBSan
+node c/scripts/gen_data.mjs                                   # regenerate src/data_gen.c from spec/data
+node c/scripts/gen_unicode.mjs                                # regenerate src/unicode_gen.c
+node c/scripts/amalgamate.mjs                                 # write c/dist/trackparse.c and trackparse.h
+```
+
+`src/` uses no `strtod`, no float `printf`, no `<ctype.h>` and no `qsort`: the first three follow
+the process locale, and `qsort` is not stable.
+
 ## Comparing the ports
 
 After a change in any port, build the JavaScript package and run the cross-port diff from the
-repository root. It runs every fixture through all four ports and compares the complete output.
+repository root. It runs every fixture through all five ports and compares the complete output.
 
 ```sh
 pnpm build
 node scripts/compare-ports.mjs                # must print "differences: 0"
-node scripts/compare-ports.mjs --only=rust    # one port against JavaScript (or --only=python, --only=go)
+node scripts/compare-ports.mjs --only=rust    # one port against JavaScript (or --only=python, --only=go, --only=c)
 node scripts/fuzz-ports.mjs                   # the same diff on random input
 ```
 
 ## This website
 
-The site lives in `site/`. Every code example has a JavaScript, a Python, a Rust and a Go tab, and every
+The site lives in `site/`. Every code example has a JavaScript, a Python, a Rust, a Go and a C tab, and every
 output in it comes from running the code.
 
 ```sh
@@ -137,7 +160,7 @@ pnpm docs:build    # build it; fails on broken pages
 [AGENTS.md](https://github.com/4matic/trackparse/blob/main/AGENTS.md) has the full repository map,
 every command and the release process. Commits follow
 [Conventional Commits](https://www.conventionalcommits.org/), because the changelog is generated
-from them. The four packages and the spec are released together under one version number.
+from them. The five packages and the spec are released together under one version number.
 
 ## See also
 

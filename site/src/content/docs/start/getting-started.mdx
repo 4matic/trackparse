@@ -1,6 +1,6 @@
 ---
 title: Getting started
-description: Install trackparse for JavaScript, Python, Rust or Go and parse your first track.
+description: Install trackparse for JavaScript, Python, Rust, Go or C and parse your first track.
 ---
 
 import { Aside, Steps, Tabs, TabItem } from "@astrojs/starlight/components";
@@ -46,6 +46,30 @@ import { Aside, Steps, Tabs, TabItem } from "@astrojs/starlight/components";
 
         Go 1.22 or newer, no dependencies. The package name is `trackparse`. The API docs are on
         [pkg.go.dev](https://pkg.go.dev/github.com/4matic/trackparse/go).
+      </TabItem>
+      <TabItem label="C">
+        ```cmake
+        include(FetchContent)
+        FetchContent_Declare(
+          trackparse
+          URL https://github.com/4matic/trackparse/releases/download/c-v0.7.0/trackparse-c-0.7.0.tar.gz
+          URL_HASH SHA256=…   # the trackparse-c-0.7.0.tar.gz line of SHA256SUMS on the release
+        )
+        FetchContent_MakeAvailable(trackparse)
+        target_link_libraries(my_app PRIVATE trackparse::trackparse)
+        ```
+
+        C11, no dependencies beyond the C standard library; it builds with GCC, Clang and MSVC.
+        Every release from 0.7.0, the first with the C library, attaches the source tarball above
+        (CMake 3.16 or newer), `SHA256SUMS` and an amalgamation to its
+        [GitHub Release](https://github.com/4matic/trackparse/releases).
+        `cmake --install` also gives you `find_package(trackparse)` and a `trackparse.pc` for
+        pkg-config. Without CMake, copy `trackparse.c` and `trackparse.h` from
+        `trackparse-c-0.7.0-amalgamation.zip` into your project and compile them with your
+        sources (`cc -std=c11 -DTRACKPARSE_STATIC main.c trackparse.c -lm -lpthread`). The API is
+        one header,
+        [`trackparse.h`](https://github.com/4matic/trackparse/blob/main/c/include/trackparse.h),
+        with a comment on every declaration.
       </TabItem>
     </Tabs>
 
@@ -106,6 +130,27 @@ import { Aside, Steps, Tabs, TabItem } from "@astrojs/starlight/components";
 		fmt.Println(track.Artists[1].Role)       // featured
 		```
       </TabItem>
+      <TabItem label="C">
+        ```c
+        #include <trackparse.h>
+
+        trackparse_track *track =
+            trackparse_parse("Noisia feat. Foreign Beggars - Shellshock", TRACKPARSE_NUL_TERMINATED);
+
+        printf("%s\n", track->title.ptr);   // Shellshock
+        for (size_t i = 0; i < track->artists_count; i++) {
+          printf("%s\n", track->artists[i].name.ptr);
+        }
+        // Noisia
+        // Foreign Beggars
+        printf("%s\n", trackparse_role_name(track->artists[1].role));   // featured
+        trackparse_track_free(track);
+        ```
+
+        Input is UTF-8 with a byte length, or `TRACKPARSE_NUL_TERMINATED` for a C string. The
+        result owns its memory, so free it with `trackparse_track_free`. `trackparse_parse`
+        returns `NULL` only when memory runs out; check for it in real code.
+      </TabItem>
     </Tabs>
 
 3. Look at the [versions](/trackparse/guides/versions/) and the
@@ -158,6 +203,27 @@ import { Aside, Steps, Tabs, TabItem } from "@astrojs/starlight/components";
 		// remix by Mefjus
 		// remix by Noisia
 		```
+      </TabItem>
+      <TabItem label="C">
+        ```c
+        trackparse_track *t = trackparse_parse(
+            "Daft Punk - One More Time (Official Music Video) [HD]", TRACKPARSE_NUL_TERMINATED);
+        printf("%s\n", t->title.ptr);   // One More Time
+        for (size_t i = 0; i < t->junk_count; i++) {
+          printf("%s: %s\n", t->junk[i].kind_name.ptr, t->junk[i].raw.ptr);
+        }
+        // video: Official Music Video
+        // quality: HD
+
+        trackparse_track *r = trackparse_parse("Dimension - Offshore (Mefjus Remix / Noisia Remix)",
+                                               TRACKPARSE_NUL_TERMINATED);
+        for (size_t i = 0; i < r->versions_count; i++) {
+          printf("%s by %s\n", r->versions[i].type_name.ptr, r->versions[i].artists[0].name.ptr);
+        }
+        // remix by Mefjus
+        // remix by Noisia
+        trackparse_track_free(r);
+        ```
       </TabItem>
     </Tabs>
 
@@ -212,6 +278,27 @@ import { Aside, Steps, Tabs, TabItem } from "@astrojs/starlight/components";
 		fmt.Printf("%q\n", names)   // ["Chase & Status"]
 		```
       </TabItem>
+      <TabItem label="C">
+        ```c
+        trackparse_track *cs = trackparse_parse("Chase & Status - Baddadan", TRACKPARSE_NUL_TERMINATED);
+        for (size_t i = 0; i < cs->artists_count; i++) {
+          printf("%s\n", cs->artists[i].name.ptr);
+        }
+        // Chase
+        // Status
+        trackparse_track_free(cs);
+
+        trackparse_parse_options *options = trackparse_parse_options_new();
+        trackparse_parse_options_add_known_artist(options, "Chase & Status", TRACKPARSE_NUL_TERMINATED);
+        cs = trackparse_parse_with("Chase & Status - Baddadan", TRACKPARSE_NUL_TERMINATED, options);
+        for (size_t i = 0; i < cs->artists_count; i++) {
+          printf("%s\n", cs->artists[i].name.ptr);
+        }
+        // Chase & Status
+        trackparse_track_free(cs);
+        trackparse_parse_options_free(options);
+        ```
+      </TabItem>
     </Tabs>
 
 5. Write it back with [`format`](/trackparse/guides/formatting/), or turn it into
@@ -251,6 +338,18 @@ import { Aside, Steps, Tabs, TabItem } from "@astrojs/starlight/components";
 		data, _ := json.Marshal(t)
 		fmt.Println(string(data))           // {"input":"Daft Punk - One More Time (Official Music Video) [HD]","mode":"youtube",…}
 		```
+      </TabItem>
+      <TabItem label="C">
+        ```c
+        trackparse_string *s = trackparse_format(t);
+        printf("%s\n", s->str.ptr);      // Daft Punk - One More Time
+        trackparse_string_free(s);
+
+        trackparse_string *json = trackparse_track_to_json(t);
+        printf("%s\n", json->str.ptr);   // {"input":"Daft Punk - One More Time (Official Music Video) [HD]","mode":"youtube",…}
+        trackparse_string_free(json);
+        trackparse_track_free(t);
+        ```
       </TabItem>
     </Tabs>
 
@@ -303,13 +402,29 @@ import { Aside, Steps, Tabs, TabItem } from "@astrojs/starlight/components";
 
         `Time` and `Track` are pointers in Go, `nil` on a blank line or a note.
       </TabItem>
+      <TabItem label="C">
+        ```c
+        trackparse_tracklist *list = trackparse_parse_tracklist(
+            "00:00 Noisia - Stigma\n04:10 Mefjus - Sleepless (Phace Remix)", TRACKPARSE_NUL_TERMINATED);
+        for (size_t i = 0; i < list->entries_count; i++) {
+          const trackparse_entry *e = &list->entries[i];
+          if (e->time && e->track) printf("%gs %s\n", e->time->seconds, e->track->title.ptr);
+        }
+        // 0s Stigma
+        // 250s Sleepless
+        printf("%zu\n", list->warnings_count);   // 0
+        trackparse_tracklist_free(list);
+        ```
+
+        `time` and `track` are pointers in C, `NULL` on a blank line or a note.
+      </TabItem>
     </Tabs>
 
 </Steps>
 
 <Aside type="tip" title="Parsing a lot of strings?">
 `createParser(options)` ([`create_parser`](/trackparse/reference/functions/#createparseroptions) in Python, `Parser::new(&options)` in Rust,
-`trackparse.NewParser(options)` in Go) compiles your options and keywords once. Its [`parse`](/trackparse/reference/parse/) method is the same function with those options already applied. See [Other functions](/trackparse/reference/functions/#createparseroptions).
+`trackparse.NewParser(options)` in Go, `trackparse_parser_new(options)` in C) compiles your options and keywords once. Its [`parse`](/trackparse/reference/parse/) method is the same function with those options already applied. See [Other functions](/trackparse/reference/functions/#createparseroptions).
 </Aside>
 
 ## Where each task is explained

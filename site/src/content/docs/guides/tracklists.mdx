@@ -7,7 +7,7 @@ import { Tabs, TabItem } from "@astrojs/starlight/components";
 
 Mixes and podcasts come with a tracklist: a block of text, one track per line, usually with a start
 time in front. [`parseTracklist`](/trackparse/reference/tracklist/#parsetracklisttext-options)
-(`parse_tracklist` in Python and Rust, `ParseTracklist` in Go) reads the whole block. Every line
+(`parse_tracklist` in Python and Rust, `ParseTracklist` in Go, `trackparse_parse_tracklist` in C) reads the whole block. Every line
 gets its kind, its time and a full [`ParsedTrack`](/trackparse/reference/parse/). The list as a
 whole gets checks with line numbers. The rules are [R13](/trackparse/reference/spec/#r13-tracklists)
 in the spec, and every field is listed in the [Tracklist API](/trackparse/reference/tracklist/).
@@ -45,13 +45,22 @@ import (
 ```
 
 </TabItem>
+<TabItem label="C">
+
+```c
+#include <trackparse.h>
+```
+
+</TabItem>
 </Tabs>
 
 In JavaScript it's a separate entry point, `trackparse/tracklist`, about 8.4 KiB gzipped, so code
 that only parses single tracks never loads it. In Python it is the module `trackparse.tracklist`,
 in Rust the module [`trackparse::tracklist`](https://docs.rs/trackparse/latest/trackparse/tracklist/index.html). Go has no separate entry:
 [`trackparse.ParseTracklist`](https://pkg.go.dev/github.com/4matic/trackparse/go#ParseTracklist) and [`trackparse.ApplyEdits`](https://pkg.go.dev/github.com/4matic/trackparse/go#ApplyEdits)
-are in the one package.
+are in the one package. C has none either: `trackparse_parse_tracklist` and
+`trackparse_apply_edits` are declared in the one header,
+[`trackparse.h`](https://github.com/4matic/trackparse/blob/main/c/include/trackparse.h).
 
 Two things differ in Rust. Seconds are `f64`, since a time can carry a fraction, so `Debug` prints
 `3167.0` where JavaScript and Python print `3167`. `to_json()` writes `3167`, as JavaScript and
@@ -60,6 +69,11 @@ And `entry.time` and `entry.track` are `Option`s, because a header or a blank li
 
 Go is like Rust here. `Seconds` is a `float64`, which `fmt` prints as `3167`, and `json.Marshal`
 writes `3167`. `Time` and `Track` are pointers, `nil` on a header or a blank line.
+
+C is like Go. `seconds` is a `double` (the examples print it with `%g`), and
+`trackparse_tracklist_to_json` writes `3167`. `time` and `track` are pointers, `NULL` on a header
+or a blank line. The result owns all its memory, entries and their tracks included, and
+`trackparse_tracklist_free` releases it.
 
 ## A first list
 
@@ -208,6 +222,51 @@ fmt.Println(s.Lines, s.Tracks, s.Markers, s.Timed, *s.FirstTime, *s.LastTime)   
 ```
 
 </TabItem>
+<TabItem label="C">
+
+```c
+const char *text =
+    "Hour 2\r\n"
+    "48:20 Noisia - Stigma\r\n"
+    "52:47 Mefjus & Kasra - Bandwagon (Phace Remix)\r\n"
+    "56:05 Black Sun Empire - ID\r\n"
+    "59:31 Alix Perez - Fade Away\r\n"
+    "01:03:10 Interview with Hybris\r\n"
+    "01:07:44 Imanu - Sacrifice\r\n"
+    "00:11:02 Current Value feat. Teddy Killerz - Payload\r\n" /* typo: should be 01:11:02 */
+    "01:15:36 Hybris - Spinning Top";
+
+trackparse_tracklist *list = trackparse_parse_tracklist(text, TRACKPARSE_NUL_TERMINATED);
+
+for (size_t i = 0; i < list->entries_count; i++) {
+  printf("%s%s", i ? " " : "", trackparse_entry_kind_name(list->entries[i].kind));
+}
+printf("\n");   // header track track track track marker track track track
+
+const trackparse_entry *bandwagon = &list->entries[2];
+printf("%s %g\n", bandwagon->time->raw.ptr, bandwagon->time->seconds);   // 52:47 3167
+const trackparse_parts *p = &bandwagon->parts;
+printf("\"%s\" \"%s\" \"%s\" \"%s\"\n", p->lead.ptr, p->time.ptr, p->gap.ptr, p->rest.ptr);
+// "" "52:47" " " "Mefjus & Kasra - Bandwagon (Phace Remix)"
+const trackparse_track *track = bandwagon->track;
+for (size_t i = 0; i < track->artists_count; i++) {
+  printf("%s\n", track->artists[i].name.ptr);
+}
+// Mefjus
+// Kasra
+for (size_t i = 0; i < track->versions_count; i++) {
+  printf("%s by %s\n", track->versions[i].type_name.ptr, track->versions[i].artists[0].name.ptr);
+}
+// remix by Phace
+printf("%d\n", list->entries[3].track->flags.unknown_title);   // 1
+
+const trackparse_stats *s = &list->stats;
+printf("%d %d %d %d %g %g\n", s->lines, s->tracks, s->markers, s->timed, *s->first_time,
+       *s->last_time);
+// 9 7 1 8 2900 4536
+```
+
+</TabItem>
 </Tabs>
 
 Paste it into the [playground](/trackparse/playground/#list=Hour%202%0A48%3A20%20Noisia%20-%20Stigma%0A52%3A47%20Mefjus%20%26%20Kasra%20-%20Bandwagon%20(Phace%20Remix)%0A56%3A05%20Black%20Sun%20Empire%20-%20ID%0A59%3A31%20Alix%20Perez%20-%20Fade%20Away%0A01%3A03%3A10%20Interview%20with%20Hybris%0A01%3A07%3A44%20Imanu%20-%20Sacrifice%0A00%3A11%3A02%20Current%20Value%20feat.%20Teddy%20Killerz%20-%20Payload%0A01%3A15%3A36%20Hybris%20-%20Spinning%20Top)
@@ -250,6 +309,18 @@ for _, e := range list.Entries {
 	joined.WriteString(e.Raw + string(e.Eol))
 }
 fmt.Println(joined.String() == text)   // true
+```
+
+</TabItem>
+<TabItem label="C">
+
+```c
+char joined[1024] = "";
+for (size_t i = 0; i < list->entries_count; i++) {
+  strcat(joined, list->entries[i].raw.ptr);
+  strcat(joined, trackparse_eol_name(list->entries[i].eol));
+}
+printf("%d\n", strcmp(joined, text) == 0);   // 1
 ```
 
 </TabItem>
@@ -357,6 +428,27 @@ fmt.Printf("%q\n", b.Track.Title)        // "Stigma"
 ```
 
 </TabItem>
+<TabItem label="C">
+
+```c
+trackparse_tracklist *md = trackparse_parse_tracklist(
+    "**[**14:21**] 10. Nitepunk - ID**\n* 18:02 Noisia - _Stigma_", TRACKPARSE_NUL_TERMINATED);
+const trackparse_entry *a = &md->entries[0], *b = &md->entries[1];
+
+printf("\"%s\" \"%s\" \"%s\" \"%s\"\n", a->parts.lead.ptr, a->parts.time.ptr, a->parts.gap.ptr,
+       a->parts.rest.ptr);
+// "**[**" "14:21" "**] " "10. Nitepunk - ID**"
+for (size_t i = 0; i < a->track->artists_count; i++) {
+  printf("%s\n", a->track->artists[i].name.ptr);
+}
+// Nitepunk
+printf("%s\n", a->track->title.ptr);   // ID
+printf("%s %d\n", a->track->position->raw.ptr, a->track->position->number);   // 10 10
+printf("%s\n", b->track->title.ptr);   // Stigma
+trackparse_tracklist_free(md);
+```
+
+</TabItem>
 </Tabs>
 
 Right next to the time, a run of one or two `*` or `_` is read as emphasis by its position, with or
@@ -438,6 +530,26 @@ fmt.Println(len(layers.Warnings))   // 0
 ```
 
 </TabItem>
+<TabItem label="C">
+
+```c
+trackparse_tracklist *layers = trackparse_parse_tracklist(
+    "00:00 Noisia - Stigma\nw/ Phace - Psycho (Acapella)\n03:10 Mefjus - Sleepless",
+    TRACKPARSE_NUL_TERMINATED);
+const trackparse_entry *e = &layers->entries[1];
+
+printf("%d\n", e->layered);          // 1
+printf("%d\n", e->time == NULL);     // 1
+for (size_t i = 0; i < e->track->artists_count; i++) {
+  printf("%s\n", e->track->artists[i].name.ptr);
+}
+// Phace
+printf("%s\n", e->track->title.ptr);       // Psycho
+printf("%zu\n", layers->warnings_count);   // 0
+trackparse_tracklist_free(layers);
+```
+
+</TabItem>
 </Tabs>
 
 Only `w/` (or `W/`) at the start of the track text, after any time or bullet, and followed by
@@ -460,7 +572,8 @@ whitespace and a track counts, so `00:30 w/ Phace - Psycho` is layered too. `w/`
 Only `track` and `marker` entries have a `track`. No line is ever dropped. In Rust the kind is the
 enum [`EntryKind`](https://docs.rs/trackparse/latest/trackparse/tracklist/enum.EntryKind.html) (`EntryKind::Track`, `EntryKind::Marker`
 and so on), in Go the string type [`EntryKind`](https://pkg.go.dev/github.com/4matic/trackparse/go#EntryKind) (`trackparse.EntryKindTrack`,
-`trackparse.EntryKindMarker`). The marker words are in
+`trackparse.EntryKindMarker`), in C the enum `trackparse_entry_kind` (`TRACKPARSE_ENTRY_TRACK`,
+`TRACKPARSE_ENTRY_MARKER`). The marker words are in
 [`marker-words.json`](https://github.com/4matic/trackparse/blob/main/spec/data/marker-words.json). The kinds are
 [R13.3](/trackparse/reference/spec/#r133-line-kinds).
 
@@ -469,7 +582,8 @@ and so on), in Go the string type [`EntryKind`](https://pkg.go.dev/github.com/4m
 `parseTracklist` takes the [`parse` options](/trackparse/reference/options/#parse-options) `mode`
 (default `"tracklist"`), `knownArtists`, `splitAnd` and `keywords`, plus two of its own
 (snake_case keyword arguments in Python, setters of [`TracklistOptions`](https://docs.rs/trackparse/latest/trackparse/tracklist/struct.TracklistOptions.html)
-in Rust, fields of [`TracklistOptions`](https://pkg.go.dev/github.com/4matic/trackparse/go#TracklistOptions) in Go). `audioSeconds` is the length
+in Rust, fields of [`TracklistOptions`](https://pkg.go.dev/github.com/4matic/trackparse/go#TracklistOptions) in Go, setters of a
+`trackparse_tracklist_options` handle in C). `audioSeconds` is the length
 of the audio, and turns on the check for times after the end. `markerWords` adds marker words to
 the built-in ones ([R13.10](/trackparse/reference/spec/#r1310-options)):
 
@@ -535,6 +649,30 @@ for _, w := range mix.Warnings {
 ```
 
 </TabItem>
+<TabItem label="C">
+
+```c
+trackparse_tracklist_options *options = trackparse_tracklist_options_new();
+trackparse_tracklist_options_set_audio_seconds(options, 3600);
+trackparse_tracklist_options_add_marker_word(options, "drop", TRACKPARSE_NUL_TERMINATED);
+trackparse_tracklist *mix = trackparse_parse_tracklist_with(
+    "00:00 Intro\n03:00 Drop\n1:02:03 Noisia - Stigma", TRACKPARSE_NUL_TERMINATED, options);
+
+for (size_t i = 0; i < mix->entries_count; i++) {
+  printf("%s%s", i ? " " : "", trackparse_entry_kind_name(mix->entries[i].kind));
+}
+printf("\n");   // marker marker track
+for (size_t i = 0; i < mix->warnings_count; i++) {
+  const trackparse_tracklist_warning *w = &mix->warnings[i];
+  printf("%s %d %s %d\n", trackparse_tracklist_warning_code_name(w->code), w->line,
+         trackparse_severity_name(w->severity), w->suggestion == NULL);
+}
+// time-after-audio-end 3 warning 1
+trackparse_tracklist_free(mix);
+trackparse_tracklist_options_free(options);
+```
+
+</TabItem>
 </Tabs>
 
 Without `markerWords`, `03:00 Drop` is a track line with no separator, and it warns [`line-unparsed`](/trackparse/reference/warnings/#tracklist-warnings:~:text=line%2Dunparsed).
@@ -595,11 +733,30 @@ for _, w := range list.Warnings {
 ```
 
 </TabItem>
+<TabItem label="C">
+
+```c
+for (size_t i = 0; i < list->warnings_count; i++) {
+  const trackparse_tracklist_warning *w = &list->warnings[i];
+  printf("%s %d %s\n", trackparse_tracklist_warning_code_name(w->code), w->line,
+         trackparse_severity_name(w->severity));
+  if (w->suggestion) {
+    printf("line %d: %s (%g)\n", w->suggestion->line, w->suggestion->raw.ptr,
+           w->suggestion->seconds);
+  }
+}
+// no-start-at-zero 2 info
+// time-out-of-order 8 warning
+// line 8: 01:11:02 (4262)
+trackparse_tracklist_free(list);
+```
+
+</TabItem>
 </Tabs>
 
 `00:11:02` sits between `01:07:44` and `01:15:36`. Changing one digit gives exactly one time that
 fits, `01:11:02`, so the warning carries it as a suggestion. When several fixes would fit, or none
-does, `suggestion` is `null` (`None`, `nil` in Go) and you only get the warning. The checks are
+does, `suggestion` is `null` (`None`, `nil` in Go, `NULL` in C) and you only get the warning. The checks are
 [R13.7](/trackparse/reference/spec/#r137-warnings), and [Suggestions](/trackparse/reference/warnings/#suggestions)
 describes the search.
 
@@ -637,7 +794,7 @@ what a plain `parse()` makes of them. The last two need neighbours: the position
 ## JSON
 
 A `Tracklist` ([R13.8](/trackparse/reference/spec/#r138-output)) serializes like a single track: `JSON.stringify(list)` in JavaScript,
-`tl.to_dict()` in Python, `list.to_json()` in Rust and `json.Marshal(list)` in Go give the same JSON, with camelCase keys such
+`tl.to_dict()` in Python, `list.to_json()` in Rust, `json.Marshal(list)` in Go and `trackparse_tracklist_to_json(list)` in C give the same JSON, with camelCase keys such
 as `specVersion` and `firstTime`. See
 [Serializing to JSON](/trackparse/reference/parse/#serializing-to-json).
 

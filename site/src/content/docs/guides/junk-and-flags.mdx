@@ -60,6 +60,23 @@ fmt.Printf("%+v\n", t.Junk)   // [{Raw:Official Music Video Kind:video} {Raw:HD 
 ```
 
 </TabItem>
+<TabItem label="C">
+
+```c
+#include <trackparse.h>
+
+trackparse_track *t = trackparse_parse("Daft Punk - One More Time (Official Music Video) [HD]",
+                                       TRACKPARSE_NUL_TERMINATED);
+printf("%s\n", t->title.ptr);   // One More Time
+for (size_t i = 0; i < t->junk_count; i++) {
+  printf("%s: %s\n", t->junk[i].kind_name.ptr, t->junk[i].raw.ptr);
+}
+// video: Official Music Video
+// quality: HD
+trackparse_track_free(t);
+```
+
+</TabItem>
 </Tabs>
 
 | Kind | Examples |
@@ -86,6 +103,10 @@ In Rust the kind is the enum [`JunkKind`](https://docs.rs/trackparse/latest/trac
 `JunkKind::Quality` and so on). Its `as_str()` gives the lowercase names in the table. In Go the
 kind is the string type [`JunkKind`](https://pkg.go.dev/github.com/4matic/trackparse/go#JunkKind),
 and its constants (`trackparse.JunkKindVideo`, `trackparse.JunkKindQuality`) hold those names.
+In C the kind is the enum `trackparse_junk_kind` (`TRACKPARSE_JUNK_VIDEO` and so on), and
+`kind_name` holds the name as a string. The two differ only for a kind that
+[`keywords.junk`](/trackparse/reference/options/#keywords) introduced: `kind` is then
+`TRACKPARSE_JUNK_OTHER` and `kind_name` the new name.
 
 <Tabs syncKey="lang">
 <TabItem label="JavaScript">
@@ -117,6 +138,18 @@ parse("Elektronomia - Sky High [NCS Release]").junk; // [Junk { raw: "NCS Releas
 ```go
 fmt.Printf("%+v\n", trackparse.Parse("Porter Robinson - Shelter - YouTube").Junk)     // [{Raw:YouTube Kind:platform}]
 fmt.Printf("%+v\n", trackparse.Parse("Elektronomia - Sky High [NCS Release]").Junk)   // [{Raw:NCS Release Kind:label}]
+```
+
+</TabItem>
+<TabItem label="C">
+
+```c
+t = trackparse_parse("Porter Robinson - Shelter - YouTube", TRACKPARSE_NUL_TERMINATED);
+printf("%s: %s\n", t->junk[0].kind_name.ptr, t->junk[0].raw.ptr);   // platform: YouTube
+trackparse_track_free(t);
+t = trackparse_parse("Elektronomia - Sky High [NCS Release]", TRACKPARSE_NUL_TERMINATED);
+printf("%s: %s\n", t->junk[0].kind_name.ptr, t->junk[0].raw.ptr);   // label: NCS Release
+trackparse_track_free(t);
 ```
 
 </TabItem>
@@ -165,12 +198,23 @@ fmt.Printf("%+v\n", trackparse.Parse("Eminem - Without Me (Explicit)").Flags)
 ```
 
 </TabItem>
+<TabItem label="C">
+
+```c
+t = trackparse_parse("Eminem - Without Me (Explicit)", TRACKPARSE_NUL_TERMINATED);
+printf("explicit %d, clean %d, unknown_artist %d, unknown_title %d\n", t->flags.explicit_,
+       t->flags.clean, t->flags.unknown_artist, t->flags.unknown_title);
+// explicit 1, clean 0, unknown_artist 0, unknown_title 0
+trackparse_track_free(t);
+```
+
+</TabItem>
 </Tabs>
 
 `explicit` and `clean` come from `(Explicit)`, `[Clean]` and the like
 ([R5.4](/trackparse/reference/spec/#r5-group-classification:~:text=R5.4%20Flag); [try it](/trackparse/playground/#track=Eminem%20-%20Without%20Me%20%28Explicit%29)). `unknownArtist` and
 `unknownTitle` (`unknown_artist` and `unknown_title` in Python and Rust, `UnknownArtist` and `UnknownTitle` in
-Go) are set when the artist
+Go, `unknown_artist` and `unknown_title` in C) are set when the artist
 or title is a placeholder such as `ID`. See
 [Unknown artists](/trackparse/guides/artists/#unknown-artists).
 
@@ -217,10 +261,21 @@ fmt.Println(*t.Year)          // 2015
 ```
 
 </TabItem>
+<TabItem label="C">
+
+```c
+t = trackparse_parse("Noisia - Stigma (2015)", TRACKPARSE_NUL_TERMINATED);
+printf("%s\n", t->title.ptr);       // Stigma
+if (t->year) printf("%d\n", *t->year);   // 2015
+trackparse_track_free(t);
+```
+
+</TabItem>
 </Tabs>
 
 A year inside a version (`Remastered 2015`) belongs to that version instead, in `versions[i].year`.
-In Rust both are `Option<u32>`; in Go both are `*int`, `nil` when there is no year.
+In Rust both are `Option<u32>`; in Go both are `*int`, `nil` when there is no year; in C both
+are `const int *`, `NULL` when there is no year.
 [Try it](/trackparse/playground/#track=Noisia%20-%20Stigma%20%282015%29) in the playground.
 
 ## Track numbers
@@ -255,6 +310,18 @@ parse("2 Unlimited - No Limit").position;  // None
 ```go
 fmt.Printf("%+v\n", *trackparse.Parse("01. Aphex Twin - Xtal").Position)   // {Raw:01 Number:1}
 fmt.Println(trackparse.Parse("2 Unlimited - No Limit").Position == nil)    // true
+```
+
+</TabItem>
+<TabItem label="C">
+
+```c
+t = trackparse_parse("01. Aphex Twin - Xtal", TRACKPARSE_NUL_TERMINATED);
+printf("%s %d\n", t->position->raw.ptr, t->position->number);   // 01 1
+trackparse_track_free(t);
+t = trackparse_parse("2 Unlimited - No Limit", TRACKPARSE_NUL_TERMINATED);
+printf("%s\n", t->position == NULL ? "NULL" : "set");            // NULL
+trackparse_track_free(t);
 ```
 
 </TabItem>
@@ -312,10 +379,22 @@ fmt.Printf("%+v\n", *trackparse.Parse("1:02:03 Noisia - Stigma").Timestamp)   //
 ```
 
 </TabItem>
+<TabItem label="C">
+
+```c
+t = trackparse_parse("[12:34] Noisia - Stigma", TRACKPARSE_NUL_TERMINATED);
+printf("%s %d\n", t->timestamp->raw.ptr, t->timestamp->seconds);   // 12:34 754
+trackparse_track_free(t);
+t = trackparse_parse("1:02:03 Noisia - Stigma", TRACKPARSE_NUL_TERMINATED);
+printf("%s %d\n", t->timestamp->raw.ptr, t->timestamp->seconds);   // 1:02:03 3723
+trackparse_track_free(t);
+```
+
+</TabItem>
 </Tabs>
 
 For whole tracklists with a time on every line, use [`parseTracklist`](/trackparse/guides/tracklists/)
-(`parse_tracklist` in Python and Rust, `ParseTracklist` in Go) instead. It reads more time formats and checks the order.
+(`parse_tracklist` in Python and Rust, `ParseTracklist` in Go, `trackparse_parse_tracklist` in C) instead. It reads more time formats and checks the order.
 
 ## See also
 
