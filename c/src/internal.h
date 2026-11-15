@@ -1968,12 +1968,9 @@ TP_PRIVATE bool tp_json_get_string(tp_json v, tp_str key, tp_str *out);
 TP_PRIVATE tp_json tp_edit_json(const tp_edit *e);
 
 /* ============================================================================================ */
-/* wire.go (wire/wire.c): the JSON door. tp_wire_call itself is declared in wire/wire.h.        */
-
-/* artistList.write: a list of artists as JSON (tp_write_artists). */
-TP_PRIVATE void tp_artist_list_write(tp_artist_vec l, tp_jw *w);
-/* wireString.write: a JSON string. */
-TP_PRIVATE void tp_wire_string_write(tp_str s, tp_jw *w);
+/* wire.go (wire/wire.c): the JSON door. tp_wire_call itself is declared in wire/wire.h, and
+ * artistList.write / wireString.write are static helpers of wire.c (declared here they would be
+ * static-but-undefined in the amalgamation, which leaves wire/ out). */
 
 /* ============================================================================================ */
 /* trackparse.go: the public functions over internal types (src/trackparse.c). Each sanitizes  */

@@ -140,11 +140,12 @@ if(TRACKPARSE_BUILD_TESTS)
 
   # Unit tests written alongside the runtime and the primitives; each is registered once its
   # source exists.
-  foreach(t test_rt test_num test_unicode test_primitives)
+  foreach(t test_rt test_num test_unicode test_primitives test_api)
     if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/tests/${t}.c")
       trackparse_test_program(${t} tests/${t}.c)
       string(REPLACE "test_" "" test_name ${t})
-      add_test(NAME ${test_name} COMMAND ${t})
+      # The tests read their data relative to c/.
+      add_test(NAME ${test_name} COMMAND ${t} WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
       set_tests_properties(${test_name} PROPERTIES SKIP_RETURN_CODE 77)
     endif()
   endforeach()

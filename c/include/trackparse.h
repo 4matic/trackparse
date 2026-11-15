@@ -59,7 +59,7 @@ extern "C" {
 
 /** The version of the linked library ("X.Y.Z"), which can differ from TRACKPARSE_VERSION when a
  * shared library is replaced. */
-TRACKPARSE_API const char *trackparse_version(void);
+TRACKPARSE_API const char *trackparse_library_version(void);
 /** The spec version the library implements (spec/VERSION), "X.Y.Z". */
 TRACKPARSE_API const char *trackparse_spec_version(void);
 
