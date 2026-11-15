@@ -1,0 +1,234 @@
+name: c
+
+on:
+  push:
+    branches: [main]
+  # The fuzz job: weekly, or by hand.
+  schedule:
+    - cron: "41 3 * * 1"
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "c/**"
+      - "spec/**"
+      # test_primitives reads the R0 primitives dumped from JS there.
+      - "rust/tests/data/**"
+      # The compare job diffs the library against the built JS package.
+      - "js/src/**"
+      - "scripts/compare-ports.mjs"
+      - "scripts/fuzz-ports.mjs"
+      - "scripts/lib/ports.mjs"
+      - ".github/workflows/c.yml"
+
+permissions:
+  contents: read
+
+env:
+  CI: "true"
+
+jobs:
+  lint:
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24
+      - name: Codegen is up to date
+        run: |
+          node c/scripts/gen_data.mjs --check
+          node c/scripts/gen_unicode.mjs --check
+      # The Unicode tables come from the same derivation as Go's: the committed samples must agree.
+      - name: Unicode sample matches the Go port's
+        run: cmp c/tests/data/unicode/cases.jsonl go/testdata/unicode/cases.jsonl
+      # R0 hazards: locale-dependent and unstable calls are banned from the library.
+      - name: No locale-dependent or unstable calls in src/
+        run: |
+          bad=$(grep -nE '#include <ctype\.h>|\b(qsort|strtod|strtof|strtold|atof|strtol|strtoul|atoi|setlocale|localeconv|sprintf|snprintf|printf|fprintf|isalpha|isdigit|isspace|isupper|islower|tolower|toupper)\s*\(' c/src/*.c c/src/*.h \
+            | grep -vE '^[^:]+:[0-9]+:[[:space:]]*(/\*|\*|//)' || true)
+          if [ -n "$bad" ]; then echo "$bad"; exit 1; fi
+      # Generated files (data_gen.*, unicode_gen.*) are left as the generators write them.
+      - name: clang-format
+        run: |
+          pipx install clang-format==19.1.7
+          git ls-files 'c/*.c' 'c/*.h' 'c/*.cpp' 'c/*.hpp' | grep -vE '_gen\.(c|h)$' \
+            | xargs clang-format --dry-run --Werror
+      - name: Amalgamation (duplicate file-local names fail here)
+        run: node c/scripts/amalgamate.mjs --out "$RUNNER_TEMP/amal"
+
+  test:
+    if: github.event_name != 'schedule'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { name: linux-gcc, os: ubuntu-latest, cc: gcc, cxx: g++ }
+          - { name: linux-clang, os: ubuntu-latest, cc: clang, cxx: clang++ }
+          - { name: linux-arm64, os: ubuntu-24.04-arm, cc: gcc, cxx: g++ }
+          - { name: linux-shared, os: ubuntu-latest, cc: gcc, cxx: g++, shared: "ON" }
+          - { name: macos, os: macos-latest, cc: clang, cxx: clang++ }
+          - { name: windows-msvc, os: windows-latest }
+    name: test (${{ matrix.name }})
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24
+          cache: pnpm
+      # The schema test validates every fixture output with the ajv the JS package has.
+      - run: pnpm install --frozen-lockfile
+      - name: Configure
+        shell: bash
+        env:
+          CC: ${{ matrix.cc }}
+          CXX: ${{ matrix.cxx }}
+        run: |
+          cmake -S c -B build -DCMAKE_BUILD_TYPE=Release -DTRACKPARSE_WERROR=ON \
+            -DTRACKPARSE_SHARED=${{ matrix.shared || 'OFF' }}
+      - run: cmake --build build --config Release -j4
+      - name: Test
+        run: ctest --test-dir build -C Release --output-on-failure -j2
+      - name: Conformance report
+        shell: bash
+        run: |
+          bin=build/trackparse-fixtures
+          [ -x "$bin" ] || bin=build/Release/trackparse-fixtures.exe
+          TRACKPARSE_REPORT=1 "$bin" spec/fixtures/handwritten/*.json spec/fixtures/generated/*.json | tail -5
+
+  # 32-bit x86 (SSE2 math, FLT_EVAL_METHOD 0) and the oldest supported toolchain.
+  old-and-32bit:
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { name: m32, cc: gcc, flags: "-m32", pkgs: "gcc-multilib g++-multilib" }
+          - { name: gcc-9-cmake-3.16, cc: gcc-9, cxx: g++-9, pkgs: "gcc-9 g++-9", cmake: "3.16.9" }
+    name: test (${{ matrix.name }})
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - run: sudo apt-get update && sudo apt-get install -y ${{ matrix.pkgs }}
+      - name: CMake ${{ matrix.cmake || 'default' }}
+        if: matrix.cmake
+        run: pipx install "cmake==${{ matrix.cmake }}" && cmake --version
+      - name: Configure, build, test
+        env:
+          CC: ${{ matrix.cc }}
+          CXX: ${{ matrix.cxx || 'g++' }}
+          CFLAGS: ${{ matrix.flags }}
+          CXXFLAGS: ${{ matrix.flags }}
+          LDFLAGS: ${{ matrix.flags }}
+        run: |
+          cmake -S c -B build -DCMAKE_BUILD_TYPE=Release -DTRACKPARSE_WERROR=ON
+          cmake --build build -j4
+          ctest --test-dir build --output-on-failure -j2 -LE consumer
+
+  sanitize:
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { name: asan-ubsan-gcc, cc: gcc, cxx: g++, opt: "-DTRACKPARSE_SANITIZE=ON" }
+          - { name: asan-ubsan-clang, cc: clang, cxx: clang++, opt: "-DTRACKPARSE_SANITIZE=ON" }
+          - { name: tsan, cc: clang, cxx: clang++, opt: "-DTRACKPARSE_SANITIZE_THREAD=ON" }
+          # MemorySanitizer with an uninstrumented libc++ would report false positives in the C++
+          # tests, so they are left out (-LE cpp is not enough: they would not even build).
+          - { name: msan, cc: clang, cxx: clang++, opt: "-DTRACKPARSE_SANITIZE_MEMORY=ON", target: "--target trackparse-fixtures test_api test_properties test_oom test_rt test_num" , tests: "-R '^(fixtures|api|properties|oom|rt|num)$'" }
+    name: sanitize (${{ matrix.name }})
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - name: Configure, build, test
+        env:
+          CC: ${{ matrix.cc }}
+          CXX: ${{ matrix.cxx }}
+        run: |
+          cmake -S c -B build -DCMAKE_BUILD_TYPE=RelWithDebInfo -DTRACKPARSE_WERROR=ON ${{ matrix.opt }}
+          cmake --build build -j4 ${{ matrix.target }}
+          ctest --test-dir build --output-on-failure -j2 -LE consumer ${{ matrix.tests }}
+
+  valgrind-and-locale:
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - name: Install valgrind and the test locales
+        run: |
+          sudo apt-get update && sudo apt-get install -y valgrind locales
+          sudo locale-gen de_DE.UTF-8 tr_TR.UTF-8
+      - name: Build
+        run: |
+          cmake -S c -B build -DCMAKE_BUILD_TYPE=RelWithDebInfo -DTRACKPARSE_WERROR=ON
+          cmake --build build -j4
+      - name: Locale (German decimal comma, Turkish dotless i)
+        run: |
+          for loc in de_DE.UTF-8 tr_TR.UTF-8; do
+            LC_ALL=$loc ctest --test-dir build --output-on-failure -R 'locale|fixtures|api'
+          done
+      - name: Valgrind (handwritten fixtures, API tests, properties in short mode)
+        env:
+          TRACKPARSE_SHORT: "1"
+          TRACKPARSE_SLOWDOWN: "40"
+        run: |
+          valgrind --error-exitcode=1 --leak-check=full --errors-for-leak-kinds=definite,indirect \
+            build/trackparse-fixtures spec/fixtures/handwritten/*.json
+          (cd c && valgrind --error-exitcode=1 --leak-check=full --errors-for-leak-kinds=definite,indirect \
+            ../build/test_api)
+          (cd c && valgrind --error-exitcode=1 --leak-check=full --errors-for-leak-kinds=definite,indirect \
+            ../build/test_properties)
+
+  compare:
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter trackparse build
+      - name: Every fixture, full output, C against JS
+        run: node scripts/compare-ports.mjs --only=c
+      - name: Random differential run, C against JS
+        run: node scripts/fuzz-ports.mjs --only=c --n=50000 --lists=10000
+
+  fuzz:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [parse, parse_artists, format, parse_tracklist, apply_edits, wire]
+    name: fuzz (${{ matrix.target }})
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24
+      - name: Build the fuzz target
+        env:
+          CC: clang
+          CXX: clang++
+        run: |
+          cmake -S c -B build -DCMAKE_BUILD_TYPE=RelWithDebInfo -DTRACKPARSE_FUZZ=ON -DTRACKPARSE_BUILD_TESTS=OFF
+          cmake --build build -j4 --target fuzz_${{ matrix.target }}
+      - name: Seed corpus from the fixtures
+        run: node c/scripts/fuzz_corpus.mjs "$RUNNER_TEMP/corpus"
+      - name: Fuzz for 10 minutes
+        run: |
+          mkdir -p crashes
+          corpus="$RUNNER_TEMP/corpus/${{ matrix.target }}"
+          mkdir -p "$corpus"
+          build/fuzz_${{ matrix.target }} -max_total_time=600 -timeout=30 -artifact_prefix=crashes/ "$corpus"
+      - if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: crashes-${{ matrix.target }}
+          path: crashes/
