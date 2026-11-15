@@ -780,10 +780,10 @@ with the count.
   about the square of the window. The reproducer is
   `{"fn":"parseArtists","input":<"a feat. B & C (x) - " repeated 500 times, 10,000 code points>,
   "options":{"knownArtists":[<its first 300 characters>]}}` through each dump tool. Measured on
-  the i7-4770S under load: C 2.3 to 2.6 s (Release) with 1.07 GB peak memory, Rust 1.9 s, Go 4.2 s,
-  JS 5.3 to 7.2 s, all with the same output. Half the input halves the time; a 150-character name
-  takes C 0.84 s and 285 MB. C's memory is the arena: scratch is never freed within a call, so
-  every candidate string the search builds stays until the call returns.
+  the i7-4770S under load: C 2.3 to 4.1 s (Release, 5 MB peak memory), Rust 1.9 s, Go 4.2 s,
+  JS 5.3 to 7.2 s, all with the same output. Half the input halves the time. (C peaked at 1 GB
+  here until `tp_match_known_at` gave each candidate key back with `tp_arena_mark` /
+  `tp_arena_release`.)
 - `format(track, { feat: "nope" })` drops the featured artists in JS and Python (and in Go, which
   matches JS: `FormatOptions{Feat: "nope"}`, and in C's JSON door, which matches JS too) instead of
   falling back to the default, unlike other bad options. The typed C setter takes an enum, so a
@@ -963,8 +963,9 @@ sanitizers, the 32-bit, ARM64 and MSVC builds, the amalgamation, compare-ports a
   `tp_scope` (an arena plus a `jmp_buf`), `tp_alloc` never returns `NULL` and `longjmp`s to the
   scope when the system allocator fails, and the scope frees the arena and returns `NULL`. So the
   pipeline has no `NULL` checks and no `free`, and must never hold anything but arena memory (no
-  `malloc`, no `FILE *`). Scratch memory is never freed within a call, which is why the
-  `knownArtists` case under Known gaps peaks at 1 GB. A function that calls `setjmp` must keep no
+  `malloc`, no `FILE *`). Scratch memory is not freed within a call, except where a loop
+  builds throwaway values: `tp_arena_mark` / `tp_arena_release` rewind the arena (the
+  `knownArtists` search in `context.c` peaked at 1 GB without it). A function that calls `setjmp` must keep no
   local that changes between `setjmp` and the `longjmp` (GCC's `-Wclobbered`): put the armed body
   in a function of its own, or make the local `volatile` (`void *volatile built` in
   `tp_once_get`). Setters build what they add under a scope and commit only when every allocation

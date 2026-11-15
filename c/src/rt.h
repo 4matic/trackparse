@@ -135,6 +135,19 @@ TP_PRIVATE void tp_scope_abort(tp_scope *s);
 TP_PRIVATE tp_arena *tp_arena_use(tp_arena *a);
 TP_PRIVATE tp_arena *tp_arena_current(void);
 
+/* Mark the current arena and later release everything allocated after the mark: chunks taken
+ * since are freed and the head chunk is rewound. Nothing allocated after the mark may be used
+ * after the release (results of a lookup that only answer yes or no, for example). Marks nest
+ * like a stack. */
+typedef struct tp_mark {
+  void *arena;
+  void *head;
+  void *head_next;
+  size_t head_used;
+} tp_mark;
+TP_PRIVATE tp_mark tp_arena_mark(void);
+TP_PRIVATE void tp_arena_release(tp_mark m);
+
 /* Zeroed, TP_ALIGN-aligned memory from the current arena. Longjmps on failure. n == 0 returns a
  * valid non-NULL pointer. */
 TP_PRIVATE void *tp_alloc(size_t n);
