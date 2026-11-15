@@ -23,7 +23,7 @@ doesn't recognize stays in the title, word for word
 
 This is the Rust port of [trackparse](https://github.com/4matic/trackparse). Its behaviour is
 defined by a [shared spec](https://4matic.github.io/trackparse/reference/spec/) and pinned
-by [13,130 fixtures](https://4matic.github.io/trackparse/project/testing/). It passes all of them, and for every fixture input its output is byte-identical
+by [13,565 fixtures](https://4matic.github.io/trackparse/project/testing/). It passes all of them, and for every fixture input its output is byte-identical
 to the [JavaScript, Python, Go and C packages](#other-languages).
 
 - Rust 1.74 or later (the minimum supported version; CI runs the test suite on 1.74 and on stable)
@@ -217,7 +217,7 @@ assert_eq!(track.junk[0].kind, JunkKind::Label);
 | `full_title` | `String` | `title` with the versions re-attached |
 | `versions` | `Vec<Version>` | Remixes and other versions, left to right |
 | `year` | `Option<u32>` | From `(2015)` or `- 2015` |
-| `label` | `Option<String>` | Record label after a spaced bullet: `Stigma • VISION` gives `Some("VISION")` |
+| `label` | `Option<String>` | Record [label after a spaced bullet](https://4matic.github.io/trackparse/guides/junk-and-flags/#labels-after-a-bullet): `Stigma • VISION` gives `Some("VISION")` |
 | `flags` | `Flags` | `explicit`, `clean`, `unknown_artist`, `unknown_title` |
 | `junk` | `Vec<Junk>` | What was taken out, each with a `kind` |
 | `warnings` | `Vec<Warning>` | Heuristics that fired |
@@ -676,7 +676,7 @@ from JSON can fail as any `serde` type can.
 
 **Docs:** [How it's tested](https://4matic.github.io/trackparse/project/testing/) · [Ports](https://4matic.github.io/trackparse/project/ports/)
 
-- `cargo test` runs all 13,130 shared fixtures (1,203 written by hand, the rest generated from
+- `cargo test` runs all 13,565 shared fixtures (1,280 written by hand, the rest generated from
   the rules), the spec's invariants for single tracks and for tracklists on generated input (no
   panic in any mode, `normalize` idempotent, the format round trip, no word lost, timing), and the
   API tests. The skip list is empty.
@@ -745,7 +745,9 @@ difference is described under [Unicode version](#unicode-version).
 
 - `parse` takes one track string. Whole tracklists go through `trackparse::tracklist`, which reads
   start times only: no durations, trailing times or time ranges.
-- Catalog numbers, key and BPM are not fields. They stay in the title.
+- Catalog numbers, key and BPM are not fields. They stay in the title. A record label is a field
+  only after a spaced bullet (`Stigma • VISION`), and a bullet inside a title (`Song • Part 2`) is
+  read as a label too.
 - There is no artist database. Pass `known_artists` for names that contain a joiner
   (`Earth, Wind & Fire`).
 

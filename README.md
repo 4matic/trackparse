@@ -100,6 +100,7 @@ track.position;                     // { raw: '01', number: 1 }
     }
   ],
   "year": null,
+  "label": null,
   "flags": { "explicit": false, "clean": false, "unknownArtist": false, "unknownTitle": false },
   "junk": [{ "raw": "Official Video", "kind": "video" }],
   "warnings": []
@@ -121,13 +122,13 @@ and C's [`trackparse_track_to_json`](c/README.md#json) give this same JSON.
 
 | Number | What it means |
 |---|---|
-| **13,130** shared fixtures | [1,203 written by hand](https://4matic.github.io/trackparse/project/testing/#handwritten-1203-cases), [11,927 generated](https://4matic.github.io/trackparse/project/testing/#generated-11927-cases) from combinations. 100% pass in JS, Python, Rust, Go and C, nothing skipped. |
+| **13,565** shared fixtures | [1,280 written by hand](https://4matic.github.io/trackparse/project/testing/#handwritten-1280-cases), [12,285 generated](https://4matic.github.io/trackparse/project/testing/#generated-12285-cases) from combinations. 100% pass in JS, Python, Rust, Go and C, nothing skipped. |
 | **1,239** of them on tracklists | 303 handwritten, 936 generated. They cover line splitting, times, bullets and Markdown, warnings and edits |
-| **1,352** JS tests | Every fixture, a schema check on every output, property-based tests of the [spec invariants](https://4matic.github.io/trackparse/reference/spec/#invariants), API tests |
+| **1,435** JS tests | Every fixture, a schema check on every output, property-based tests of the [spec invariants](https://4matic.github.io/trackparse/reference/spec/#invariants), API tests |
 | **27** version types | [Remix, VIP, bootleg, extended, radio, original, live, remaster, sped up and more](https://4matic.github.io/trackparse/guides/versions/#the-27-types) |
 | **0** dependencies in JS, Python, Go and C | The Rust crate has one, `unicode-normalization`. The C library needs only libc, `libm` and threads. The JS package is ESM + CJS with TypeScript types, about 18 kB gzipped. `trackparse/tracklist` adds about 8.4 KiB, only if you import it |
 | **Node 18+** | CI runs the full suite on 22 and 24, and every fixture against the built package on 18 and 20 |
-| **Python 3.9+** | 1,342 pytest tests on 3.9 to 3.14, plus every fixture against the built wheel. Output is byte-identical to JS |
+| **Python 3.9+** | 1,427 pytest tests on 3.9 to 3.14, plus every fixture against the built wheel. Output is byte-identical to JS |
 | **Rust 1.74+** | Every fixture, the tracklist invariants and the typed API tests on stable and on 1.74. Output is byte-identical to JS on every fixture and on about 790,000 random inputs |
 | **Go 1.22+** | Every fixture, the spec invariants and the examples with `go test -race` on 1.22 and on the latest stable. Output is byte-identical to JS on every fixture and on about 790,000 random inputs |
 | **C11, C++17** | Every fixture, the spec invariants, threads, locales and allocation failure at every step. GCC and Clang on x86-64, GCC on ARM64 and 32-bit x86, GCC 9 with CMake 3.16, Apple Clang and MSVC; AddressSanitizer, UBSan, ThreadSanitizer, MemorySanitizer and Valgrind; libFuzzer targets. A header-only C++17 wrapper on top. Output is byte-identical to JS on every fixture and on 60,000 random inputs on every push and pull request |
@@ -445,6 +446,8 @@ in, so you can see the full output or change the string.
 | [`Eminem - Without Me (Explicit)`](https://4matic.github.io/trackparse/playground/#track=Eminem%20-%20Without%20Me%20%28Explicit%29) | Eminem | `Without Me` | explicit flag |
 | [`Daft Punk - One More Time (Official Music Video) [HD]`](https://4matic.github.io/trackparse/playground/#track=Daft%20Punk%20-%20One%20More%20Time%20%28Official%20Music%20Video%29%20%5BHD%5D) | Daft Punk | `One More Time` | junk: video, quality |
 | [`Elektronomia - Sky High [NCS Release]`](https://4matic.github.io/trackparse/playground/#track=Elektronomia%20-%20Sky%20High%20%5BNCS%20Release%5D) | Elektronomia | `Sky High` | junk: label |
+| [`Noisia - concussion • VISION • VISION RADIO RELOAD`](https://4matic.github.io/trackparse/playground/#track=Noisia%20-%20concussion%20%E2%80%A2%20VISION%20%E2%80%A2%20VISION%20RADIO%20RELOAD) | Noisia | `concussion` | [label](https://4matic.github.io/trackparse/guides/junk-and-flags/#labels-after-a-bullet) `VISION`, junk: note |
+| [`Scrufizzer & Machinedrum - WHO (K-LONE VIP) • IAMSIAM`](https://4matic.github.io/trackparse/playground/#track=Scrufizzer%20%26%20Machinedrum%20-%20WHO%20%28K-LONE%20VIP%29%20%E2%80%A2%20IAMSIAM) | Scrufizzer, Machinedrum | `WHO` | vip by K-LONE, label `IAMSIAM` |
 | [`Porter Robinson - Shelter - YouTube`](https://4matic.github.io/trackparse/playground/#track=Porter%20Robinson%20-%20Shelter%20-%20YouTube) | Porter Robinson | `Shelter` | junk: platform |
 | [`01. Aphex Twin - Xtal`](https://4matic.github.io/trackparse/playground/#track=01.%20Aphex%20Twin%20-%20Xtal) | Aphex Twin | `Xtal` | position 1 |
 | [`[12:34] Noisia - Stigma`](https://4matic.github.io/trackparse/playground/#track=%5B12%3A34%5D%20Noisia%20-%20Stigma) | Noisia | `Stigma` | timestamp 754 s |
@@ -660,7 +663,7 @@ of the list uses spaced dashes ([R6.10](https://4matic.github.io/trackparse/refe
 The fixtures in [`spec/fixtures`](spec/fixtures) are the source of truth
 ([format and matching rules](spec/fixtures/README.md)). The spec says what should happen, the
 fixtures pin it down, and every port has to pass all of them. The JS and Python packages, the
-Rust crate, the Go module and the C library all do: **13,130 of 13,130**, with empty skip lists, in
+Rust crate, the Go module and the C library all do: **13,565 of 13,565**, with empty skip lists, in
 CI on every push.
 
 Passing a fixture only checks the fields the case asserts ([matching rules](spec/fixtures/README.md#matching-semantics-match-partial)), so
@@ -672,9 +675,9 @@ cases and 290,000 random tracklists with edits: 0 differences. CI runs the C lib
 on 50,000 random tracks and 10,000 random tracklists on every push
 ([port against port](https://4matic.github.io/trackparse/project/testing/#port-against-port)).
 
-### Handwritten: 1,203 cases in 27 files
+### Handwritten: 1,280 cases in 28 files
 
-Each case cites the [spec rules](https://4matic.github.io/trackparse/reference/spec/) it exercises. 62 of them spell out the complete output field by
+Each case cites the [spec rules](https://4matic.github.io/trackparse/reference/spec/) it exercises. 65 of them spell out the complete output field by
 field, so nothing can drift unnoticed.
 
 | Group | Cases | What's in there |
@@ -688,13 +691,14 @@ field, so nothing can drift unnoticed.
 | Modes | 65 | YouTube pipes, `"Title" by Artist`, uploader fallback, filenames |
 | Unicode and normalization | 71 | NFC, zero-width characters, fullwidth brackets, Cyrillic, CJK, Turkish İ |
 | `format`, `parseArtists`, unknown IDs | 94 | Round-trips, canonical joiners, `ID - ID` |
+| Labels after a bullet | 70 | `Artist - Title • LABEL • NOTE` lines from real radio show tracklists, notes, junk after the bullet, the near misses (unspaced, inside brackets, before the dash, `·` and `●`), `format` with and without the label |
 | Tracklist mode | 67 | All 17 real podcast lines that single-line `parse()` gets wrong, the 6 real lines with no separator at all, `parse(s, { mode: "tracklist" })`, Markdown emphasis around names, and names that keep their `*` and `_` |
-| Tracklist lines and times | 104 | LF/CRLF/CR, trailing spaces, line kinds, every time form, brackets, gap separators, `=>` arrows, invalid times, list bullets, Markdown around times, `w/` lines |
+| Tracklist lines and times | 109 | LF/CRLF/CR, trailing spaces, line kinds, every time form, brackets, gap separators, `=>` arrows, invalid times, list bullets, Markdown around times, `w/` lines |
 | Tracklist positions | 15 | The real 81-line list numbered `1 ` to `81 ` without dots, and the `2 Unlimited` guard, with a `w/` line in between |
 | Tracklist warnings | 38 | Each code with its near-miss, and the 10 real out-of-order lists with their suggestions |
-| Tracklist edits | 79 | `set-time` style keeping, shift, clamp, `sort-by-time`, insert/delete line endings, invalid edits, locality |
+| Tracklist edits | 81 | `set-time` style keeping, shift, clamp, `sort-by-time`, insert/delete line endings, invalid edits, locality |
 
-### Generated: 11,927 cases
+### Generated: 12,285 cases
 
 A deterministic generator in [`spec/generator`](spec/generator) ([README](spec/generator/README.md)) builds inputs from small "atoms": an
 artist, a joiner, a feat placement, a version group, a junk suffix. Each atom carries its own
@@ -709,6 +713,7 @@ running a parser, so the generator can't just agree with the code it is testing.
 | dedup | 1,008 | | unicode | 674 |
 | feat placement | 922 | | prefixes | 577 |
 | tracklists | 826 | | tracklists with Markdown | 110 |
+| bullet labels | 358 | | | |
 
 The tracklist scenario crosses time forms (`MM:SS`, `H:MM:SS`, fractions, long minutes) with
 brackets, gap separators, position styles, line endings, an extra blank, header or note line, and
@@ -841,6 +846,7 @@ exceptions: Python raises `TypeError` when the input is not a `str`, the C funct
 | `fullTitle` | `string` | `title` with versions re-attached |
 | `versions` | `Version[]` | [Remixes and versions](https://4matic.github.io/trackparse/guides/versions/), left to right |
 | `year` | `number \| null` | [From](https://4matic.github.io/trackparse/guides/junk-and-flags/#year) `(2015)` or `- 2015` |
+| `label` | `string \| null` | The [record label after a spaced bullet](https://4matic.github.io/trackparse/guides/junk-and-flags/#labels-after-a-bullet): `Stigma • VISION` → `"VISION"` |
 | `flags` | `{ explicit, clean, unknownArtist, unknownTitle }` | [Flags](https://4matic.github.io/trackparse/guides/junk-and-flags/#flags) |
 | `junk` | `{ raw, kind }[]` | What was removed, and what [kind of noise](https://4matic.github.io/trackparse/guides/junk-and-flags/#junk) it was |
 | `warnings` | `string[]` | [Heuristics that fired](https://4matic.github.io/trackparse/reference/warnings/#track-warnings) |
@@ -867,8 +873,9 @@ exceptions: Python raises `TypeError` when the input is not a `str`, the C funct
   `descriptor` holds leftover text (`"Taylor's"`, `"at Wembley"`, `"D'n'B"`).
 - `delimiter` is `(`, `[`, `{`, or `-` for dash suffixes.
 
-**[Junk kinds](https://4matic.github.io/trackparse/reference/parse/#junk-kinds):** `video`, `audio`, `lyrics`, `quality`, `promo`, `platform`, `label`, `genre`, `other`.
-The vocabulary is in [`spec/data`](spec/data).
+**[Junk kinds](https://4matic.github.io/trackparse/reference/parse/#junk-kinds):** `video`, `audio`, `lyrics`, `quality`, `promo`, `platform`, `label`, `genre`, `other`, `note`.
+Junk kind `label` is a label name in brackets (`[NCS Release]`); `note` is text after a second
+bullet (`• VISION RADIO RELOAD`), next to the `label` field. The vocabulary is in [`spec/data`](spec/data).
 
 **Warnings:** `noSeparator`, `ambiguousSeparator`, `unspacedDashSplit`, `asymmetricDashSplit`,
 `bySplit`, `quotedTitleSplit`, `ambiguousMixCredit`, `unbalancedBrackets`. What each one means is
@@ -907,7 +914,7 @@ TRACKPARSE_MODE_YOUTUBE)`) and passes it to `trackparse_parse_with`. The rules f
 | Function | |
 |---|---|
 | [`parseArtists(input, options?)`](https://4matic.github.io/trackparse/reference/functions/#parseartistsinput-options) | Split a bare artist string into credits ([R10](https://4matic.github.io/trackparse/reference/spec/#r10-parseartists)) |
-| [`format(track, options?)`](https://4matic.github.io/trackparse/reference/functions/#formattrack-options) | Render back to a string ([R11](https://4matic.github.io/trackparse/reference/spec/#r11-format)). [Options](https://4matic.github.io/trackparse/reference/options/#format-options): `feat` (`source`/`artist`/`title`/`omit`), `featMarker`, `joiners` (`original`/`canonical`), `versions`, `producers`, `position` |
+| [`format(track, options?)`](https://4matic.github.io/trackparse/reference/functions/#formattrack-options) | Render back to a string ([R11](https://4matic.github.io/trackparse/reference/spec/#r11-format)). [Options](https://4matic.github.io/trackparse/reference/options/#format-options): `feat` (`source`/`artist`/`title`/`omit`), `featMarker`, `joiners` (`original`/`canonical`), `versions`, `producers`, `position`, `label` |
 | [`normalize(input)`](https://4matic.github.io/trackparse/reference/functions/#normalizeinput) | The Unicode cleanup every function runs first: NFC, invisible characters, dash, bracket and quote variants ([R1](https://4matic.github.io/trackparse/reference/spec/#r1-normalization)) |
 | [`allArtists(track)`](https://4matic.github.io/trackparse/reference/functions/#allartiststrack) | Credits plus every remixer, deduplicated |
 | [`createParser(options)`](https://4matic.github.io/trackparse/reference/functions/#createparseroptions) | Compile options once for repeated calls; per-call options merge over them |
@@ -1151,7 +1158,7 @@ spaced dashes. The checks run last, over the finished entries.
 | Go | [`github.com/4matic/trackparse/go`](https://pkg.go.dev/github.com/4matic/trackparse/go) | Go 1.22+, no dependencies | [pkg.go.dev](https://pkg.go.dev/github.com/4matic/trackparse/go) | [go/README.md](go/README.md) | [go/CHANGELOG.md](go/CHANGELOG.md) |
 | C / C++ | `trackparse-c-X.Y.Z.tar.gz` and an amalgamation on [GitHub Releases](https://github.com/4matic/trackparse/releases) | C11 (C++17 for `trackparse.hpp`), CMake 3.16+ or any build system for the amalgamation, no dependencies beyond libc, `libm` and threads | [trackparse.h](c/include/trackparse.h) | [c/README.md](c/README.md) | [c/CHANGELOG.md](c/CHANGELOG.md) |
 
-The JavaScript package is the reference implementation. All five pass 13,130 of 13,130 fixtures,
+The JavaScript package is the reference implementation. All five pass 13,565 of 13,565 fixtures,
 and the Python, Rust, Go and C output is byte-identical to JavaScript on every fixture input. Go
 releases are the tags `go/vX.Y.Z`, which the Go module proxy serves
 ([versions](https://pkg.go.dev/github.com/4matic/trackparse/go?tab=versions)). C releases are the
@@ -1199,8 +1206,9 @@ Not there yet:
 - Times at the end of a line (`Noisia - Stigma [12:34]`) and time ranges (`00:00 - 05:30`). A
   trailing time stays in the title. In a range only the start is the line's time; the end ends up
   in `track.timestamp` and nothing checks it.
-- Label and catalog numbers (`[HOSP123]`) as fields. Catalog numbers stay in the title; only
-  known label phrases (`[NCS Release]`) land in `junk` as `label`.
+- Catalog numbers (`[HOSP123]`) as a field: they stay in the title. A record label is a field only
+  when it follows a spaced bullet (`Stigma • VISION`), and known label phrases (`[NCS Release]`)
+  land in `junk` as `label`. A bullet inside a title (`Song • Part 2`) is read as a label too.
 - Key and BPM (`8A`, `174 BPM`).
 - An artist database. `Earth, Wind & Fire` splits unless it's in `knownArtists`, and a tracklist
   doesn't yet learn names from its other lines.

@@ -22,7 +22,7 @@ doesn't recognize stays in the title, word for word
 
 This is the Go port of [trackparse](https://github.com/4matic/trackparse). Its behaviour is defined
 by a [shared spec](https://4matic.github.io/trackparse/reference/spec/) and pinned by
-[13,130 fixtures](https://4matic.github.io/trackparse/project/testing/). It passes all of them, and for every fixture input its output is byte-identical
+[13,565 fixtures](https://4matic.github.io/trackparse/project/testing/). It passes all of them, and for every fixture input its output is byte-identical
 to the [JavaScript, Python, Rust and C packages](#other-languages).
 
 - Go 1.22 or later (the `go` line of `go.mod`; CI runs the tests on 1.22 and on the latest stable)
@@ -110,6 +110,7 @@ fmt.Println(string(b))
     }
   ],
   "year": null,
+  "label": null,
   "flags": { "explicit": false, "clean": false, "unknownArtist": false, "unknownTitle": false },
   "junk": [{ "raw": "HD", "kind": "quality" }],
   "warnings": []
@@ -252,6 +253,7 @@ on. Nothing panics.
 | `FullTitle` | `string` | `Title` with the versions re-attached |
 | `Versions` | `[]Version` | Remixes and other versions, left to right |
 | `Year` | `*int` | From `(2015)` or `- 2015` |
+| `Label` | `*string` | Record [label after a spaced bullet](https://4matic.github.io/trackparse/guides/junk-and-flags/#labels-after-a-bullet): `Stigma • VISION` gives `"VISION"` |
 | `Flags` | `Flags` | `Explicit`, `Clean`, `UnknownArtist`, `UnknownTitle` |
 | `Junk` | `[]Junk` | What was taken out, each with a `Kind` |
 | `Warnings` | `[]Warning` | Heuristics that fired |
@@ -367,6 +369,7 @@ Renders a track back to a string ([format options](https://4matic.github.io/trac
 | `Versions` | `VersionsAll` | `VersionsAll` or `VersionsNone` |
 | `OmitProducers` | `false` | Leave out `(prod. ...)` credits (`producers: false` in JavaScript) |
 | `Position` | `false` | Include the track number (`01. `) |
+| `OmitLabel` | `false` | Leave out the label after a spaced bullet, ` • VISION` (`label: false` in JavaScript) |
 
 ```go
 track := trackparse.Parse("01. Wilkinson ft. Becky Hill - Afterglow (Sub Focus Remix)")
@@ -387,6 +390,12 @@ fmt.Println(trackparse.FormatWith(track, trackparse.FormatOptions{Position: true
 // 01. Wilkinson ft. Becky Hill - Afterglow (Sub Focus Remix)
 fmt.Println(trackparse.FormatWith(track, trackparse.FormatOptions{FeatMarker: trackparse.Ptr("featuring")}))
 // Wilkinson featuring Becky Hill - Afterglow (Sub Focus Remix)
+
+track = trackparse.Parse("Noisia - concussion • VISION • VISION RADIO RELOAD")
+fmt.Println(trackparse.Format(track))
+// Noisia - concussion • VISION
+fmt.Println(trackparse.FormatWith(track, trackparse.FormatOptions{OmitLabel: true}))
+// Noisia - concussion
 ```
 
 ### `Normalize`
@@ -675,7 +684,7 @@ fmt.Printf("%q\n", trackparse.Parse("Noisia - Sti\xffgma\xe2\x82").Title) // "St
 
 **Docs:** [How it's tested](https://4matic.github.io/trackparse/project/testing/) · [Ports](https://4matic.github.io/trackparse/project/ports/)
 
-- `go test ./...` runs all 13,130 shared fixtures (1,203 written by hand, the rest generated from
+- `go test ./...` runs all 13,565 shared fixtures (1,280 written by hand, the rest generated from
   the rules) and checks every output against the JSON Schema. The skip list is empty. The fixture
   test skips itself when `../spec` is missing, as in the module zip that `go get` downloads.
 - The R0 primitives (whitespace, word keys, dedup keys, letters, NFC and NFD) are tested against
@@ -771,7 +780,9 @@ difference is described under [Unicode version](#unicode-version).
 
 - `Parse` takes one track string. Whole tracklists go through `ParseTracklist`, which reads start
   times only: no durations, trailing times or time ranges.
-- Catalog numbers, key and BPM are not fields. They stay in the title.
+- Catalog numbers, key and BPM are not fields. They stay in the title. A record label is a field
+  only after a spaced bullet (`Stigma • VISION`), and a bullet inside a title (`Song • Part 2`) is
+  read as a label too.
 - There is no artist database. Pass `KnownArtists` for names that contain a joiner
   (`Earth, Wind & Fire`).
 

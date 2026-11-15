@@ -23,7 +23,7 @@ doesn't recognize stays in the title, word for word
 
 This is the C port of [trackparse](https://github.com/4matic/trackparse), with a header-only C++17
 wrapper. Its behaviour is defined by a [shared spec](https://4matic.github.io/trackparse/reference/spec/)
-and pinned by [13,130 fixtures](https://4matic.github.io/trackparse/project/testing/). It passes
+and pinned by [13,565 fixtures](https://4matic.github.io/trackparse/project/testing/). It passes
 all of them, and for every fixture input its output is byte-identical to the
 [JavaScript, Python, Rust and Go packages](#other-languages).
 
@@ -281,9 +281,11 @@ and, for the three that options take, `_from_name()`.
 | `flags` | `trackparse_flags` | `{explicit_, clean, unknown_artist, unknown_title}` (`explicit` is a C++ keyword) |
 | `junk`, `junk_count` | `const trackparse_junk *` | `{raw, kind, kind_name}` |
 | `warnings`, `warnings_count` | `const trackparse_warning *` | See [Warnings](#warnings) |
+| `label` | `const trackparse_str *` | Record [label after a spaced bullet](https://4matic.github.io/trackparse/guides/junk-and-flags/#labels-after-a-bullet) (`Stigma • VISION` gives `VISION`), `NULL` when there is none |
 
 Nullable fields are pointers that are `NULL` when the value is absent, as in the Go port. Arrays
-are a pointer and a count.
+are a pointer and a count. `label` is the last member, so the struct only grew at its end (ABI);
+in JSON it comes between `year` and `flags`.
 
 ### JSON
 
@@ -306,7 +308,7 @@ trackparse_track_free(t);
 <summary>Output</summary>
 
 ```json
-{"input":"Wilkinson ft. Becky Hill - Afterglow (Sub Focus VIP Remix) [HD]","mode":"youtube","position":null,"timestamp":null,"artists":[{"name":"Wilkinson","role":"primary","joiner":null,"source":"artist"},{"name":"Becky Hill","role":"featured","joiner":"ft.","source":"artist"}],"title":"Afterglow","fullTitle":"Afterglow (Sub Focus VIP Remix)","versions":[{"type":"remix","raw":"Sub Focus VIP Remix","artists":[{"name":"Sub Focus","role":"remixer","joiner":null,"source":"version"}],"modifiers":["vip"],"descriptor":null,"year":null,"unknownArtist":false,"delimiter":"("}],"year":null,"flags":{"explicit":false,"clean":false,"unknownArtist":false,"unknownTitle":false},"junk":[{"raw":"HD","kind":"quality"}],"warnings":[]}
+{"input":"Wilkinson ft. Becky Hill - Afterglow (Sub Focus VIP Remix) [HD]","mode":"youtube","position":null,"timestamp":null,"artists":[{"name":"Wilkinson","role":"primary","joiner":null,"source":"artist"},{"name":"Becky Hill","role":"featured","joiner":"ft.","source":"artist"}],"title":"Afterglow","fullTitle":"Afterglow (Sub Focus VIP Remix)","versions":[{"type":"remix","raw":"Sub Focus VIP Remix","artists":[{"name":"Sub Focus","role":"remixer","joiner":null,"source":"version"}],"modifiers":["vip"],"descriptor":null,"year":null,"unknownArtist":false,"delimiter":"("}],"year":null,"label":null,"flags":{"explicit":false,"clean":false,"unknownArtist":false,"unknownTitle":false},"junk":[{"raw":"HD","kind":"quality"}],"warnings":[]}
 ```
 
 </details>
@@ -358,8 +360,25 @@ and the spec are released together.
 Writes a parsed track back as `Artists - Title (Versions)`. `trackparse_format_options` has
 `_set_feat` (`TRACKPARSE_FEAT_SOURCE`, `_ARTIST`, `_TITLE`, `_OMIT`), `_set_feat_marker` (`""` is
 a valid marker; unset keeps the input's), `_set_joiners` (`TRACKPARSE_JOINERS_ORIGINAL`,
-`_CANONICAL`), `_set_versions` (`TRACKPARSE_VERSIONS_ALL`, `_NONE`), `_set_omit_producers` and
-`_set_position`. The [quick start](#quick-start) has an example.
+`_CANONICAL`), `_set_versions` (`TRACKPARSE_VERSIONS_ALL`, `_NONE`), `_set_omit_producers`,
+`_set_position` and `_set_omit_label` (leaves out the ` • VISION` label). The
+[quick start](#quick-start) has an example.
+
+```c
+trackparse_track *t = trackparse_parse("Noisia - concussion • VISION • VISION RADIO RELOAD",
+                                       TRACKPARSE_NUL_TERMINATED);
+printf("%s\n", t->label->ptr);   // VISION
+trackparse_string *s = trackparse_format(t);
+printf("%s\n", s->str.ptr);      // Noisia - concussion • VISION
+trackparse_string_free(s);
+trackparse_format_options *o = trackparse_format_options_new();
+trackparse_format_options_set_omit_label(o, true);
+s = trackparse_format_with(t, o);
+printf("%s\n", s->str.ptr);      // Noisia - concussion
+trackparse_string_free(s);
+trackparse_format_options_free(o);
+trackparse_track_free(t);
+```
 
 ### `trackparse_parser`
 
@@ -686,6 +705,8 @@ the same output. It is installed and shipped next to `trackparse.h`, and links a
 - Option builders chain: `parse_options{}.mode(mode::youtube).known_artist("Chase & Status")`.
 - The enums are `enum class` (`trackparse::role::featured`), and `trackparse::name(value)` gives
   the spec name.
+- `t.label()` is the record label after a spaced bullet, a `std::optional<std::string_view>`, and
+  `format_options{}.omit_label(true)` leaves it out of `format`.
 - The only exception is `std::bad_alloc`, when the library runs out of memory. Built with
   `-fno-exceptions`, the wrapper calls `std::abort()` instead.
 
@@ -755,7 +776,7 @@ node scripts/gen_unicode.mjs --check     # Unicode tables are up to date
 
 What `ctest` runs:
 
-- `fixtures`: all 13,130 shared fixtures (1,203 written by hand, the rest generated from the
+- `fixtures`: all 13,565 shared fixtures (1,280 written by hand, the rest generated from the
   rules), with an empty skip list. `schema` then checks every output against the JSON Schema with
   the validator of the JavaScript package.
 - `match`, `rt`, `api`: the fixture matcher and the JSON reader, the internal runtime (arenas,
@@ -855,7 +876,9 @@ fixture input, so you can parse in one language and read the result in another.
 - `trackparse_parse` takes one track string. Whole tracklists go through
   `trackparse_parse_tracklist`, which reads start times only: no durations, trailing times or
   time ranges.
-- Catalog numbers, key and BPM are not fields. They stay in the title.
+- Catalog numbers, key and BPM are not fields. They stay in the title. A record label is a field
+  only after a spaced bullet (`Stigma • VISION`), and a bullet inside a title (`Song • Part 2`) is
+  read as a label too.
 - There is no artist database. Add known artists for names that contain a joiner
   (`Earth, Wind & Fire`).
 - No package manager carries the library yet: use FetchContent, the amalgamation or an install
