@@ -321,3 +321,96 @@ TP_PRIVATE tp_str tp_cleanup_title(tp_str raw) {
   }
   return title;
 }
+
+/* ------------------------------------------------------------------------------------------ */
+/* R8.7 Bullet suffix */
+
+/* bulletSegments is R8.7.1 to R8.7.2: the head and tail segments when the rule fires. It cuts
+ * at every spaced bullet after the first spaced dash D, which must have text before and after
+ * it. */
+TP_PRIVATE bool tp_bullet_segments(const tp_skel *sk, tp_skel_vec *out) {
+  tp_runes t = sk->text;
+  ptrdiff_t n = (ptrdiff_t)t.n;
+  if (tp_at(t, 0) == '-' && tp_at(t, 1) == ' ') return false; /* R6.1: D at the start */
+  ptrdiff_t dash = -1;
+  for (ptrdiff_t i = 1; i + 1 < n; i++) {
+    if (tp_is_spaced_dash_at(t, i)) {
+      dash = i;
+      break;
+    }
+  }
+  if (dash < 0) return false;
+  tp_skel_vec parts = {0};
+  ptrdiff_t start = 0;
+  for (ptrdiff_t i = dash + 2; i + 1 < n; i++) {
+    if (!tp_is_spaced_bullet_at(t, i)) continue;
+    tp_skel part = tp_slice_skel(sk, start, i);
+    tp_push(parts, tp_trim_skel(&part));
+    start = i + 1;
+  }
+  if (parts.n == 0) return false;
+  tp_skel last = tp_slice_from(sk, start);
+  tp_push(parts, tp_trim_skel(&last));
+  for (size_t i = 0; i < parts.n; i++) {
+    if (tp_skel_is_empty(&parts.p[i])) return false;
+  }
+  /* R8.7.2: the title part between D and the first bullet counts as a segment ("A - • L"). */
+  if (tp_skel_len(&parts.p[0]) <= dash + 1) return false;
+  *out = parts;
+  return true;
+}
+
+/* cutBulletSuffix is R8.7: cut a bullet suffix off the working skeleton (after R2 and R4,
+ * before R6). False when the rule does not fire. */
+TP_PRIVATE bool tp_cut_bullet_suffix(const tp_skel *sk, tp_ctx *c, tp_bullet_suffix *out) {
+  tp_skel_vec parts;
+  if (!tp_bullet_segments(sk, &parts)) return false;
+  tp_positioned_junk_vec junk = {0};
+  const tp_str *label = NULL;
+  for (size_t i = 1; i < parts.n; i++) {
+    tp_skel part = parts.p[i];
+    /* R8.7.4: junk groups go to junk; every other group stays verbatim. */
+    tp_idxvec removed = {0};
+    tp_indexed_group_vec groups = tp_groups_of(&part);
+    for (size_t k = 0; k < groups.n; k++) {
+      const tp_group *g = groups.p[k].group;
+      tp_str kind;
+      if (!tp_junk_kind_of(tp_split_words(g->inner), c, &kind)) continue;
+      tp_positioned_junk j;
+      j.raw = g->inner;
+      j.kind = kind;
+      j.pos = g->pos;
+      tp_push(junk, j);
+      tp_push(removed, g->pos);
+    }
+    tp_skel kept = tp_remove_groups(&part, removed);
+    tp_skel rest = tp_trim_skel(&kept);
+    if (tp_skel_is_empty(&rest)) continue;
+    tp_str text = tp_collapse_spaces(tp_render_skel(&rest));
+    ptrdiff_t pos = tp_start_pos(&rest, 0);
+    /* R8.7.4: only junk phrases, connectors and year words (no genres, no label suffixes).
+     * JS truthiness: an empty kind (possible through keywords.junk) does not count. */
+    tp_str kind;
+    if (tp_phrase_kind_of(tp_split_words(text), c->t->junk_phrases, c, &kind) && kind.n != 0) {
+      tp_positioned_junk j;
+      j.raw = text;
+      j.kind = kind;
+      j.pos = pos;
+      tp_push(junk, j);
+    } else if (label == NULL) {
+      tp_str *l = tp_alloc(sizeof *l);
+      *l = text;
+      label = l;
+    } else {
+      tp_positioned_junk j;
+      j.raw = text;
+      j.kind = TP_JUNK_KIND_NOTE;
+      j.pos = pos;
+      tp_push(junk, j);
+    }
+  }
+  out->head = parts.p[0];
+  out->label = label;
+  out->junk = junk;
+  return true;
+}

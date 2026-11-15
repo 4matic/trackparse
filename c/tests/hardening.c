@@ -263,6 +263,9 @@ static const tp_str prop_titles[] = {HZ_S("Tentacles"),  HZ_S("Bruises"), HZ_S("
 static const tp_str prop_remixers[] = {HZ_S("Skrillex"), HZ_S("Magnetude"), HZ_S("Wilkinson"),
                                        HZ_S("Break")};
 static const tp_str prop_joiners[] = {HZ_S(" & "), HZ_S(", "), HZ_S(" x "), HZ_S(" vs. ")};
+/* R8.7 record labels after a spaced bullet. */
+static const tp_str prop_labels[] = {HZ_S("VISION"), HZ_S("HOSPITAL"), HZ_S("GEMINI GEMINI"),
+                                     HZ_S("SIX EIGHT"), HZ_S("\xc3\x98")};
 
 tp_str hz_track_string(hz_rng *r) {
   tp_strvec artists = {0};
@@ -278,6 +281,7 @@ tp_str hz_track_string(hz_rng *r) {
   }
   s = cat3(s, S(" - "), PICK(r, prop_titles));
   if (hz_chance(r, 50)) s = cat(s, cat3(S(" ("), PICK(r, prop_remixers), S(" Remix)")));
+  if (hz_chance(r, 50)) s = cat3(s, S(" " TP_BULLET_UTF8 " "), PICK(r, prop_labels));
   return s;
 }
 
@@ -488,6 +492,7 @@ tp_format_options hz_format_options_from(hz_rng *r, tp_str s) {
   o.versions = PICK(r, versions);
   o.omit_producers = hz_chance(r, 30);
   o.position = hz_chance(r, 50);
+  o.omit_label = hz_chance(r, 30);
   return o;
 }
 
@@ -749,7 +754,8 @@ void hz_check_public(tp_str s) {
       !trackparse_format_options_set_joiners(fo, TRACKPARSE_JOINERS_CANONICAL) ||
       !trackparse_format_options_set_versions(fo, TRACKPARSE_VERSIONS_NONE) ||
       !trackparse_format_options_set_omit_producers(fo, true) ||
-      !trackparse_format_options_set_position(fo, true)) {
+      !trackparse_format_options_set_position(fo, true) ||
+      !trackparse_format_options_set_omit_label(fo, true)) {
     hz_fail("format options: out of memory");
   }
   memset(&ifo, 0, sizeof ifo);
@@ -759,6 +765,7 @@ void hz_check_public(tp_str s) {
   ifo.versions = TP_VERSIONS_NONE;
   ifo.omit_producers = true;
   ifo.position = true;
+  ifo.omit_label = true;
   same("trackparse_format_with", s, own(trackparse_format_with(t, fo), "format_with", s),
        tp_api_format_with(&it, &ifo));
   trackparse_format_options_free(fo);
@@ -829,8 +836,10 @@ void hz_check_noise_insensitive(tp_str s, int cut) {
   }
 }
 
-/* What R11.6 promises to keep: names with roles, the title, each version's type and names. */
-static tp_str shape(const tp_track *t) {
+/* What R11.6 promises to keep: names with roles, the title, each version's type and names,
+ * and the label. Without with_title the title and the label are left out (R11.6: a label
+ * counts only when the formatted string has an artist part). */
+static tp_str shape(const tp_track *t, bool with_title) {
   tp_buf b = {0};
   for (size_t i = 0; i < t->artists.n; i++) {
     tp_buf_str(&b, t->artists.p[i].name);
@@ -838,9 +847,17 @@ static tp_str shape(const tp_track *t) {
     tp_buf_str(&b, t->artists.p[i].role);
     tp_buf_byte(&b, ';');
   }
-  tp_buf_byte(&b, '|');
-  tp_buf_str(&b, t->title);
-  tp_buf_byte(&b, '|');
+  if (with_title) {
+    tp_buf_byte(&b, '|');
+    tp_buf_str(&b, t->title);
+    tp_buf_byte(&b, '|');
+    if (t->label != NULL) {
+      tp_buf_str(&b, *t->label);
+    } else {
+      tp_buf_str(&b, S("<nil>"));
+    }
+    tp_buf_byte(&b, '|');
+  }
   for (size_t i = 0; i < t->versions.n; i++) {
     const tp_version *v = &t->versions.p[i];
     tp_buf_str(&b, v->type);
@@ -861,8 +878,18 @@ void hz_check_round_trip(tp_str s) {
   if (first.warnings.n > 0) return;
   formatted = tp_api_format(&first);
   second = tp_api_parse(formatted);
-  a = shape(&first);
-  b = shape(&second);
+  /* R11.6: the label (and the title) only count when the formatted string has an artist part. */
+  bool artist_part = false;
+  for (size_t i = 0; i < first.artists.n; i++) {
+    const tp_artist *x = &first.artists.p[i];
+    if (tp_str_eq(x->role, TP_ROLE_PRIMARY) ||
+        (tp_str_eq(x->role, TP_ROLE_FEATURED) && tp_str_eq(x->source, TP_SOURCE_ARTIST))) {
+      artist_part = true;
+    }
+  }
+  bool both = artist_part || first.label == NULL;
+  a = shape(&first, both);
+  b = shape(&second, both);
   if (!tp_str_eq(a, b)) hz_fail("round trip %s -> %s:\n%s\n%s", hz_q(s), hz_q(formatted), a.p, b.p);
 }
 
@@ -879,7 +906,8 @@ static tp_strvec content_words(tp_str normalized) {
     tp_str w = words.p[i];
     size_t a = 0, b = w.n;
     if (tp_str_eq(w, S("-")) || tp_str_eq(w, S("&")) || tp_str_eq(w, S("x")) ||
-        tp_str_eq(w, S("vs.")) || tp_str_eq(w, S("feat."))) {
+        tp_str_eq(w, S("vs.")) || tp_str_eq(w, S("feat.")) ||
+        tp_str_eq(w, S(TP_BULLET_UTF8))) { /* R8.7: a spaced bullet is a separator */
       continue;
     }
     while (a < b && in_cutset(w.p[a])) a++;
@@ -901,6 +929,7 @@ static tp_strvec output_strings(const tp_track *t) {
     }
   }
   for (size_t i = 0; i < t->junk.n; i++) tp_push(out, t->junk.p[i].raw);
+  if (t->label) tp_push(out, *t->label);
   if (t->position) tp_push(out, t->position->raw);
   if (t->timestamp) tp_push(out, t->timestamp->raw);
   return out;

@@ -294,6 +294,8 @@ TP_PRIVATE void tp_track_write(const tp_track *t, tp_jw *w) {
   tp_jw_close(w, ']');
   KEY(w, "year");
   tp_jw_opt_int(w, t->year);
+  KEY(w, "label");
+  tp_jw_opt_str(w, t->label);
   KEY(w, "flags");
   tp_flags_write(&t->flags, w);
   KEY(w, "junk");

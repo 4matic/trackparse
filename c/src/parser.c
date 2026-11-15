@@ -158,11 +158,21 @@ TP_PRIVATE tp_track tp_finish(tp_staged st, bool list_context) {
     if (!tp_skel_is_empty(&working)) artist_skel = st.working;
     relaxed = artist_skel != NULL;
   } else {
+    /* R8.7: a bullet suffix is cut before R6, which then sees only the head. */
+    tp_skel head = working;
+    tp_bullet_suffix bullet;
+    bool cut = tp_cut_bullet_suffix(&working, c, &bullet);
+    if (cut) {
+      head = bullet.head;
+      track.label = bullet.label;
+      tp_append(out.junk, bullet.junk);
+    }
     tp_separator_input in;
-    in.skel = working;
+    in.skel = head;
     in.mode = pre.mode;
     in.uploader = tp_uploader_skel(st.e->opts.uploader);
     in.list_context = list_context;
+    in.bullet_head = cut;
     tp_separator_result sep = tp_find_separator(in, c);
     tp_add_peeled(&out, sep.peeled);
     artist_skel = sep.artist;

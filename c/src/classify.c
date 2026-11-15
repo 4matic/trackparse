@@ -75,6 +75,27 @@ TP_PRIVATE tp_classification tp_classify(tp_str inner, tp_site s, tp_ctx *c) {
 /* junkKindOf is R5.1: the junk kind if the whole word list is junk vocabulary. */
 TP_PRIVATE bool tp_junk_kind_of(tp_strvec words, tp_ctx *c, tp_str *kind) {
   const tp_tables *t = c->t;
+  tp_str first_kind;
+  ptrdiff_t n = (ptrdiff_t)words.n;
+  /* JS truthiness: an empty kind (possible through keywords.junk) does not count. */
+  if (tp_phrase_kind_of(words, t->junk_or_genre, c, &first_kind) && first_kind.n != 0) {
+    *kind = first_kind;
+    return true;
+  }
+  if (n >= 2 && tp_in_vocab(words.p[n - 1], &t->label_suffixes)) {
+    *kind = TP_JUNK_KIND_LABEL;
+    return true;
+  }
+  return false;
+}
+
+/* phraseKindOf is the R5.1 tokenization over phrases (greedy, longest first) with connectors
+ * and year words, at least one phrase: the kind of the first phrase and true, else false. The
+ * kind can be empty (through keywords.junk); callers apply JS truthiness. R8.7 uses it without
+ * genres. */
+TP_PRIVATE bool tp_phrase_kind_of(tp_strvec words, const tp_phrase_table *phrases, tp_ctx *c,
+                                  tp_str *kind) {
+  const tp_tables *t = c->t;
   tp_str first_kind = TP_EMPTY;
   bool found = false;
   ptrdiff_t n = (ptrdiff_t)words.n;
@@ -84,7 +105,7 @@ TP_PRIVATE bool tp_junk_kind_of(tp_strvec words, tp_ctx *c, tp_str *kind) {
     tp_phrase_match m;
     int year;
     bool is_year;
-    if (tp_phrase_table_match_at(t->junk_or_genre, words, i, &m)) {
+    if (tp_phrase_table_match_at(phrases, words, i, &m)) {
       if (!found) {
         first_kind = *(const tp_str *)m.value;
         found = true;
@@ -99,19 +120,10 @@ TP_PRIVATE bool tp_junk_kind_of(tp_strvec words, tp_ctx *c, tp_str *kind) {
       i++;
       continue;
     }
-    found = false;
-    break;
+    return false;
   }
-  /* JS truthiness: an empty kind (possible through keywords.junk) does not count. */
-  if (found && first_kind.n != 0) {
-    *kind = first_kind;
-    return true;
-  }
-  if (n >= 2 && tp_in_vocab(words.p[n - 1], &t->label_suffixes)) {
-    *kind = TP_JUNK_KIND_LABEL;
-    return true;
-  }
-  return false;
+  *kind = first_kind;
+  return found;
 }
 
 /* ------------------------------------------------------------------------------------------ */

@@ -36,5 +36,16 @@ int main(void) {
   if (t == NULL) return 1;
   if (t->year) printf("year: %d\n", *t->year);
   trackparse_track_free(t);
+
+  /* R8.7: the record label after a spaced bullet (U+2022); a later segment is a note. */
+  t = trackparse_parse("Noisia - concussion \xe2\x80\xa2 VISION \xe2\x80\xa2 VISION RADIO RELOAD",
+                       TRACKPARSE_NUL_TERMINATED);
+  if (t == NULL) return 1;
+  printf("title: %.*s\n", STR(t->title));
+  if (t->label) printf("label: %.*s\n", STR(*t->label));
+  for (size_t i = 0; i < t->junk_count; i++) {
+    printf("junk: %.*s (%.*s)\n", STR(t->junk[i].raw), STR(t->junk[i].kind_name));
+  }
+  trackparse_track_free(t);
   return 0;
 }

@@ -159,7 +159,8 @@ typedef enum trackparse_junk_kind {
   TRACKPARSE_JUNK_PLATFORM,
   TRACKPARSE_JUNK_LABEL,
   TRACKPARSE_JUNK_GENRE,
-  TRACKPARSE_JUNK_OTHER /**< also used for names keywords introduced */
+  TRACKPARSE_JUNK_OTHER, /**< also used for names keywords introduced */
+  TRACKPARSE_JUNK_NOTE   /**< a note after the record label, behind a second spaced bullet (R8.7) */
 } trackparse_junk_kind;
 
 /** Track warnings (reference/warnings, "track warnings"). */
@@ -254,7 +255,7 @@ typedef enum trackparse_versions {
 #define TRACKPARSE_SOURCE_COUNT 3
 #define TRACKPARSE_VERSION_TYPE_COUNT 27
 #define TRACKPARSE_DELIMITER_COUNT 4
-#define TRACKPARSE_JUNK_KIND_COUNT 9
+#define TRACKPARSE_JUNK_KIND_COUNT 10
 #define TRACKPARSE_WARNING_COUNT 8
 #define TRACKPARSE_ENTRY_KIND_COUNT 6
 #define TRACKPARSE_EOL_COUNT 4
@@ -357,6 +358,12 @@ typedef struct trackparse_track {
   size_t junk_count;
   const trackparse_warning *warnings;
   size_t warnings_count;
+  /** The record label written after a spaced bullet on the title side (R8.7):
+   * "Age Of Spin \u2022 WEAREHUMANS" gives "WEAREHUMANS". As written after R1, case kept, with
+   * no lookup; NULL when there is none. Not the junk kind TRACKPARSE_JUNK_LABEL, which is a
+   * label name in brackets such as [NCS Release]. ("label" in JSON, between "year" and
+   * "flags"; appended last here to keep the ABI.) */
+  const trackparse_str *label;
 } trackparse_track;
 
 /** A list of artists (the result of trackparse_parse_artists). */
@@ -411,6 +418,9 @@ TRACKPARSE_API bool trackparse_format_options_set_versions(trackparse_format_opt
 TRACKPARSE_API bool trackparse_format_options_set_omit_producers(trackparse_format_options *o,
                                                                  bool v);
 TRACKPARSE_API bool trackparse_format_options_set_position(trackparse_format_options *o, bool v);
+/** Leaves out the record label after the title, " \u2022 " + label (R11.3; the JavaScript
+ * option label: false). Default: false, the label is written. */
+TRACKPARSE_API bool trackparse_format_options_set_omit_label(trackparse_format_options *o, bool v);
 
 TRACKPARSE_API trackparse_tracklist_options *trackparse_tracklist_options_new(void);
 TRACKPARSE_API void trackparse_tracklist_options_free(trackparse_tracklist_options *o);
