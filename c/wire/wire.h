@@ -15,9 +15,9 @@
 TP_PRIVATE tp_str tp_wire_call(tp_str fn, tp_str input, tp_json options, tp_json format_options,
                                tp_json edits);
 
-/* One case object {"fn", "input", "options", "formatOptions", "edits"} as JSON text (go/wire_hook.go
- * wireLine): missing fn means parse, missing options are {}, missing edits []. Text that is not
- * a JSON object gives "null". Same arena rules as tp_wire_call. */
+/* One case object {"fn", "input", "options", "formatOptions", "edits"} as JSON text
+ * (go/wire_hook.go wireLine): missing fn means parse, missing options are {}, missing edits [].
+ * Text that is not a JSON object gives "null". Same arena rules as tp_wire_call. */
 TP_PRIVATE tp_str tp_wire_line(tp_str line);
 
 #endif /* TP_WIRE_H */

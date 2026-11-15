@@ -18,13 +18,13 @@
 static int failures;
 static long checks;
 
-#define CHECK(cond)                                                       \
-  do {                                                                    \
-    checks++;                                                             \
-    if (!(cond)) {                                                        \
-      failures++;                                                         \
-      fprintf(stderr, "%s:%d: CHECK(%s)\n", __FILE__, __LINE__, #cond);   \
-    }                                                                     \
+#define CHECK(cond)                                                                                \
+  do {                                                                                             \
+    checks++;                                                                                      \
+    if (!(cond)) {                                                                                 \
+      failures++;                                                                                  \
+      fprintf(stderr, "%s:%d: CHECK(%s)\n", __FILE__, __LINE__, #cond);                            \
+    }                                                                                              \
   } while (0)
 
 /* A trackparse_str equals a C string (no embedded NUL). */
@@ -46,14 +46,14 @@ static void show_diff(const char *what, const trackparse_string *a, const trackp
           a ? a->str.ptr : "NULL", b ? (int)b->str.len : 4, b ? b->str.ptr : "NULL");
 }
 
-#define SAME_JSON(what, a, b)                 \
-  do {                                        \
-    checks++;                                 \
-    if (!same_text((a), (b))) {               \
-      failures++;                             \
-      fprintf(stderr, "%s:%d: ", __FILE__, __LINE__); \
-      show_diff((what), (a), (b));            \
-    }                                         \
+#define SAME_JSON(what, a, b)                                                                      \
+  do {                                                                                             \
+    checks++;                                                                                      \
+    if (!same_text((a), (b))) {                                                                    \
+      failures++;                                                                                  \
+      fprintf(stderr, "%s:%d: ", __FILE__, __LINE__);                                              \
+      show_diff((what), (a), (b));                                                                 \
+    }                                                                                              \
   } while (0)
 
 /* -------------------------------------------------------------------------------------------- */
@@ -63,12 +63,27 @@ static long live_blocks;
 static long malloc_calls;
 static long fail_at = -1; /* fail the malloc with this index, -1: never */
 
+/* The allocator stays installed during the thread test, so the counters need a lock there. */
+#ifdef TP_TEST_THREADS
+static pthread_mutex_t count_lock = PTHREAD_MUTEX_INITIALIZER;
+#define COUNT_LOCK() pthread_mutex_lock(&count_lock)
+#define COUNT_UNLOCK() pthread_mutex_unlock(&count_lock)
+#else
+#define COUNT_LOCK() ((void)0)
+#define COUNT_UNLOCK() ((void)0)
+#endif
+
 static void *count_malloc(size_t size, void *user) {
   void *p;
   (void)user;
-  if (fail_at >= 0 && malloc_calls++ == fail_at) return NULL;
+  COUNT_LOCK();
+  if (fail_at >= 0 && malloc_calls++ == fail_at) {
+    COUNT_UNLOCK();
+    return NULL;
+  }
   p = malloc(size);
   if (p != NULL) live_blocks++;
+  COUNT_UNLOCK();
   return p;
 }
 
@@ -79,7 +94,9 @@ static void *count_realloc(void *ptr, size_t size, void *user) {
 
 static void count_free(void *ptr, void *user) {
   (void)user;
+  COUNT_LOCK();
   if (ptr != NULL) live_blocks--;
+  COUNT_UNLOCK();
   free(ptr);
 }
 
@@ -145,7 +162,7 @@ static trackparse_string *string_json(const trackparse_string *in) {
   r = tp_string_json(x);
   tp_scope_close(&s);
   /* A plain malloc copy (free it with free, not trackparse_string_free). */
-  out =(trackparse_string *)malloc(sizeof *out + r.n + 1);
+  out = (trackparse_string *)malloc(sizeof *out + r.n + 1);
   if (out != NULL) {
     char *d = (char *)(out + 1);
     memcpy(d, r.p, r.n);
@@ -343,9 +360,15 @@ typedef struct lossy_case {
 } lossy_case;
 
 static const lossy_case lossy_cases[] = {
-    {"a\xff" "b", "a\xef\xbf\xbd" "b"},
+    {"a\xff"
+     "b",
+     "a\xef\xbf\xbd"
+     "b"},
     {"\xe2\x82", "\xef\xbf\xbd"},
-    {"\xe2\x82" "A", "\xef\xbf\xbd" "A"},
+    {"\xe2\x82"
+     "A",
+     "\xef\xbf\xbd"
+     "A"},
     {"\xed\xa0\x80", "\xef\xbf\xbd\xef\xbf\xbd\xef\xbf\xbd"},
     {"\xf0\x9f\x98", "\xef\xbf\xbd"},
     {"\xf4\x90\x80\x80", "\xef\xbf\xbd\xef\xbf\xbd\xef\xbf\xbd\xef\xbf\xbd"},
@@ -531,8 +554,8 @@ static void test_parse_with(void) {
 
   /* Keywords and splitAnd, against the JSON door. */
   o = trackparse_parse_options_new();
-  CHECK(trackparse_parse_options_add_junk(o, "some label rip", TRACKPARSE_NUL_TERMINATED,
-                                          "label", TRACKPARSE_NUL_TERMINATED));
+  CHECK(trackparse_parse_options_add_junk(o, "some label rip", TRACKPARSE_NUL_TERMINATED, "label",
+                                          TRACKPARSE_NUL_TERMINATED));
   CHECK(trackparse_parse_options_add_version_head(o, "rerub", TRACKPARSE_NUL_TERMINATED,
                                                   "rerubtype", TRACKPARSE_NUL_TERMINATED));
   CHECK(trackparse_parse_options_add_descriptor(o, "deluxe", TRACKPARSE_NUL_TERMINATED));
@@ -589,8 +612,7 @@ static void test_format(void) {
   CHECK(trackparse_format_options_set_position(o, true));
   CHECK(trackparse_format_options_set_omit_producers(o, true));
   s = trackparse_format_with(t, o);
-  CHECK(s != NULL &&
-        str_is(s->str, "01. Wilkinson ft. Becky Hill - Afterglow (Sub Focus Remix)"));
+  CHECK(s != NULL && str_is(s->str, "01. Wilkinson ft. Becky Hill - Afterglow (Sub Focus Remix)"));
   trackparse_string_free(s);
   CHECK(trackparse_format_options_set_feat_marker(o, "with", TRACKPARSE_NUL_TERMINATED));
   CHECK(trackparse_format_options_set_position(o, false));
@@ -645,7 +667,7 @@ static void test_hand_built(void) {
   t.full_title.len = 12;
   t.versions = &version;
   t.versions_count = 1;
-  t.junk_count = 7; /* NULL junk */
+  t.junk_count = 7;     /* NULL junk */
   t.warnings_count = 2; /* NULL warnings */
 
   s = trackparse_format(&t);
@@ -693,8 +715,9 @@ static void test_hand_built(void) {
 }
 
 static void test_normalize_and_all_artists(void) {
-  trackparse_string *s = trackparse_normalize("Noisia\xe2\x80\x8b \xe2\x80\x93 Stigma \xef\xbc\x88VIP\xef\xbc\x89",
-                                              TRACKPARSE_NUL_TERMINATED);
+  trackparse_string *s =
+      trackparse_normalize("Noisia\xe2\x80\x8b \xe2\x80\x93 Stigma \xef\xbc\x88VIP\xef\xbc\x89",
+                           TRACKPARSE_NUL_TERMINATED);
   trackparse_track *t;
   trackparse_artists *a;
   CHECK(s != NULL && str_is(s->str, "Noisia - Stigma (VIP)"));
@@ -758,7 +781,8 @@ static void test_parser(void) {
         str_is(t->artists[1].name, "Camo & Krooked") && t->versions_count == 1 &&
         t->versions[0].type == TRACKPARSE_VERSION_REWORK);
   trackparse_track_free(t);
-  a = trackparse_parser_parse_artists(p, "Chase & Status, Camo & Krooked", TRACKPARSE_NUL_TERMINATED);
+  a = trackparse_parser_parse_artists(p, "Chase & Status, Camo & Krooked",
+                                      TRACKPARSE_NUL_TERMINATED);
   CHECK(a != NULL && a->count == 2);
   trackparse_artists_free(a);
   for (i = 0; i < TP_COUNT(parser_inputs); i++) trackparse_string_free(want[i]);
@@ -779,16 +803,15 @@ static void test_parser(void) {
   trackparse_artists_free(a);
 }
 
-static const char tracklist_text[] =
-    "Hour 2\r\n"
-    "48:20 Noisia - Stigma\r\n"
-    "52:47 Mefjus & Kasra - Bandwagon (Phace Remix)\r\n"
-    "56:05 Black Sun Empire - ID\r\n"
-    "59:31 Alix Perez - Fade Away\r\n"
-    "01:03:10 Interview with Hybris\r\n"
-    "01:07:44 Imanu - Sacrifice\r\n"
-    "00:11:02 Current Value feat. Teddy Killerz - Payload\r\n"
-    "01:15:36 Hybris - Spinning Top";
+static const char tracklist_text[] = "Hour 2\r\n"
+                                     "48:20 Noisia - Stigma\r\n"
+                                     "52:47 Mefjus & Kasra - Bandwagon (Phace Remix)\r\n"
+                                     "56:05 Black Sun Empire - ID\r\n"
+                                     "59:31 Alix Perez - Fade Away\r\n"
+                                     "01:03:10 Interview with Hybris\r\n"
+                                     "01:07:44 Imanu - Sacrifice\r\n"
+                                     "00:11:02 Current Value feat. Teddy Killerz - Payload\r\n"
+                                     "01:15:36 Hybris - Spinning Top";
 
 static void test_tracklist(void) {
   trackparse_tracklist *l = trackparse_parse_tracklist(tracklist_text, TRACKPARSE_NUL_TERMINATED);
@@ -857,7 +880,8 @@ static void test_tracklist(void) {
   CHECK(trackparse_tracklist_options_set_audio_seconds(o, 3600));
   CHECK(trackparse_tracklist_options_set_mode(o, TRACKPARSE_MODE_AUTO));
   CHECK(trackparse_tracklist_options_set_split_and(o, TRACKPARSE_SPLIT_AND_ALWAYS));
-  CHECK(trackparse_tracklist_options_add_known_artist(o, "Camo & Krooked", TRACKPARSE_NUL_TERMINATED));
+  CHECK(trackparse_tracklist_options_add_known_artist(o, "Camo & Krooked",
+                                                      TRACKPARSE_NUL_TERMINATED));
   CHECK(trackparse_tracklist_options_add_version_head(o, "rerub", TRACKPARSE_NUL_TERMINATED,
                                                       "rework", TRACKPARSE_NUL_TERMINATED));
   CHECK(trackparse_tracklist_options_add_descriptor(o, "deluxe", TRACKPARSE_NUL_TERMINATED));
@@ -901,9 +925,8 @@ static void test_edits(void) {
   r = trackparse_apply_edits(text, TRACKPARSE_NUL_TERMINATED, e);
   CHECK(r != NULL);
   if (r != NULL) {
-    STR_IS(r->text,
-           "48:20 Noisia - Stigma\r\n01:00:16 Alix Perez - Fade Away\r\n01:03:55 Imanu - "
-           "Sacrifice\r\n");
+    STR_IS(r->text, "48:20 Noisia - Stigma\r\n01:00:16 Alix Perez - Fade Away\r\n01:03:55 Imanu - "
+                    "Sacrifice\r\n");
     CHECK(r->changed_count == 2 && r->changed[0] == 2 && r->changed[1] == 3);
     CHECK(r->warnings_count == 1 && r->warnings[0].code == TRACKPARSE_EDIT_WARNING_STYLE_UPGRADED &&
           r->warnings[0].edit == 1 && r->warnings[0].line != NULL && *r->warnings[0].line == 2);
@@ -1028,8 +1051,8 @@ static void check_oom(const char *what, oom_call call, void (*release)(void *)) 
     fail_from(-1);
     if (r != NULL) break;
     if (live_blocks != base) {
-      fprintf(stderr, "%s: %ld blocks leaked after failing malloc %ld\n", what,
-              live_blocks - base, n);
+      fprintf(stderr, "%s: %ld blocks leaked after failing malloc %ld\n", what, live_blocks - base,
+              n);
       failures++;
       return;
     }
@@ -1070,8 +1093,7 @@ static void test_oom(void) {
   CHECK(!ok);
   CHECK(live_blocks == base);
   {
-    trackparse_track *t =
-        trackparse_parse_with("Camo & Krooked - X", TRACKPARSE_NUL_TERMINATED, o);
+    trackparse_track *t = trackparse_parse_with("Camo & Krooked - X", TRACKPARSE_NUL_TERMINATED, o);
     CHECK(t != NULL && t->artists_count == 2);
     trackparse_track_free(t);
     t = trackparse_parse_with("Chase & Status - X", TRACKPARSE_NUL_TERMINATED, o);
@@ -1106,7 +1128,8 @@ static void *thread_main(void *arg) {
   thread_arg *a = (thread_arg *)arg;
   int i;
   for (i = 0; i < 200; i++) {
-    trackparse_track *t = trackparse_parser_parse(a->p, parser_inputs[0], TRACKPARSE_NUL_TERMINATED);
+    trackparse_track *t =
+        trackparse_parser_parse(a->p, parser_inputs[0], TRACKPARSE_NUL_TERMINATED);
     trackparse_string *s = trackparse_track_to_json(t);
     if (!same_text(s, a->want)) a->bad++;
     trackparse_string_free(s);

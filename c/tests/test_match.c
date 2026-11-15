@@ -49,7 +49,8 @@ static const read_case reads[] = {
     /* Escapes; a lone surrogate becomes U+FFFD, a pair is one code point. */
     {"\"\\n\\t\\/\\u0041\\ud83d\\ude00\"", "\"\\n\\t/A\xf0\x9f\x98\x80\""},
     {"\"\\ud800x\"", "\"\xef\xbf\xbdx\""},
-    {"\"\\ud800\\u0041\"", "\"\xef\xbf\xbd" "A\""},
+    {"\"\\ud800\\u0041\"", "\"\xef\xbf\xbd"
+                           "A\""},
     {"\"\\udc00\"", "\"\xef\xbf\xbd\""},
     /* Infinity travels as 1e999 (shown as null, as JSON.stringify does). */
     {"[1e999,-1e999]", "[null,null]"},

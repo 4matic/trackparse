@@ -134,10 +134,10 @@ static const char *const mode_names[] = {"auto", "clean", "youtube", "filename",
 static const char *const role_names[] = {"primary", "featured", "remixer", "producer"};
 static const char *const source_names[] = {"artist", "title", "version"};
 static const char *const version_type_names[] = {
-    "remix",    "bootleg",      "vip",      "edit",     "flip",     "refix",  "rework",
-    "mashup",   "blend",        "dub",      "mix",      "extended", "radio",  "club",
-    "original", "instrumental", "acapella", "live",     "acoustic", "remaster", "demo",
-    "reprise",  "cover",        "version",  "spedUp",   "slowed",   "nightcore"};
+    "remix",    "bootleg",      "vip",      "edit",   "flip",     "refix",    "rework",
+    "mashup",   "blend",        "dub",      "mix",    "extended", "radio",    "club",
+    "original", "instrumental", "acapella", "live",   "acoustic", "remaster", "demo",
+    "reprise",  "cover",        "version",  "spedUp", "slowed",   "nightcore"};
 static const char *const delimiter_names[] = {"(", "[", "{", "-"};
 static const char *const junk_kind_names[] = {"video",    "audio", "lyrics", "quality", "promo",
                                               "platform", "label", "genre",  "other"};
@@ -148,14 +148,13 @@ static const char *const entry_kind_names[] = {"track", "marker", "header",
                                                "link",  "note",   "blank"};
 static const char *const eol_names[] = {"\n", "\r\n", "\r", ""};
 static const char *const tl_warning_names[] = {
-    "time-missing", "time-out-of-order", "time-duplicate",     "no-start-at-zero",
-    "time-after-audio-end", "invalid-time", "position-gap", "position-duplicate",
-    "line-unparsed"};
+    "time-missing",     "time-out-of-order",    "time-duplicate",
+    "no-start-at-zero", "time-after-audio-end", "invalid-time",
+    "position-gap",     "position-duplicate",   "line-unparsed"};
 static const char *const severity_names[] = {"info", "warning"};
 static const char *const edit_op_names[] = {"set-time", "shift",  "sort-by-time",
                                             "set-rest", "insert", "delete"};
-static const char *const edit_warning_names[] = {"edit-invalid", "time-clamped",
-                                                 "style-upgraded"};
+static const char *const edit_warning_names[] = {"edit-invalid", "time-clamped", "style-upgraded"};
 
 /* The name of value v in a table, "" out of range. */
 static const char *name_at(const char *const *names, size_t n, size_t v) {
@@ -199,11 +198,9 @@ TRACKPARSE_API const char *trackparse_warning_name(trackparse_warning v) {
 TRACKPARSE_API const char *trackparse_entry_kind_name(trackparse_entry_kind v) {
   return NAME_OF(entry_kind_names, v);
 }
-TRACKPARSE_API const char *trackparse_eol_name(trackparse_eol v) {
-  return NAME_OF(eol_names, v);
-}
-TRACKPARSE_API const char *trackparse_tracklist_warning_code_name(
-    trackparse_tracklist_warning_code v) {
+TRACKPARSE_API const char *trackparse_eol_name(trackparse_eol v) { return NAME_OF(eol_names, v); }
+TRACKPARSE_API const char *
+trackparse_tracklist_warning_code_name(trackparse_tracklist_warning_code v) {
   return NAME_OF(tl_warning_names, v);
 }
 TRACKPARSE_API const char *trackparse_severity_name(trackparse_severity v) {
@@ -670,8 +667,7 @@ static tp_version int_version(const trackparse_version *v) {
   size_t i, n;
   memset(&r, 0, sizeof r);
   /* type_name is what a library result carries; a hand-built version may leave it unset. */
-  r.type = v->type_name.ptr != NULL ? int_str(v->type_name)
-                                    : INT_NAME(version_type_names, v->type);
+  r.type = v->type_name.ptr != NULL ? int_str(v->type_name) : INT_NAME(version_type_names, v->type);
   r.raw = int_str(v->raw);
   r.artists = int_artist_list(v->artists, v->artists_count);
   n = COUNT(v->modifiers, v->modifiers_count);
@@ -867,12 +863,12 @@ static bool mutate(tp_arena **arena, mutate_fn fn, void *arg) {
 
 /* Setter arguments. */
 typedef struct set_arg {
-  tp_str *str;          /* set a string */
-  const tp_str **pstr;  /* set a nullable string */
-  tp_strvec *list;      /* append a string */
+  tp_str *str;         /* set a string */
+  const tp_str **pstr; /* set a nullable string */
+  tp_strvec *list;     /* append a string */
   tp_version_head_vec *heads;
   tp_junk_phrase_vec *junk;
-  const double **num;   /* set a nullable number */
+  const double **num; /* set a nullable number */
   tp_str a, b;
   double value;
 } set_arg;
@@ -1011,8 +1007,7 @@ TRACKPARSE_API bool trackparse_parse_options_set_split_and(trackparse_parse_opti
 
 TRACKPARSE_API bool trackparse_parse_options_add_version_head(trackparse_parse_options *o,
                                                               const char *key, size_t key_len,
-                                                              const char *type,
-                                                              size_t type_len) {
+                                                              const char *type, size_t type_len) {
   if (o == NULL) return true;
   return add_head(&o->arena, &o->o.keywords, key, key_len, type, type_len);
 }
@@ -1023,8 +1018,8 @@ TRACKPARSE_API bool trackparse_parse_options_add_descriptor(trackparse_parse_opt
   return add_string(&o->arena, &o->o.keywords.descriptors, s, len);
 }
 
-TRACKPARSE_API bool trackparse_parse_options_add_genre(trackparse_parse_options *o,
-                                                       const char *s, size_t len) {
+TRACKPARSE_API bool trackparse_parse_options_add_genre(trackparse_parse_options *o, const char *s,
+                                                       size_t len) {
   if (o == NULL) return true;
   return add_string(&o->arena, &o->o.keywords.genres, s, len);
 }
@@ -1143,8 +1138,7 @@ TRACKPARSE_API bool trackparse_tracklist_options_set_split_and(trackparse_trackl
 }
 
 TRACKPARSE_API bool trackparse_tracklist_options_add_version_head(trackparse_tracklist_options *o,
-                                                                  const char *key,
-                                                                  size_t key_len,
+                                                                  const char *key, size_t key_len,
                                                                   const char *type,
                                                                   size_t type_len) {
   if (o == NULL) return true;
@@ -1255,8 +1249,8 @@ TRACKPARSE_API trackparse_artists *trackparse_parse_artists(const char *s, size_
   return (trackparse_artists *)guarded_result(work_parse_artists, &a);
 }
 
-TRACKPARSE_API trackparse_artists *trackparse_parse_artists_with(
-    const char *s, size_t len, const trackparse_parse_options *o) {
+TRACKPARSE_API trackparse_artists *
+trackparse_parse_artists_with(const char *s, size_t len, const trackparse_parse_options *o) {
   parse_arg a = parse_arg_of(s, len);
   a.with = o != NULL;
   a.o = o != NULL ? &o->o : NULL;
@@ -1393,8 +1387,8 @@ TRACKPARSE_API void trackparse_parser_free(trackparse_parser *p) {
   tp_sys_free(p);
 }
 
-TRACKPARSE_API trackparse_track *trackparse_parser_parse(const trackparse_parser *p,
-                                                         const char *s, size_t len) {
+TRACKPARSE_API trackparse_track *trackparse_parser_parse(const trackparse_parser *p, const char *s,
+                                                         size_t len) {
   parse_arg a = parse_arg_of(s, len);
   if (p != NULL) a.p = &p->p;
   return (trackparse_track *)guarded_result(work_parse, &a);
@@ -1417,8 +1411,8 @@ typedef struct tracklist_arg {
 
 static void work_tracklist(call *c, void *arg) {
   const tracklist_arg *a = (const tracklist_arg *)arg;
-  tp_tracklist l = a->o != NULL ? tp_api_parse_tracklist_with(a->text, a->o)
-                                 : tp_api_parse_tracklist(a->text);
+  tp_tracklist l =
+      a->o != NULL ? tp_api_parse_tracklist_with(a->text, a->o) : tp_api_parse_tracklist(a->text);
   rb_build(c, sizeof(trackparse_tracklist), fill_tracklist_top, &l);
 }
 
@@ -1429,8 +1423,8 @@ TRACKPARSE_API trackparse_tracklist *trackparse_parse_tracklist(const char *s, s
   return (trackparse_tracklist *)guarded_result(work_tracklist, &a);
 }
 
-TRACKPARSE_API trackparse_tracklist *trackparse_parse_tracklist_with(
-    const char *s, size_t len, const trackparse_tracklist_options *o) {
+TRACKPARSE_API trackparse_tracklist *
+trackparse_parse_tracklist_with(const char *s, size_t len, const trackparse_tracklist_options *o) {
   tracklist_arg a;
   a.text = in_str(s, len);
   a.o = o != NULL ? &o->o : NULL;
@@ -1513,8 +1507,7 @@ static edit_arg edit_arg_of(trackparse_edits *e, int kind) {
   return a;
 }
 
-TRACKPARSE_API bool trackparse_edits_set_time(trackparse_edits *e, long long line,
-                                              double seconds) {
+TRACKPARSE_API bool trackparse_edits_set_time(trackparse_edits *e, long long line, double seconds) {
   edit_arg a;
   if (e == NULL) return true;
   a = edit_arg_of(e, TRACKPARSE_EDIT_SET_TIME);
@@ -1561,8 +1554,8 @@ TRACKPARSE_API bool trackparse_edits_sort_by_time(trackparse_edits *e) {
   return mutate(&e->arena, do_add_edit, &a);
 }
 
-TRACKPARSE_API bool trackparse_edits_set_rest(trackparse_edits *e, long long line,
-                                              const char *rest, size_t len) {
+TRACKPARSE_API bool trackparse_edits_set_rest(trackparse_edits *e, long long line, const char *rest,
+                                              size_t len) {
   edit_arg a;
   if (e == NULL) return true;
   a = edit_arg_of(e, TRACKPARSE_EDIT_SET_REST);
@@ -1571,8 +1564,8 @@ TRACKPARSE_API bool trackparse_edits_set_rest(trackparse_edits *e, long long lin
   return mutate(&e->arena, do_add_edit, &a);
 }
 
-TRACKPARSE_API bool trackparse_edits_insert(trackparse_edits *e, long long after,
-                                            const char *text, size_t len) {
+TRACKPARSE_API bool trackparse_edits_insert(trackparse_edits *e, long long after, const char *text,
+                                            size_t len) {
   edit_arg a;
   if (e == NULL) return true;
   a = edit_arg_of(e, TRACKPARSE_EDIT_INSERT);
@@ -1672,7 +1665,22 @@ TRACKPARSE_API trackparse_string *trackparse_tracklist_to_json(const trackparse_
   return (trackparse_string *)guarded_result(work_tracklist_json, ARG(t));
 }
 
-TRACKPARSE_API trackparse_string *trackparse_edit_result_to_json(
-    const trackparse_edit_result *r) {
+TRACKPARSE_API trackparse_string *trackparse_edit_result_to_json(const trackparse_edit_result *r) {
   return (trackparse_string *)guarded_result(work_edit_result_json, ARG(r));
 }
+
+/* The _COUNT macros in trackparse.h must follow the enums. */
+_Static_assert(TRACKPARSE_MODE_TRACKLIST + 1 == TRACKPARSE_MODE_COUNT, "mode count");
+_Static_assert(TRACKPARSE_ROLE_PRODUCER + 1 == TRACKPARSE_ROLE_COUNT, "role count");
+_Static_assert(TRACKPARSE_SOURCE_VERSION + 1 == TRACKPARSE_SOURCE_COUNT, "source count");
+_Static_assert(TRACKPARSE_VERSION_NIGHTCORE + 1 == TRACKPARSE_VERSION_TYPE_COUNT, "version count");
+_Static_assert(TRACKPARSE_DELIMITER_DASH + 1 == TRACKPARSE_DELIMITER_COUNT, "delimiter count");
+_Static_assert(TRACKPARSE_JUNK_OTHER + 1 == TRACKPARSE_JUNK_KIND_COUNT, "junk count");
+_Static_assert(TRACKPARSE_WARNING_UNBALANCED_BRACKETS + 1 == TRACKPARSE_WARNING_COUNT, "warnings");
+_Static_assert(TRACKPARSE_ENTRY_BLANK + 1 == TRACKPARSE_ENTRY_KIND_COUNT, "entry count");
+_Static_assert(TRACKPARSE_EOL_NONE + 1 == TRACKPARSE_EOL_COUNT, "eol count");
+_Static_assert(TRACKPARSE_TL_LINE_UNPARSED + 1 == TRACKPARSE_TRACKLIST_WARNING_CODE_COUNT, "codes");
+_Static_assert(TRACKPARSE_SEVERITY_WARNING + 1 == TRACKPARSE_SEVERITY_COUNT, "severity count");
+_Static_assert(TRACKPARSE_EDIT_DELETE + 1 == TRACKPARSE_EDIT_OP_COUNT, "edit op count");
+_Static_assert(TRACKPARSE_EDIT_WARNING_STYLE_UPGRADED + 1 == TRACKPARSE_EDIT_WARNING_CODE_COUNT,
+               "edit warning count");

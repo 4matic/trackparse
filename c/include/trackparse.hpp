@@ -595,8 +595,8 @@ public:
 
   /** keywords.versionHeads: `key` names a version of `type` (a spec name; new names allowed). */
   parse_options &version_head(std::string_view key, std::string_view type) & {
-    detail::check(trackparse_parse_options_add_version_head(o_, key.data(), key.size(),
-                                                            type.data(), type.size()));
+    detail::check(trackparse_parse_options_add_version_head(o_, key.data(), key.size(), type.data(),
+                                                            type.size()));
     return *this;
   }
   parse_options &&version_head(std::string_view key, std::string_view type) && {
@@ -993,8 +993,8 @@ public:
   }
   trackparse::stats stats() const {
     const trackparse_stats &s = t_->stats;
-    return trackparse::stats{s.lines,  s.tracks, s.markers, s.timed, detail::opt(s.first_time),
-                             detail::opt(s.last_time)};
+    return trackparse::stats{
+        s.lines, s.tracks, s.markers, s.timed, detail::opt(s.first_time), detail::opt(s.last_time)};
   }
   std::string to_json() const { return detail::take(trackparse_tracklist_to_json(t_)); }
   const trackparse_tracklist *c_ptr() const { return t_; }

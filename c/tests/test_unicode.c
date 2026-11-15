@@ -259,13 +259,22 @@ static void examples(void *unused) {
       {"abc", "abc"},
       {"ABC Def", "abc def"},
       {"\xce\x9f\xce\x94\xce\x9f\xce\xa3", "\xce\xbf\xce\xb4\xce\xbf\xcf\x82"}, /* final sigma */
-      {"\xce\x9f\xce\x94\xce\x9f\xce\xa3" "A", "\xce\xbf\xce\xb4\xce\xbf\xcf\x83" "a"},
-      {"\xce\xa3", "\xcf\x83"},                    /* nothing cased before */
-      {"A\xce\xa3.", "a\xcf\x82."},                /* "." is case-ignorable */
-      {"\xc4\xb0", "i\xcc\x87"},                   /* several code points */
-      {"\xc3\x89" "COLE", "\xc3\xa9" "cole"},      /* Latin-1 */
-      {"\xf0\x90\x90\x80", "\xf0\x90\x90\xa8"},    /* astral (Deseret) */
-      {"a\xff" "B", "a\xef\xbf\xbd" "b"},          /* invalid UTF-8 */
+      {"\xce\x9f\xce\x94\xce\x9f\xce\xa3"
+       "A",
+       "\xce\xbf\xce\xb4\xce\xbf\xcf\x83"
+       "a"},
+      {"\xce\xa3", "\xcf\x83"},     /* nothing cased before */
+      {"A\xce\xa3.", "a\xcf\x82."}, /* "." is case-ignorable */
+      {"\xc4\xb0", "i\xcc\x87"},    /* several code points */
+      {"\xc3\x89"
+       "COLE",
+       "\xc3\xa9"
+       "cole"},                                 /* Latin-1 */
+      {"\xf0\x90\x90\x80", "\xf0\x90\x90\xa8"}, /* astral (Deseret) */
+      {"a\xff"
+       "B",
+       "a\xef\xbf\xbd"
+       "b"}, /* invalid UTF-8 */
   };
   for (size_t i = 0; i < TP_COUNT(lower); i++) {
     check_str("js_to_lower", S(lower[i].in), tp_js_to_lower(S(lower[i].in)), S(lower[i].want));
@@ -281,16 +290,25 @@ static void examples(void *unused) {
       /* reordering, then composition */
       {"\xe1\xb8\x8b\xcc\xa3", "\xe1\xb8\x8d\xcc\x87", "d\xcc\xa3\xcc\x87"},
       {"q\xcc\x87\xcc\xa3", "q\xcc\xa3\xcc\x87", "q\xcc\xa3\xcc\x87"}, /* no composite */
-      {"\xe2\x84\xab", "\xc3\x85", "A\xcc\x8a"},                        /* singleton */
-      {"\xcd\x84", "\xcc\x88\xcc\x81", "\xcc\x88\xcc\x81"},             /* non-starter decomp */
-      {"\xea\xb0\x80", "\xea\xb0\x80", "\xe1\x84\x80\xe1\x85\xa1"},     /* Hangul LV */
+      {"\xe2\x84\xab", "\xc3\x85", "A\xcc\x8a"},                       /* singleton */
+      {"\xcd\x84", "\xcc\x88\xcc\x81", "\xcc\x88\xcc\x81"},            /* non-starter decomp */
+      {"\xea\xb0\x80", "\xea\xb0\x80", "\xe1\x84\x80\xe1\x85\xa1"},    /* Hangul LV */
       {"\xe1\x84\x80\xe1\x85\xa1\xe1\x86\xa8", "\xea\xb0\x81",
        "\xe1\x84\x80\xe1\x85\xa1\xe1\x86\xa8"}, /* Hangul L V T */
       {"\xea\xb0\x80\xe1\x86\xa7", "\xea\xb0\x80\xe1\x86\xa7",
        "\xe1\x84\x80\xe1\x85\xa1\xe1\x86\xa7"}, /* T base does not compose */
       {"\xe0\xad\x87\xe0\xac\xbe", "\xe0\xad\x8b", "\xe0\xad\x87\xe0\xac\xbe"}, /* two starters */
-      {"a\xff" "e\xcc\x81", "a\xef\xbf\xbd\xc3\xa9", "a\xef\xbf\xbd" "e\xcc\x81"}, /* invalid */
-      {"\xcc\x81" "e", "\xcc\x81" "e", "\xcc\x81" "e"},                        /* leading mark */
+      {"a\xff"
+       "e\xcc\x81",
+       "a\xef\xbf\xbd\xc3\xa9",
+       "a\xef\xbf\xbd"
+       "e\xcc\x81"}, /* invalid */
+      {"\xcc\x81"
+       "e",
+       "\xcc\x81"
+       "e",
+       "\xcc\x81"
+       "e"},                                                          /* leading mark */
       {"A\xcc\x81\xcc\x81", "\xc3\x81\xcc\x81", "A\xcc\x81\xcc\x81"}, /* second mark blocked */
       {"\xf0\x9d\x85\x9e", "\xf0\x9d\x85\x97\xf0\x9d\x85\xa5",
        "\xf0\x9d\x85\x97\xf0\x9d\x85\xa5"}, /* excluded composite */
@@ -303,14 +321,15 @@ static void examples(void *unused) {
   static const struct {
     tp_rune r;
     bool letter, upper;
-  } cats[] = {
-      {'a', true, false},     {'Z', true, true},      {'1', false, false},
-      {'_', false, false},    {0xc9, true, true},     {0xe9, true, false},
-      {0x1c5, true, false}, /* Lt is a letter, not Lu */
-      {0x2160, false, false}, /* Nl: not L */
-      {0x0301, false, false}, {0x4e00, true, false},  {0x10400, true, true},
-      {-1, false, false},     {0x110000, false, false}, {0xfffd, false, false},
-  };
+  } cats[] =
+      {
+          {'a', true, false},     {'Z', true, true},        {'1', false, false},
+          {'_', false, false},    {0xc9, true, true},       {0xe9, true, false},
+          {0x1c5, true, false},   /* Lt is a letter, not Lu */
+          {0x2160, false, false}, /* Nl: not L */
+          {0x0301, false, false}, {0x4e00, true, false},    {0x10400, true, true},
+          {-1, false, false},     {0x110000, false, false}, {0xfffd, false, false},
+      };
   for (size_t i = 0; i < TP_COUNT(cats); i++) {
     if (tp_is_letter(cats[i].r) != cats[i].letter ||
         tp_is_upper_letter(cats[i].r) != cats[i].upper) {
@@ -358,9 +377,9 @@ static size_t rng_int(size_t n) { return (size_t)(rng_next() % n); }
  * on random input, invalid UTF-8 included. */
 static void total_and_stable(void *unused) {
   (void)unused;
-  static const tp_rune pool[] = {'a',    'A',    'e',    0x3a3,  0x301,  0x323,   0x345,  0x334,
-                                 0xe9,   0x1e0b, 0x1100, 0x1161, 0x11a8, 0xac00,  0x212b, 0x344,
-                                 0xf900, 0x1d15e, 0xb47, 0xb3e,  0x130,  0x2e,    0x1f600};
+  static const tp_rune pool[] = {'a',    'A',     'e',    0x3a3,  0x301,  0x323,  0x345,  0x334,
+                                 0xe9,   0x1e0b,  0x1100, 0x1161, 0x11a8, 0xac00, 0x212b, 0x344,
+                                 0xf900, 0x1d15e, 0xb47,  0xb3e,  0x130,  0x2e,   0x1f600};
   rng_state = 0x9e3779b97f4a7c15ULL;
   for (int i = 0; i < 20000; i++) {
     tp_buf b = {0};

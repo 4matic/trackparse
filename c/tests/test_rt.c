@@ -14,13 +14,13 @@
 static int failures;
 static long checks;
 
-#define CHECK(cond)                                                  \
-  do {                                                               \
-    checks++;                                                        \
-    if (!(cond)) {                                                   \
-      failures++;                                                    \
-      fprintf(stderr, "%s:%d: CHECK(%s)\n", __FILE__, __LINE__, #cond); \
-    }                                                                \
+#define CHECK(cond)                                                                                \
+  do {                                                                                             \
+    checks++;                                                                                      \
+    if (!(cond)) {                                                                                 \
+      failures++;                                                                                  \
+      fprintf(stderr, "%s:%d: CHECK(%s)\n", __FILE__, __LINE__, #cond);                            \
+    }                                                                                              \
   } while (0)
 
 #define STR_IS(s, lit) CHECK(tp_str_eq_c((s), (lit)))
@@ -28,9 +28,9 @@ static long checks;
 /* -------------------------------------------------------------------------------------------- */
 /* A counting allocator that fails the n-th malloc                                              */
 
-static long live_blocks;   /* mallocs minus frees */
+static long live_blocks; /* mallocs minus frees */
 static long malloc_calls;
-static long fail_at = -1;  /* fail the malloc with this index (0-based), -1: never */
+static long fail_at = -1; /* fail the malloc with this index (0-based), -1: never */
 
 static void *count_malloc(size_t size, void *user) {
   void *p;
@@ -97,7 +97,7 @@ static size_t workload(void) {
       tp_push(v, p);
     }
   }
-  (void)tp_alloc(200000); /* a chunk of its own */
+  (void)tp_alloc(200000);                         /* a chunk of its own */
   for (i = 0; i < 40000; i++) (void)tp_alloc(50); /* several regular chunks */
   tp_sort_stable(v.p, v.n, sizeof *v.p, cmp_pair, NULL);
   sum += tp_join(parts, TP_S(", ")).n + tp_buf_done(&b).n + tp_runes_of(TP_S("añb€😀")).n;
@@ -440,8 +440,8 @@ static void test_sort(void) {
     }
     tp_sort_stable(a, n, sizeof(pair), cmp_pair, NULL);
     for (i = 1; i < n; i++) {
-      ok = ok && (a[i - 1].key < a[i].key ||
-                  (a[i - 1].key == a[i].key && a[i - 1].order < a[i].order));
+      ok = ok &&
+           (a[i - 1].key < a[i].key || (a[i - 1].key == a[i].key && a[i - 1].order < a[i].order));
     }
     CHECK(ok);
   }

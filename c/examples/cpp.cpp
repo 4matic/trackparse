@@ -4,9 +4,9 @@
 #include <trackparse.hpp>
 
 int main() {
-  auto t = trackparse::parse("Noisia - Stigma (2015)");  // owns the C result
-  std::cout << t.title() << '\n';                        // std::string_view
-  if (auto y = t.year()) std::cout << *y << '\n';        // std::optional<int>
+  auto t = trackparse::parse("Noisia - Stigma (2015)"); // owns the C result
+  std::cout << t.title() << '\n';                       // std::string_view
+  if (auto y = t.year()) std::cout << *y << '\n';       // std::optional<int>
   for (const auto &a : t.artists()) {
     std::cout << a.name() << " (" << trackparse::name(a.role()) << ")\n";
   }

@@ -7,11 +7,13 @@
 # Options:
 #   TRACKPARSE_WERROR    warnings are errors (default ON when the CI environment variable is set)
 #   TRACKPARSE_SANITIZE  build everything with AddressSanitizer + UndefinedBehaviorSanitizer
-#   TRACKPARSE_FUZZ      libFuzzer targets (not written yet)
-#   TRACKPARSE_BUILD_TESTS  the test programs and CTest entries (default ON)
+#   TRACKPARSE_FUZZ      libFuzzer targets in fuzz/ (Clang); see cmake/hardening.cmake
+#   TRACKPARSE_BUILD_TESTS  the test programs and CTest entries (default ON at top level)
+#   TRACKPARSE_SHARED    build the installed library shared (default BUILD_SHARED_LIBS)
+#   TRACKPARSE_INSTALL   install rules (default ON at top level); see cmake/package.cmake
 cmake_minimum_required(VERSION 3.16)
 
-project(trackparse VERSION 0.6.1 LANGUAGES C CXX) # x-release-please-version
+project(trackparse VERSION 0.6.1 LANGUAGES C) # x-release-please-version
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
@@ -20,7 +22,9 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+# Only as the top-level project: under FetchContent the parent decides the build type.
+if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR AND NOT CMAKE_BUILD_TYPE
+   AND NOT CMAKE_CONFIGURATION_TYPES)
   set(CMAKE_BUILD_TYPE RelWithDebInfo CACHE STRING "Build type" FORCE)
 endif()
 
@@ -32,7 +36,17 @@ endif()
 option(TRACKPARSE_WERROR "Treat warnings as errors" ${trackparse_werror_default})
 option(TRACKPARSE_SANITIZE "Build with -fsanitize=address,undefined" OFF)
 option(TRACKPARSE_FUZZ "Build the libFuzzer targets (Clang)" OFF)
-option(TRACKPARSE_BUILD_TESTS "Build the tests and register them with CTest" ON)
+# Tests only by default when trackparse is the top-level project (not under FetchContent).
+if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
+  set(trackparse_tests_default ON)
+else()
+  set(trackparse_tests_default OFF)
+endif()
+option(TRACKPARSE_BUILD_TESTS "Build the tests and register them with CTest" ${trackparse_tests_default})
+# C++ is needed only for the wrapper's tests and the C++ example; users of the library need none.
+if(TRACKPARSE_BUILD_TESTS)
+  enable_language(CXX)
+endif()
 
 get_filename_component(TRACKPARSE_REPO_DIR "${CMAKE_CURRENT_SOURCE_DIR}/.." ABSOLUTE)
 set(TRACKPARSE_SPEC_DIR "${TRACKPARSE_REPO_DIR}/spec")
@@ -106,17 +120,25 @@ target_link_libraries(trackparse_wire PUBLIC trackparse_internal)
 add_executable(trackparse-dump tools/dump.c)
 target_link_libraries(trackparse-dump PRIVATE trackparse_wire)
 
-# ---------------------------------------------------------------------------------------------
-# TODO(packaging, PLAN.md step 9): the installed library `trackparse`, built from the
-# amalgamation (scripts/amalgamate.mjs -> dist/trackparse.c, TP_PRIVATE = static), static and
-# shared (TRACKPARSE_SHARED), -fvisibility=hidden, the exported-symbol check, install() rules,
-# trackparseConfig.cmake and trackparse.pc. Not written yet.
+# The installed library `trackparse` (built from the amalgamation), install() rules,
+# trackparseConfig.cmake, trackparse.pc, the C++ wrapper tests and the consumer checks are in
+# cmake/package.cmake, included at the end.
 # ---------------------------------------------------------------------------------------------
 
 if(TRACKPARSE_FUZZ)
-  # TODO(hardening, PLAN.md step 8): libFuzzer targets in fuzz/ (parse, parse_artists, format,
-  # parse_tracklist, apply_edits, wire), seeded from the fixture inputs.
-  message(WARNING "TRACKPARSE_FUZZ: the fuzz targets are not written yet")
+  # libFuzzer targets in fuzz/ (parse, parse_artists, format, parse_tracklist, apply_edits, wire),
+  # defined in cmake/hardening.cmake; scripts/fuzz_corpus.mjs seeds them from the fixture inputs.
+  # Clang only. Every target gets coverage instrumentation and ASan + UBSan; the fuzz programs
+  # add libFuzzer's main.
+  if(NOT CMAKE_C_COMPILER_ID MATCHES "Clang")
+    message(FATAL_ERROR "TRACKPARSE_FUZZ needs Clang (libFuzzer)")
+  endif()
+  target_compile_options(trackparse_flags INTERFACE
+    -fsanitize=fuzzer-no-link,address,undefined -fno-sanitize-recover=all -fno-omit-frame-pointer)
+  target_link_options(trackparse_flags INTERFACE -fsanitize=address,undefined)
+  if(NOT TRACKPARSE_BUILD_TESTS)
+    include(cmake/hardening.cmake)
+  endif()
 endif()
 
 # ---------------------------------------------------------------------------------------------
@@ -180,3 +202,12 @@ if(TRACKPARSE_BUILD_TESTS)
     set_tests_properties(schema PROPERTIES FIXTURES_REQUIRED trackparse_outputs)
   endif()
 endif()
+
+# Hardening: properties, threads, locale, bench, OOM sweep, fuzz targets (cmake/hardening.cmake).
+if(TRACKPARSE_BUILD_TESTS)
+  include(cmake/hardening.cmake OPTIONAL)
+endif()
+
+# Packaging: the installed library built from the amalgamation, install rules, the C++ header
+# tests (cmake/package.cmake).
+include(cmake/package.cmake OPTIONAL)

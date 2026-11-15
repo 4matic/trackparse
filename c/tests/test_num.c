@@ -19,16 +19,16 @@
 static int failures;
 static long checks;
 
-#define CHECK(cond, ...)               \
-  do {                                 \
-    checks++;                          \
-    if (!(cond)) {                     \
-      failures++;                      \
-      if (failures <= 30) {            \
-        fprintf(stderr, __VA_ARGS__);  \
-        fputc('\n', stderr);           \
-      }                                \
-    }                                  \
+#define CHECK(cond, ...)                                                                           \
+  do {                                                                                             \
+    checks++;                                                                                      \
+    if (!(cond)) {                                                                                 \
+      failures++;                                                                                  \
+      if (failures <= 30) {                                                                        \
+        fprintf(stderr, __VA_ARGS__);                                                              \
+        fputc('\n', stderr);                                                                       \
+      }                                                                                            \
+    }                                                                                              \
   } while (0)
 
 static uint64_t bits_of(double v) {
@@ -123,8 +123,8 @@ static void unit_tests(void) {
   expect_parse("0e99999999999999999999", true, 0);
   /* Grammar: rejected forms. */
   {
-    static const char *bad[] = {"",   "-",   "+",   ".",    "e5",  "1e",   "1e+", "1.2.3",
-                                " 1", "1 ",  "--1", "+-1",  "1e5.", "0x10", "1_0", "Infinity",
+    static const char *bad[] = {"",    "-",   "+",   ".",   "e5",   "1e",   "1e+", "1.2.3",
+                                " 1",  "1 ",  "--1", "+-1", "1e5.", "0x10", "1_0", "Infinity",
                                 "NaN", "inf", "1e-", ".e1", "1d",   "١"};
     size_t i;
     for (i = 0; i < TP_COUNT(bad); i++) expect_parse(bad[i], false, 0);

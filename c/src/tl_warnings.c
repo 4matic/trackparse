@@ -234,8 +234,8 @@ static void tl_add(tl_warning_lines *per_line, const tp_entry_vec *entries, ptrd
   if (i < 0 || i >= (ptrdiff_t)entries->n) return;
   w.code = code;
   w.line = entries->p[i].line;
-  w.severity = tp_str_eq(code, TP_WARNING_CODE_NO_START_AT_ZERO) ? TP_SEVERITY_INFO
-                                                                  : TP_SEVERITY_WARNING;
+  w.severity =
+      tp_str_eq(code, TP_WARNING_CODE_NO_START_AT_ZERO) ? TP_SEVERITY_INFO : TP_SEVERITY_WARNING;
   w.suggestion = suggestion;
   tp_push(per_line->p[i], w);
 }
@@ -273,11 +273,11 @@ TP_PRIVATE tp_tracklist_warning_vec tp_tracklist_warnings(const tp_warning_input
   for (ptrdiff_t i = 0; i < n; i++) {
     const tp_entry *e = &entries->p[i];
     /* R13.13.3: an untimed layered line plays over the previous track, at its time. */
-    if (tp_str_eq(e->kind, TP_ENTRY_KIND_TRACK) && e->time == NULL && !e->layered &&
-        times.n > 0) {
+    if (tp_str_eq(e->kind, TP_ENTRY_KIND_TRACK) && e->time == NULL && !e->layered && times.n > 0) {
       tl_add(&per_line, entries, i, TP_WARNING_CODE_TIME_MISSING, NULL);
     }
-    if (tp_flag_at(in->invalid, i)) tl_add(&per_line, entries, i, TP_WARNING_CODE_INVALID_TIME, NULL);
+    if (tp_flag_at(in->invalid, i))
+      tl_add(&per_line, entries, i, TP_WARNING_CODE_INVALID_TIME, NULL);
     if (tp_flag_at(in->unparsed, i)) {
       tl_add(&per_line, entries, i, TP_WARNING_CODE_LINE_UNPARSED, NULL);
     }

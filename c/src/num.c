@@ -77,8 +77,8 @@ static const double num_pow10[23] = {1e0,  1e1,  1e2,  1e3,  1e4,  1e5,  1e6,  1
 TP_PRIVATE double tp_floor(double v) {
   double t;
   if (!(v < 4503599627370496.0 && v > -4503599627370496.0)) return v; /* NaN, inf, integers */
-  if (v == 0) return v;                                                 /* keeps -0 */
-  t = (double)(int64_t)v;                                               /* toward zero */
+  if (v == 0) return v;                                               /* keeps -0 */
+  t = (double)(int64_t)v;                                             /* toward zero */
   if (t > v) t -= 1.0;
   return t;
 }
@@ -106,7 +106,7 @@ TP_PRIVATE double tp_round_half_up(double v, int digits) {
 
 typedef struct num_big {
   uint32_t d[NUM_BIG_LIMBS]; /* little endian */
-  size_t n;              /* used limbs, no leading zero limb */
+  size_t n;                  /* used limbs, no leading zero limb */
 } num_big;
 
 static void num_big_trim(num_big *a) {
@@ -305,7 +305,7 @@ static double num_decimal_to_double(const char *digits, size_t nd, int64_t e) {
 TP_PRIVATE bool tp_parse_number(tp_str s, double *out) {
   const unsigned char *p = (const unsigned char *)s.p;
   size_t i = 0, n = s.n, nd = 0, mant_digits = 0;
-  int64_t point = 0;  /* significant-stream digits before the decimal point */
+  int64_t point = 0; /* significant-stream digits before the decimal point */
   int64_t exp10 = 0, e;
   bool neg = false, seen_sig = false, sticky = false;
   char digits[NUM_MAX_DIGITS + 1];

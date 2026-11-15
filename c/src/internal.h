@@ -70,8 +70,8 @@ typedef TP_VEC(tp_edit_warning) tp_edit_warning_vec;
 typedef TP_VEC(tp_raw_edit_warning) tp_raw_edit_warning_vec;
 
 /* Builtin element types not in rt.h. */
-typedef TP_VEC(bool) tp_bool_vec;       /* Go []bool */
-typedef TP_VEC(tp_runes) tp_runes_vec;  /* Go [][]rune */
+typedef TP_VEC(bool) tp_bool_vec;        /* Go []bool */
+typedef TP_VEC(tp_runes) tp_runes_vec;   /* Go [][]rune */
 typedef TP_VEC(ptrdiff_t) tp_idxvec;     /* Go []int (rt.h's tp_intvec is Go []int64) */
 typedef TP_VEC(tp_idxvec) tp_idxvec_vec; /* Go [][]int (creditLists heaps) */
 
@@ -368,7 +368,7 @@ TP_PRIVATE ptrdiff_t tp_name_index(tp_strvec names, tp_str name);
 
 /* Artist is one credited artist. */
 struct tp_artist {
-  tp_str name;         /* as written, trimmed */
+  tp_str name; /* as written, trimmed */
   tp_role role;
   const tp_str *joiner; /* raw joiner or marker before the name; NULL for the first of a list */
   tp_source source;
@@ -377,12 +377,12 @@ struct tp_artist {
 /* Version is one version of the track: a remix, an edit, a live take, a remaster (R5, R8). */
 struct tp_version {
   tp_version_type type;
-  tp_str raw;              /* without its brackets */
-  tp_artist_vec artists;   /* role remixer; empty without a credit */
-  tp_strvec modifiers;     /* other version words, lowercase keys */
+  tp_str raw;            /* without its brackets */
+  tp_artist_vec artists; /* role remixer; empty without a credit */
+  tp_strvec modifiers;   /* other version words, lowercase keys */
   const tp_str *descriptor;
   const ptrdiff_t *year;
-  bool unknown_artist;     /* the credit is a placeholder (ID, Unknown) */
+  bool unknown_artist; /* the credit is a placeholder (ID, Unknown) */
   tp_delimiter delimiter;
 };
 
@@ -490,20 +490,20 @@ struct tp_tracklist {
 /* Edit is one edit of a tracklist text (R13.9); each operation reads only its own fields. */
 struct tp_edit {
   tp_edit_op op;
-  int64_t line;    /* set-time, set-rest, delete */
-  double seconds;  /* set-time: the new time; shift: the amount */
-  bool has_lines;  /* Go Lines != nil: lines was given (it may be empty: shifts no line) */
-  tp_intvec lines; /* shift only these lines */
+  int64_t line;        /* set-time, set-rest, delete */
+  double seconds;      /* set-time: the new time; shift: the amount */
+  bool has_lines;      /* Go Lines != nil: lines was given (it may be empty: shifts no line) */
+  tp_intvec lines;     /* shift only these lines */
   const int64_t *from; /* shift from this line on; NULL: not given */
-  tp_str rest;     /* set-rest */
-  int64_t after;   /* insert after this line; 0: at the start */
-  tp_str text;     /* insert, without a terminator */
+  tp_str rest;         /* set-rest */
+  int64_t after;       /* insert after this line; 0: at the start */
+  tp_str text;         /* insert, without a terminator */
 };
 
 /* EditWarning is a warning about one edit. */
 struct tp_edit_warning {
   tp_edit_warning_code code;
-  ptrdiff_t edit;        /* index into the edits */
+  ptrdiff_t edit;      /* index into the edits */
   const int64_t *line; /* see tp_saturating_int */
 };
 
@@ -590,8 +590,8 @@ TP_PRIVATE bool tp_keywords_is_empty(const tp_keywords *k);
 
 /* ParseOptions (R12): the zero value is what parse uses. */
 struct tp_parse_options {
-  tp_mode mode;       /* "" means auto */
-  tp_str uploader;    /* R6.8; "" means none */
+  tp_mode mode;            /* "" means auto */
+  tp_str uploader;         /* R6.8; "" means none */
   tp_strvec known_artists; /* R7.3a */
   tp_split_and split_and;
   tp_keywords keywords;
@@ -638,10 +638,10 @@ TP_PRIVATE tp_edit tp_edit_delete(int64_t line);
 
 /* requestKind is how options.mode reached the pipeline. */
 typedef enum tp_request_kind {
-  TP_REQUEST_AUTO,  /* missing, null or "auto" */
-  TP_REQUEST_MODE,  /* one of the four mode names */
-  TP_REQUEST_OTHER  /* anything else: JS skips the R2.1 youtube detection, still detects
-                       filenames */
+  TP_REQUEST_AUTO, /* missing, null or "auto" */
+  TP_REQUEST_MODE, /* one of the four mode names */
+  TP_REQUEST_OTHER /* anything else: JS skips the R2.1 youtube detection, still detects
+                      filenames */
 } tp_request_kind;
 
 /* requestedMode is options.mode as the pipeline sees it; mode is set for TP_REQUEST_MODE only. */
@@ -699,7 +699,7 @@ struct tp_resolved_format {
 
 /* resolvedTracklist are tracklist options after the R13.10 fallbacks. */
 struct tp_resolved_tracklist {
-  tp_resolved_options parse; /* the per-line parse */
+  tp_resolved_options parse;   /* the per-line parse */
   const double *audio_seconds; /* NULL when unknown */
   tp_strvec marker_words;
 };
@@ -770,10 +770,10 @@ struct tp_engine {
 struct tp_ctx {
   const tp_tables *t;
   const tp_word_set *known_keys; /* the engine's */
-  ptrdiff_t known_max_len;         /* UTF-16 units; bounds the R7.3a search */
+  ptrdiff_t known_max_len;       /* UTF-16 units; bounds the R7.3a search */
   tp_split_and_mode split_and;
-  tp_strvec warnings;            /* tp_warning values, each once */
-  ptrdiff_t list_seq;              /* R7.6: the next credit list id (ids start at 0) */
+  tp_strvec warnings; /* tp_warning values, each once */
+  ptrdiff_t list_seq; /* R7.6: the next credit list id (ids start at 0) */
 };
 
 /* newEngine builds the tables and known keys for o, in the current arena. */
@@ -901,8 +901,8 @@ struct tp_piece {
 /* preludeResult is the outcome of R2. */
 struct tp_prelude_result {
   tp_mode mode;
-  tp_piece working;            /* R2.4 step 2 or 4, or the artist piece of "artist | title" */
-  const tp_piece *pipe_title;  /* R2.4 step 3: the title piece; NULL otherwise */
+  tp_piece working;           /* R2.4 step 2 or 4, or the artist piece of "artist | title" */
+  const tp_piece *pipe_title; /* R2.4 step 3: the title piece; NULL otherwise */
   tp_positioned_junk_vec junk;
 };
 
@@ -979,9 +979,9 @@ TP_PRIVATE tp_prefix_result tp_strip_prefixes(tp_runes text, ptrdiff_t base, tp_
 /* group is one top-level bracket group (R3.1). */
 struct tp_group {
   tp_delimiter open;
-  tp_str inner; /* R3.5: trimmed and whitespace-collapsed */
-  tp_str raw;   /* exactly as written, brackets included */
-  ptrdiff_t pos;  /* absolute offset of the opener */
+  tp_str inner;  /* R3.5: trimmed and whitespace-collapsed */
+  tp_str raw;    /* exactly as written, brackets included */
+  ptrdiff_t pos; /* absolute offset of the opener */
 };
 
 /* groupMap holds the groups of one scan by the offset of their opener (Go map[int]*group). Only
@@ -1185,11 +1185,11 @@ typedef enum tp_class_kind {
 /* classification is the result of R5. Only the fields of its kind are set. */
 struct tp_classification {
   tp_class_kind kind;
-  tp_junk_kind junk;              /* TP_CLASS_JUNK */
-  tp_list_result list;            /* TP_CLASS_FEAT, TP_CLASS_PRODUCER */
-  tp_flag flag;                   /* TP_CLASS_FLAG */
-  ptrdiff_t year;                   /* TP_CLASS_YEAR */
-  tp_version_draft_vec versions;  /* TP_CLASS_VERSIONS */
+  tp_junk_kind junk;             /* TP_CLASS_JUNK */
+  tp_list_result list;           /* TP_CLASS_FEAT, TP_CLASS_PRODUCER */
+  tp_flag flag;                  /* TP_CLASS_FLAG */
+  ptrdiff_t year;                /* TP_CLASS_YEAR */
+  tp_version_draft_vec versions; /* TP_CLASS_VERSIONS */
 };
 
 /* site is where the classified text sits: credits' source, versions' delimiter, absolute offset
@@ -1575,8 +1575,8 @@ struct tp_time_style {
   bool hours;
   ptrdiff_t hour_width;   /* digits written for the hours (minimum width), 0 without hours */
   ptrdiff_t minute_width; /* digits written for the minutes (minimum width) */
-  bool long_minutes;    /* a two-part time already at 60 minutes or more */
-  tp_rune frac_sep;     /* '.' or ',' with a fraction, else TP_NORUNE */
+  bool long_minutes;      /* a two-part time already at 60 minutes or more */
+  tp_rune frac_sep;       /* '.' or ',' with a fraction, else TP_NORUNE */
   ptrdiff_t frac_digits;
 };
 
@@ -1710,9 +1710,9 @@ TP_PRIVATE tp_bool_vec tp_confirm_positions(tp_idxvec bare, tp_bool_vec candidat
 /* warningInput is what tracklistWarnings reads, one slot per entry. */
 struct tp_warning_input {
   tp_entry_vec entries;
-  tp_idxvec positions;  /* R4.2 / R13.5 position number of each entry's track, or -1 */
-  tp_bool_vec invalid;  /* R13.2.4 */
-  tp_bool_vec unparsed; /* R13.7 line-unparsed */
+  tp_idxvec positions;         /* R4.2 / R13.5 position number of each entry's track, or -1 */
+  tp_bool_vec invalid;         /* R13.2.4 */
+  tp_bool_vec unparsed;        /* R13.7 line-unparsed */
   const double *audio_seconds; /* NULL when unknown */
 };
 
@@ -1776,8 +1776,8 @@ TP_PRIVATE tp_tracklist_warning_vec tp_tracklist_warnings(const tp_warning_input
 struct tp_tl_row {
   tp_tl_line line;
   tp_time_scan scan;
-  tp_str text;   /* R13.4.1: rest without emphasis markers (R13.12) and layered prefix (R13.13) */
-  bool layered;  /* R13.13 */
+  tp_str text;  /* R13.4.1: rest without emphasis markers (R13.12) and layered prefix (R13.13) */
+  bool layered; /* R13.13 */
   bool blank;
   bool candidate; /* R13.4.2: the line has a time or a spaced dash */
   bool dash;

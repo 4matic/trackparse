@@ -141,8 +141,7 @@ static tp_str get_str(tp_json v, const char *key) {
 static void check_property(const char *property, bool (*test)(tp_rune)) {
   tp_json data, table, runs, flags;
   if (!primitives_data(&data)) return;
-  if (!tp_json_get(data, TP_S("codePoints"), &table) ||
-      !tp_json_get(table, TP_S("runs"), &runs) ||
+  if (!tp_json_get(data, TP_S("codePoints"), &table) || !tp_json_get(table, TP_S("runs"), &runs) ||
       !tp_json_get(table, tp_str_c(property), &flags) || flags.kind != TP_JSON_STRING) {
     check(false, "codePoints table");
     return;
@@ -227,8 +226,7 @@ static void strings(void *unused) {
   (void)unused;
   tp_json data, records;
   if (!primitives_data(&data)) return;
-  if (!tp_json_get(data, TP_S("strings"), &records) ||
-      (records.arr_n < 250 && !data_override)) {
+  if (!tp_json_get(data, TP_S("strings"), &records) || (records.arr_n < 250 && !data_override)) {
     printf("FAIL only %zu records\n", records.arr_n);
     failures++;
     return;
@@ -315,34 +313,44 @@ static void dedup_keys(void *unused) {
     const char *in, *want;
   } cases[] = {
       {"\xc4\xb0stanbul", "istanbul"}, /* i + U+0307, the mark then removed */
-      {"STRA\xe1\xba\x9e" "E", "stra\xc3\x9f" "e"},
+      {"STRA\xe1\xba\x9e"
+       "E",
+       "stra\xc3\x9f"
+       "e"},
       {"\xce\x9f\xce\x94\xce\xa5\xce\xa3\xce\xa3\xce\x95\xce\x91\xce\xa3",
        "\xce\xbf\xce\xb4\xcf\x85\xcf\x83\xcf\x83\xce\xb5\xce\xb1\xcf\x82"}, /* final sigma */
       {"  Beyonce\xcc\x81   KNOWLES ", "beyonce knowles"},
-      {"\xd0\x99", "\xd0\xb8"},                                   /* U+0306 is removed */
-      {"\xe3\x81\x8b\xe3\x82\x99", "\xe3\x81\x8b\xe3\x82\x99"},   /* other marks stay */
-      {"\xff" "A", "\xef\xbf\xbd" "a"}, /* invalid UTF-8 cannot reach here, but must not fail */
+      {"\xd0\x99", "\xd0\xb8"},                                 /* U+0306 is removed */
+      {"\xe3\x81\x8b\xe3\x82\x99", "\xe3\x81\x8b\xe3\x82\x99"}, /* other marks stay */
+      {"\xff"
+       "A",
+       "\xef\xbf\xbd"
+       "a"}, /* invalid UTF-8 cannot reach here, but must not fail */
   };
   for (size_t i = 0; i < TP_COUNT(cases); i++) {
     check_str("dedup_key", S(cases[i].in), tp_dedup_key(S(cases[i].in)), S(cases[i].want));
   }
-  (void)tp_dedup_key(S("\xff" "A\xe2\x82"));
+  (void)tp_dedup_key(S("\xff"
+                       "A\xe2\x82"));
 }
 
 static void rune_helpers(void *unused) {
   (void)unused;
-  tp_runes rs = tp_runes_of(S("a\xf0\x9d\x90\x80" "b")); /* a, U+1D400, b */
+  tp_runes rs = tp_runes_of(S("a\xf0\x9d\x90\x80"
+                              "b")); /* a, U+1D400, b */
   check(tp_at(rs, 1) == 0x1d400 && tp_at(rs, 3) == TP_NORUNE && tp_at(rs, -1) == TP_NORUNE &&
             tp_before(rs, 0) == TP_NORUNE,
         "at / before");
-  check(tp_str_eq(tp_runes_str(tp_sub(rs, 1, 99)), S("\xf0\x9d\x90\x80" "b")) &&
+  check(tp_str_eq(tp_runes_str(tp_sub(rs, 1, 99)), S("\xf0\x9d\x90\x80"
+                                                     "b")) &&
             tp_sub(rs, 5, 2).n == 0 && tp_str_eq(tp_runes_str(tp_tail(rs, 2)), S("b")),
         "sub / tail");
   check(tp_utf16_len(rs) == 4, "utf16_len");
   check(tp_is_letter_at(rs, 0) && !tp_is_letter_at(rs, 9) && !tp_is_upper_at(rs, 2) &&
             tp_is_upper_at(tp_runes_of(S("A")), 0) && tp_is_letter_before(rs, 1),
         "letter helpers");
-  tp_word_span_vec spans = tp_word_spans(tp_runes_of(S(" ab\xe3\x80\x80" "c ")));
+  tp_word_span_vec spans = tp_word_spans(tp_runes_of(S(" ab\xe3\x80\x80"
+                                                       "c ")));
   check(spans.n == 2 && tp_str_eq(spans.p[0].text, S("ab")) && spans.p[0].start == 1 &&
             spans.p[0].end == 3 && tp_str_eq(spans.p[1].text, S("c")) && spans.p[1].start == 4 &&
             spans.p[1].end == 5,
@@ -381,7 +389,9 @@ static void sanitize(void *unused) {
   } cases[] = {
 #define C(in, want) {in, sizeof(in) - 1, want, sizeof(want) - 1}
       C("Noisia - Stigma", "Noisia - Stigma"),
-      C("a\xff" "b", "a" R "b"),
+      C("a\xff"
+        "b",
+        "a" R "b"),
       C("\xc0\xaf", R R),       /* C0 is never a lead */
       C("\xe0\x80\x80", R R R), /* E0 needs A0..BF next */
       C("\xe0\xa0", R),         /* truncated: one maximal subpart */
@@ -397,7 +407,9 @@ static void sanitize(void *unused) {
       C("\xf1\x80\x80\xe1\x80\xc2", R R R),
       C("a\0b", "a\0b"), /* U+0000 is valid */
       /* go/utf8_test.go lossyCases: as Rust's from_utf8_lossy and Node's TextDecoder */
-      C("\xe2\x82" "A", R "A"),
+      C("\xe2\x82"
+        "A",
+        R "A"),
       C("\xf0\x9f\x98", R),
       C("\xe0\x80\xaf", R R R),
       C("\xf0\x8f\xbf\xbf", R R R R),
@@ -433,8 +445,8 @@ static void phrase_table(void *unused) {
   tp_push(words, S("VIDEO,"));
   tp_push(words, S("x"));
   tp_phrase_match m;
-#define MATCH(ok, want, len)                                                             \
-  check((ok) && m.value != NULL && *(const int *)m.value == (want) && m.length == (len), \
+#define MATCH(ok, want, len)                                                                       \
+  check((ok) && m.value != NULL && *(const int *)m.value == (want) && m.length == (len),           \
         "phrase match " #want " " #len)
   bool ok = tp_phrase_table_match_at(tb, words, 0, &m);
   MATCH(ok, 1, 2);

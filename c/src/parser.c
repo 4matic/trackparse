@@ -173,8 +173,8 @@ TP_PRIVATE tp_track tp_finish(tp_staged st, bool list_context) {
   tp_artist_side_result artist_side;
   memset(&artist_side, 0, sizeof artist_side);
   if (artist_skel != NULL) artist_side = tp_parse_artist_side(artist_skel, c);
-  tp_title_side_result title_side = tp_parse_title_side(
-      title_skel, relaxed, tp_str_eq(pre.mode, TP_MODE_YOUTUBE), &out, c);
+  tp_title_side_result title_side =
+      tp_parse_title_side(title_skel, relaxed, tp_str_eq(pre.mode, TP_MODE_YOUTUBE), &out, c);
 
   /* R9 */
   tp_version_draft_vec versions = tp_by_pos_versions(out.versions);

@@ -83,39 +83,49 @@ static bool read_string(reader *r, tp_str *out) {
     if (r->at >= r->s.n) return false;
     c = r->s.p[r->at++];
     switch (c) {
-      case 'n': tp_buf_byte(&b, '\n'); break;
-      case 'r': tp_buf_byte(&b, '\r'); break;
-      case 't': tp_buf_byte(&b, '\t'); break;
-      case 'b': tp_buf_byte(&b, '\b'); break;
-      case 'f': tp_buf_byte(&b, '\f'); break;
-      case 'u': {
-        int32_t hi, cp;
-        if (!hex4(r, &hi)) return false;
-        cp = hi;
-        if (hi >= 0xd800 && hi < 0xdc00 && eat(r, "\\u")) {
-          int32_t lo;
-          if (!hex4(r, &lo)) return false;
-          if (lo >= 0xdc00 && lo < 0xe000) {
-            cp = 0x10000 + ((hi - 0xd800) << 10) + (lo - 0xdc00);
-          } else {
-            /* Two units that do not pair: both become U+FFFD (lo unless it is a scalar). */
-            append_rune(&b, 0xfffd);
-            cp = lo;
-          }
+    case 'n':
+      tp_buf_byte(&b, '\n');
+      break;
+    case 'r':
+      tp_buf_byte(&b, '\r');
+      break;
+    case 't':
+      tp_buf_byte(&b, '\t');
+      break;
+    case 'b':
+      tp_buf_byte(&b, '\b');
+      break;
+    case 'f':
+      tp_buf_byte(&b, '\f');
+      break;
+    case 'u': {
+      int32_t hi, cp;
+      if (!hex4(r, &hi)) return false;
+      cp = hi;
+      if (hi >= 0xd800 && hi < 0xdc00 && eat(r, "\\u")) {
+        int32_t lo;
+        if (!hex4(r, &lo)) return false;
+        if (lo >= 0xdc00 && lo < 0xe000) {
+          cp = 0x10000 + ((hi - 0xd800) << 10) + (lo - 0xdc00);
+        } else {
+          /* Two units that do not pair: both become U+FFFD (lo unless it is a scalar). */
+          append_rune(&b, 0xfffd);
+          cp = lo;
         }
-        append_rune(&b, cp);
-        break;
       }
-      default: {
-        /* \" \\ \/ and any other escaped character stand for themselves. The escaped character
-         * may be the first byte of a multi-byte code point: copy it whole. */
-        size_t size = 0;
-        tp_decode_rune(tp_str_slice(r->s, r->at - 1, r->s.n), &size);
-        if (size == 0) size = 1;
-        tp_buf_bytes(&b, r->s.p + r->at - 1, size);
-        r->at += size - 1;
-        break;
-      }
+      append_rune(&b, cp);
+      break;
+    }
+    default: {
+      /* \" \\ \/ and any other escaped character stand for themselves. The escaped character
+       * may be the first byte of a multi-byte code point: copy it whole. */
+      size_t size = 0;
+      tp_decode_rune(tp_str_slice(r->s, r->at - 1, r->s.n), &size);
+      if (size == 0) size = 1;
+      tp_buf_bytes(&b, r->s.p + r->at - 1, size);
+      r->at += size - 1;
+      break;
+    }
     }
   }
 }
@@ -228,27 +238,27 @@ static bool read_object(reader *r, tp_json *out) {
 static bool read_value(reader *r, tp_json *out) {
   if (r->depth > TP_JSON_MAX_DEPTH || r->at >= r->s.n) return false;
   switch (peek(r)) {
-    case 'n':
-      *out = tp_json_null();
-      return eat(r, "null");
-    case 't':
-      *out = tp_json_bool(true);
-      return eat(r, "true");
-    case 'f':
-      *out = tp_json_bool(false);
-      return eat(r, "false");
-    case '"': {
-      tp_str s;
-      if (!read_string(r, &s)) return false;
-      *out = tp_json_str(s);
-      return true;
-    }
-    case '[':
-      return read_array(r, out);
-    case '{':
-      return read_object(r, out);
-    default:
-      return read_number(r, out);
+  case 'n':
+    *out = tp_json_null();
+    return eat(r, "null");
+  case 't':
+    *out = tp_json_bool(true);
+    return eat(r, "true");
+  case 'f':
+    *out = tp_json_bool(false);
+    return eat(r, "false");
+  case '"': {
+    tp_str s;
+    if (!read_string(r, &s)) return false;
+    *out = tp_json_str(s);
+    return true;
+  }
+  case '[':
+    return read_array(r, out);
+  case '{':
+    return read_object(r, out);
+  default:
+    return read_number(r, out);
   }
 }
 

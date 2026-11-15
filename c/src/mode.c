@@ -113,8 +113,7 @@ TP_PRIVATE tp_segment_vec tp_split_pipes(tp_skel sk) {
 
 /* trailingJunkPhrase is the R8.4 test: the text ends with an unbracketed junk phrase (genres
  * excluded). It gives the code-point index where the phrase starts and its kind. */
-TP_PRIVATE bool tp_trailing_junk_phrase(tp_runes text, tp_ctx *c, ptrdiff_t *start,
-                                        tp_str *kind) {
+TP_PRIVATE bool tp_trailing_junk_phrase(tp_runes text, tp_ctx *c, ptrdiff_t *start, tp_str *kind) {
   tp_word_span_vec spans = tp_word_spans(text);
   tp_strvec words = tp_span_texts(spans);
   tp_phrase_match m;
@@ -141,8 +140,7 @@ TP_PRIVATE bool tp_looks_like_youtube(tp_skel sk, tp_ctx *c) {
   tp_indexed_group_vec groups = tp_groups_of(&sk);
   for (size_t i = 0; i < groups.n; i++) {
     tp_str kind;
-    if (tp_junk_text_kind(groups.p[i].group->inner, c, &kind) &&
-        !tp_str_eq(kind, TP_S("genre"))) {
+    if (tp_junk_text_kind(groups.p[i].group->inner, c, &kind) && !tp_str_eq(kind, TP_S("genre"))) {
       return true;
     }
   }
@@ -152,8 +150,7 @@ TP_PRIVATE bool tp_looks_like_youtube(tp_skel sk, tp_ctx *c) {
 }
 
 /* prelude is R2 on the normalized string. */
-TP_PRIVATE tp_prelude_result tp_prelude(tp_str normalized, tp_requested_mode requested,
-                                        tp_ctx *c) {
+TP_PRIVATE tp_prelude_result tp_prelude(tp_str normalized, tp_requested_mode requested, tp_ctx *c) {
   tp_positioned_junk_vec junk = {0};
   tp_runes text = tp_strip_platform_suffixes(tp_runes_of(normalized), c, &junk);
   bool had_platform = junk.n > 0;

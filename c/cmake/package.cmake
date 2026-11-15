@@ -94,6 +94,10 @@ target_compile_features(trackparse PUBLIC c_std_11)
 if(trackparse_is_top_level)
   # BUILD_INTERFACE: a build-only dependency, so the export set does not need trackparse_flags.
   target_link_libraries(trackparse PRIVATE "$<BUILD_INTERFACE:trackparse_flags>")
+  # A sanitizer or fuzz build instruments the library, so whatever links it in this build tree
+  # (examples, the C++ tests) needs the same link options.
+  target_link_options(trackparse INTERFACE
+    "$<BUILD_INTERFACE:$<TARGET_PROPERTY:trackparse_flags,INTERFACE_LINK_OPTIONS>>")
 elseif(MSVC)
   target_compile_options(trackparse PRIVATE /fp:precise /utf-8)
   target_compile_definitions(trackparse PRIVATE _CRT_SECURE_NO_WARNINGS)

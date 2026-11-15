@@ -64,7 +64,7 @@ TP_PRIVATE tp_title_side_result tp_parse_title_side(tp_skel input, bool relaxed,
   if (youtube) sk = tp_strip_trailing_junk(sk, out, c); /* R8.4 */
 
   tp_title_side_result r;
-  r.title = tp_cleanup_title(tp_render_skel(&sk));                   /* R8.5 */
+  r.title = tp_cleanup_title(tp_render_skel(&sk));                       /* R8.5 */
   r.unknown_title = r.title.n > 0 && tp_is_unknown_token(r.title, c->t); /* R8.6 */
   return r;
 }
