@@ -92,6 +92,11 @@ export interface SeparatorInput {
    * `letter-Uppercase` dash in tracklist mode.
    */
   listContext?: boolean;
+  /**
+   * R8.7: `skel` is the head before a bullet suffix. Its first spaced dash always separates, as
+   * in R6.10 (no R6.2 peeling), in every mode.
+   */
+  bulletHead?: boolean;
 }
 
 function nonEmpty(s: Skel): Skel | null {
@@ -106,8 +111,12 @@ function splitAt(s: Skel, cutStart: number, cutEnd: number): { artist: Skel | nu
 export function findSeparator(input: SeparatorInput, ctx: Ctx): SeparatorResult {
   const { skel, mode } = input;
   const segments = splitAtSpacedDashes(skel, true);
+  if (mode === "tracklist" || input.bulletHead === true) {
+    const first = firstDashSplit(skel, segments);
+    if (first) return first;
+  }
   if (mode === "tracklist")
-    return tracklistSeparator(skel, segments, input.listContext === true, ctx);
+    return tracklistSeparator((segments[0] as Segment).skel, input.listContext === true, ctx);
   const { remaining, peeled } = peelSuffixes(segments, false, ctx);
 
   // R6.3
@@ -131,25 +140,25 @@ export function findSeparator(input: SeparatorInput, ctx: Ctx): SeparatorResult 
 }
 
 /**
- * R6.10: tracklist mode. The first spaced dash always separates (no R6.2 peeling; R8.2 still
- * peels later suffixes on the title side). Without one: R6.4, then the first `_-_`, then (list
- * context only) the last tight `letter-Uppercase` dash; both of these warn `unspacedDashSplit`.
+ * R6.10 / R8.7: the first spaced dash always separates (no R6.2 peeling; R8.2 still peels later
+ * suffixes on the title side). Null without a spaced dash.
  */
-function tracklistSeparator(
-  skel: Skel,
-  segments: Segment[],
-  listContext: boolean,
-  ctx: Ctx,
-): SeparatorResult {
-  if (segments.length >= 2) {
-    const first = segments[0] as Segment;
-    const second = segments[1] as Segment;
-    const lastSeg = segments[segments.length - 1] as Segment;
-    const artist = first.skel.text.length > 0 ? first.skel : null;
-    const title = sliceSkel(skel, second.start, lastSeg.end);
-    return { artist, title, split: artist !== null, peeled: [] };
-  }
-  const rest = (segments[0] as Segment).skel;
+function firstDashSplit(skel: Skel, segments: Segment[]): SeparatorResult | null {
+  if (segments.length < 2) return null;
+  const first = segments[0] as Segment;
+  const second = segments[1] as Segment;
+  const lastSeg = segments[segments.length - 1] as Segment;
+  const artist = first.skel.text.length > 0 ? first.skel : null;
+  const title = sliceSkel(skel, second.start, lastSeg.end);
+  return { artist, title, split: artist !== null, peeled: [] };
+}
+
+/**
+ * R6.10: tracklist mode without a spaced dash (`firstDashSplit` handles one): R6.4, then the
+ * first `_-_`, then (list context only) the last tight `letter-Uppercase` dash; both of these
+ * warn `unspacedDashSplit`.
+ */
+function tracklistSeparator(rest: Skel, listContext: boolean, ctx: Ctx): SeparatorResult {
   const asym = asymmetricDash(rest.text);
   if (asym >= 0) {
     warn(ctx, "asymmetricDashSplit");

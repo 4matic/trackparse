@@ -11,6 +11,9 @@ import { collapseSpaces, isWhitespace } from "./words.js";
 /** R3.4 placeholder code point. */
 export const PH = "";
 
+/** R8.7 bullet (U+2022). */
+export const BULLET = "\u2022";
+
 export type Opener = "(" | "[" | "{";
 
 export interface Group {
@@ -193,6 +196,11 @@ export function isSpacedDashAt(text: string, i: number): boolean {
 export function hasSpacedDash(text: string): boolean {
   for (let i = 1; i < text.length - 1; i++) if (isSpacedDashAt(text, i)) return true;
   return false;
+}
+
+/** R8.7: U+2022 with a space immediately on both sides (the ends of the string do not count). */
+export function isSpacedBulletAt(text: string, i: number): boolean {
+  return text[i] === BULLET && text[i - 1] === " " && text[i + 1] === " ";
 }
 
 export interface Segment {

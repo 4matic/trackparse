@@ -26,6 +26,7 @@ describe("public API", () => {
         "fullTitle",
         "input",
         "junk",
+        "label",
         "mode",
         "position",
         "timestamp",
@@ -88,6 +89,27 @@ describe("public API", () => {
     expect(format(parse("01. Noisia - Stigma (VIP)"), { position: true })).toBe(
       "01. Noisia - Stigma (VIP)",
     );
+  });
+
+  it("label follows year in the key order (R8.7)", () => {
+    const keys = Object.keys(parse("A - T • L"));
+    expect(keys.indexOf("label")).toBe(keys.indexOf("year") + 1);
+  });
+
+  it("format writes the label back unless label: false (R11.3)", () => {
+    const t = parse("Noisia - concussion • VISION • VISION RADIO RELOAD");
+    expect(t.label).toBe("VISION");
+    expect(t.junk).toEqual([{ raw: "VISION RADIO RELOAD", kind: "note" }]);
+    expect(format(t)).toBe("Noisia - concussion • VISION");
+    expect(format(t, { label: false })).toBe("Noisia - concussion");
+    expect(format({ ...t, label: null })).toBe("Noisia - concussion");
+  });
+
+  it("keywords junk phrases make a bullet segment junk (R8.7)", () => {
+    const p = createParser({ keywords: { junk: { "radio reload": "promo" } } });
+    const t = p.parse("Noisia - Stigma • VISION • Radio Reload");
+    expect(t.label).toBe("VISION");
+    expect(t.junk).toEqual([{ raw: "Radio Reload", kind: "promo" }]);
   });
 });
 

@@ -8,7 +8,7 @@ import { stripPrefixes } from "./prefix.js";
 import { type Skel, scan, splitAtSpacedDashes, trimSkel } from "./scanner.js";
 import { findSeparator } from "./separator.js";
 import { stringEntries, stringList, type Tables, tablesFor } from "./tables.js";
-import { addPeeled, emptyExtracted, parseTitleSide } from "./title.js";
+import { addPeeled, cutBulletSuffix, emptyExtracted, parseTitleSide } from "./title.js";
 import type { Artist, Mode, ParsedTrack, ParseOptions } from "./types.js";
 
 export interface Parser {
@@ -30,6 +30,7 @@ function emptyTrack(input: string, mode: Mode): ParsedTrack {
     fullTitle: "",
     versions: [],
     year: null,
+    label: null,
     flags: { explicit: false, clean: false, unknownArtist: false, unknownTitle: false },
     junk: [],
     warnings: [],
@@ -99,8 +100,20 @@ function finish(st: Staged, listContext: boolean): ParsedTrack {
     titleSkel = skelOf(pre.pipeTitle, ctx);
     relaxed = artistSkel !== null;
   } else {
+    // R8.7: a bullet suffix is cut before R6, which then sees only the head.
+    const bullet = cutBulletSuffix(working, ctx);
+    if (bullet) {
+      track.label = bullet.label;
+      out.junk.push(...bullet.junk);
+    }
     const sep = findSeparator(
-      { skel: working, mode: pre.mode, uploader: uploaderSkel(options.uploader), listContext },
+      {
+        skel: bullet ? bullet.head : working,
+        mode: pre.mode,
+        uploader: uploaderSkel(options.uploader),
+        listContext,
+        bulletHead: bullet !== null,
+      },
       ctx,
     );
     addPeeled(out, sep.peeled);

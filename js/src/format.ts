@@ -1,5 +1,6 @@
 /** R11: render a ParsedTrack back to a string. */
 import { renderVersion } from "./assemble.js";
+import { BULLET } from "./scanner.js";
 import { getDefaultTables, type Tables } from "./tables.js";
 import type { Artist, FormatOptions, ParsedTrack } from "./types.js";
 import { dedupKey, wordMatches } from "./words.js";
@@ -11,6 +12,7 @@ interface Resolved {
   versions: boolean;
   producers: boolean;
   position: boolean;
+  label: boolean;
 }
 
 function resolve(o: FormatOptions | undefined): Resolved {
@@ -21,6 +23,7 @@ function resolve(o: FormatOptions | undefined): Resolved {
     versions: (o?.versions ?? "all") === "all",
     producers: o?.producers ?? true,
     position: o?.position ?? false,
+    label: o?.label ?? true,
   };
 }
 
@@ -103,6 +106,9 @@ export function format(track: ParsedTrack, options?: FormatOptions): string {
     const marker = producerFirst.joiner ?? "prod.";
     pieces.push(`(${marker} ${joinNames(producers, o, t)})`);
   }
+  // R11.3: the label after a spaced bullet (R8.7).
+  if (o.label && typeof track?.label === "string" && track.label.length > 0)
+    pieces.push(`${BULLET} ${track.label}`);
   const titlePart = pieces.join(" ");
 
   // R11.4

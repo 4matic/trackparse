@@ -1,11 +1,13 @@
 /** R8: the title side. */
-import { classify, type VersionDraft } from "./classify.js";
+import { classify, junkKindOf, phraseKindOf, type VersionDraft } from "./classify.js";
 import type { Ctx } from "./context.js";
 import { type Credit, type PositionedYear, splitCredits } from "./credits.js";
 import type { PositionedJunk } from "./mode.js";
 import {
   cutSkel,
   groupsOf,
+  isSpacedBulletAt,
+  isSpacedDashAt,
   PH,
   removeGroups,
   renderSkel,
@@ -18,7 +20,7 @@ import {
 import { type Peeled, peelSuffixes } from "./separator.js";
 import { isUnknownToken } from "./tables.js";
 import type { Flags } from "./types.js";
-import { collapseSpaces, type WordSpan, wordSpans } from "./words.js";
+import { collapseSpaces, splitWords, type WordSpan, wordSpans } from "./words.js";
 
 /** Everything the title side (and R6.2 peeling) can extract. */
 export interface Extracted {
@@ -247,4 +249,74 @@ export function cleanupTitle(raw: string): string {
     title = stripLoneEdges(collapseSpaces(title.slice(1, -1)));
   }
   return title;
+}
+
+// ---------------------------------------------------------------------------
+// R8.7 Bullet suffix
+
+export interface BulletSuffix {
+  /** The working skeleton before the first cut, trimmed (R8.7.3). */
+  head: Skel;
+  label: string | null;
+  /** Junk from the tail segments, with their positions in the normalized string (R9.7). */
+  junk: PositionedJunk[];
+}
+
+/**
+ * R8.7.1–R8.7.2: the head and tail segments when the rule fires, else null. Cuts at every
+ * spaced bullet after the first spaced dash D, which must have text before it and after it.
+ */
+function bulletSegments(skel: Skel): Skel[] | null {
+  const t = skel.text;
+  if (t[0] === "-" && t[1] === " ") return null; // R6.1: D at the start, nothing before it
+  let dash = -1;
+  for (let i = 1; i < t.length - 1; i++) {
+    if (isSpacedDashAt(t, i)) {
+      dash = i;
+      break;
+    }
+  }
+  if (dash < 0) return null;
+  const parts: Skel[] = [];
+  let start = 0;
+  for (let i = dash + 2; i < t.length - 1; i++) {
+    if (!isSpacedBulletAt(t, i)) continue;
+    parts.push(trimSkel(sliceSkel(skel, start, i)));
+    start = i + 1;
+  }
+  if (parts.length === 0) return null;
+  parts.push(trimSkel(sliceSkel(skel, start)));
+  if (parts.some((p) => p.text.length === 0)) return null;
+  // R8.7.2: the title part between D and the first bullet counts as a segment (`A - • L`).
+  const head = parts[0] as Skel;
+  if (head.text.length <= dash + 1) return null;
+  return parts;
+}
+
+/** R8.7: cut a bullet suffix off the working skeleton (after R2 and R4, before R6). */
+export function cutBulletSuffix(skel: Skel, ctx: Ctx): BulletSuffix | null {
+  const parts = bulletSegments(skel);
+  if (!parts) return null;
+  const junk: PositionedJunk[] = [];
+  let label: string | null = null;
+  for (const part of parts.slice(1)) {
+    // R8.7.4: junk groups go to junk; every other group stays verbatim.
+    const removed = new Set<number>();
+    for (const { group } of groupsOf(part)) {
+      const kind = junkKindOf(splitWords(group.inner), ctx);
+      if (!kind) continue;
+      junk.push({ raw: group.inner, kind, pos: group.pos });
+      removed.add(group.pos);
+    }
+    const rest = trimSkel(removeGroups(part, removed));
+    if (rest.text.length === 0) continue;
+    const text = collapseSpaces(renderSkel(rest));
+    const pos = rest.pos[0] ?? 0;
+    // R8.7.4: only junk phrases, connectors and year words (no genres, no label suffixes).
+    const kind = phraseKindOf(splitWords(text), ctx.t.junkPhrases, ctx);
+    if (kind) junk.push({ raw: text, kind, pos });
+    else if (label === null) label = text;
+    else junk.push({ raw: text, kind: "note", pos });
+  }
+  return { head: parts[0] as Skel, label, junk };
 }
