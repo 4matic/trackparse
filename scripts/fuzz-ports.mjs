@@ -100,6 +100,7 @@ const TITLES = [
   "Tentacles", "Bruises", "Out the Blue", "Dead Limit", "Stigma", "Blind Faith", "Shellshock",
   "Untitled", "Intro", "Love & Hate", "I Love You (Part 2)", "Mr. Brightside", "Hi-Fi", "2 Much",
 ];
+const LABELS = ["VISION", "WEAREHUMANS", "GEMINI GEMINI", "HOSPITAL", "DUB", "1985", "Ø", "SOFA SOUND", "Hospital Records", "VISION RADIO RELOAD"];
 const VERSION_WORDS = ["Remix", "VIP", "Edit", "Bootleg", "Flip", "Refix", "Dub", "Mix", "Rework", "Version", "Instrumental", "Sped Up"];
 const JOINERS = [" & ", ", ", " x ", " vs. ", " and ", " + ", " / ", " with "];
 
@@ -124,6 +125,11 @@ function trackString() {
     ]);
     s += ` ${open}${inner}${close}`;
   }
+  // R8.7: a label and notes after spaced bullets, plus near misses (tight, double, other dots).
+  for (let k = chance(30) ? 1 + below(3) : 0; k > 0; k--) {
+    s += pick([" • ", " • ", " •", "•", " •  • ", " · "]);
+    s += pick([pick(LABELS), pick(LABELS), pick(ARTISTS), pick(VERSION_WORDS), "OUT NOW", "Free Download", "[Official Video]", "(2024)", "", noisyString()]);
+  }
   if (chance(20)) s = `${pick(["01. ", "1 - ", "A1 ", "[03:45] ", "12) ", "07 "])}${s}`;
   if (chance(15)) s += pick([".mp3", ".flac", " (2015)", " [Explicit]", " Remix"]);
   return s;
@@ -147,7 +153,7 @@ function stringList() {
 const VERSION_TYPES = [
   "remix", "bootleg", "vip", "edit", "flip", "dub", "mix", "spedUp", "version", "original", "x", "", "Remix", "constructor",
 ];
-const JUNK_KINDS = ["video", "audio", "lyrics", "quality", "promo", "other", "weird", "", "__proto__"];
+const JUNK_KINDS = ["video", "audio", "lyrics", "quality", "promo", "other", "note", "weird", "", "__proto__"];
 const KEYS = [
   "rerub", "2", "10", "01", "-1", "0", "4294967294", "4294967295", "1.5", " vip ", "VIP", "feat.",
   "mix", "official", "out now", "a b", "", " ", "x.", "toString", "Ab",
@@ -193,6 +199,7 @@ function formatOptions() {
   if (chance(40)) o.versions = pick(["all", "none", "x", null]);
   if (chance(30)) o.producers = pick([true, false, 0, 1, "no", null]);
   if (chance(40)) o.position = pick([true, false, 1, 0, "yes", null]);
+  if (chance(30)) o.label = pick([true, false, 0, 1, "no", null]);
   return o;
 }
 
