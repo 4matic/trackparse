@@ -313,6 +313,8 @@ func (t *Track) write(w *jw) {
 	w.close(']')
 	w.key("year")
 	w.optInt(t.Year)
+	w.key("label")
+	w.optStr(t.Label)
 	w.key("flags")
 	t.Flags.write(w)
 	w.key("junk")
@@ -1130,6 +1132,8 @@ func (d *decoder) track(v jsonValue, path string) Track {
 			d.each(x, p, func(y jsonValue, q string) { t.Versions = append(t.Versions, d.version(y, q)) })
 		case "year":
 			t.Year = d.optInt(x, p)
+		case "label":
+			t.Label = d.optStr(x, p)
 		case "flags":
 			d.fields(x, p, func(k string, y jsonValue, q string) {
 				switch k {

@@ -126,7 +126,7 @@ func AllDelimiters() []Delimiter {
 	return []Delimiter{DelimiterParen, DelimiterSquare, DelimiterCurly, DelimiterDash}
 }
 
-// JunkKind is what kind of noise a junk fragment is (R5). A junk phrase added through
+// JunkKind is what kind of fragment a junk entry is (R5, R8.7). A junk phrase added through
 // [Keywords] can carry any string, which the output keeps as given.
 type JunkKind string
 
@@ -141,6 +141,8 @@ const (
 	JunkKindLabel    JunkKind = "label"
 	JunkKindGenre    JunkKind = "genre"
 	JunkKindOther    JunkKind = "other"
+	// JunkKindNote is a note after the record label, behind a second spaced bullet (R8.7).
+	JunkKindNote JunkKind = "note"
 )
 
 // AllJunkKinds returns the junk kinds of the spec, in the spec's order.
@@ -148,7 +150,7 @@ const (
 func AllJunkKinds() []JunkKind {
 	return []JunkKind{
 		JunkKindVideo, JunkKindAudio, JunkKindLyrics, JunkKindQuality, JunkKindPromo,
-		JunkKindPlatform, JunkKindLabel, JunkKindGenre, JunkKindOther,
+		JunkKindPlatform, JunkKindLabel, JunkKindGenre, JunkKindOther, JunkKindNote,
 	}
 }
 
@@ -212,12 +214,13 @@ type Version struct {
 	Delimiter Delimiter
 }
 
-// Junk is a fragment that says nothing about the track: Official Video, HD, Free Download. It
-// is taken out of the title and kept here (the parser extracts, it does not delete).
+// Junk is a fragment that is not part of the track's identity: noise (Official Video, HD), promo
+// text (Free Download), platform names, a bracketed label, notes after a record label. It is
+// taken out of the title and kept here (the parser extracts, it does not delete).
 type Junk struct {
 	// Raw is the fragment as written, without its brackets.
 	Raw string
-	// Kind is what kind of noise it is.
+	// Kind is what kind of fragment it is.
 	Kind JunkKind
 }
 
@@ -271,9 +274,14 @@ type Track struct {
 	Versions []Version
 	// Year is a release year found outside the versions.
 	Year *int
+	// Label is the record label written after a spaced bullet on the title side (R8.7):
+	// "Age Of Spin • WEAREHUMANS" gives "WEAREHUMANS". It is as written after R1, case kept,
+	// with no lookup; nil when there is none. It is not the junk kind [JunkKindLabel], which is
+	// a label name in brackets such as [NCS Release].
+	Label *string
 	// Flags are yes/no facts.
 	Flags Flags
-	// Junk are the fragments that say nothing about the track.
+	// Junk are the fragments that are not part of the track's identity.
 	Junk []Junk
 	// Warnings are guesses the caller may want to check.
 	Warnings []Warning

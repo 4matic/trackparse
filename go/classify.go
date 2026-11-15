@@ -109,12 +109,27 @@ func classify(inner string, s site, c *ctx) classification {
 
 // junkKindOf is R5.1: the junk kind if the whole word list is junk vocabulary.
 func junkKindOf(words []string, c *ctx) (string, bool) {
+	// JS truthiness: an empty kind (possible through keywords.junk) does not count.
+	if kind, ok := phraseKindOf(words, c.t.junkOrGenre, c); ok && kind != "" {
+		return kind, true
+	}
+	if len(words) >= 2 && inVocab(words[len(words)-1], c.t.labelSuffixes) {
+		return string(JunkKindLabel), true
+	}
+	return "", false
+}
+
+// phraseKindOf is the R5.1 tokenization over phrases (greedy, longest first) with connectors
+// and year words, at least one phrase: the kind of the first phrase and true, else false. The
+// kind can be empty (through keywords.junk); callers apply JS truthiness. R8.7 uses it without
+// genres.
+func phraseKindOf(words []string, phrases *phraseTable[string], c *ctx) (string, bool) {
 	t := c.t
 	firstKind, found := "", false
 	i := 0
 	for i < len(words) {
 		w := words[i]
-		if m, ok := t.junkOrGenre.matchAt(words, i); ok {
+		if m, ok := phrases.matchAt(words, i); ok {
 			if !found {
 				firstKind, found = m.value, true
 			}
@@ -126,17 +141,9 @@ func junkKindOf(words []string, c *ctx) (string, bool) {
 			i++
 			continue
 		}
-		found = false
-		break
+		return "", false
 	}
-	// JS truthiness: an empty kind (possible through keywords.junk) does not count.
-	if found && firstKind != "" {
-		return firstKind, true
-	}
-	if len(words) >= 2 && inVocab(words[len(words)-1], t.labelSuffixes) {
-		return string(JunkKindLabel), true
-	}
-	return "", false
+	return firstKind, found
 }
 
 // ---------------------------------------------------------------------------------------------

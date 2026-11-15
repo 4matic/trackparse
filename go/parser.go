@@ -165,11 +165,20 @@ func finish(st staged, listContext bool) Track {
 		}
 		relaxed = artistSkel != nil
 	} else {
+		// R8.7: a bullet suffix is cut before R6, which then sees only the head.
+		head := working
+		bullet, cut := cutBulletSuffix(&working, c)
+		if cut {
+			head = bullet.head
+			track.Label = bullet.label
+			out.junk = append(out.junk, bullet.junk...)
+		}
 		sep := findSeparator(separatorInput{
-			skel:        working,
+			skel:        head,
 			mode:        pre.mode,
 			uploader:    uploaderSkel(st.e.opts.uploader),
 			listContext: listContext,
+			bulletHead:  cut,
 		}, c)
 		addPeeled(&out, sep.peeled)
 		artistSkel = sep.artist

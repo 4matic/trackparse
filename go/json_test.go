@@ -76,7 +76,7 @@ func TestJSONReader(t *testing.T) {
 }
 
 func sampleTrack() Track {
-	feat, desc := "feat.", "at Lowlands"
+	feat, desc, label := "feat.", "at Lowlands", "VISION"
 	year, vyear := 2015, 2016
 	return Track{
 		Input:     "01. Noisia feat. Foreign Beggars - Stigma (Phace Remix) [HD]",
@@ -96,8 +96,9 @@ func sampleTrack() Track {
 			UnknownArtist: true, Delimiter: DelimiterParen,
 		}},
 		Year:     &year,
+		Label:    &label,
 		Flags:    Flags{Explicit: true, UnknownTitle: true},
-		Junk:     []Junk{{Raw: "HD", Kind: JunkKindQuality}},
+		Junk:     []Junk{{Raw: "HD", Kind: JunkKindQuality}, {Raw: "VISION RADIO", Kind: JunkKindNote}},
 		Warnings: []Warning{WarningNoSeparator, "somethingNew"},
 	}
 }
@@ -115,9 +116,9 @@ func TestTrackJSONRoundTrip(t *testing.T) {
 		`"title":"Stigma","fullTitle":"Stigma (Phace Remix)","versions":[{"type":"remix",` +
 		`"raw":"Phace Remix","artists":[{"name":"Phace","role":"remixer","joiner":null,` +
 		`"source":"version"}],"modifiers":["extended"],"descriptor":"at Lowlands","year":2016,` +
-		`"unknownArtist":true,"delimiter":"("}],"year":2015,"flags":{"explicit":true,` +
+		`"unknownArtist":true,"delimiter":"("}],"year":2015,"label":"VISION","flags":{"explicit":true,` +
 		`"clean":false,"unknownArtist":false,"unknownTitle":true},"junk":[{"raw":"HD",` +
-		`"kind":"quality"}],"warnings":["noSeparator","somethingNew"]}`
+		`"kind":"quality"},{"raw":"VISION RADIO","kind":"note"}],"warnings":["noSeparator","somethingNew"]}`
 	if string(b) != want {
 		t.Errorf("MarshalJSON:\n%s\nwant\n%s", b, want)
 	}
@@ -137,7 +138,7 @@ func TestTrackJSONRoundTrip(t *testing.T) {
 	// An empty track still has every key, with [] for lists.
 	empty, _ := Track{}.MarshalJSON()
 	if string(empty) != `{"input":"","mode":"","position":null,"timestamp":null,"artists":[],`+
-		`"title":"","fullTitle":"","versions":[],"year":null,"flags":{"explicit":false,`+
+		`"title":"","fullTitle":"","versions":[],"year":null,"label":null,"flags":{"explicit":false,`+
 		`"clean":false,"unknownArtist":false,"unknownTitle":false},"junk":[],"warnings":[]}` {
 		t.Errorf("empty track: %s", empty)
 	}

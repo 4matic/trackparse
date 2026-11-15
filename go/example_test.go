@@ -56,6 +56,20 @@ func ExampleParse() {
 	// true 0
 }
 
+func ExampleParse_label() {
+	track := trackparse.Parse("Noisia - concussion • VISION • VISION RADIO RELOAD")
+
+	fmt.Printf("%q %q\n", track.Title, *track.Label)
+	fmt.Printf("%+v\n", track.Junk)
+	fmt.Println(trackparse.Format(track))
+	fmt.Println(trackparse.FormatWith(track, trackparse.FormatOptions{OmitLabel: true}))
+	// Output:
+	// "concussion" "VISION"
+	// [{Raw:VISION RADIO RELOAD Kind:note}]
+	// Noisia - concussion • VISION
+	// Noisia - concussion
+}
+
 func ExampleParseWith() {
 	names := func(t trackparse.Track) []string {
 		var out []string
@@ -276,7 +290,7 @@ func ExampleTrack_MarshalJSON() {
 	}
 	fmt.Println(back.FullTitle, back.Versions[0].Artists[0].Name)
 	// Output:
-	// {"input":"Wilkinson ft. Becky Hill - Afterglow (Sub Focus VIP Remix) [HD]","mode":"youtube","position":null,"timestamp":null,"artists":[{"name":"Wilkinson","role":"primary","joiner":null,"source":"artist"},{"name":"Becky Hill","role":"featured","joiner":"ft.","source":"artist"}],"title":"Afterglow","fullTitle":"Afterglow (Sub Focus VIP Remix)","versions":[{"type":"remix","raw":"Sub Focus VIP Remix","artists":[{"name":"Sub Focus","role":"remixer","joiner":null,"source":"version"}],"modifiers":["vip"],"descriptor":null,"year":null,"unknownArtist":false,"delimiter":"("}],"year":null,"flags":{"explicit":false,"clean":false,"unknownArtist":false,"unknownTitle":false},"junk":[{"raw":"HD","kind":"quality"}],"warnings":[]}
+	// {"input":"Wilkinson ft. Becky Hill - Afterglow (Sub Focus VIP Remix) [HD]","mode":"youtube","position":null,"timestamp":null,"artists":[{"name":"Wilkinson","role":"primary","joiner":null,"source":"artist"},{"name":"Becky Hill","role":"featured","joiner":"ft.","source":"artist"}],"title":"Afterglow","fullTitle":"Afterglow (Sub Focus VIP Remix)","versions":[{"type":"remix","raw":"Sub Focus VIP Remix","artists":[{"name":"Sub Focus","role":"remixer","joiner":null,"source":"version"}],"modifiers":["vip"],"descriptor":null,"year":null,"unknownArtist":false,"delimiter":"("}],"year":null,"label":null,"flags":{"explicit":false,"clean":false,"unknownArtist":false,"unknownTitle":false},"junk":[{"raw":"HD","kind":"quality"}],"warnings":[]}
 	// Afterglow (Sub Focus VIP Remix) Sub Focus
 }
 

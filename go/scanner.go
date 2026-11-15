@@ -10,6 +10,9 @@ package trackparse
 // ph is the R3.4 placeholder code point. R1.2 removes it from input, so it never occurs there.
 const ph rune = 0xe000
 
+// bullet is the R8.7 bullet, U+2022.
+const bullet rune = 0x2022
+
 // group is one top-level bracket group (R3.1).
 type group struct {
 	open Delimiter
@@ -283,6 +286,12 @@ func hasSpacedDash(t []rune) bool {
 		}
 	}
 	return false
+}
+
+// isSpacedBulletAt is R8.7: U+2022 with a space immediately on both sides (the ends of the
+// string do not count).
+func isSpacedBulletAt(t []rune, i int) bool {
+	return at(t, i) == bullet && before(t, i) == ' ' && at(t, i+1) == ' '
 }
 
 // segment is a trimmed piece of a skeleton and its range inside the parent.
