@@ -2,7 +2,7 @@
 #   cmake -DLIBRARY=... -DNM=... -DSHARED=ON|OFF -DAPPLE=1|"" -P check_exports.cmake
 # Prints "SKIP:" (the test's skip pattern) where there is no nm, or for a DLL.
 if(NOT NM OR LIBRARY MATCHES "\\.(dll|lib)$")
-  message("SKIP: no nm, or a Windows library (CI checks those with dumpbin)")
+  message("SKIP: no nm, or a Windows library (the Windows DLL is built and linked by CI's windows-msvc-shared job)")
   return()
 endif()
 if(SHARED AND NOT APPLE)

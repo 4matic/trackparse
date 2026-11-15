@@ -3,8 +3,10 @@
 // against output the other ports give for the same input.
 #include <trackparse.hpp>
 
+#include <algorithm>
 #include <cstdio>
 #include <cstring>
+#include <iterator>
 #include <string>
 #include <type_traits>
 #include <vector>

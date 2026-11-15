@@ -192,6 +192,7 @@ TP_PRIVATE tp_mark tp_arena_mark(void) {
   m.head = rt_cur != NULL ? rt_cur->head : NULL;
   m.head_next = m.head != NULL ? ((tp_chunk *)m.head)->next : NULL;
   m.head_used = m.head != NULL ? ((tp_chunk *)m.head)->used : 0;
+  m.next_size = rt_cur != NULL ? rt_cur->next_size : 0;
   return m;
 }
 
@@ -205,6 +206,7 @@ TP_PRIVATE void tp_arena_release(tp_mark m) {
   tp_chunk *old = (tp_chunk *)m.head;
   tp_chunk *c;
   if (a == NULL) return;
+  a->next_size = m.next_size; /* chunks taken in the region do not grow later ones */
   /* New heads (and the large chunks put behind them) sit in front of the old head. */
   c = a->head;
   while (c != NULL && c != old) {
@@ -281,9 +283,15 @@ TP_PRIVATE void *tp_once_get(tp_once *once, void *(*build)(void)) {
   void *v;
   tp_scope s;
   void *volatile built = NULL;
+#if defined(__GNUC__) || defined(__clang__)
+  /* Fast path: an acquire load pairs with the release store below, so a reader that sees the
+   * pointer sees the table built behind it. */
+  v = __atomic_load_n(&once->value, __ATOMIC_ACQUIRE);
+#else
   rt_once_lock();
   v = once->value;
   rt_once_unlock();
+#endif
   if (v != NULL) return v;
   if (!tp_scope_open(&s)) return NULL;
   if (setjmp(s.jmp) != 0) {
@@ -300,7 +308,11 @@ TP_PRIVATE void *tp_once_get(tp_once *once, void *(*build)(void)) {
   rt_once_lock();
   v = once->value;
   if (v == NULL) {
+#if defined(__GNUC__) || defined(__clang__)
+    __atomic_store_n(&once->value, built, __ATOMIC_RELEASE);
+#else
     once->value = built;
+#endif
     once->opaque[0] = s.arena; /* kept forever */
     v = built;
   }

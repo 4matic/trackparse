@@ -51,7 +51,9 @@
 #define TP_UNUSED
 #endif
 #if defined(TRACKPARSE_AMALGAMATION) && defined(_MSC_VER)
-#pragma warning(disable : 4505)
+/* 4505: unreferenced static function; 4132: a const object declared before its definition
+ * (TP_PRIVATE_DATA in the generated headers). */
+#pragma warning(disable : 4505 4132)
 #endif
 #ifdef TRACKPARSE_AMALGAMATION
 #define TP_PRIVATE static TP_UNUSED
@@ -144,6 +146,7 @@ typedef struct tp_mark {
   void *head;
   void *head_next;
   size_t head_used;
+  size_t next_size;
 } tp_mark;
 TP_PRIVATE tp_mark tp_arena_mark(void);
 TP_PRIVATE void tp_arena_release(tp_mark m);
