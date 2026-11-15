@@ -473,11 +473,16 @@ static void test_json(void) {
 /* Once                                                                                         */
 
 static tp_once once_a = TP_ONCE_INIT, once_b = TP_ONCE_INIT, once_fail = TP_ONCE_INIT;
-static int build_b_calls;
+static long build_b_calls;
 
 static void *build_b(void) {
   int *v = (int *)tp_alloc(sizeof(int));
-  build_b_calls++;
+  /* Two threads may build at once (tp_once_get publishes one result), so count atomically. */
+#if defined(_MSC_VER)
+  InterlockedIncrement(&build_b_calls);
+#else
+  __atomic_fetch_add(&build_b_calls, 1, __ATOMIC_RELAXED);
+#endif
   *v = 7;
   return v;
 }
