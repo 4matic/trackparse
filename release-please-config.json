@@ -4,7 +4,7 @@
   "tag-separator": "-",
   "bump-minor-pre-major": true,
   "bump-patch-for-minor-pre-major": false,
-  "pull-request-header": ":robot: Merging this PR tags the release, publishes a GitHub Release with these notes and publishes to npm, PyPI and crates.io. The Go module is published by its tag (go/vX.Y.Z) through the Go module proxy.",
+  "pull-request-header": ":robot: Merging this PR tags the release, publishes a GitHub Release with these notes and publishes to npm, PyPI and crates.io. The Go module is published by its tag (go/vX.Y.Z) through the Go module proxy. The C library is attached to its GitHub Release (c-vX.Y.Z) as a source tarball and an amalgamation.",
   "changelog-sections": [
     {
       "type": "feat",
@@ -122,6 +122,27 @@
         }
       ],
       "initial-version": "0.1.0"
+    },
+    "c": {
+      "release-type": "simple",
+      "component": "c",
+      "version-file": "VERSION",
+      "changelog-path": "CHANGELOG.md",
+      "extra-files": [
+        {
+          "type": "generic",
+          "path": "CMakeLists.txt"
+        },
+        {
+          "type": "generic",
+          "path": "include/trackparse.h"
+        },
+        {
+          "type": "generic",
+          "path": "src/data_gen.h"
+        }
+      ],
+      "initial-version": "0.1.0"
     }
   },
   "plugins": [
@@ -133,7 +154,8 @@
         "spec",
         "python",
         "rust",
-        "go"
+        "go",
+        "c"
       ]
     }
   ]

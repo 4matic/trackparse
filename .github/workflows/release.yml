@@ -4,7 +4,8 @@ name: release
 # Merging that PR tags js-vX.Y.Z / spec-vX.Y.Z / python-vX.Y.Z / rust-vX.Y.Z / go/vX.Y.Z, creates
 # the GitHub Releases, and publishes to npm, PyPI and (once enabled) crates.io. The Go module has
 # no registry upload: the go/vX.Y.Z tag is the release, and publish-go only checks it through the
-# Go module proxy.
+# Go module proxy. The C library has no registry either: publish-c attaches a source tarball and an
+# amalgamation to the c-vX.Y.Z GitHub Release.
 
 on:
   push:
@@ -21,6 +22,10 @@ on:
         default: ""
       go_tag:
         description: "Re-run the Go module checks for an existing go release tag (e.g. go/v0.6.0). Leave empty for a normal release-please run."
+        required: false
+        default: ""
+      c_tag:
+        description: "Re-build and attach the C release files for an existing c release tag (e.g. c-v0.7.0). Leave empty for a normal release-please run."
         required: false
         default: ""
 
@@ -50,6 +55,9 @@ jobs:
       go_release_created: ${{ steps.release.outputs['go--release_created'] }}
       go_tag_name: ${{ steps.release.outputs['go--tag_name'] }}
       go_version: ${{ steps.release.outputs['go--version'] }}
+      c_release_created: ${{ steps.release.outputs['c--release_created'] }}
+      c_tag_name: ${{ steps.release.outputs['c--tag_name'] }}
+      c_version: ${{ steps.release.outputs['c--version'] }}
     steps:
       - uses: googleapis/release-please-action@v4
         id: release
@@ -481,4 +489,170 @@ jobs:
             echo "pkg.go.dev: https://pkg.go.dev/${MODULE}@v${VERSION} · implements spec ${VERSION} ([SPEC.md](https://github.com/${GITHUB_REPOSITORY}/blob/${TAG}/spec/SPEC.md))"
           } > "$RUNNER_TEMP/notes.md"
           # The npm release (js-vX.Y.Z) stays "Latest"; don't touch that flag here.
+          gh release edit "$TAG" --notes-file "$RUNNER_TEMP/notes.md"
+
+  publish-c:
+    needs: release-please
+    if: needs.release-please.outputs.c_release_created == 'true' || (github.event_name == 'workflow_dispatch' && inputs.c_tag != '')
+    runs-on: ubuntu-latest
+    environment:
+      name: c
+      url: https://github.com/${{ github.repository }}/releases
+    permissions:
+      contents: write # upload release files, edit the notes
+      id-token: write # build provenance attestation
+      attestations: write
+    steps:
+      - name: Resolve the release tag
+        id: tag
+        env:
+          RELEASED_TAG: ${{ needs.release-please.outputs.c_tag_name }}
+          RELEASED_VERSION: ${{ needs.release-please.outputs.c_version }}
+          INPUT_TAG: ${{ inputs.c_tag }}
+        run: |
+          if [ -n "$INPUT_TAG" ]; then
+            tag="$INPUT_TAG"
+          else
+            tag="$RELEASED_TAG"
+          fi
+          if ! printf '%s' "$tag" | grep -Eq '^c-v[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "the c tag must look like c-vX.Y.Z, got '$tag'" >&2
+            exit 1
+          fi
+          version="${tag#c-v}"
+          if [ -z "$INPUT_TAG" ] && [ "$version" != "$RELEASED_VERSION" ]; then
+            echo "tag $tag does not match the released version $RELEASED_VERSION" >&2
+            exit 1
+          fi
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: ${{ steps.tag.outputs.tag }}
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24
+
+      - name: Verify versions are in sync
+        env:
+          TAG_VERSION: ${{ steps.tag.outputs.version }}
+        run: |
+          c_version=$(cat c/VERSION)
+          c_cmake=$(sed -n 's/^project(trackparse VERSION \([0-9.]*\) .*/\1/p' c/CMakeLists.txt)
+          c_header=$(sed -n 's/^#define TRACKPARSE_VERSION "\([^"]*\)".*/\1/p' c/include/trackparse.h)
+          c_spec=$(sed -n 's/^#define TP_SPEC_VERSION "\([^"]*\)".*/\1/p' c/src/data_gen.h)
+          spec_version=$(cat spec/VERSION)
+          echo "c=$c_version cmake=$c_cmake header=$c_header spec-macro=$c_spec spec=$spec_version tag=$TAG_VERSION"
+          for v in "$c_version" "$c_cmake" "$c_header" "$c_spec" "$spec_version"; do
+            test "$v" = "$TAG_VERSION"
+          done
+          node c/scripts/gen_data.mjs --check
+          node c/scripts/gen_unicode.mjs --check
+
+      - name: Test from the repository
+        run: |
+          cmake -S c -B build -DCMAKE_BUILD_TYPE=Release -DTRACKPARSE_WERROR=ON
+          cmake --build build -j4
+          ctest --test-dir build --output-on-failure
+
+      # The tarball holds c/ alone plus the generated amalgamation, so it builds without Node and
+      # without the rest of the repository; the fixture tests skip there (no ../spec).
+      - name: Build the release files
+        id: files
+        env:
+          VERSION: ${{ steps.tag.outputs.version }}
+        run: |
+          out="$RUNNER_TEMP/out"
+          name="trackparse-c-$VERSION"
+          mkdir -p "$out" "$RUNNER_TEMP/stage"
+          git archive --format=tar --prefix="$name/" HEAD:c | tar -x -C "$RUNNER_TEMP/stage"
+          node c/scripts/amalgamate.mjs --out "$RUNNER_TEMP/stage/$name/dist"
+          tar -C "$RUNNER_TEMP/stage" -czf "$out/$name.tar.gz" "$name"
+          mkdir -p "$RUNNER_TEMP/amal/$name-amalgamation"
+          cp "$RUNNER_TEMP/stage/$name/dist/"* "$RUNNER_TEMP/amal/$name-amalgamation/"
+          cp c/LICENSE "$RUNNER_TEMP/amal/$name-amalgamation/"
+          (cd "$RUNNER_TEMP/amal" && zip -qr "$out/$name-amalgamation.zip" "$name-amalgamation")
+          (cd "$out" && sha256sum "$name.tar.gz" "$name-amalgamation.zip" > SHA256SUMS)
+          cat "$out/SHA256SUMS"
+          echo "out=$out" >> "$GITHUB_OUTPUT"
+          echo "name=$name" >> "$GITHUB_OUTPUT"
+
+      - name: Build and test the tarball alone, then install it and build an example against it
+        env:
+          OUT: ${{ steps.files.outputs.out }}
+          NAME: ${{ steps.files.outputs.name }}
+        run: |
+          cd "$RUNNER_TEMP"
+          rm -rf check && mkdir check && tar -xzf "$OUT/$NAME.tar.gz" -C check
+          cmake -S "check/$NAME" -B check/build -DCMAKE_BUILD_TYPE=Release -DTRACKPARSE_WERROR=ON
+          cmake --build check/build -j4
+          ctest --test-dir check/build --output-on-failure
+          cmake --install check/build --prefix "$RUNNER_TEMP/prefix"
+          cat > check/main.c <<'EOF'
+          #include <stdio.h>
+          #include <trackparse.h>
+          int main(void) {
+            trackparse_track *t = trackparse_parse("Noisia - Stigma (2015)", TRACKPARSE_NUL_TERMINATED);
+            if (!t) return 1;
+            printf("%s %s %s %d\n", trackparse_spec_version(), t->artists[0].name.ptr, t->title.ptr, *t->year);
+            trackparse_track_free(t);
+            return 0;
+          }
+          EOF
+          export PKG_CONFIG_PATH="$RUNNER_TEMP/prefix/lib/pkgconfig:$RUNNER_TEMP/prefix/lib64/pkgconfig"
+          cc -std=c11 check/main.c $(pkg-config --cflags --libs trackparse) -o check/main
+          got=$(LD_LIBRARY_PATH="$RUNNER_TEMP/prefix/lib:$RUNNER_TEMP/prefix/lib64" ./check/main)
+          want="${NAME#trackparse-c-} Noisia Stigma 2015"
+          echo "got:  $got"
+          echo "want: $want"
+          test "$got" = "$want"
+          # The amalgamation alone, as a user who copies the files would build it.
+          unzip -q "$OUT/$NAME-amalgamation.zip" -d amal-check
+          cc -std=c11 -O2 -Wall -Wextra -Werror -DTRACKPARSE_STATIC -I"amal-check/$NAME-amalgamation" \
+            check/main.c "amal-check/$NAME-amalgamation/trackparse.c" -lm -lpthread -o check/main-amal
+          ./check/main-amal
+
+      - uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: |
+            ${{ steps.files.outputs.out }}/*.tar.gz
+            ${{ steps.files.outputs.out }}/*.zip
+
+      - name: Upload the files and add install notes to the GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.tag.outputs.tag }}
+          VERSION: ${{ steps.tag.outputs.version }}
+          OUT: ${{ steps.files.outputs.out }}
+          NAME: ${{ steps.files.outputs.name }}
+        run: |
+          # Release files are permanent: package managers pin their hashes. Never replace one.
+          existing=$(gh release view "$TAG" --json assets --jq '.assets[].name')
+          for f in "$OUT/$NAME.tar.gz" "$OUT/$NAME-amalgamation.zip" "$OUT/SHA256SUMS"; do
+            if printf '%s\n' "$existing" | grep -qx "$(basename "$f")"; then
+              echo "$(basename "$f") is already attached; keeping it"
+            else
+              gh release upload "$TAG" "$f"
+            fi
+          done
+          sha=$(sed -n "s/  $NAME.tar.gz\$//p" "$OUT/SHA256SUMS")
+          url="https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG}/${NAME}.tar.gz"
+          highlights=".github/release-notes/${VERSION}.md"
+          {
+            if [ -f "$highlights" ]; then cat "$highlights"; echo; fi
+            gh release view "$TAG" --json body --jq .body
+            echo
+            echo "### Install"
+            echo
+            echo '```cmake'
+            echo 'include(FetchContent)'
+            echo 'FetchContent_Declare(trackparse'
+            echo "  URL ${url}"
+            echo "  URL_HASH SHA256=${sha})"
+            echo 'FetchContent_MakeAvailable(trackparse)'
+            echo 'target_link_libraries(app PRIVATE trackparse::trackparse)'
+            echo '```'
+            echo
+            echo "Or copy \`trackparse.c\`, \`trackparse.h\` and \`trackparse.hpp\` from ${NAME}-amalgamation.zip. Implements spec ${VERSION} ([SPEC.md](https://github.com/${GITHUB_REPOSITORY}/blob/${TAG}/spec/SPEC.md))."
+          } > "$RUNNER_TEMP/notes.md"
           gh release edit "$TAG" --notes-file "$RUNNER_TEMP/notes.md"

@@ -12,6 +12,10 @@ on:
       - "python/pyproject.toml"
       - "rust/Cargo.toml"
       - "go/data_gen.go"
+      - "c/VERSION"
+      - "c/CMakeLists.txt"
+      - "c/include/trackparse.h"
+      - "c/src/data_gen.h"
       - "pnpm-lock.yaml"
       - "pnpm-workspace.yaml"
       - "package.json"
@@ -36,15 +40,21 @@ jobs:
         run: pnpm --filter @trackparse/fixture-gen test
       - name: Port data codegen is up to date
         run: pnpm --filter trackparse gen:data:check
-      - name: js, python, rust, go and spec versions are linked
+      - name: js, python, rust, go, c and spec versions are linked
         run: |
           js_version=$(node -p "require('./js/package.json').version")
           py_version=$(python3 -c 'import tomllib; print(tomllib.load(open("python/pyproject.toml", "rb"))["project"]["version"])')
           rs_version=$(python3 -c 'import tomllib; print(tomllib.load(open("rust/Cargo.toml", "rb"))["package"]["version"])')
           go_version=$(sed -n 's/^const SpecVersion = "\([^"]*\)".*/\1/p' go/data_gen.go)
+          c_version=$(cat c/VERSION)
+          c_cmake=$(sed -n 's/^project(trackparse VERSION \([0-9.]*\) .*/\1/p' c/CMakeLists.txt)
+          c_header=$(sed -n 's/^#define TRACKPARSE_VERSION "\([^"]*\)".*/\1/p' c/include/trackparse.h)
+          c_parts=$(sed -n 's/^#define TRACKPARSE_VERSION_\(MAJOR\|MINOR\|PATCH\) \([0-9]*\).*/\2/p' c/include/trackparse.h | paste -sd.)
+          c_spec=$(sed -n 's/^#define TP_SPEC_VERSION "\([^"]*\)".*/\1/p' c/src/data_gen.h)
           spec_version=$(cat spec/VERSION)
-          echo "js=$js_version python=$py_version rust=$rs_version go=$go_version spec=$spec_version"
+          echo "js=$js_version python=$py_version rust=$rs_version go=$go_version c=$c_version/$c_cmake/$c_header/$c_parts/$c_spec spec=$spec_version"
           test "$js_version" = "$spec_version"
           test "$py_version" = "$spec_version"
           test "$rs_version" = "$spec_version"
           test "$go_version" = "$spec_version"
+          for v in "$c_version" "$c_cmake" "$c_header" "$c_parts" "$c_spec"; do test "$v" = "$spec_version"; done
