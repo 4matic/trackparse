@@ -1,4 +1,4 @@
-/* test_locale.c: the output does not depend on the process locale (PLAN.md hazard 2).
+/* test_locale.c: the output does not depend on the process locale (PORTING.md hazard 2).
  *
  * The library never calls a locale-dependent function (no <ctype.h>, strtod or float printf in
  * src/), so a program that calls setlocale() must still get the bytes the "C" locale gives. This

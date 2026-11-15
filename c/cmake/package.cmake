@@ -88,7 +88,7 @@ target_include_directories(trackparse PUBLIC
 target_compile_definitions(trackparse PRIVATE TRACKPARSE_BUILDING)
 target_compile_features(trackparse PUBLIC c_std_11)
 
-# The flags the results depend on (PLAN.md hazards 1, 5 and 12), always. The warning flags of
+# The flags the results depend on (PORTING.md hazards 1, 5 and 12), always. The warning flags of
 # trackparse_flags (and -Werror under CI) only when trackparse is the top-level project, so a
 # consumer's newer compiler cannot break its build.
 if(trackparse_is_top_level)

@@ -1,4 +1,4 @@
-# hardening.cmake: the hardening tests and the fuzz targets (PLAN.md step 8). Included from
+# hardening.cmake: the hardening tests and the fuzz targets (AGENTS.md, C hazards). Included from
 # CMakeLists.txt when TRACKPARSE_BUILD_TESTS or TRACKPARSE_FUZZ is on.
 #
 #   properties  SPEC invariants and R13.11 on seeded inputs, and the time ceilings

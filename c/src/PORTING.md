@@ -210,3 +210,26 @@ the array's elements, and the typed API passes `tp_edit_json` of each edit. The 
 
 The only recursive function is `tp_json_write`. Its depth is bounded by the reader's
 `TP_JSON_MAX_DEPTH` (200) and, for `tp_edit_json` values, by 2.
+
+## Hazards (numbered; the code cites them)
+
+The Go hazards carry over: Unicode tables from Node, final sigma, JS `trim()`, WHATWG UTF-8,
+UTF-16 positions, stable sorts, `Object.entries` order, JSON bytes, half-up rounding, JS number
+rules for edits, lone surrogates. C adds these:
+
+| # | Hazard | What goes wrong | Fix |
+|---|---|---|---|
+| 1 | FMA contraction | GCC in GNU mode defaults to `-ffp-contract=fast`, so `floor(v * 10^d + 0.5)` can become a fused multiply-add on ARM64 (or x86 with `-mfma`), and rounding changes | `-ffp-contract=off` (MSVC `/fp:precise`) set by CMake and by `#pragma STDC FP_CONTRACT OFF` in `num.c`, so the amalgamation is safe too; a test with the values that differ; ARM64 CI |
+| 2 | Locale | `strtod`, `printf("%g")`, `isalpha`, `tolower` follow `LC_NUMERIC` / `LC_CTYPE`: a German locale writes `3167,5`, a Turkish one lowercases `I` to dotless `ı` | No `<ctype.h>`, no `strtod`, no float `printf` in `src/` (a CI grep bans them). `tests/test_locale.c` calls `setlocale(LC_ALL, "")` and CI runs the suite under `de_DE.UTF-8` and `tr_TR.UTF-8` |
+| 3 | Number formatting | JS writes the shortest digits that round trip; `%.17g` does not | Own shortest-digits writer (exact big-integer digit generation, about 250 lines; speed does not matter for a few numbers per result), then JS's exponent rules. `tests/test_num.c` checks it against Node on the committed sample (`tests/data/numbers_sample.jsonl`, 700 doubles: random bit patterns, subnormals, `1e21`, `-0`, `5e-324`); `scripts/dump_numbers.mjs` writes larger sets (1 million cases by default) to run by hand |
+| 4 | Number parsing | `Number("3167.12345678901234567")` is correctly rounded | Fast path when the digits fit in 2^53 and the power of ten is exact (one correctly rounded division), big-integer fallback otherwise. `tests/test_num.c` checks it against Node on the same sample's 700 digit strings, and larger sets from `scripts/dump_numbers.mjs` by hand |
+| 5 | x87 excess precision | 32-bit x86 without SSE2 computes in 80 bits (`FLT_EVAL_METHOD == 2`) | Require SSE2 there (`-msse2 -mfpmath=sse`), `#error` when `FLT_EVAL_METHOD` is not 0, a 32-bit CI job |
+| 6 | `char` signedness | `char` is signed on x86 and unsigned on ARM | Bytes are `unsigned char` / `uint8_t` inside `src/`; ARM64 CI |
+| 7 | `qsort` is not stable | ties reorder, unlike JS `sort` | `sort.c` (merge sort); a CI grep bans `qsort(` |
+| 8 | Hash table order | an iteration order can reach the output | Ordered arrays for the keyword maps (JS `Object.entries` order, as in Go); hash or sorted indexes only for lookup, never iterated for output |
+| 9 | Memory safety and totality (R0.8) | out-of-bounds reads, leaks, use after free, size overflow | `at()` returning -1 out of range, as in Go; checked size arithmetic; ASan + UBSan on every test run, MSan, Valgrind, libFuzzer; `-Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror` |
+| 10 | Out of memory | C cannot pretend allocation never fails | Two arenas per call (scratch, freed at the end, and the result's own block). An arena that fails once stays failed, the pipeline finishes on empty data without crashing, and the call returns `NULL`. `tests/test_oom.c` fails allocation n for every n |
+| 11 | Recursion and stack | deep nesting could overflow the stack | Bracket depth is a counter. The one recursive function, `tp_json_write`, has a bounded depth (see [Recursion](#recursion)) |
+| 12 | Source charset | MSVC reads string literals in the system code page | Generated tables and every non-ASCII literal are `\xNN` escapes; `/utf-8` anyway |
+| 13 | Thread safety | lazy global init needs locks | Default tables are `static const` generated data: nothing to initialize. `tests/test_threads.c` runs 16 threads against sequential results under ThreadSanitizer |
+| 14 | Numbers echoed in edit warnings | `-0`, NaN, huge line numbers | The wire layer applies JS number semantics; the typed API takes `double` seconds and `long long` lines; `num.c` prints JS's form |

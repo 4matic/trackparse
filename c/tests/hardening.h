@@ -1,4 +1,4 @@
-/* hardening.h: what the hardening tests and the fuzz targets share (PLAN.md step 8).
+/* hardening.h: what the hardening tests and the fuzz targets share (AGENTS.md, C hazards).
  *
  * - The seeded input generator of go/properties_test.go (mulberry32 over the same fragments),
  *   so a failure is reproducible from its seed and case number.
