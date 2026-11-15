@@ -152,7 +152,8 @@ enum class junk_kind : int {
   platform = TRACKPARSE_JUNK_PLATFORM,
   label = TRACKPARSE_JUNK_LABEL,
   genre = TRACKPARSE_JUNK_GENRE,
-  other = TRACKPARSE_JUNK_OTHER /**< also used for names keywords introduced */
+  other = TRACKPARSE_JUNK_OTHER, /**< also used for names keywords introduced */
+  note = TRACKPARSE_JUNK_NOTE    /**< a note after the record label (R8.7) */
 };
 
 /** Track warnings. */
@@ -461,6 +462,8 @@ public:
   std::string_view full_title() const { return detail::sv(t_->full_title); }
   version_span versions() const { return version_span(t_->versions, t_->versions_count); }
   std::optional<int> year() const { return detail::opt(t_->year); }
+  /** The record label after a spaced bullet (R8.7); not junk_kind::label. */
+  std::optional<std::string_view> label() const { return detail::opt(t_->label); }
   flags_view flags() const { return flags_view(&t_->flags); }
   junk_span junk() const { return junk_span(t_->junk, t_->junk_count); }
   warning_span warnings() const { return warning_span(t_->warnings, t_->warnings_count); }
@@ -708,6 +711,13 @@ public:
     return *this;
   }
   format_options &&position(bool v) && { return std::move(position(v)); }
+
+  /** Leaves out the record label after the title (R11.3; JavaScript label: false). */
+  format_options &omit_label(bool v) & {
+    detail::check(trackparse_format_options_set_omit_label(o_, v));
+    return *this;
+  }
+  format_options &&omit_label(bool v) && { return std::move(omit_label(v)); }
 
   const trackparse_format_options *c_ptr() const { return o_; }
 

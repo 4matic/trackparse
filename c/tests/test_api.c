@@ -197,6 +197,9 @@ static void test_enums(void) {
   CHECK(strcmp(trackparse_version_type_name(TRACKPARSE_VERSION_NIGHTCORE), "nightcore") == 0);
   CHECK(strcmp(trackparse_delimiter_name(TRACKPARSE_DELIMITER_BRACE), "{") == 0);
   CHECK(strcmp(trackparse_junk_kind_name(TRACKPARSE_JUNK_OTHER), "other") == 0);
+  CHECK(strcmp(trackparse_junk_kind_name(TRACKPARSE_JUNK_NOTE), "note") == 0);
+  CHECK(strcmp(trackparse_junk_kind_name((trackparse_junk_kind)TRACKPARSE_JUNK_KIND_COUNT), "") ==
+        0);
   CHECK(strcmp(trackparse_warning_name(TRACKPARSE_WARNING_NO_SEPARATOR), "noSeparator") == 0);
   CHECK(strcmp(trackparse_warning_name(TRACKPARSE_WARNING_UNBALANCED_BRACKETS),
                "unbalancedBrackets") == 0);
@@ -224,6 +227,55 @@ static void test_enums(void) {
   CHECK(trackparse_junk_kind_from_name("genre", TRACKPARSE_NUL_TERMINATED, &jk) &&
         jk == TRACKPARSE_JUNK_GENRE);
   CHECK(trackparse_junk_kind_from_name("label", 5, NULL));
+  CHECK(trackparse_junk_kind_from_name("note", TRACKPARSE_NUL_TERMINATED, &jk) &&
+        jk == TRACKPARSE_JUNK_NOTE);
+}
+
+/* R8.7: the record label after a spaced bullet, notes after a second one, and R11.3. */
+static void test_label(void) {
+  static const char in[] = "Noisia - concussion \xe2\x80\xa2 VISION \xe2\x80\xa2 VISION RADIO "
+                           "RELOAD";
+  trackparse_track *t = trackparse_parse(in, TRACKPARSE_NUL_TERMINATED);
+  trackparse_format_options *o;
+  trackparse_string *s;
+  CHECK(t != NULL);
+  if (t == NULL) return;
+  STR_IS(t->title, "concussion");
+  CHECK(t->label != NULL && str_is(*t->label, "VISION"));
+  CHECK(t->junk_count == 1);
+  if (t->junk_count == 1) {
+    STR_IS(t->junk[0].raw, "VISION RADIO RELOAD");
+    CHECK(t->junk[0].kind == TRACKPARSE_JUNK_NOTE);
+    STR_IS(t->junk[0].kind_name, "note");
+  }
+  check_wire("label to_json", trackparse_track_to_json(t),
+             "{\"fn\":\"parse\",\"input\":\"Noisia - concussion \xe2\x80\xa2 VISION "
+             "\xe2\x80\xa2 VISION RADIO RELOAD\"}");
+  s = trackparse_format(t);
+  CHECK(s != NULL && str_is(s->str, "Noisia - concussion \xe2\x80\xa2 VISION"));
+  trackparse_string_free(s);
+  o = trackparse_format_options_new();
+  CHECK(trackparse_format_options_set_omit_label(o, true));
+  CHECK(trackparse_format_options_set_omit_label(NULL, true));
+  s = trackparse_format_with(t, o);
+  CHECK(s != NULL && str_is(s->str, "Noisia - concussion"));
+  trackparse_string_free(s);
+  CHECK(trackparse_format_options_set_omit_label(o, false));
+  s = trackparse_format_with(t, o);
+  CHECK(s != NULL && str_is(s->str, "Noisia - concussion \xe2\x80\xa2 VISION"));
+  trackparse_string_free(s);
+  trackparse_format_options_free(o);
+  trackparse_track_free(t);
+
+  /* No bullet: label is NULL and the JSON has "label":null between year and flags. */
+  t = trackparse_parse("Noisia - Stigma", TRACKPARSE_NUL_TERMINATED);
+  CHECK(t != NULL);
+  if (t == NULL) return;
+  CHECK(t->label == NULL);
+  s = trackparse_track_to_json(t);
+  CHECK(s != NULL && strstr(s->str.ptr, "\"year\":null,\"label\":null,\"flags\":") != NULL);
+  trackparse_string_free(s);
+  trackparse_track_free(t);
 }
 
 static void test_parse(void) {
@@ -287,7 +339,8 @@ static void test_parse(void) {
                  "Remix)\",\"versions\":[{\"type\":\"remix\",\"raw\":\"Sub Focus VIP Remix\","
                  "\"artists\":[{\"name\":\"Sub Focus\",\"role\":\"remixer\",\"joiner\":null,"
                  "\"source\":\"version\"}],\"modifiers\":[\"vip\"],\"descriptor\":null,\"year\":"
-                 "null,\"unknownArtist\":false,\"delimiter\":\"(\"}],\"year\":null,\"flags\":{"
+                 "null,\"unknownArtist\":false,\"delimiter\":\"(\"}],\"year\":null,\"label\":null,"
+                 "\"flags\":{"
                  "\"explicit\":false,\"clean\":false,\"unknownArtist\":false,\"unknownTitle\":"
                  "false},\"junk\":[{\"raw\":\"HD\",\"kind\":\"quality\"}],\"warnings\":[]}"));
     trackparse_string_free(j);
@@ -680,6 +733,21 @@ static void test_hand_built(void) {
   all = trackparse_all_artists(&t);
   CHECK(all != NULL && all->count == 1 && str_is(all->items[0].name, "Noisia"));
   trackparse_artists_free(all);
+
+  /* A hand-built label is written after the versions (R11.3); an empty one is not. */
+  {
+    trackparse_str label = {"VISION", 6};
+    trackparse_str empty_label = {"", 0};
+    t.label = &label;
+    s = trackparse_format(&t);
+    CHECK(s != NULL && str_is(s->str, "Noisia - Stigma (VIP) \xe2\x80\xa2 VISION"));
+    trackparse_string_free(s);
+    t.label = &empty_label;
+    s = trackparse_format(&t);
+    CHECK(s != NULL && str_is(s->str, "Noisia - Stigma (VIP)"));
+    trackparse_string_free(s);
+    t.label = NULL;
+  }
 
   /* An all-zero track and a NULL track format as "" (Go Format(Track{})). */
   memset(&t, 0, sizeof t);
@@ -1173,6 +1241,7 @@ int main(void) {
   test_versions();
   test_enums();
   test_parse();
+  test_label();
   test_embedded_nul();
   test_invalid_utf8();
   test_parse_artists();

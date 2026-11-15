@@ -238,6 +238,16 @@ static void test_artists_format_normalize() {
   auto fo =
       tp::format_options{}.joiners(tp::joiners::canonical).omit_producers(true).position(false);
   CHECK_EQ(tp::format(t, fo), c_json(trackparse_format_with(t.c_ptr(), fo.c_ptr())));
+  CHECK(!t.label());
+
+  // R8.7: the record label after a spaced bullet, a note after a second one.
+  auto l = tp::parse("Noisia - concussion \xe2\x80\xa2 VISION \xe2\x80\xa2 VISION RADIO RELOAD");
+  CHECK(l.label() == std::optional<std::string_view>("VISION"));
+  CHECK_EQ(l.junk().size(), 1u);
+  CHECK(l.junk()[0].kind() == tp::junk_kind::note);
+  CHECK_EQ(l.format(), "Noisia - concussion \xe2\x80\xa2 VISION");
+  CHECK_EQ(tp::format(l, tp::format_options{}.omit_label(true)), "Noisia - concussion");
+  CHECK_EQ(tp::name(tp::junk_kind::note), "note");
 
   auto all = tp::all_artists(tp::parse("Noisia - Stigma (Mefjus Remix)"));
   CHECK_EQ(all.size(), 2u);
@@ -367,6 +377,7 @@ static void test_names() {
   CHECK(!tp::mode_from_name("nope"));
   CHECK(tp::version_type_from_name("vip") == tp::version_type::vip);
   CHECK(tp::junk_kind_from_name("genre") == tp::junk_kind::genre);
+  CHECK(tp::junk_kind_from_name("note") == tp::junk_kind::note);
   CHECK(!tp::junk_kind_from_name(""));
 }
 

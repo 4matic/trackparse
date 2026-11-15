@@ -140,7 +140,7 @@ static const char *const version_type_names[] = {
     "reprise",  "cover",        "version",  "spedUp", "slowed",   "nightcore"};
 static const char *const delimiter_names[] = {"(", "[", "{", "-"};
 static const char *const junk_kind_names[] = {"video",    "audio", "lyrics", "quality", "promo",
-                                              "platform", "label", "genre",  "other"};
+                                              "platform", "label", "genre",  "other",   "note"};
 static const char *const warning_names[] = {
     "noSeparator", "ambiguousSeparator", "unspacedDashSplit",  "asymmetricDashSplit",
     "bySplit",     "quotedTitleSplit",   "ambiguousMixCredit", "unbalancedBrackets"};
@@ -486,6 +486,12 @@ static void fill_track(rb *b, trackparse_track *out, const tp_track *t) {
   }
   out->warnings = warnings;
   out->warnings_count = t->warnings.n;
+  out->label = NULL;
+  if (t->label != NULL) {
+    trackparse_str *l = (trackparse_str *)rb_alloc(b, sizeof *l);
+    *l = rb_str(b, *t->label);
+    out->label = l;
+  }
 }
 
 static void fill_track_top(rb *b, void *top, const void *src) {
@@ -703,6 +709,7 @@ static tp_track int_track(const trackparse_track *t) {
   n = COUNT(t->versions, t->versions_count);
   for (i = 0; i < n; i++) tp_push(r.versions, int_version(&t->versions[i]));
   r.year = int_opt_int(t->year);
+  r.label = int_opt_str(t->label);
   r.flags.explicit_ = t->flags.explicit_;
   r.flags.clean = t->flags.clean;
   r.flags.unknown_artist = t->flags.unknown_artist;
@@ -1097,6 +1104,12 @@ TRACKPARSE_API bool trackparse_format_options_set_omit_producers(trackparse_form
 TRACKPARSE_API bool trackparse_format_options_set_position(trackparse_format_options *o, bool v) {
   if (o == NULL) return true;
   o->o.position = v;
+  return true;
+}
+
+TRACKPARSE_API bool trackparse_format_options_set_omit_label(trackparse_format_options *o, bool v) {
+  if (o == NULL) return true;
+  o->o.omit_label = v;
   return true;
 }
 
@@ -1675,7 +1688,7 @@ _Static_assert(TRACKPARSE_ROLE_PRODUCER + 1 == TRACKPARSE_ROLE_COUNT, "role coun
 _Static_assert(TRACKPARSE_SOURCE_VERSION + 1 == TRACKPARSE_SOURCE_COUNT, "source count");
 _Static_assert(TRACKPARSE_VERSION_NIGHTCORE + 1 == TRACKPARSE_VERSION_TYPE_COUNT, "version count");
 _Static_assert(TRACKPARSE_DELIMITER_DASH + 1 == TRACKPARSE_DELIMITER_COUNT, "delimiter count");
-_Static_assert(TRACKPARSE_JUNK_OTHER + 1 == TRACKPARSE_JUNK_KIND_COUNT, "junk count");
+_Static_assert(TRACKPARSE_JUNK_NOTE + 1 == TRACKPARSE_JUNK_KIND_COUNT, "junk count");
 _Static_assert(TRACKPARSE_WARNING_UNBALANCED_BRACKETS + 1 == TRACKPARSE_WARNING_COUNT, "warnings");
 _Static_assert(TRACKPARSE_ENTRY_BLANK + 1 == TRACKPARSE_ENTRY_KIND_COUNT, "entry count");
 _Static_assert(TRACKPARSE_EOL_NONE + 1 == TRACKPARSE_EOL_COUNT, "eol count");

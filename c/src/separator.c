@@ -114,7 +114,8 @@ TP_PRIVATE tp_separator_result tp_result_of(tp_split_parts parts, tp_peeled_vec 
 }
 
 /* firstDashSplit is R6.3: the first segment is the artist side, the rest (up to the last kept
- * one) the title. */
+ * one) the title. R6.10 and R8.7 call it on the unpeeled segments, where the first spaced dash
+ * always separates (R8.2 still peels later suffixes on the title side). */
 TP_PRIVATE bool tp_first_dash_split(tp_skel sk, tp_segment_vec segments, tp_split_parts *out) {
   if (segments.n < 2) return false;
   tp_segment first = segments.p[0], second = segments.p[1], last = tp_last(segments);
@@ -134,8 +135,18 @@ TP_PRIVATE tp_separator_result tp_find_separator(tp_separator_input in, tp_ctx *
   tp_skel sk = in.skel;
   tp_mode mode = in.mode;
   tp_segment_vec segments = tp_split_at_spaced_dashes(&sk, true);
-  if (tp_str_eq(mode, TP_MODE_TRACKLIST)) {
-    return tp_tracklist_separator(sk, segments, in.list_context, c);
+  bool tracklist = tp_str_eq(mode, TP_MODE_TRACKLIST);
+  if (tracklist || in.bullet_head) {
+    tp_split_parts first;
+    if (tp_first_dash_split(sk, segments, &first)) {
+      tp_peeled_vec none = {0};
+      return tp_result_of(first, none);
+    }
+  }
+  if (tracklist) {
+    tp_skel rest0 = tp_slice_skel(&sk, 0, 0);
+    if (segments.n > 0) rest0 = segments.p[0].skel;
+    return tp_tracklist_separator(rest0, in.list_context, c);
   }
   tp_peeled_vec p;
   tp_segment_vec remaining = tp_peel_suffixes(segments, false, c, &p);
@@ -161,17 +172,11 @@ TP_PRIVATE tp_separator_result tp_find_separator(tp_separator_input in, tp_ctx *
   return r;
 }
 
-/* tracklistSeparator is R6.10, tracklist mode. The first spaced dash always separates (no R6.2
- * peeling; R8.2 still peels later suffixes on the title side). Without one: R6.4, then the
- * first "_-_", then (list context only) the last tight "letter-Uppercase" dash; both of these
- * warn unspacedDashSplit. */
-TP_PRIVATE tp_separator_result tp_tracklist_separator(tp_skel sk, tp_segment_vec segments,
-                                                      bool list_context, tp_ctx *c) {
+/* tracklistSeparator is R6.10, tracklist mode without a spaced dash (tp_first_dash_split
+ * handles one): R6.4, then the first "_-_", then (list context only) the last tight
+ * "letter-Uppercase" dash; both of these warn unspacedDashSplit. */
+TP_PRIVATE tp_separator_result tp_tracklist_separator(tp_skel rest, bool list_context, tp_ctx *c) {
   tp_peeled_vec none = {0};
-  tp_split_parts parts;
-  if (tp_first_dash_split(sk, segments, &parts)) return tp_result_of(parts, none);
-  tp_skel rest = tp_slice_skel(&sk, 0, 0);
-  if (segments.n > 0) rest = segments.p[0].skel;
   ptrdiff_t at;
   if (tp_asymmetric_dash(rest.text, &at)) {
     tp_ctx_warn(c, TP_WARNING_ASYMMETRIC_DASH_SPLIT);

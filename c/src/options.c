@@ -264,12 +264,14 @@ TP_PRIVATE tp_resolved_format tp_resolve_format(const tp_format_options *o) {
     r.feat = TP_FEAT_MODE_SOURCE;
     r.versions = true;
     r.producers = true;
+    r.label = true;
     return r;
   }
   r.canonical = tp_str_eq(o->joiners, TP_JOINERS_CANONICAL);
   r.versions = o->versions.n == 0 || tp_str_eq(o->versions, TP_VERSIONS_ALL);
   r.producers = !o->omit_producers;
   r.position = o->position;
+  r.label = !o->omit_label;
   feat = o->feat;
   if (feat.n == 0 || tp_str_eq(feat, TP_FEAT_SOURCE)) {
     r.feat = TP_FEAT_MODE_SOURCE;
@@ -484,6 +486,7 @@ TP_PRIVATE tp_resolved_format tp_resolve_format_json(tp_json o) {
   r.feat = TP_FEAT_MODE_SOURCE;
   r.versions = true;
   r.producers = true;
+  r.label = true;
   if (get_set(o, "feat", &v)) {
     if (is_string(v, "source")) {
       r.feat = TP_FEAT_MODE_SOURCE;
@@ -505,6 +508,7 @@ TP_PRIVATE tp_resolved_format tp_resolve_format_json(tp_json o) {
   if (get_set(o, "versions", &v)) r.versions = is_string(v, "all");
   if (get_set(o, "producers", &v)) r.producers = tp_truthy(v);
   if (get_set(o, "position", &v)) r.position = tp_truthy(v);
+  if (get_set(o, "label", &v)) r.label = tp_truthy(v);
   return r;
 }
 

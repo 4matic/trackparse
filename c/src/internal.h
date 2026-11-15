@@ -122,6 +122,7 @@ typedef struct tp_segment tp_segment;
 typedef TP_VEC(const tp_group *) tp_group_ptr_vec;
 typedef TP_VEC(tp_indexed_group) tp_indexed_group_vec;
 typedef TP_VEC(tp_segment) tp_segment_vec;
+typedef TP_VEC(tp_skel) tp_skel_vec;
 
 /* credits.go */
 typedef struct tp_credit tp_credit;
@@ -156,6 +157,7 @@ typedef struct tp_feat_marker tp_feat_marker;
 /* title.go */
 typedef struct tp_extracted tp_extracted;
 typedef struct tp_title_side_result tp_title_side_result;
+typedef struct tp_bullet_suffix tp_bullet_suffix;
 typedef struct tp_marker_hit tp_marker_hit;
 typedef TP_VEC(tp_marker_hit) tp_marker_hit_vec;
 
@@ -283,7 +285,7 @@ typedef tp_str tp_delimiter;
 #define TP_DELIMITER_DASH TP_S("-")
 TP_PRIVATE tp_strvec tp_all_delimiters(void);
 
-/* JunkKind is what kind of noise a junk fragment is (R5). keywords can add any string. */
+/* JunkKind is what kind of fragment a junk entry is (R5, R8.7). keywords can add any string. */
 typedef tp_str tp_junk_kind;
 #define TP_JUNK_KIND_VIDEO TP_S("video")
 #define TP_JUNK_KIND_AUDIO TP_S("audio")
@@ -294,6 +296,7 @@ typedef tp_str tp_junk_kind;
 #define TP_JUNK_KIND_LABEL TP_S("label")
 #define TP_JUNK_KIND_GENRE TP_S("genre")
 #define TP_JUNK_KIND_OTHER TP_S("other")
+#define TP_JUNK_KIND_NOTE TP_S("note") /* a note after the record label (R8.7) */
 TP_PRIVATE tp_strvec tp_all_junk_kinds(void);
 
 /* Warning is a warning of the single-track parser. */
@@ -423,6 +426,7 @@ struct tp_track {
   tp_str full_title;
   tp_version_vec versions;
   const ptrdiff_t *year;
+  const tp_str *label; /* R8.7: the record label after a spaced bullet, or NULL */
   tp_flags flags;
   tp_junk_vec junk;
   tp_strvec warnings; /* tp_warning values */
@@ -605,6 +609,7 @@ struct tp_format_options {
   tp_versions_option versions;
   bool omit_producers; /* JS producers: false */
   bool position;
+  bool omit_label; /* R11.3; JS label: false */
 };
 
 /* TracklistOptions (R13.10): the zero value is what parseTracklist uses. */
@@ -695,6 +700,7 @@ struct tp_resolved_format {
   bool versions;
   bool producers;
   bool position;
+  bool label;
 };
 
 /* resolvedTracklist are tracklist options after the R13.10 fallbacks. */
@@ -975,6 +981,10 @@ TP_PRIVATE tp_prefix_result tp_strip_prefixes(tp_runes text, ptrdiff_t base, tp_
 
 /* ph is the R3.4 placeholder code point. R1.2 removes it from input. */
 #define TP_PH ((tp_rune)0xE000)
+/* bullet is the R8.7 bullet, U+2022. */
+#define TP_BULLET ((tp_rune)0x2022)
+/* TP_BULLET in UTF-8, for format (R11.3). */
+#define TP_BULLET_UTF8 "\xe2\x80\xa2"
 
 /* group is one top-level bracket group (R3.1). */
 struct tp_group {
@@ -1064,6 +1074,9 @@ TP_PRIVATE bool tp_sorted_has(tp_idxvec v, ptrdiff_t x);
 TP_PRIVATE bool tp_is_spaced_dash_at(tp_runes t, ptrdiff_t i);
 /* hasSpacedDash reports whether t has a spaced dash. */
 TP_PRIVATE bool tp_has_spaced_dash(tp_runes t);
+/* isSpacedBulletAt is R8.7: U+2022 with a space immediately on both sides (the ends of the
+ * string do not count). */
+TP_PRIVATE bool tp_is_spaced_bullet_at(tp_runes t, ptrdiff_t i);
 
 /* segment is a trimmed piece of a skeleton and its range inside the parent. */
 struct tp_segment {
@@ -1214,6 +1227,11 @@ struct tp_run_item {
 TP_PRIVATE tp_classification tp_classify(tp_str inner, tp_site s, tp_ctx *c);
 /* junkKindOf is R5.1: the junk kind if the whole word list is junk vocabulary. */
 TP_PRIVATE bool tp_junk_kind_of(tp_strvec words, tp_ctx *c, tp_str *kind);
+/* phraseKindOf is the R5.1 tokenization over phrases with connectors and year words, at least
+ * one phrase: the kind of the first phrase. The kind can be empty (through keywords.junk);
+ * callers apply JS truthiness. R8.7 uses it without genres. */
+TP_PRIVATE bool tp_phrase_kind_of(tp_strvec words, const tp_phrase_table *phrases, tp_ctx *c,
+                                  tp_str *kind);
 TP_PRIVATE bool tp_feat_or_producer(tp_str inner, tp_site s, tp_ctx *c, tp_classification *out);
 TP_PRIVATE bool tp_credits_after(tp_runes inner, tp_word_span_vec spans, ptrdiff_t marker_words,
                                  tp_role role, tp_site s, tp_ctx *c, tp_list_result *out);
@@ -1278,6 +1296,8 @@ struct tp_separator_input {
   tp_mode mode;
   const tp_skel *uploader; /* R6.8 fallback artist, or NULL */
   bool list_context;       /* R13.4.2 (tracklist module only): enables the R6.10 tight dash */
+  bool bullet_head;        /* R8.7: skel is the head before a bullet suffix; its first spaced dash
+                              always separates, as in R6.10 (no R6.2 peeling), in every mode */
 };
 
 /* splitParts is an artist side (NULL when empty) and a title side. */
@@ -1303,15 +1323,15 @@ TP_PRIVATE tp_split_parts tp_split_at(tp_skel s, ptrdiff_t cut_start, ptrdiff_t 
 /* resultOf is a separator result for split parts. */
 TP_PRIVATE tp_separator_result tp_result_of(tp_split_parts parts, tp_peeled_vec p);
 /* firstDashSplit is R6.3: the first segment is the artist side, the rest (up to the last kept
- * one) the title. */
+ * one) the title. R6.10 and R8.7 call it on the unpeeled segments, where the first spaced dash
+ * always separates (R8.2 still peels later suffixes on the title side). */
 TP_PRIVATE bool tp_first_dash_split(tp_skel sk, tp_segment_vec segments, tp_split_parts *out);
 /* findSeparator is R6. */
 TP_PRIVATE tp_separator_result tp_find_separator(tp_separator_input in, tp_ctx *c);
-/* tracklistSeparator is R6.10, tracklist mode: the first spaced dash always separates; without
- * one: R6.4, then the first "_-_", then (list context only) the last tight letter-Uppercase
- * dash; both of these warn unspacedDashSplit. */
-TP_PRIVATE tp_separator_result tp_tracklist_separator(tp_skel sk, tp_segment_vec segments,
-                                                      bool list_context, tp_ctx *c);
+/* tracklistSeparator is R6.10, tracklist mode without a spaced dash (tp_first_dash_split
+ * handles one): R6.4, then the first "_-_", then (list context only) the last tight
+ * letter-Uppercase dash; both of these warn unspacedDashSplit. */
+TP_PRIVATE tp_separator_result tp_tracklist_separator(tp_skel rest, bool list_context, tp_ctx *c);
 /* underscoreDash is the index of the first "_-_". */
 TP_PRIVATE bool tp_underscore_dash(tp_runes t, ptrdiff_t *out);
 /* tightUpperDash is R6.10: the last "-" with a letter (R0.6) left and Lu right. */
@@ -1412,6 +1432,21 @@ TP_PRIVATE bool tp_is_lone_edge(tp_str word);
 TP_PRIVATE tp_str tp_strip_lone_edges(tp_str s);
 /* cleanupTitle is R8.5. */
 TP_PRIVATE tp_str tp_cleanup_title(tp_str raw);
+
+/* bulletSuffix is what R8.7 cuts off the working skeleton. */
+struct tp_bullet_suffix {
+  tp_skel head;                /* the working skeleton before the first cut, trimmed (R8.7.3) */
+  const tp_str *label;         /* the record label, or NULL */
+  tp_positioned_junk_vec junk; /* junk from the tail segments, positions as in R9.7 */
+};
+
+/* bulletSegments is R8.7.1 to R8.7.2: the head and tail segments when the rule fires. It cuts
+ * at every spaced bullet after the first spaced dash D, which must have text before and after
+ * it. */
+TP_PRIVATE bool tp_bullet_segments(const tp_skel *sk, tp_skel_vec *out);
+/* cutBulletSuffix is R8.7: cut a bullet suffix off the working skeleton (after R2 and R4,
+ * before R6). False when the rule does not fire. */
+TP_PRIVATE bool tp_cut_bullet_suffix(const tp_skel *sk, tp_ctx *c, tp_bullet_suffix *out);
 
 /* ============================================================================================ */
 /* assemble.go: R9                                                                              */

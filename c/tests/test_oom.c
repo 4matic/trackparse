@@ -218,7 +218,8 @@ static char *op_format_with(const op *o) {
       !trackparse_format_options_set_joiners(fo, TRACKPARSE_JOINERS_CANONICAL) ||
       !trackparse_format_options_set_versions(fo, TRACKPARSE_VERSIONS_ALL) ||
       !trackparse_format_options_set_omit_producers(fo, true) ||
-      !trackparse_format_options_set_position(fo, true)) {
+      !trackparse_format_options_set_position(fo, true) ||
+      !trackparse_format_options_set_omit_label(fo, true)) {
     trackparse_format_options_free(fo);
     return NULL;
   }
@@ -553,6 +554,8 @@ static void sweep_all(const hz_cases *cases_p, size_t *used_p) {
         "\xff\xfe broken \xed\xa0\x80 UTF-8",
         ("01. Wilkinson ft. Becky Hill & Tom Cane - Afterglow (Sub Focus VIP Remix) "
          "[Official Video]"),
+        /* R8.7: a label and a note after spaced bullets. */
+        "Noisia - concussion \xe2\x80\xa2 VISION \xe2\x80\xa2 VISION RADIO RELOAD",
     };
     char *big = (char *)malloc(10001), *list = (char *)malloc(400001);
     size_t ln = 0;

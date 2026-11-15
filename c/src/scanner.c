@@ -299,6 +299,12 @@ TP_PRIVATE bool tp_has_spaced_dash(tp_runes t) {
   return false;
 }
 
+/* isSpacedBulletAt is R8.7: U+2022 with a space immediately on both sides (the ends of the
+ * string do not count). */
+TP_PRIVATE bool tp_is_spaced_bullet_at(tp_runes t, ptrdiff_t i) {
+  return tp_at(t, i) == TP_BULLET && tp_before(t, i) == ' ' && tp_at(t, i + 1) == ' ';
+}
+
 /* trimmedSegment is s[start:end] trimmed of R0.2 whitespace. */
 TP_PRIVATE tp_segment tp_trimmed_segment(const tp_skel *s, ptrdiff_t start, ptrdiff_t end) {
   ptrdiff_t a = start;

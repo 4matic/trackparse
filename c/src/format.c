@@ -154,6 +154,10 @@ TP_PRIVATE tp_str tp_format_track(const tp_track *track, tp_resolved_format o) {
     tp_buf_byte(&b, ')');
     tp_push(pieces, tp_buf_done(&b));
   }
+  /* R11.3: the label after a spaced bullet (R8.7). */
+  if (o.label && track->label != NULL && track->label->n != 0) {
+    tp_push(pieces, tp_concat3(TP_S(TP_BULLET_UTF8), TP_S(" "), *track->label));
+  }
   tp_str title_part = tp_join(pieces, TP_S(" "));
 
   /* R11.4 */

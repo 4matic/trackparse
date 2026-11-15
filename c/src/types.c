@@ -44,9 +44,9 @@ static const tp_str delimiters[] = {{"(", 1}, {"[", 1}, {"{", 1}, {"-", 1}};
 /* AllDelimiters: every Delimiter, in the spec's order. */
 TP_PRIVATE tp_strvec tp_all_delimiters(void) { return TP_NAMES(delimiters); }
 
-static const tp_str junk_kinds[] = {{"video", 5},   {"audio", 5}, {"lyrics", 6},
-                                    {"quality", 7}, {"promo", 5}, {"platform", 8},
-                                    {"label", 5},   {"genre", 5}, {"other", 5}};
+static const tp_str junk_kinds[] = {{"video", 5}, {"audio", 5},    {"lyrics", 6}, {"quality", 7},
+                                    {"promo", 5}, {"platform", 8}, {"label", 5},  {"genre", 5},
+                                    {"other", 5}, {"note", 4}};
 
 /* AllJunkKinds: the junk kinds of the spec, in the spec's order. */
 TP_PRIVATE tp_strvec tp_all_junk_kinds(void) { return TP_NAMES(junk_kinds); }
