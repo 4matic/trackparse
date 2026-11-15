@@ -73,10 +73,11 @@ template <class T> std::optional<T> opt(const T *v) {
 
 /* A string the library allocated, copied into a std::string. */
 inline std::string take(trackparse_string *s) {
-  check(s);
-  std::string r(s->str.ptr, s->str.len);
-  trackparse_string_free(s);
-  return r;
+  struct guard {
+    trackparse_string *s;
+    ~guard() { trackparse_string_free(s); }
+  } g{check(s)};
+  return std::string(g.s->str.ptr, g.s->str.len);
 }
 
 } // namespace detail
@@ -435,11 +436,16 @@ using warning_span = span<trackparse_warning, trackparse::warning,
 
 class format_options;
 class artists;
+class track;
 
 /** A parsed track, borrowed (from a track, or from a tracklist entry). */
 class track_view {
 public:
   explicit track_view(const trackparse_track *t) : t_(t) {}
+  track_view(const track_view &) = default;
+  track_view &operator=(const track_view &) = default;
+  /** A view of a temporary track would dangle at once: keep the track in a variable. */
+  track_view(track &&) = delete;
   std::string_view input() const { return detail::sv(t_->input); }
   trackparse::mode mode() const { return static_cast<trackparse::mode>(t_->mode); }
   std::optional<trackparse::position> position() const {

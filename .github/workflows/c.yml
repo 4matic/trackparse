@@ -69,6 +69,8 @@ jobs:
           - { name: linux-shared, os: ubuntu-latest, cc: gcc, cxx: g++, shared: "ON" }
           - { name: macos, os: macos-latest, cc: clang, cxx: clang++ }
           - { name: windows-msvc, os: windows-latest }
+          # The DLL: dllexport, the import library, and the examples and C++ tests linking it.
+          - { name: windows-msvc-shared, os: windows-latest, shared: "ON" }
     name: test (${{ matrix.name }})
     runs-on: ${{ matrix.os }}
     steps:
@@ -107,7 +109,7 @@ jobs:
       matrix:
         include:
           - { name: m32, cc: gcc, flags: "-m32", pkgs: "gcc-multilib g++-multilib" }
-          - { name: gcc-9-cmake-3.16, cc: gcc-9, cxx: g++-9, pkgs: "gcc-9 g++-9", cmake: "3.16.9" }
+          - { name: gcc-9-cmake-3.16, cc: gcc-9, cxx: g++-9, pkgs: "gcc-9 g++-9", cmake: "3.16.8" }
     name: test (${{ matrix.name }})
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
@@ -125,7 +127,8 @@ jobs:
         run: |
           cmake -S c -B build -DCMAKE_BUILD_TYPE=Release -DTRACKPARSE_WERROR=ON
           cmake --build build -j4
-          ctest --test-dir build --output-on-failure -j2 -LE consumer
+          # ctest --test-dir needs CTest 3.20; 3.16 would ignore it and find no tests.
+          cd build && ctest --output-on-failure -j2 -LE consumer
 
   sanitize:
     if: github.event_name != 'schedule'

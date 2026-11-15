@@ -15,6 +15,10 @@
  * - Results are read-only and own all their memory; free each with its _free function. Strings
  *   in results are trackparse_str: a pointer and a length, also NUL-terminated.
  * - Nullable fields are pointers that are NULL when the value is absent.
+ * - ABI: while the version is 0.x, a minor release may add fields to the result structs. Results
+ *   the library returns are always safe to read. A struct the caller fills in by hand and passes
+ *   to trackparse_format, trackparse_all_artists or a _to_json function must be built against
+ *   the header of the library it runs with.
  * - Option objects are opaque. Their setters copy what they are given. Bad values fall back to
  *   the defaults, as in every port. A NULL options pointer means the defaults.
  * - All functions are thread-safe. A trackparse_parser is immutable once created and can be
