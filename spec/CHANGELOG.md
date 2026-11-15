@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.8.0](https://github.com/4matic/trackparse/compare/spec-v0.7.1...spec-v0.8.0) (2026-11-15)
+
+
+### Features
+
+* **fixtures:** bullet-label cases for R8.7 (labels, notes, near misses, format, tracklists); exact cases gain "label": null ([7323a0f](https://github.com/4matic/trackparse/commit/7323a0f9f2e9bfd2903e394fcadd202a486ade24))
+* **generator:** bullet-label scenario (358 cases: label and notes after a spaced bullet) ([f99e165](https://github.com/4matic/trackparse/commit/f99e165c34590e35835dc1950038e3f973825db4))
+* **spec:** R8.7 bullet suffix: the record label after a spaced bullet becomes the label field, later segments junk kind note; format writes it back (label option) ([e3c000d](https://github.com/4matic/trackparse/commit/e3c000d55cc1c3735899f637051fe0c6db726892))
+
+
+### Documentation
+
+* **spec:** R11.6 leaves out an empty title; R8.7 says the tail can pick the mode through R2.1 and that quotes do not protect a bullet ([785eeed](https://github.com/4matic/trackparse/commit/785eeed1933d799f7f6a5f4edcb438e74bf6b976))
+* the label field, junk kind note and the format label option in every README; fixture counts ([a6f19dd](https://github.com/4matic/trackparse/commit/a6f19dd4583784288f3ca126be05f5617e4e0637))
+
 ## [0.7.1](https://github.com/4matic/trackparse/compare/spec-v0.7.0...spec-v0.7.1) (2026-11-15)
 
 
