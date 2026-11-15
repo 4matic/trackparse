@@ -1,0 +1,35 @@
+# The style of c/ (C11 sources, the C++ header and tests): 2-space indent, 100 columns, braces
+# on the same line, `T *p`, case labels at the switch's level, includes left in written order.
+# Meant for clang-format 13 or newer (--dry-run --Werror) over src/, include/, tests/, tools/,
+# wire/, examples/ and fuzz/; leave out the generated src/data_gen.* and src/unicode_gen.*.
+---
+Language: Cpp
+BasedOnStyle: LLVM
+IndentWidth: 2
+ContinuationIndentWidth: 4
+ColumnLimit: 100
+UseTab: Never
+BreakBeforeBraces: Attach
+PointerAlignment: Right
+DerivePointerAlignment: false
+IndentCaseLabels: false
+AllowShortFunctionsOnASingleLine: All
+AllowShortIfStatementsOnASingleLine: WithoutElse
+AllowShortLoopsOnASingleLine: true
+AllowShortBlocksOnASingleLine: Never
+AllowShortCaseLabelsOnASingleLine: false
+AlignAfterOpenBracket: Align
+AlignEscapedNewlines: Right
+AlignTrailingComments: true
+BinPackArguments: true
+BinPackParameters: true
+Cpp11BracedListStyle: true
+SpaceAfterCStyleCast: false
+SortIncludes: Never
+IncludeBlocks: Preserve
+ReflowComments: true
+MaxEmptyLinesToKeep: 1
+KeepEmptyLinesAtTheStartOfBlocks: false
+FixNamespaceComments: true
+NamespaceIndentation: None
+Standard: c++17

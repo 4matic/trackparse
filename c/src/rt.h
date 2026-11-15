@@ -40,10 +40,25 @@
 #include <stdint.h>
 #include <string.h>
 
+/* In the amalgamation (scripts/amalgamate.mjs) every internal name is static, and a given
+ * configuration may never call some of them: the unused attribute keeps GCC and Clang quiet
+ * about that, and MSVC's matching /W4 warning (C4505, unreferenced function removed) is turned
+ * off for the amalgamation. TP_PRIVATE_DATA declares a generated table in data_gen.h /
+ * unicode_gen.h (their own fallback definition is guarded by #ifndef, so this one wins). */
+#if defined(__GNUC__) || defined(__clang__)
+#define TP_UNUSED __attribute__((unused))
+#else
+#define TP_UNUSED
+#endif
+#if defined(TRACKPARSE_AMALGAMATION) && defined(_MSC_VER)
+#pragma warning(disable : 4505)
+#endif
 #ifdef TRACKPARSE_AMALGAMATION
-#define TP_PRIVATE static
+#define TP_PRIVATE static TP_UNUSED
+#define TP_PRIVATE_DATA static TP_UNUSED
 #else
 #define TP_PRIVATE
+#define TP_PRIVATE_DATA extern
 #endif
 
 #if defined(_MSC_VER)

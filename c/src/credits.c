@@ -137,7 +137,7 @@ TP_PRIVATE tp_list_result tp_split_credits(const tp_skel *input, const tp_list_o
   ptrdiff_t start = 0;
   while (start <= n) {
     ptrdiff_t known, end, pos;
-    tp_joiner_hit hit;
+    tp_joiner_hit hit = {0};
     bool found;
     tp_skel piece;
     tp_raw_name r;

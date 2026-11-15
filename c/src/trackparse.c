@@ -342,7 +342,7 @@ static void *guarded_result(work_fn work, void *arg) {
 typedef void (*fill_fn)(rb *b, void *top, const void *src);
 
 /* The result block for src: measure, take the block, fill it. Sets c->result. */
-static void build(call *c, size_t top_size, fill_fn fill, const void *src) {
+static void rb_build(call *c, size_t top_size, fill_fn fill, const void *src) {
   rb *b = &c->b;
   void *top;
   char *block;
@@ -1212,7 +1212,7 @@ static void work_parse(call *c, void *arg) {
   } else {
     t = tp_api_parse(a->input);
   }
-  build(c, sizeof(trackparse_track), fill_track_top, &t);
+  rb_build(c, sizeof(trackparse_track), fill_track_top, &t);
 }
 
 static void work_parse_artists(call *c, void *arg) {
@@ -1225,7 +1225,7 @@ static void work_parse_artists(call *c, void *arg) {
   } else {
     list = tp_api_parse_artists(a->input);
   }
-  build(c, sizeof(trackparse_artists), fill_artists_top, &list);
+  rb_build(c, sizeof(trackparse_artists), fill_artists_top, &list);
 }
 
 static parse_arg parse_arg_of(const char *s, size_t len) {
@@ -1268,7 +1268,7 @@ TRACKPARSE_API void trackparse_artists_free(trackparse_artists *a) { free_result
 TRACKPARSE_API void trackparse_string_free(trackparse_string *s) { free_result(s); }
 
 static void build_string(call *c, tp_str s) {
-  build(c, sizeof(trackparse_string), fill_string_top, &s);
+  rb_build(c, sizeof(trackparse_string), fill_string_top, &s);
 }
 
 typedef struct format_arg {
@@ -1309,7 +1309,7 @@ TRACKPARSE_API trackparse_string *trackparse_normalize(const char *s, size_t len
 static void work_all_artists(call *c, void *arg) {
   tp_track t = int_track_or_empty((const trackparse_track *)arg);
   tp_artist_vec list = tp_api_all_artists(&t);
-  build(c, sizeof(trackparse_artists), fill_artists_top, &list);
+  rb_build(c, sizeof(trackparse_artists), fill_artists_top, &list);
 }
 
 TRACKPARSE_API trackparse_artists *trackparse_all_artists(const trackparse_track *t) {
@@ -1419,7 +1419,7 @@ static void work_tracklist(call *c, void *arg) {
   const tracklist_arg *a = (const tracklist_arg *)arg;
   tp_tracklist l = a->o != NULL ? tp_api_parse_tracklist_with(a->text, a->o)
                                  : tp_api_parse_tracklist(a->text);
-  build(c, sizeof(trackparse_tracklist), fill_tracklist_top, &l);
+  rb_build(c, sizeof(trackparse_tracklist), fill_tracklist_top, &l);
 }
 
 TRACKPARSE_API trackparse_tracklist *trackparse_parse_tracklist(const char *s, size_t len) {
@@ -1599,7 +1599,7 @@ static void work_apply(call *c, void *arg) {
   const tp_edit *edits = a->e != NULL ? a->e->v.p : NULL;
   size_t n = a->e != NULL ? a->e->v.n : 0;
   tp_edit_result r = tp_api_apply_edits_with(a->text, edits, n, NULL);
-  build(c, sizeof(trackparse_edit_result), fill_edit_result_top, &r);
+  rb_build(c, sizeof(trackparse_edit_result), fill_edit_result_top, &r);
 }
 
 TRACKPARSE_API trackparse_edit_result *trackparse_apply_edits(const char *s, size_t len,

@@ -54,7 +54,7 @@ TP_PRIVATE const tp_phrase_table *tp_marker_table(tp_strvec base, tp_strvec extr
   return t;
 }
 
-static const tp_str *str_ptr(tp_str s) {
+static const tp_str *tables_str_ptr(tp_str s) {
   tp_str *p = tp_alloc(sizeof *p);
   *p = s;
   return p;
@@ -65,7 +65,7 @@ TP_PRIVATE const tp_phrase_table *tp_kind_table(const tp_kv_vec *entries, size_t
   tp_phrase_table *t = tp_new_phrase_table();
   for (size_t l = 0; l < count; l++) {
     for (size_t i = 0; i < entries[l].n; i++) {
-      tp_phrase_table_add(t, entries[l].p[i].key, str_ptr(entries[l].p[i].value));
+      tp_phrase_table_add(t, entries[l].p[i].key, tables_str_ptr(entries[l].p[i].value));
     }
   }
   return t;
@@ -146,7 +146,7 @@ TP_PRIVATE tp_tables *tp_build_tables(const tp_keyword_lists *kw) {
     tp_kv_vec capable = tp_data_entries(tp_data_version_keywords_type_capable_modifiers,
                                         TP_DATA_VERSION_KEYWORDS_TYPE_CAPABLE_MODIFIERS_N);
     for (size_t i = 0; i < capable.n; i++) {
-      note(&notes, capable.p[i].key)->type_capable = str_ptr(capable.p[i].value);
+      note(&notes, capable.p[i].key)->type_capable = tables_str_ptr(capable.p[i].value);
     }
   }
   tp_clone(descriptors,
@@ -157,12 +157,12 @@ TP_PRIVATE tp_tables *tp_build_tables(const tp_keyword_lists *kw) {
   }
   for (size_t i = 0; i < descriptors.n; i++) {
     tp_str d = descriptors.p[i];
-    const tp_str *value = str_ptr(tp_js_trim(tp_ascii_lower(d)));
+    const tp_str *value = tables_str_ptr(tp_js_trim(tp_ascii_lower(d)));
     note(&notes, d)->descriptor = value;
   }
   for (size_t i = 0; i < genres.n; i++) note(&notes, genres.p[i])->genre = true;
   for (size_t i = 0; i < head_entries.n; i++) {
-    note(&notes, head_entries.p[i].key)->head = str_ptr(head_entries.p[i].value);
+    note(&notes, head_entries.p[i].key)->head = tables_str_ptr(head_entries.p[i].value);
   }
   run_words = tp_new_phrase_table();
   for (size_t i = 0; i < notes.keys.n; i++) {
