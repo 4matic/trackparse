@@ -1143,9 +1143,13 @@ Version rules:
   and release notes; the module itself was published by the tag) or `-f c_tag=c-vX.Y.Z` (builds
   the C files again and uploads only the ones that are missing). The npm job always republishes from a fresh release; a
   failed npm publish needs the same treatment by hand.
-- **Things the 0.5.0 and 0.6.0 releases taught:**
+- **Things the 0.5.0, 0.6.0 and 0.7.0 releases taught:**
   - The release PR is opened with `GITHUB_TOKEN`, so no CI runs on it and GitHub shows it as
-    `UNSTABLE`. That is expected; `main` was green when it was generated.
+    `UNSTABLE`. That is expected; `main` was green when it was generated. It also means a test
+    whose expected output holds the version passes on `main` and fails only in the publish job,
+    after the tags exist: `c/examples/json.expected` held `0.6.1`, and `publish-c` for
+    `c-v0.7.0` stopped with no files attached. Write `@TRACKPARSE_VERSION@` in an expected file
+    (`run_example.cmake` and `consumer_check.cmake` fill in `c/VERSION`), never a version.
   - A `docs:` commit under `js/`, `python/`, `rust/`, `go/` or `c/` (a package README) opens a release PR. A
     commit that touches only the root README, `AGENTS.md`, `site/` or `.github/` does not.
   - A component's first changelog lists every commit that ever touched its folder, because there
