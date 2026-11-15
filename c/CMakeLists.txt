@@ -13,7 +13,7 @@
 #   TRACKPARSE_INSTALL   install rules (default ON at top level); see cmake/package.cmake
 cmake_minimum_required(VERSION 3.16)
 
-project(trackparse VERSION 0.8.0 LANGUAGES C) # x-release-please-version
+project(trackparse VERSION 0.8.1 LANGUAGES C) # x-release-please-version
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
