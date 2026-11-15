@@ -143,6 +143,9 @@ type FormatOptions struct {
 	OmitProducers bool
 	// Position writes the position in front.
 	Position bool
+	// OmitLabel leaves out the record label after the title, " • " + label (R11.3; the
+	// JavaScript option label: false).
+	OmitLabel bool
 }
 
 // TracklistOptions are the options of [ParseTracklistWith] and [ApplyEditsWith] (R13.10). The
@@ -283,6 +286,7 @@ type resolvedFormat struct {
 	versions   bool
 	producers  bool
 	position   bool
+	label      bool
 }
 
 // resolvedTracklist are tracklist options after the R13.10 fallbacks.
@@ -463,6 +467,7 @@ func resolveFormat(o *FormatOptions) resolvedFormat {
 		versions:  o.Versions == "" || o.Versions == VersionsAll,
 		producers: !o.OmitProducers,
 		position:  o.Position,
+		label:     !o.OmitLabel,
 	}
 	switch o.Feat {
 	case "", FeatSource:
@@ -651,7 +656,7 @@ func resolveFormatJSON(o jsonValue) resolvedFormat {
 		}
 		return v, true
 	}
-	r := resolvedFormat{versions: true, producers: true}
+	r := resolvedFormat{versions: true, producers: true, label: true}
 	if f, ok := get("feat"); ok {
 		switch {
 		case f.kind == jsonString && f.str == "source":
@@ -680,6 +685,9 @@ func resolveFormatJSON(o jsonValue) resolvedFormat {
 	}
 	if p, ok := get("position"); ok {
 		r.position = truthy(p)
+	}
+	if l, ok := get("label"); ok {
+		r.label = truthy(l)
 	}
 	return r
 }

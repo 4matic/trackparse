@@ -111,6 +111,8 @@ var (
 	propTitles   = []string{"Tentacles", "Bruises", "Out the Blue", "Dead Limit", "Stigma", "Blind Faith"}
 	propRemixers = []string{"Skrillex", "Magnetude", "Wilkinson", "Break"}
 	propJoiners  = []string{" & ", ", ", " x ", " vs. "}
+	// propLabels are R8.7 record labels after a spaced bullet.
+	propLabels = []string{"VISION", "HOSPITAL", "GEMINI GEMINI", "SIX EIGHT", "Ø"}
 )
 
 // trackString is a track-shaped input for the metamorphic and round-trip properties.
@@ -131,6 +133,9 @@ func (r *rng) trackString() string {
 	s += " - " + r.pick(propTitles)
 	if r.chance(50) {
 		s += " (" + r.pick(propRemixers) + " Remix)"
+	}
+	if r.chance(50) {
+		s += " • " + r.pick(propLabels)
 	}
 	return s
 }
@@ -345,6 +350,7 @@ func formatOptionsFrom(r *rng, s string) FormatOptions {
 		Versions:      VersionsOption(r.pick([]string{"", "all", "none", "x"})),
 		OmitProducers: r.chance(30),
 		Position:      r.chance(50),
+		OmitLabel:     r.chance(30),
 	}
 }
 
@@ -368,14 +374,21 @@ func checkNoiseInsensitive(tb testing.TB, s string, cut int) {
 	}
 }
 
-// shape is what R11.6 promises to keep: names with roles, the title, and each version's type
-// and names.
-func shape(t *Track) string {
+// shape is what R11.6 promises to keep: names with roles, the title, each version's type and
+// names, and the label. Without withTitle the title and the label are left out (R11.6: a label
+// counts only when the formatted string has an artist part).
+func shape(t *Track, withTitle bool) string {
 	var b strings.Builder
 	for _, a := range t.Artists {
 		fmt.Fprintf(&b, "%s/%s;", a.Name, a.Role)
 	}
-	fmt.Fprintf(&b, "|%s|", t.Title)
+	if withTitle {
+		label := "<nil>"
+		if t.Label != nil {
+			label = *t.Label
+		}
+		fmt.Fprintf(&b, "|%s|%s|", t.Title, label)
+	}
 	for _, v := range t.Versions {
 		fmt.Fprintf(&b, "%s:", v.Type)
 		for _, a := range v.Artists {
@@ -395,7 +408,12 @@ func checkRoundTrip(tb testing.TB, s string) {
 	}
 	formatted := Format(first)
 	second := Parse(formatted)
-	if a, b := shape(&first), shape(&second); a != b {
+	// R11.6: the label (and the title) only count when the formatted string has an artist part.
+	artistPart := slices.ContainsFunc(first.Artists, func(a Artist) bool {
+		return a.Role == RolePrimary || (a.Role == RoleFeatured && a.Source == SourceArtist)
+	})
+	both := artistPart || first.Label == nil
+	if a, b := shape(&first, both), shape(&second, both); a != b {
 		tb.Fatalf("round trip %q -> %q:\n%s\n%s", s, formatted, a, b)
 	}
 }
@@ -406,7 +424,7 @@ func contentWords(normalized string) []string {
 	var out []string
 	for _, w := range strings.FieldsFunc(normalized, isWhitespace) {
 		switch w {
-		case "-", "&", "x", "vs.", "feat.":
+		case "-", "&", "x", "vs.", "feat.", "•": // R8.7: a spaced bullet is a separator
 			continue
 		}
 		w = strings.Trim(w, "()[],.")
@@ -430,6 +448,9 @@ func outputStrings(t *Track) []string {
 	}
 	for _, j := range t.Junk {
 		out = append(out, j.Raw)
+	}
+	if t.Label != nil {
+		out = append(out, *t.Label)
 	}
 	if t.Position != nil {
 		out = append(out, t.Position.Raw)

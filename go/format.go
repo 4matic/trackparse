@@ -152,6 +152,10 @@ func formatTrack(track *Track, o resolvedFormat) string {
 		}
 		pieces = append(pieces, "("+marker+" "+joinNames(producers, &o, t)+")")
 	}
+	// R11.3: the label after a spaced bullet (R8.7).
+	if o.label && track.Label != nil && *track.Label != "" {
+		pieces = append(pieces, string(bullet)+" "+*track.Label)
+	}
 	titlePart := strings.Join(pieces, " ")
 
 	// R11.4

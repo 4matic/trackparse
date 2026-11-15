@@ -111,6 +111,9 @@ func typedFormat(o jsonValue) FormatOptions {
 	if p, ok := given(o, "position"); ok {
 		out.Position = truthy(p)
 	}
+	if l, ok := given(o, "label"); ok {
+		out.OmitLabel = !truthy(l)
+	}
 	return out
 }
 
@@ -156,7 +159,7 @@ func equalResolved(a, b resolvedOptions) bool {
 
 func equalFormat(a, b resolvedFormat) bool {
 	return a.feat == b.feat && a.canonical == b.canonical && a.versions == b.versions &&
-		a.producers == b.producers && a.position == b.position &&
+		a.producers == b.producers && a.position == b.position && a.label == b.label &&
 		(a.featMarker == nil) == (b.featMarker == nil) &&
 		(a.featMarker == nil || *a.featMarker == *b.featMarker)
 }
@@ -196,6 +199,8 @@ var looseFormatOptions = []string{
 	`{"versions":"bogus"}`, `{"versions":""}`, `{"versions":null}`, `{"versions":"all"}`,
 	`{"producers":false,"position":true}`, `{"producers":0,"position":"x"}`,
 	`{"producers":null,"position":null}`, `{"producers":"","position":[]}`,
+	`{"label":false}`, `{"label":true}`, `{"label":0}`, `{"label":null}`, `{"label":""}`,
+	`{"label":"x"}`, `{"label":[]}`,
 }
 
 func TestTypedOptionsExpressLooseJSON(t *testing.T) {

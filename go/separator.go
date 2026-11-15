@@ -98,6 +98,9 @@ type separatorInput struct {
 	// listContext is the R13.4.2 list context (internal, set only by the tracklist module): it
 	// enables the R6.10 tight "letter-Uppercase" dash in tracklist mode.
 	listContext bool
+	// bulletHead is R8.7: skel is the head before a bullet suffix. Its first spaced dash always
+	// separates, as in R6.10 (no R6.2 peeling), in every mode.
+	bulletHead bool
 }
 
 // splitParts is an artist side (nil when empty) and a title side.
@@ -127,7 +130,8 @@ func resultOf(parts splitParts, p []peeled) separatorResult {
 }
 
 // firstDashSplit is R6.3: the first segment is the artist side, the rest (up to the last kept
-// one) the title.
+// one) the title. R6.10 and R8.7 call it on the unpeeled segments, where the first spaced dash
+// always separates (R8.2 still peels later suffixes on the title side).
 func firstDashSplit(sk skel, segments []segment) (splitParts, bool) {
 	if len(segments) < 2 {
 		return splitParts{}, false
@@ -146,8 +150,13 @@ func findSeparator(in separatorInput, c *ctx) separatorResult {
 	sk := in.skel
 	mode := in.mode
 	segments := splitAtSpacedDashes(&sk, true)
+	if mode == ModeTracklist || in.bulletHead {
+		if parts, ok := firstDashSplit(sk, segments); ok {
+			return resultOf(parts, nil)
+		}
+	}
 	if mode == ModeTracklist {
-		return tracklistSeparator(sk, segments, in.listContext, c)
+		return tracklistSeparator(segments[0].skel, in.listContext, c)
 	}
 	remaining, p := peelSuffixes(segments, false, c)
 
@@ -175,18 +184,10 @@ func findSeparator(in separatorInput, c *ctx) separatorResult {
 	return separatorResult{artist: artist, title: rest, split: false, peeled: p}
 }
 
-// tracklistSeparator is R6.10, tracklist mode. The first spaced dash always separates (no R6.2
-// peeling; R8.2 still peels later suffixes on the title side). Without one: R6.4, then the
-// first "_-_", then (list context only) the last tight "letter-Uppercase" dash; both of these
-// warn unspacedDashSplit.
-func tracklistSeparator(sk skel, segments []segment, listContext bool, c *ctx) separatorResult {
-	if parts, ok := firstDashSplit(sk, segments); ok {
-		return resultOf(parts, nil)
-	}
-	rest := sliceSkel(&sk, 0, 0)
-	if len(segments) > 0 {
-		rest = segments[0].skel
-	}
+// tracklistSeparator is R6.10, tracklist mode without a spaced dash (firstDashSplit handles
+// one): R6.4, then the first "_-_", then (list context only) the last tight "letter-Uppercase"
+// dash; both of these warn unspacedDashSplit.
+func tracklistSeparator(rest skel, listContext bool, c *ctx) separatorResult {
 	if asym, ok := asymmetricDash(rest.text); ok {
 		c.warn(WarningAsymmetricDashSplit)
 		return resultOf(splitAt(rest, asym, asym+1), nil)

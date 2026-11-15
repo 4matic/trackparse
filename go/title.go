@@ -312,3 +312,104 @@ func cleanupTitle(raw string) string {
 	}
 	return title
 }
+
+// ---------------------------------------------------------------------------------------------
+// R8.7 Bullet suffix
+
+// bulletSuffix is what R8.7 cuts off the working skeleton.
+type bulletSuffix struct {
+	// head is the working skeleton before the first cut, trimmed (R8.7.3).
+	head skel
+	// label is the record label, or nil.
+	label *string
+	// junk is the junk from the tail segments, with their positions in the normalized string
+	// (R9.7).
+	junk []positionedJunk
+}
+
+// bulletSegments is R8.7.1–R8.7.2: the head and tail segments when the rule fires, else false.
+// It cuts at every spaced bullet after the first spaced dash D, which must have text before it
+// and after it.
+func bulletSegments(sk *skel) ([]skel, bool) {
+	t := sk.text
+	if at(t, 0) == '-' && at(t, 1) == ' ' {
+		return nil, false // R6.1: D at the start, nothing before it
+	}
+	dash := -1
+	for i := 1; i+1 < len(t); i++ {
+		if isSpacedDashAt(t, i) {
+			dash = i
+			break
+		}
+	}
+	if dash < 0 {
+		return nil, false
+	}
+	var parts []skel
+	start := 0
+	for i := dash + 2; i+1 < len(t); i++ {
+		if !isSpacedBulletAt(t, i) {
+			continue
+		}
+		part := sliceSkel(sk, start, i)
+		parts = append(parts, trimSkel(&part))
+		start = i + 1
+	}
+	if len(parts) == 0 {
+		return nil, false
+	}
+	last := sliceFrom(sk, start)
+	parts = append(parts, trimSkel(&last))
+	for _, p := range parts {
+		if p.isEmpty() {
+			return nil, false
+		}
+	}
+	// R8.7.2: the title part between D and the first bullet counts as a segment ("A - • L").
+	if parts[0].len() <= dash+1 {
+		return nil, false
+	}
+	return parts, true
+}
+
+// cutBulletSuffix is R8.7: cut a bullet suffix off the working skeleton (after R2 and R4,
+// before R6). False when the rule does not fire.
+func cutBulletSuffix(sk *skel, c *ctx) (bulletSuffix, bool) {
+	parts, ok := bulletSegments(sk)
+	if !ok {
+		return bulletSuffix{}, false
+	}
+	var junk []positionedJunk
+	var label *string
+	for i := 1; i < len(parts); i++ {
+		part := parts[i]
+		// R8.7.4: junk groups go to junk; every other group stays verbatim.
+		removed := map[int]struct{}{}
+		for _, ig := range groupsOf(&part) {
+			g := ig.group
+			kind, isJunk := junkKindOf(splitWords(g.inner), c)
+			if !isJunk {
+				continue
+			}
+			junk = append(junk, positionedJunk{raw: g.inner, kind: JunkKind(kind), pos: g.pos})
+			removed[g.pos] = struct{}{}
+		}
+		kept := removeGroups(&part, removed)
+		rest := trimSkel(&kept)
+		if rest.isEmpty() {
+			continue
+		}
+		text := collapseSpaces(renderSkel(&rest))
+		pos := startPos(&rest, 0)
+		// R8.7.4: only junk phrases, connectors and year words (no genres, no label suffixes).
+		// JS truthiness: an empty kind (possible through keywords.junk) does not count.
+		if kind, isJunk := phraseKindOf(splitWords(text), c.t.junkPhrases, c); isJunk && kind != "" {
+			junk = append(junk, positionedJunk{raw: text, kind: JunkKind(kind), pos: pos})
+		} else if label == nil {
+			label = &text
+		} else {
+			junk = append(junk, positionedJunk{raw: text, kind: JunkKindNote, pos: pos})
+		}
+	}
+	return bulletSuffix{head: parts[0], label: label, junk: junk}, true
+}
