@@ -170,18 +170,17 @@ go get github.com/4matic/trackparse/go@latest
 C and C++ ([library README](c/README.md)). C11 (C++17 for the wrapper `trackparse.hpp`), no
 dependencies beyond libc, `libm` and threads. Each release attaches a source tarball for CMake and
 a single-file amalgamation to its [GitHub Release](https://github.com/4matic/trackparse/releases)
-(tags `c-vX.Y.Z`, from 0.7.0):
+(tags `c-vX.Y.Z`, from 0.7.1):
 
 ```cmake
 include(FetchContent)
 FetchContent_Declare(trackparse
-  URL https://github.com/4matic/trackparse/releases/download/c-v0.7.0/trackparse-c-0.7.0.tar.gz)
+  URL https://github.com/4matic/trackparse/releases/download/c-v0.7.1/trackparse-c-0.7.1.tar.gz)
 FetchContent_MakeAvailable(trackparse)
 target_link_libraries(app PRIVATE trackparse::trackparse)
 ```
 
-0.7.0 is not out yet; until the releases page lists `c-v0.7.0`, build from a clone as in
-[the C README](c/README.md#from-source).
+To build from a clone instead, see [the C README](c/README.md#from-source).
 
 ## Quick start
 
