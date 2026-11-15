@@ -62,6 +62,7 @@ present (use `null` / `[]` / `false`, never omit).
       "modifiers": [], "descriptor": null, "year": null, "unknownArtist": false, "delimiter": "(" }
   ],
   "year": null,
+  "label": null,
   "flags": { "explicit": false, "clean": false, "unknownArtist": false, "unknownTitle": false },
   "junk": [{ "raw": "Official Video", "kind": "video" }],
   "warnings": []
@@ -79,8 +80,9 @@ present (use `null` / `[]` / `false`, never omit).
 | `fullTitle` | `title` + every version re-attached in order with its original delimiter (R9.4). |
 | `versions` | Every recognised version/remix group or dash suffix, left to right (R5.7). |
 | `year` | The first year in text order from a bare year group `(2015)`, a year-only dash suffix or a dropped year-only credit name (R7.5). Versions carry their own `year`. |
+| `label` | The record label written after a spaced bullet on the title side (R8.7): `Age Of Spin • WEAREHUMANS` → `"WEAREHUMANS"`. As written after R1, case kept, no lookup. `null` when there is none. Not the junk kind `label` (R5.1), which is a label name in brackets such as `[NCS Release]`. |
 | `flags` | `explicit`, `clean` (R5.4); `unknownArtist`, `unknownTitle` (R7.5, R8.6). |
-| `junk` | Removed noise with a `kind`, in text order (position in the normalized string, not removal order). |
+| `junk` | Removed text that is not part of the track's identity (noise, promo text, platform names, a bracketed label, notes after a label), with a `kind`, in text order (position in the normalized string, not removal order). Kinds: `video`, `audio`, `lyrics`, `quality`, `promo`, `platform`, `label`, `genre`, `other`, `note` (R8.7). |
 | `warnings` | Stable codes flagging heuristics that fired (list in schema). Order of first emission, no duplicates. |
 
 ### Artist
@@ -160,7 +162,8 @@ All later rules operate on the normalized string. `input` in the output is the o
      case-insensitive).
   2. `youtube` — any of: a platform suffix matches (R2.2); a top-level ` | ` exists (outside groups);
      any top-level group classifies as junk (R5.1, excluding `genre`); the string ends with an
-     unbracketed junk phrase (R8.4 test).
+     unbracketed junk phrase (R8.4 test). These tests see the whole string, including a bullet
+     suffix (R8.7): `A - T • OUT NOW` and `A - T • L [Official Video]` resolve to `youtube`.
   3. `clean` otherwise.
 
   `auto` never resolves to `tracklist`; that mode is only used when asked for (R13.6).
@@ -299,7 +302,9 @@ this order. Applied to **every** top-level group on both sides, and (where noted
 
 ## R6 Artist/title separator
 
-Operates on the skeleton of the working string (after R2, R4).
+Operates on the skeleton of the working string (after R2, R4). When R8.7 cuts a bullet suffix,
+R6 sees only the head, and splits it at its first spaced dash as R6.3 does, without the R6.2
+peel of the segment after that dash (the R6.10 behaviour, in every mode).
 
 - **R6.1 Spaced dashes.** A *spaced dash* is `-` with a space immediately on both sides; the start
   of the string counts as a space (so a leading `- Title` has an empty `s0`). Split the skeleton at
@@ -439,6 +444,42 @@ warns `noSeparator` (`Hey Jude - Remastered 2015`).
   `"` or `'` around the entire title; strip leading/trailing lone `-` or `|` left behind.
 - **R8.6 Unknown title.** If the final title is an unknown token (`ID`, `???`, `Untitled`…), keep it
   as the title and set `flags.unknownTitle`.
+- **R8.7 Bullet suffix.** Runs on the skeleton of the working string after R2 and R4, before R6.
+  A *spaced bullet* is U+2022 `•` with a space on both sides (after R1.6 every whitespace run is
+  one U+0020; the ends of the string do not count). Group contents are placeholders in the
+  skeleton, so a bullet inside a group never counts. R1 maps no other character to U+2022:
+  `·` (U+00B7), `∙` (U+2219) and `●` (U+25CF) are not bullets.
+  1. *Trigger.* Let D be the first spaced dash (R6.1). The rule fires only when D exists, the text
+     before D is not empty, and at least one spaced bullet comes after D. Bullets before D stay
+     where they are (`Noisia • Phace - Stigma • VISION` → artist `Noisia • Phace`). Without D
+     nothing happens (`Intro • VISION`, `Noisia | Stigma • VISION`, `Noisia -Stigma • VISION`).
+  2. *Cut.* Split at every spaced bullet after D into the *head* and the tail segments, each
+     trimmed. If any segment is empty, the rule does not fire (`Stigma •  • VISION`). The title
+     part between D and the first bullet counts as a segment: `A - • L` does not fire (artist
+     `A`, title `• L`, as without the rule).
+  3. *Head.* From here on the head is the working string: R6 splits it at D (see the R6 intro),
+     and R7, R8.1–R8.6 and R9 take credits, versions, junk, flags and the year from it only.
+     `WHO (K-LONE VIP) • IAMSIAM` → title `WHO`, version `K-LONE VIP`.
+  4. *Tail.* Each tail segment, in text order:
+     - top-level groups in it that classify as Junk (R5.1) are removed and pushed to `junk`;
+       every other group stays in the text verbatim (`HOSPITAL (2024)` sets no `year`);
+     - if the text left is empty, the segment is done: its groups are already junk
+       (`• [Official Video]` → junk video, nothing else);
+     - if the text left is made only of junk phrases (`data/junk.json#phrases`), connector
+       tokens and year words, with at least one phrase (the R5.1 tokenization without genres and
+       without the label-suffix rule), it is pushed to `junk` with the kind of its first phrase
+       (`• FREE DOWNLOAD` → promo);
+     - otherwise the first such segment becomes `label` (whitespace collapsed, case kept) and
+       every later one is pushed to `junk` with kind `note`
+       (`concussion • VISION • VISION RADIO RELOAD` → label `VISION`, note
+       `VISION RADIO RELOAD`).
+
+     A tail segment is never scanned for versions, feat or producer markers or years. When every
+     segment became junk, `label` is `null` and the head is still the working string. Junk from
+     the tail takes its position in the normalized string (R9.7).
+
+  The rule applies in every mode, `tracklist` included. A bullet inside a title (`Song • Part 2`)
+  is read as a label too.
 
 ## R9 Assembly and dedup
 
@@ -484,7 +525,7 @@ Title-like groups (versions, unknown) stay part of names verbatim.
 ## R11 format
 
 `format(track, options)` → string. Defaults: `feat: "source"`, `joiners: "original"`,
-`versions: "all"`, `producers: true`, `position: false`.
+`versions: "all"`, `producers: true`, `position: false`, `label: true`.
 
 - **R11.1 Artist string.** Primary credits joined by their joiners: spaced joiners render as
   `" " + joiner + " "`, tight joiners as the raw character + `" "` (`", "`, `"; "`). Joiner `null`
@@ -495,14 +536,18 @@ Title-like groups (versions, unknown) stay part of names verbatim.
   featured in the artist string, `"title"` all into the title group, `"omit"` drops them.
   `featMarker` overrides the first featured joiner.
 - **R11.3 Title.** `title`, then title-featured group, then versions (R9.4 rendering) if
-  `versions: "all"`, then ` (<producer marker> names)` when `producers` and producers exist.
+  `versions: "all"`, then ` (<producer marker> names)` when `producers` and producers exist,
+  then `" • " + label` when `label` (default `true`) and the track has a label. Notes are junk and
+  are not written.
 - **R11.4 Result.** `artists + " - " + title-part` when there are any artist-string credits,
   else the title part. `position: true` prefixes `"<raw>. "`.
 - **R11.5 canonical joiners** map raw joiners through `data/joiners.json` `canonical` (so `;` → `,`,
   rendered `", "`); feat markers become `featCanonical` (`feat.`). `with` between primaries stays
   `with`; it becomes `feat.` only as the marker that starts a featured list.
 - **R11.6 Round-trip.** `parse(format(parse(s)))` equals `parse(s)` on `artists` (name, role),
-  `title`, and `versions` (type, artists' names) whenever `parse(s)` produced no warnings.
+  `title`, `versions` (type, artists' names) and `label` whenever `parse(s)` produced no warnings
+  and, if it has a label, the formatted string has an artist part (R11.4). Without one,
+  `ID - T • L` formats to `T • L`, which has no separator, so R8.7 does not fire on it.
 
 ## R12 Options
 
@@ -633,7 +678,8 @@ Nothing is ever dropped.
   note), and `00:00 Intro-Outro` is a marker, not `Intro` / `Outro`.
   "Contains a spaced dash" is tested on the skeleton R6 searches for the track part, i.e. after
   R1, R2 and R4 (R6.1), not on `raw`: the ` - ` in a gap (`00:00 - Intro`) or one consumed by a
-  position (`01 - Title`) does not count.
+  position (`01 - Title`) does not count. A bullet suffix (R8.7) does not change the answer: it
+  is cut only after a spaced dash, so the head has one exactly when the skeleton has one.
 
 ### R13.5 Bare positions
 
@@ -847,7 +893,8 @@ Property tests in every port assert:
    non-producer entries in `artists` share a dedup key, and no two producer entries do.
 6. **Conservation.** Every word of `normalize(input)` — minus separators, joiners, feat/producer
    markers and bracket characters — appears in some output string field (title, artist names,
-   version raw, junk raw, position/timestamp raw, uploader not counted).
+   version raw, junk raw, `label`, position/timestamp raw, uploader not counted). A spaced bullet
+   (R8.7) counts as a separator.
 7. **Metamorphic** (on generated inputs without warnings):
    - prefixing `01. ` only sets `position`;
    - appending ` (Official Video)` only adds a junk entry (and may change `mode` to youtube);
@@ -862,6 +909,9 @@ Tracklists (R13) have their own invariants: R13.11.
 - **Working string** — the normalized input after R2 stripping.
 - **Skeleton** — working string with top-level groups replaced by placeholders (R3.4).
 - **Credit list** — a substring that R7.3 splits into names.
+- **Spaced bullet** — U+2022 with a space on both sides, outside every group (R8.7).
+- **Bullet suffix** — the text after the first spaced bullet that follows the artist/title
+  dash: a label and notes (R8.7).
 - **Word key** — R0.3.
 - **Dedup key** — R0.4.
 - **Line text** — a tracklist line's `rest` without its emphasis markers and a layered prefix

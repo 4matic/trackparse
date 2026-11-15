@@ -15,6 +15,7 @@
     "fullTitle",
     "versions",
     "year",
+    "label",
     "flags",
     "junk",
     "warnings"
@@ -110,6 +111,18 @@
           "maximum": 2099
         }
       ]
+    },
+    "label": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "string",
+          "minLength": 1
+        }
+      ],
+      "description": "The record label written after a spaced bullet on the title side (R8.7), as written after R1. Not the junk kind label (R5.1)."
     },
     "flags": {
       "type": "object",
@@ -302,7 +315,8 @@
             "platform",
             "label",
             "genre",
-            "other"
+            "other",
+            "note"
           ]
         }
       }
