@@ -639,7 +639,7 @@ trackparse_version_type vt;
 if (trackparse_version_type_from_name("remix", TRACKPARSE_NUL_TERMINATED, &vt)) {
   printf("%d\n", vt == TRACKPARSE_VERSION_REMIX);   // 1
 }
-printf("%d\n", TRACKPARSE_VERSION_NIGHTCORE + 1);   // 27
+printf("%d\n", TRACKPARSE_VERSION_TYPE_COUNT);   // 27
 ```
 
 The values of each enum are in the spec's order, so the last one plus one is the count. A later
