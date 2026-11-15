@@ -823,8 +823,8 @@ const listExamples: { label: string; title: string; text: string }[] = [
     for (const x of document.querySelectorAll<HTMLElement>("[data-lang]"))
       x.setAttribute("aria-pressed", String(x.dataset.lang === lang));
     const p = PACKAGE[lang];
-    // Before 0.7.0 there is no C release yet, so the FetchContent URL answers 404.
-    const pending = lang === "c" && !C_RELEASED ? " (from 0.7.0, not released yet)" : "";
+    // Before 0.7.1 there is no C release yet, so the FetchContent URL answers 404.
+    const pending = lang === "c" && !C_RELEASED ? " (from 0.7.1, not released yet)" : "";
     const html =
       `<span>Install: <code>${escapeHtml(p.install)}</code>${pending}</span>` +
       `<a href="${base}/start/getting-started/">Getting started</a>` +
