@@ -24,7 +24,8 @@ The resolved mode is in `track.mode`, so you can always see which one ran. You p
 which has no `Auto`. In Go both are the string type [`Mode`](https://pkg.go.dev/github.com/4matic/trackparse/go#Mode):
 [`trackparse.ModeAuto`](https://pkg.go.dev/github.com/4matic/trackparse/go#ModeAuto) (`"auto"`) asks for auto, an empty `Mode` in `ParseOptions`
 means auto too, and `Track.Mode` is never `ModeAuto`. In C both are the enum `trackparse_mode`:
-`TRACKPARSE_MODE_AUTO` is the default of `trackparse_parse_options_set_mode`, and a result's
+`TRACKPARSE_MODE_AUTO` is what a new options handle uses until `trackparse_parse_options_set_mode`
+changes it, and a result's
 `mode` is never `TRACKPARSE_MODE_AUTO`; `trackparse_mode_name` gives the name. The mode rules are
 [R2](/trackparse/reference/spec/#r2-mode-prelude) in the spec.
 
@@ -32,7 +33,7 @@ means auto too, and `Track.Mode` is never `ModeAuto`. In C both are the enum `tr
 
 1. A known audio or video extension at the end (`.mp3`, `.flac`, `.wav`, `.mp4`…) means
    `filename`.
-2. Junk, a `|`, or a platform suffix like `- YouTube` means `youtube`.
+2. Junk (a genre bracket doesn't count), a `|`, or a platform suffix like `- YouTube` means `youtube`.
 3. Anything else is `clean`.
 
 That order is [R2.1](/trackparse/reference/spec/#r2-mode-prelude:~:text=R2.1%20Resolution). Open the

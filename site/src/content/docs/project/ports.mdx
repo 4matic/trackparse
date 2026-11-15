@@ -3,6 +3,8 @@ title: Ports
 description: The JavaScript, Python, Rust, Go and C implementations, and what it takes to add another language.
 ---
 
+import { Tabs, TabItem } from "@astrojs/starlight/components";
+
 | Language | Package | Status |
 |---|---|---|
 | JavaScript / TypeScript | [`trackparse`](https://www.npmjs.com/package/trackparse) on npm | Reference implementation. 13,130 / 13,130 fixtures. Tracklists in `trackparse/tracklist` |
@@ -11,16 +13,78 @@ description: The JavaScript, Python, Rust, Go and C implementations, and what it
 | Go | [`github.com/4matic/trackparse/go`](https://pkg.go.dev/github.com/4matic/trackparse/go), API docs on [pkg.go.dev](https://pkg.go.dev/github.com/4matic/trackparse/go) | 13,130 / 13,130 fixtures, output identical to JS. Tracklists in the same package (`trackparse.ParseTracklist`) |
 | C | Source tarball and amalgamation on each [GitHub Release](https://github.com/4matic/trackparse/releases) from 0.7.0; the API is [`trackparse.h`](https://github.com/4matic/trackparse/blob/main/c/include/trackparse.h) | 13,130 / 13,130 fixtures, output identical to JS. Tracklists in the same library (`trackparse_parse_tracklist`) |
 
-| | JavaScript | Python | Rust | Go | C |
-|---|---|---|---|---|---|
-| Install | `npm install trackparse` | `pip install trackparse` | `cargo add trackparse` | `go get github.com/4matic/trackparse/go@latest` | CMake `FetchContent` from the release tarball, or copy the amalgamation |
-| Needs | Node 18 or newer, or any ES2020 runtime | Python 3.9 or newer | Rust 1.74 or newer | Go 1.22 or newer | a C11 compiler (GCC, Clang or MSVC); CMake 3.16 or newer for the CMake build |
-| Dependencies | none | none | `unicode-normalization`; `serde` is optional | none | none beyond the C standard library and the system's threads |
-| Types | TypeScript types included | `py.typed`, passes `mypy --strict` | structs and enums, no `unsafe` | structs and typed string constants, no `unsafe`, no cgo | read-only structs, C enums with `_name()` functions, opaque option handles |
-| Names | [`parseArtists`](/trackparse/reference/functions/#parseartistsinput-options), [`fullTitle`](/trackparse/reference/parse/#parsedtrack) | `parse_artists`, `full_title` | `parse_artists`, `full_title` | `ParseArtists`, `FullTitle` | `trackparse_parse_artists`, `full_title` |
-| Options | one object | keyword arguments | `_with` functions and option builders | `With` functions and option structs | `_with` functions and option handles with setters |
-| On bad input | never throws on a string | `TypeError` if the input isn't a `str` | never panics, no `Result` | never panics, no `error` | never crashes; `NULL` only when memory runs out |
-| JSON | `JSON.stringify(track)` | `track.to_dict()` | `track.to_json()`, or `serde` | `json.Marshal(track)` | `trackparse_track_to_json(track)` |
+<Tabs syncKey="lang">
+<TabItem label="JavaScript">
+
+| What | JavaScript |
+|---|---|
+| Install | `npm install trackparse` |
+| Needs | Node 18 or newer, or any ES2020 runtime |
+| Dependencies | none |
+| Types | TypeScript types included |
+| Names | [`parseArtists`](/trackparse/reference/functions/#parseartistsinput-options), [`fullTitle`](/trackparse/reference/parse/#parsedtrack) |
+| Options | one object |
+| On bad input | never throws on a string |
+| JSON | `JSON.stringify(track)` |
+
+</TabItem>
+<TabItem label="Python">
+
+| What | Python |
+|---|---|
+| Install | `pip install trackparse` |
+| Needs | Python 3.9 or newer |
+| Dependencies | none |
+| Types | `py.typed`, passes `mypy --strict` |
+| Names | `parse_artists`, `full_title` |
+| Options | keyword arguments |
+| On bad input | `TypeError` if the input isn't a `str` |
+| JSON | `track.to_dict()` |
+
+</TabItem>
+<TabItem label="Rust">
+
+| What | Rust |
+|---|---|
+| Install | `cargo add trackparse` |
+| Needs | Rust 1.74 or newer |
+| Dependencies | `unicode-normalization`; `serde` is optional |
+| Types | structs and enums, no `unsafe` |
+| Names | `parse_artists`, `full_title` |
+| Options | `_with` functions and option builders |
+| On bad input | never panics, no `Result` |
+| JSON | `track.to_json()`, or `serde` |
+
+</TabItem>
+<TabItem label="Go">
+
+| What | Go |
+|---|---|
+| Install | `go get github.com/4matic/trackparse/go@latest` |
+| Needs | Go 1.22 or newer |
+| Dependencies | none |
+| Types | structs and typed string constants, no `unsafe`, no cgo |
+| Names | `ParseArtists`, `FullTitle` |
+| Options | `With` functions and option structs |
+| On bad input | never panics, no `error` |
+| JSON | `json.Marshal(track)` |
+
+</TabItem>
+<TabItem label="C">
+
+| What | C |
+|---|---|
+| Install | CMake `FetchContent` from the release tarball, or copy the amalgamation (both from 0.7.0) |
+| Needs | a C11 compiler (GCC, Clang or MSVC), C++17 for `trackparse.hpp`; CMake 3.16 or newer for the CMake build |
+| Dependencies | none beyond libc, `libm` and threads |
+| Types | read-only structs, C enums with `_name()` functions, opaque option handles |
+| Names | `trackparse_parse_artists`, `full_title` |
+| Options | `_with` functions and option handles with setters |
+| On bad input | never crashes; `NULL` only when memory runs out |
+| JSON | `trackparse_track_to_json(track)` |
+
+</TabItem>
+</Tabs>
 
 [Getting started](/trackparse/start/getting-started/) has the install steps, and
 [Other functions](/trackparse/reference/functions/) has the full table of names.
@@ -32,7 +96,7 @@ the tag `go/vX.Y.Z`, which the Go module proxy reads
 ([published versions](https://proxy.golang.org/github.com/4matic/trackparse/go/@v/list)). C has no
 registry either: a C release is the tag `c-vX.Y.Z`, with the source tarball
 (`trackparse-c-X.Y.Z.tar.gz`), the amalgamation (`trackparse-c-X.Y.Z-amalgamation.zip`) and
-`SHA256SUMS` attached to its GitHub Release. 0.7.0 is the first. The
+`SHA256SUMS` attached to its GitHub Release, starting with 0.7.0. The
 [changelogs](/trackparse/project/roadmap/#next) list what each release brought.
 
 ## Adding a language
@@ -150,7 +214,7 @@ JavaScript's `trim()`, WHATWG UTF-8, key order, stable sorts). What C added:
 - **Fused multiply-add.** GCC in GNU mode contracts `floor(v * 10^d + 0.5)` into one fused
   instruction on ARM64, or on x86 with FMA enabled, and that rounds differently. CMake passes
   `-ffp-contract=off` (`/fp:precise` on MSVC), `num.c` sets the standard pragma where the compiler
-  honours it, and the product goes through a `volatile`, so the amalgamation is safe under other
+  honors it, and the product goes through a `volatile`, so the amalgamation is safe under other
   flags too. On 32-bit x86, x87 registers compute with extra precision, so `num.c` refuses to
   compile unless `FLT_EVAL_METHOD` is 0 (`-msse2 -mfpmath=sse`).
 - **Unicode tables from Node, as in Go.** The C library can't take letters, lowercasing or

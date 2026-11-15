@@ -23,7 +23,7 @@ const ref = {
   feat: doc(`guides/formatting/#options${frag("feat", '"source"')}`),
   joiners: doc(`guides/formatting/#options${frag("joiners", '"original"')}`),
   versions: doc(`guides/formatting/#options${frag("versions", '"all"')}`),
-  shift: doc(`reference/tracklist/#edits${frag("Edit::shift_from")}`),
+  shift: doc(`reference/tracklist/#edits${frag('"shift", seconds, from')}`),
   edits: doc("guides/editing-tracklists/#the-edits"),
 };
 // The tracklist table's columns: entry fields in reference/tracklist, track fields in reference/parse.
@@ -697,7 +697,7 @@ const listExamples: { label: string; title: string; text: string }[] = [
   import { format, parse, type ParseOptions } from "trackparse";
   import { applyEdits, parseTracklist, type Edit, type Tracklist, type TracklistEntry, type TracklistOptions } from "trackparse/tracklist";
   import { icon } from "../lib/icons";
-  import { getLang, PACKAGE, setLang, type Lang } from "../lib/lang";
+  import { C_RELEASED, getLang, PACKAGE, setLang, type Lang } from "../lib/lang";
   import { apiUrl, listCode, trackCode, type Snippet } from "../lib/codegen";
   import { chip, codeHtml, GUIDE, escapeHtml, fieldsHtml, highlight, jsonHtml, KIND_LABEL, roleKind, segmentsHtml, type Kind } from "../lib/trackview";
 
@@ -823,8 +823,10 @@ const listExamples: { label: string; title: string; text: string }[] = [
     for (const x of document.querySelectorAll<HTMLElement>("[data-lang]"))
       x.setAttribute("aria-pressed", String(x.dataset.lang === lang));
     const p = PACKAGE[lang];
+    // Before 0.7.0 there is no C release yet, so the FetchContent URL answers 404.
+    const pending = lang === "c" && !C_RELEASED ? " (from 0.7.0, not released yet)" : "";
     const html =
-      `<span>Install: <code>${escapeHtml(p.install)}</code></span>` +
+      `<span>Install: <code>${escapeHtml(p.install)}</code>${pending}</span>` +
       `<a href="${base}/start/getting-started/">Getting started</a>` +
       `<a href="${p.url}">${p.registry}</a>` +
       // The API docs: docs.rs for the crate, pkg.go.dev (the link above) for the module, the

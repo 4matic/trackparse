@@ -213,6 +213,11 @@ h5 {
 .sl-markdown-content table {
   font-variant-numeric: tabular-nums;
   font-size: 0.92em;
+  /* A table wider than the column (the five language columns) scrolls sideways. A thin scrollbar
+     that stays visible says so; an overlay one that shows only while scrolling hid the last
+     columns without a hint. */
+  scrollbar-width: thin;
+  scrollbar-color: var(--tp-border-strong) transparent;
 }
 .sl-markdown-content :is(th, td) {
   border-color: var(--tp-border);
@@ -282,6 +287,14 @@ starlight-tabs [role="tab"][aria-selected="true"] {
 }
 starlight-tabs [role="tab"] {
   color: var(--sl-color-gray-3);
+}
+/* Five language tabs fit a phone, also inside a numbered step: tighter padding and a smaller
+   label, so the strip never scrolls and the first label is never cut off. */
+@media (max-width: 50rem) {
+  starlight-tabs .tab > [role="tab"] {
+    padding-inline: 0.6rem;
+    font-size: var(--sl-text-sm);
+  }
 }
 
 /* Cards and pagination: hairline boxes, no shadows. */

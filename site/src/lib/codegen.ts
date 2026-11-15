@@ -747,7 +747,13 @@ export function listCode(lang: Lang, x: ListInput): Snippet {
     if (audioSeconds !== undefined) opts.audioSeconds = audioSeconds;
     if (knownArtists) opts.knownArtists = knownArtists;
     const head = "const text = ";
-    const textLine = joined ? `${head}${jsLay(lines, "", head, '.join("\\n");')}.join("\\n");` : `${head}${strLit(text)};`;
+    // One string too long for the line goes on the next one, as Biome breaks after `=`.
+    const one = `${head}${strLit(text)};`;
+    const textLine = joined
+      ? `${head}${jsLay(lines, "", head, '.join("\\n");')}.join("\\n");`
+      : cols(one) <= WIDTH
+        ? one
+        : `const text =\n  ${strLit(text)};`;
     const out = [
       'import { applyEdits, parseTracklist } from "trackparse/tracklist";',
       "",

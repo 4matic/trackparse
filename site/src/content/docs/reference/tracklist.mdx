@@ -286,19 +286,80 @@ are [R13.9](/trackparse/reference/spec/#r139-edits).
 
 ### Edits
 
-| JavaScript and Python | Rust | Go | C | Effect |
-|---|---|---|---|---|
-| `{ op: "set-time", line, seconds }` | `Edit::set_time(line, seconds)` | `SetTime(line, seconds)` | `trackparse_edits_set_time(e, line, seconds)` | Rewrite the time on that line |
-| `{ op: "shift", seconds }` | `Edit::shift(seconds)` | `Shift(seconds)` | `trackparse_edits_shift(e, seconds)` | Add `seconds` to every timed line |
-| `{ op: "shift", seconds, from }` | `Edit::shift_from(seconds, from)` | `ShiftFrom(seconds, from)` | `trackparse_edits_shift_from(e, seconds, from)` | Add `seconds` to every timed line from `from` on |
-| `{ op: "shift", seconds, lines }` | `Edit::shift_lines(seconds, lines)` | `ShiftLines(seconds, lines...)` | `trackparse_edits_shift_lines(e, seconds, lines, count)` | Add `seconds` to the listed lines |
-| `{ op: "sort-by-time" }` | `Edit::sort_by_time()` | `SortByTime()` | `trackparse_edits_sort_by_time(e)` | Stable sort by time. Untimed lines move with the timed line above them |
-| `{ op: "set-rest", line, rest }` | `Edit::set_rest(line, rest)` | `SetRest(line, rest)` | `trackparse_edits_set_rest(e, line, rest, len)` | Replace everything after the time |
-| `{ op: "insert", after, text }` | `Edit::insert(after, text)` | `Insert(after, text)` | `trackparse_edits_insert(e, after, text, len)` | Insert a line after `after` (`0` = at the top) |
-| `{ op: "delete", line }` | `Edit::delete(line)` | `Delete(line)` | `trackparse_edits_delete(e, line)` | Remove a line |
+| JavaScript and Python | Effect |
+|---|---|
+| `{ op: "set-time", line, seconds }` | Rewrite the time on that line |
+| `{ op: "shift", seconds }` | Add `seconds` to every timed line |
+| `{ op: "shift", seconds, from }` | Add `seconds` to every timed line from `from` on |
+| `{ op: "shift", seconds, lines }` | Add `seconds` to the listed lines |
+| `{ op: "sort-by-time" }` | Stable sort by time. Untimed lines move with the timed line above them |
+| `{ op: "set-rest", line, rest }` | Replace everything after the time |
+| `{ op: "insert", after, text }` | Insert a line after `after` (`0` = at the top) |
+| `{ op: "delete", line }` | Remove a line |
 
-In Python an edit is a dict with quoted keys: `{"op": "shift", "seconds": 45, "from": 5}`. With the
-`serde` feature, the Rust `Edit` reads and writes that same JSON. The Go `Edit` writes it with
+<Tabs syncKey="lang">
+<TabItem label="JavaScript">
+
+Pass the objects in the table as an array: `applyEdits(text, [{ op: "shift", seconds: 45, from: 5 }])`.
+
+</TabItem>
+<TabItem label="Python">
+
+An edit is a dict with the same keys, quoted: `{"op": "shift", "seconds": 45, "from": 5}`.
+
+</TabItem>
+<TabItem label="Rust">
+
+Each edit has a constructor on [`Edit`](https://docs.rs/trackparse/latest/trackparse/tracklist/enum.Edit.html); pass a slice of them.
+
+| Edit | Rust |
+|---|---|
+| `set-time` | `Edit::set_time(line, seconds)` |
+| `shift` | `Edit::shift(seconds)` |
+| `shift` with `from` | `Edit::shift_from(seconds, from)` |
+| `shift` with `lines` | `Edit::shift_lines(seconds, lines)` |
+| `sort-by-time` | `Edit::sort_by_time()` |
+| `set-rest` | `Edit::set_rest(line, rest)` |
+| `insert` | `Edit::insert(after, text)` |
+| `delete` | `Edit::delete(line)` |
+
+</TabItem>
+<TabItem label="Go">
+
+Each edit has a constructor that returns an [`Edit`](https://pkg.go.dev/github.com/4matic/trackparse/go#Edit); pass a `[]trackparse.Edit`.
+
+| Edit | Go |
+|---|---|
+| `set-time` | `SetTime(line, seconds)` |
+| `shift` | `Shift(seconds)` |
+| `shift` with `from` | `ShiftFrom(seconds, from)` |
+| `shift` with `lines` | `ShiftLines(seconds, lines...)` |
+| `sort-by-time` | `SortByTime()` |
+| `set-rest` | `SetRest(line, rest)` |
+| `insert` | `Insert(after, text)` |
+| `delete` | `Delete(line)` |
+
+</TabItem>
+<TabItem label="C">
+
+Each edit is a function that appends it to a `trackparse_edits` list from `trackparse_edits_new()`. It returns `false` only when memory runs out.
+
+| Edit | C |
+|---|---|
+| `set-time` | `trackparse_edits_set_time(e, line, seconds)` |
+| `shift` | `trackparse_edits_shift(e, seconds)` |
+| `shift` with `from` | `trackparse_edits_shift_from(e, seconds, from)` |
+| `shift` with `lines` | `trackparse_edits_shift_lines(e, seconds, lines, count)` |
+| `sort-by-time` | `trackparse_edits_sort_by_time(e)` |
+| `set-rest` | `trackparse_edits_set_rest(e, line, rest, len)` |
+| `insert` | `trackparse_edits_insert(e, after, text, len)` |
+| `delete` | `trackparse_edits_delete(e, line)` |
+
+</TabItem>
+</Tabs>
+
+
+With the `serde` feature, the Rust `Edit` reads and writes the JSON of the JavaScript objects. The Go `Edit` writes it with
 `json.Marshal`.
 
 Edits run in sequence, each on the result of the one before. Times are written in their line's
@@ -324,12 +385,20 @@ In Rust the codes are [`EditWarningCode`](https://docs.rs/trackparse/latest/trac
 Both functions take the same options ([R13.10](/trackparse/reference/spec/#r1310-options)). `applyEdits` accepts them for symmetry; edits don't depend on
 them, and the C `trackparse_apply_edits` has no options argument.
 
-| JavaScript | Python and Rust | Go | C | Default | Description |
-|---|---|---|---|---|---|
-| `mode` | `mode` | `Mode` | `trackparse_tracklist_options_set_mode` | `"tracklist"` | Mode for each line's [`parse()`](/trackparse/reference/parse/). See [Tracklist mode](/trackparse/guides/tracklists/#tracklist-mode) |
-| [`knownArtists`](/trackparse/guides/artists/#knownartists), [`splitAnd`](/trackparse/guides/artists/#and-is-special), [`keywords`](/trackparse/reference/options/#keywords) | `known_artists`, `split_and`, `keywords` | `KnownArtists`, `SplitAnd`, `Keywords` | `_add_known_artist`, `_set_split_and`, `_add_version_head` and the other `add_` setters | as for `parse` | As for [`parse()`](/trackparse/reference/options/) |
-| [`audioSeconds`](/trackparse/guides/tracklists/#options) | `audio_seconds` | `AudioSeconds` | `trackparse_tracklist_options_set_audio_seconds` | none | Length of the audio. Enables [`time-after-audio-end`](/trackparse/reference/warnings/#tracklist-warnings:~:text=time%2Dafter%2Daudio%2Dend) |
-| [`markerWords`](/trackparse/guides/tracklists/#options) | `marker_words` | `MarkerWords` | `trackparse_tracklist_options_add_marker_word` | empty | Extra marker words |
+| JavaScript | Python and Rust<br/>Go | Default | Description |
+|---|---|---|---|
+| `mode` | `mode`<br/>`Mode` | `"tracklist"` | Mode for each line's [`parse()`](/trackparse/reference/parse/). See [Tracklist mode](/trackparse/guides/tracklists/#tracklist-mode) |
+| [`knownArtists`](/trackparse/guides/artists/#knownartists) | `known_artists`<br/>`KnownArtists` | empty | As for [`parse()`](/trackparse/reference/options/#parse-options) |
+| [`splitAnd`](/trackparse/guides/artists/#and-is-special) | `split_and`<br/>`SplitAnd` | `"auto"` | As for `parse()` |
+| [`keywords`](/trackparse/reference/options/#keywords) | `keywords`<br/>`Keywords` | none | As for `parse()` |
+| [`audioSeconds`](/trackparse/guides/tracklists/#options) | `audio_seconds`<br/>`AudioSeconds` | none | Length of the audio. Enables [`time-after-audio-end`](/trackparse/reference/warnings/#tracklist-warnings:~:text=time%2Dafter%2Daudio%2Dend) |
+| [`markerWords`](/trackparse/guides/tracklists/#options) | `marker_words`<br/>`MarkerWords` | empty | Extra marker words |
+
+The C setters are named after the option, after `trackparse_tracklist_options_`: `set_mode`,
+`set_split_and` and `set_audio_seconds` take a value, and the list options take one entry per call,
+named in the singular: `add_known_artist` and `add_marker_word`. `keywords` is five setters, as on
+the [parse options](/trackparse/reference/options/#keywords): `add_version_head`, `add_descriptor`,
+`add_genre`, `add_junk` and `add_feat_marker`.
 
 Python uses keyword arguments. Rust has a setter of the same name for each on [`TracklistOptions`](https://docs.rs/trackparse/latest/trackparse/tracklist/struct.TracklistOptions.html),
 for example `TracklistOptions::new().audio_seconds(3600.0).marker_words(["drop"])`, and passes it

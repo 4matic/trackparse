@@ -269,7 +269,7 @@ printf("%d %d %d %d %g %g\n", s->lines, s->tracks, s->markers, s->timed, *s->fir
 </TabItem>
 </Tabs>
 
-Paste it into the [playground](/trackparse/playground/#list=Hour%202%0A48%3A20%20Noisia%20-%20Stigma%0A52%3A47%20Mefjus%20%26%20Kasra%20-%20Bandwagon%20(Phace%20Remix)%0A56%3A05%20Black%20Sun%20Empire%20-%20ID%0A59%3A31%20Alix%20Perez%20-%20Fade%20Away%0A01%3A03%3A10%20Interview%20with%20Hybris%0A01%3A07%3A44%20Imanu%20-%20Sacrifice%0A00%3A11%3A02%20Current%20Value%20feat.%20Teddy%20Killerz%20-%20Payload%0A01%3A15%3A36%20Hybris%20-%20Spinning%20Top)
+Paste it into the [playground](/trackparse/playground/#list=Hour%202%0A48%3A20%20Noisia%20-%20Stigma%0A52%3A47%20Mefjus%20%26%20Kasra%20-%20Bandwagon%20%28Phace%20Remix%29%0A56%3A05%20Black%20Sun%20Empire%20-%20ID%0A59%3A31%20Alix%20Perez%20-%20Fade%20Away%0A01%3A03%3A10%20Interview%20with%20Hybris%0A01%3A07%3A44%20Imanu%20-%20Sacrifice%0A00%3A11%3A02%20Current%20Value%20feat.%20Teddy%20Killerz%20-%20Payload%0A01%3A15%3A36%20Hybris%20-%20Spinning%20Top)
 to see the table, the warnings and the fix button.
 
 ## Nothing is lost
@@ -464,7 +464,7 @@ DJ tracklists mark a track played over the previous one, like an acapella on the
 `w/` where the track number would go. Such a line gets `layered: true`. The `w/` stays in `rest` and
 is left out of the parsed track. An untimed layered line plays at the previous track's time, so it
 doesn't warn [`time-missing`](/trackparse/reference/warnings/#tracklist-warnings:~:text=time%2Dmissing),
-and it doesn't count as a neighbour for bare track numbers. [Open the
+and it doesn't count as a neighbor for bare track numbers. [Open the
 example](/trackparse/playground/#list=00%3A00%20Noisia%20-%20Stigma%0Aw%2F%20Phace%20-%20Psycho%20%28Acapella%29%0A03%3A10%20Mefjus%20-%20Sleepless) in the
 playground.
 
@@ -770,7 +770,7 @@ each language. To apply a suggestion, see
 
 Some lists number their lines without a dot: `1 Artist - Title`, `2 Artist - Title`. A single
 [`parse()`](/trackparse/reference/parse/) call would read `1 Artist` as the artist's name, and it should, because `2 Unlimited`
-exists. In a list, trackparse looks at the neighbours: a bare number counts as a position when the
+exists. In a list, trackparse looks at the neighbors: a bare number counts as a position when the
 nearest line before or after it carries the next or previous number
 ([R13.5](/trackparse/reference/spec/#r135-bare-positions)).
 
@@ -788,7 +788,7 @@ parsed with `mode: "tracklist"` ([Modes](/trackparse/guides/modes/#tracklist-mod
 | `10 Optiv & BTK-Inception (Gydra remix)` | no separator | position 10, Optiv, BTK / `Inception`, remix by Gydra |
 
 The first three open in the playground in tracklist mode; set the mode back to `auto` there to see
-what a plain `parse()` makes of them. The last two need neighbours: the position needs a 7 or 9 next to it, and the unspaced
+what a plain `parse()` makes of them. The last two need neighbors: the position needs a 7 or 9 next to it, and the unspaced
 `BTK-Inception` dash only splits on a timed line when at least half the list uses spaced dashes.
 
 ## JSON

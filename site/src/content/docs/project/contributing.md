@@ -121,15 +121,15 @@ by file; [`c/src/PORTING.md`](https://github.com/4matic/trackparse/blob/main/c/s
 the conventions.
 
 ```sh
-cmake -S c -B c/build -DTRACKPARSE_WERROR=ON
-cmake --build c/build
-ctest --test-dir c/build --output-on-failure                  # fixtures, schema check, unit tests
-TRACKPARSE_REPORT=1 c/build/trackparse-fixtures spec/fixtures/*/*.json   # pass rate per file and per rule
-TRACKPARSE_ONLY=brackets-version-001 c/build/trackparse-fixtures spec/fixtures/*/*.json   # one case
+cmake -S c -B c/build-test -DTRACKPARSE_WERROR=ON
+cmake --build c/build-test
+ctest --test-dir c/build-test --output-on-failure                  # fixtures, schema check, unit tests
+TRACKPARSE_REPORT=1 c/build-test/trackparse-fixtures spec/fixtures/*/*.json   # pass rate per file and per rule
+TRACKPARSE_ONLY=brackets-version-001 c/build-test/trackparse-fixtures spec/fixtures/*/*.json   # one case
 cmake -S c -B c/build-asan -DTRACKPARSE_SANITIZE=ON           # the same suite under ASan and UBSan
 node c/scripts/gen_data.mjs                                   # regenerate src/data_gen.c from spec/data
 node c/scripts/gen_unicode.mjs                                # regenerate src/unicode_gen.c
-node c/scripts/amalgamate.mjs                                 # write c/dist/trackparse.c and trackparse.h
+node c/scripts/amalgamate.mjs                                 # write trackparse.c, .h and .hpp into c/dist
 ```
 
 `src/` uses no `strtod`, no float `printf`, no `<ctype.h>` and no `qsort`: the first three follow

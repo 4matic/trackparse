@@ -10,16 +10,81 @@ functions in snake_case, the Go package in CamelCase, and the C library in snake
 `trackparse_` prefix. [`parse`](/trackparse/reference/parse/) and the
 [tracklist functions](/trackparse/reference/tracklist/) have pages of their own.
 
-| JavaScript | Python | Rust | Go | C |
-|---|---|---|---|---|
-| `parse` | `parse` | `parse`, `parse_with` | `Parse`, `ParseWith` | `trackparse_parse`, `trackparse_parse_with` |
-| `parseArtists` | `parse_artists` | `parse_artists`, `parse_artists_with` | `ParseArtists`, `ParseArtistsWith` | `trackparse_parse_artists`, `trackparse_parse_artists_with` |
-| `format` | `format_track` | `format_track`, `format_track_with` | `Format`, `FormatWith` | `trackparse_format`, `trackparse_format_with` |
-| `normalize` | `normalize` | `normalize` | `Normalize` | `trackparse_normalize` |
-| `allArtists` | `all_artists` | `all_artists` | `AllArtists` | `trackparse_all_artists` |
-| `createParser` | `create_parser` | `Parser::new` | `NewParser` | `trackparse_parser_new` |
-| `SPEC_VERSION` | `SPEC_VERSION` | `SPEC_VERSION` | `SpecVersion` | `trackparse_spec_version()` |
-| [`parseTracklist`](/trackparse/reference/tracklist/#parsetracklisttext-options), [`applyEdits`](/trackparse/reference/tracklist/#applyeditstext-edits-options) (from `trackparse/tracklist`) | `parse_tracklist`, `apply_edits` (from `trackparse.tracklist`) | `parse_tracklist`, `parse_tracklist_with`, `apply_edits`, `apply_edits_with` (from `trackparse::tracklist`) | `ParseTracklist`, `ParseTracklistWith`, `ApplyEdits`, `ApplyEditsWith` (same package) | `trackparse_parse_tracklist`, `trackparse_parse_tracklist_with`, `trackparse_apply_edits` (same header) |
+<Tabs syncKey="lang">
+<TabItem label="JavaScript">
+
+| JavaScript | What it does |
+|---|---|
+| [`parse`](/trackparse/reference/parse/) | Parses one track string |
+| [`parseArtists`](#parseartistsinput-options) | Splits a bare artist string into credits |
+| [`format`](#formattrack-options) | Renders a track back to a string |
+| [`normalize`](#normalizeinput) | The Unicode cleanup every function runs first |
+| [`allArtists`](#allartiststrack) | The artists and remixers in one list, without duplicates |
+| [`createParser`](#createparseroptions) | Compiles options once for many calls |
+| [`SPEC_VERSION`](#spec_version) | The spec version the package implements |
+
+</TabItem>
+<TabItem label="Python">
+
+| JavaScript | Python |
+|---|---|
+| `parse` | `parse` |
+| `parseArtists` | `parse_artists` |
+| `format` | `format_track` |
+| `normalize` | `normalize` |
+| `allArtists` | `all_artists` |
+| `createParser` | `create_parser` |
+| `SPEC_VERSION` | `SPEC_VERSION` |
+
+</TabItem>
+<TabItem label="Rust">
+
+| JavaScript | Rust |
+|---|---|
+| `parse` | `parse`, `parse_with` |
+| `parseArtists` | `parse_artists`, `parse_artists_with` |
+| `format` | `format_track`, `format_track_with` |
+| `normalize` | `normalize` |
+| `allArtists` | `all_artists` |
+| `createParser` | `Parser::new` |
+| `SPEC_VERSION` | `SPEC_VERSION` |
+
+</TabItem>
+<TabItem label="Go">
+
+| JavaScript | Go |
+|---|---|
+| `parse` | `Parse`, `ParseWith` |
+| `parseArtists` | `ParseArtists`, `ParseArtistsWith` |
+| `format` | `Format`, `FormatWith` |
+| `normalize` | `Normalize` |
+| `allArtists` | `AllArtists` |
+| `createParser` | `NewParser` |
+| `SPEC_VERSION` | `SpecVersion` |
+
+</TabItem>
+<TabItem label="C">
+
+| JavaScript | C |
+|---|---|
+| `parse` | `trackparse_parse`, `trackparse_parse_with` |
+| `parseArtists` | `trackparse_parse_artists`, `trackparse_parse_artists_with` |
+| `format` | `trackparse_format`, `trackparse_format_with` |
+| `normalize` | `trackparse_normalize` |
+| `allArtists` | `trackparse_all_artists` |
+| `createParser` | `trackparse_parser_new` |
+| `SPEC_VERSION` | `trackparse_spec_version()` |
+
+</TabItem>
+</Tabs>
+
+The tracklist functions are [`parseTracklist`](/trackparse/reference/tracklist/#parsetracklisttext-options)
+and [`applyEdits`](/trackparse/reference/tracklist/#applyeditstext-edits-options), from the entry
+`trackparse/tracklist` in JavaScript. They are `parse_tracklist` and `apply_edits` in Python (from
+`trackparse.tracklist`); `parse_tracklist`, `parse_tracklist_with`, `apply_edits` and
+`apply_edits_with` in Rust (from `trackparse::tracklist`); `ParseTracklist`, `ParseTracklistWith`,
+`ApplyEdits` and `ApplyEditsWith` in Go (same package); and `trackparse_parse_tracklist`,
+`trackparse_parse_tracklist_with` and `trackparse_apply_edits` in C (same header).
 
 What to know for each language:
 
@@ -52,6 +117,19 @@ What to know for each language:
   and enums have a `_name()` function that gives the spec's string. Strings in results are
   `trackparse_str`, a `ptr` and a `len`, and `ptr` is also NUL-terminated. A function returns
   `NULL` only when memory runs out; it never crashes on any input. All functions are thread-safe.
+  `trackparse_set_allocator` replaces `malloc`, `realloc` and `free` for the whole process; call
+  it once, before any other function.
+- **C++** ([`trackparse.hpp`](https://github.com/4matic/trackparse/blob/main/c/include/trackparse.hpp)).
+  A header-only C++17 wrapper over the C library, installed next to `trackparse.h`. The functions
+  are in the namespace `trackparse` with the C names minus the prefix (`trackparse::parse`,
+  `trackparse::parse_tracklist`), and options are a second argument instead of a `_with` form.
+  Results are move-only owners that free their C object, strings read from results are
+  `std::string_view` (`format`, `normalize` and `to_json` return `std::string`), nullable fields
+  are `std::optional`, and options chain:
+  `trackparse::parse_options{}.known_artist("Chase & Status")`. The only exception it throws is
+  `std::bad_alloc`, when memory runs out. The
+  [C README](https://github.com/4matic/trackparse/blob/main/c/README.md#c-wrapper) has a full
+  example.
 
 The options themselves are on the [Options](/trackparse/reference/options/) page.
 
