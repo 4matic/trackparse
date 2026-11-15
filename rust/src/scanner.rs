@@ -14,6 +14,9 @@ use crate::words::{at, before, collapse_chars, is_whitespace, string, sub};
 /// R3.4 placeholder code point.
 pub(crate) const PH: char = '\u{e000}';
 
+/// R8.7 bullet (U+2022).
+pub(crate) const BULLET: char = '\u{2022}';
+
 #[derive(Debug, Clone)]
 pub(crate) struct Group {
     pub open: VersionDelimiter,
@@ -229,6 +232,11 @@ pub(crate) fn is_spaced_dash_at(text: &[char], i: usize) -> bool {
 
 pub(crate) fn has_spaced_dash(text: &[char]) -> bool {
     (1..text.len().saturating_sub(1)).any(|i| is_spaced_dash_at(text, i))
+}
+
+/// R8.7: U+2022 with a space immediately on both sides (the ends of the string do not count).
+pub(crate) fn is_spaced_bullet_at(text: &[char], i: usize) -> bool {
+    at(text, i) == Some(BULLET) && before(text, i) == Some(' ') && at(text, i + 1) == Some(' ')
 }
 
 #[derive(Debug, Clone)]

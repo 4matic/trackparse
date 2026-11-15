@@ -2,18 +2,22 @@
 
 use std::collections::HashSet;
 
-use crate::classify::{classify, Classification, Flag, Site, VersionDraft};
+use crate::classify::{
+    classify, junk_kind_of, phrase_kind_of, Classification, Flag, Site, VersionDraft,
+};
 use crate::context::Ctx;
 use crate::credits::{split_credits, Credit, ListOptions, PositionedYear};
 use crate::mode::PositionedJunk;
 use crate::scanner::{
-    groups_of, remove_groups, render_skel, slice_skel, split_at_spaced_dashes, trim_skel, Skel, PH,
+    groups_of, is_spaced_bullet_at, is_spaced_dash_at, remove_groups, render_skel, slice_from,
+    slice_skel, split_at_spaced_dashes, start_pos, trim_skel, Skel, PH,
 };
 use crate::separator::{peel_suffixes, Peelable, Peeled};
 use crate::tables::is_unknown_token;
 use crate::types::{ArtistRole, ArtistSource};
 use crate::words::{
-    at, before, chars, collapse_chars, collapse_spaces, span_texts, string, sub, word_spans,
+    at, before, chars, collapse_chars, collapse_spaces, span_texts, split_words, string, sub,
+    word_spans,
 };
 
 /// Everything the title side (and R6.2 peeling) can extract.
@@ -287,4 +291,79 @@ pub(crate) fn cleanup_title(raw: &str) -> String {
         }
     }
     title
+}
+
+// ---------------------------------------------------------------------------
+// R8.7 Bullet suffix
+
+pub(crate) struct BulletSuffix {
+    /// The working skeleton before the first cut, trimmed (R8.7.3).
+    pub head: Skel,
+    pub label: Option<String>,
+    /// Junk from the tail segments, with their positions in the normalized string (R9.7).
+    pub junk: Vec<PositionedJunk>,
+}
+
+/// R8.7.1–R8.7.2: the head and tail segments when the rule fires, else `None`. Cuts at every
+/// spaced bullet after the first spaced dash D, which must have text before it and after it.
+fn bullet_segments(skel: &Skel) -> Option<(Skel, Vec<Skel>)> {
+    let t = &skel.text;
+    if at(t, 0) == Some('-') && at(t, 1) == Some(' ') {
+        return None; // R6.1: D at the start, nothing before it
+    }
+    let dash = (1..t.len().saturating_sub(1)).find(|&i| is_spaced_dash_at(t, i))?;
+    let mut parts: Vec<Skel> = Vec::new();
+    let mut start = 0usize;
+    for i in (dash + 2)..t.len().saturating_sub(1) {
+        if !is_spaced_bullet_at(t, i) {
+            continue;
+        }
+        parts.push(trim_skel(&slice_skel(skel, start, i)));
+        start = i + 1;
+    }
+    if parts.is_empty() {
+        return None;
+    }
+    parts.push(trim_skel(&slice_from(skel, start)));
+    if parts.iter().any(Skel::is_empty) {
+        return None;
+    }
+    let mut parts = parts.into_iter();
+    let head = parts.next()?;
+    // R8.7.2: the title part between D and the first bullet counts as a segment (`A - • L`).
+    if head.len() <= dash + 1 {
+        return None;
+    }
+    Some((head, parts.collect()))
+}
+
+/// R8.7: cut a bullet suffix off the working skeleton (after R2 and R4, before R6).
+pub(crate) fn cut_bullet_suffix(skel: &Skel, ctx: &Ctx<'_>) -> Option<BulletSuffix> {
+    let (head, tail) = bullet_segments(skel)?;
+    let mut junk: Vec<PositionedJunk> = Vec::new();
+    let mut label: Option<String> = None;
+    for part in &tail {
+        // R8.7.4: junk groups go to junk; every other group stays verbatim.
+        let mut removed: HashSet<i64> = HashSet::new();
+        for (_, group) in groups_of(part) {
+            let Some(kind) = junk_kind_of(&split_words(&group.inner), ctx) else { continue };
+            junk.push(PositionedJunk { raw: group.inner.clone(), kind, pos: group.pos });
+            removed.insert(group.pos);
+        }
+        let rest = trim_skel(&remove_groups(part, &removed));
+        if rest.is_empty() {
+            continue;
+        }
+        let text = collapse_spaces(&render_skel(&rest));
+        let pos = start_pos(&rest, 0);
+        // R8.7.4: only junk phrases, connectors and year words (no genres, no label suffixes).
+        if let Some(kind) = phrase_kind_of(&split_words(&text), &ctx.t.junk_phrases, ctx) {
+            junk.push(PositionedJunk { raw: text, kind, pos });
+        } else if label.is_none() {
+            label = Some(text);
+        } else {
+            junk.push(PositionedJunk { raw: text, kind: "note".to_string(), pos });
+        }
+    }
+    Some(BulletSuffix { head, label, junk })
 }

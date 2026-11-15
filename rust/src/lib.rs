@@ -245,6 +245,7 @@ pub fn format_track_with(track: &ParsedTrack, options: &FormatOptions) -> String
         title: &track.title,
         versions: track.versions.iter().map(|v| (v.raw.as_str(), v.delimiter)).collect(),
         position_raw: track.position.as_ref().map(|p| p.raw.as_str()),
+        label: track.label.as_deref(),
     };
     format::format(&input, &ResolvedFormat::from_typed(options))
 }

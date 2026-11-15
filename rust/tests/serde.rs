@@ -262,7 +262,10 @@ fn options_read_and_write_the_spec_keys() {
     assert!(serde_json::from_str::<ParseOptions>(r#"{"mode":"radio"}"#).is_err());
     assert_eq!(
         serde_json::to_string(&FormatOptions::new().feat(FeatPlacement::Omit)).unwrap(),
-        r#"{"feat":"omit","joiners":"original","versions":"all","producers":true,"position":false}"#
+        concat!(
+            r#"{"feat":"omit","joiners":"original","versions":"all","producers":true,"#,
+            r#""position":false,"label":true}"#
+        )
     );
     assert_eq!(
         serde_json::to_string(&TracklistOptions::new().audio_seconds(3600.5)).unwrap(),
@@ -483,4 +486,17 @@ fn keyword_maps_have_no_repeated_keys() {
         )
         .write()
     );
+}
+
+#[test]
+fn a_track_without_label_reads_as_none() {
+    // `label` (R8.7) came in 0.8.0: JSON written before it still deserializes.
+    let track = parse("Noisia - Stigma (2015)");
+    let old = track.to_json().replace(r#""label":null,"#, "");
+    assert!(!old.contains("label"));
+    let back: ParsedTrack = serde_json::from_str(&old).unwrap();
+    assert_eq!(back, track);
+    let labelled = parse("Noisia - Stigma \u{2022} VISION");
+    let back: ParsedTrack = serde_json::from_str(&labelled.to_json()).unwrap();
+    assert_eq!(back.label.as_deref(), Some("VISION"));
 }

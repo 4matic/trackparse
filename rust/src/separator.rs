@@ -103,6 +103,9 @@ pub(crate) struct SeparatorInput<'a> {
     /// R13.4.2 list context (internal, set only by the tracklist module): enables the R6.10
     /// tight `letter-Uppercase` dash in tracklist mode.
     pub list_context: bool,
+    /// R8.7: `skel` is the head before a bullet suffix. Its first spaced dash always separates,
+    /// as in R6.10 (no R6.2 peeling), in every mode.
+    pub bullet_head: bool,
 }
 
 fn non_empty(s: &Skel) -> Option<Skel> {
@@ -120,6 +123,8 @@ fn result(parts: (Option<Skel>, Skel), peeled: Vec<Peeled>) -> SeparatorResult {
 }
 
 /// R6.3: the first segment is the artist side, the rest (up to the last kept one) the title.
+/// R6.10 / R8.7 also use it on all segments: the first spaced dash always separates (no R6.2
+/// peeling; R8.2 still peels later suffixes on the title side). `None` without a spaced dash.
 fn first_dash_split(skel: &Skel, segments: &[Segment]) -> Option<(Option<Skel>, Skel)> {
     let [first, second, ..] = segments else { return None };
     let last = segments.last()?;
@@ -131,8 +136,14 @@ pub(crate) fn find_separator(input: SeparatorInput<'_>, ctx: &mut Ctx<'_>) -> Se
     let skel = input.skel;
     let mode = input.mode;
     let segments = split_at_spaced_dashes(skel, true);
+    if mode == Mode::Tracklist || input.bullet_head {
+        if let Some(parts) = first_dash_split(skel, &segments) {
+            return result(parts, Vec::new());
+        }
+    }
     if mode == Mode::Tracklist {
-        return tracklist_separator(skel, &segments, input.list_context, ctx);
+        let rest = segments.first().map_or_else(|| slice_skel(skel, 0, 0), |s| s.skel.clone());
+        return tracklist_separator(rest, input.list_context, ctx);
     }
     let (remaining, peeled) = peel_suffixes(segments, false, ctx);
 
@@ -154,19 +165,10 @@ pub(crate) fn find_separator(input: SeparatorInput<'_>, ctx: &mut Ctx<'_>) -> Se
     SeparatorResult { artist, title: rest, split: false, peeled }
 }
 
-/// R6.10: tracklist mode. The first spaced dash always separates (no R6.2 peeling; R8.2 still
-/// peels later suffixes on the title side). Without one: R6.4, then the first `_-_`, then (list
-/// context only) the last tight `letter-Uppercase` dash; both of these warn `unspacedDashSplit`.
-fn tracklist_separator(
-    skel: &Skel,
-    segments: &[Segment],
-    list_context: bool,
-    ctx: &mut Ctx<'_>,
-) -> SeparatorResult {
-    if let Some(parts) = first_dash_split(skel, segments) {
-        return result(parts, Vec::new());
-    }
-    let rest = segments.first().map_or_else(|| slice_skel(skel, 0, 0), |s| s.skel.clone());
+/// R6.10: tracklist mode without a spaced dash (`first_dash_split` handles one): R6.4, then the
+/// first `_-_`, then (list context only) the last tight `letter-Uppercase` dash; both of these
+/// warn `unspacedDashSplit`.
+fn tracklist_separator(rest: Skel, list_context: bool, ctx: &mut Ctx<'_>) -> SeparatorResult {
     if let Some(asym) = asymmetric_dash(&rest.text) {
         warn(ctx, Warning::AsymmetricDashSplit);
         return result(split_at(&rest, asym, asym + 1), Vec::new());

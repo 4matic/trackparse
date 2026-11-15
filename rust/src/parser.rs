@@ -13,7 +13,7 @@ use crate::prefix::strip_prefixes;
 use crate::scanner::{scan, split_at_spaced_dashes, trim_skel, Skel};
 use crate::separator::{find_separator, SeparatorInput};
 use crate::tables::{tables_for, Tables};
-use crate::title::{add_peeled, parse_title_side, Extracted};
+use crate::title::{add_peeled, cut_bullet_suffix, parse_title_side, Extracted};
 use crate::types::{Artist, ArtistSource, Flags, Mode, RawJunk, RawTrack, Warning};
 use crate::words::{chars, js_trim_end};
 
@@ -159,12 +159,24 @@ fn finish(st: Staged<'_>, list_context: bool) -> RawTrack {
         artist_skel = (!working.is_empty()).then_some(working);
         relaxed = artist_skel.is_some();
     } else {
+        // R8.7: a bullet suffix is cut before R6, which then sees only the head.
+        let bullet = cut_bullet_suffix(&working, &ctx);
+        let bullet_head = bullet.is_some();
+        let head = match bullet {
+            Some(b) => {
+                track.label = b.label;
+                out.junk.extend(b.junk);
+                b.head
+            }
+            None => working,
+        };
         let sep = find_separator(
             SeparatorInput {
-                skel: &working,
+                skel: &head,
                 mode: pre.mode,
                 uploader: uploader_skel(engine.options.uploader.as_deref()),
                 list_context,
+                bullet_head,
             },
             &mut ctx,
         );

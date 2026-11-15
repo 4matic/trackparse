@@ -206,7 +206,7 @@ string_enum! {
 }
 
 string_enum! {
-    /// What kind of noise a junk fragment is (R5).
+    /// What kind of junk fragment it is (R5; `Note` is text after a label, R8.7).
     ///
     /// ```
     /// use trackparse::{parse, JunkKind};
@@ -219,7 +219,7 @@ string_enum! {
     JunkKind {
         Video => "video", Audio => "audio", Lyrics => "lyrics", Quality => "quality",
         Promo => "promo", Platform => "platform", Label => "label", Genre => "genre",
-        Other => "other",
+        Other => "other", Note => "note",
     }
 }
 
@@ -312,8 +312,9 @@ pub struct Version {
     pub delimiter: VersionDelimiter,
 }
 
-/// A fragment that says nothing about the track: `Official Video`, `HD`, `Free Download`.
-/// It is taken out of the title and kept here (the parser extracts, it does not delete).
+/// Text that is not part of the track's identity: noise and promo text (`Official Video`,
+/// `HD`, `Free Download`), platform names, a bracketed label, notes after a label (R8.7). It is
+/// taken out of the title and kept here (the parser extracts, it does not delete).
 ///
 /// ```
 /// use trackparse::{parse, JunkKind};
@@ -327,7 +328,7 @@ pub struct Version {
 pub struct Junk {
     /// The fragment as written, without its brackets.
     pub raw: String,
-    /// What kind of noise it is.
+    /// What kind of fragment it is.
     pub kind: JunkKind,
 }
 
@@ -399,8 +400,8 @@ pub struct Timestamp {
 ///         r#"{"input":"Noisia - Stigma (2015)","mode":"clean","position":null,"#,
 ///         r#""timestamp":null,"artists":[{"name":"Noisia","role":"primary","joiner":null,"#,
 ///         r#""source":"artist"}],"title":"Stigma","fullTitle":"Stigma","versions":[],"#,
-///         r#""year":2015,"flags":{"explicit":false,"clean":false,"unknownArtist":false,"#,
-///         r#""unknownTitle":false},"junk":[],"warnings":[]}"#
+///         r#""year":2015,"label":null,"flags":{"explicit":false,"clean":false,"#,
+///         r#""unknownArtist":false,"unknownTitle":false},"junk":[],"warnings":[]}"#
 ///     )
 /// );
 /// ```
@@ -427,9 +428,14 @@ pub struct ParsedTrack {
     pub versions: Vec<Version>,
     /// A release year found outside the versions.
     pub year: Option<u32>,
+    /// The record label after a spaced bullet on the title side (R8.7):
+    /// `Age Of Spin • WEAREHUMANS` gives `WEAREHUMANS`. Not [`JunkKind::Label`], which is a label
+    /// name in brackets such as `[NCS Release]`.
+    #[cfg_attr(feature = "serde", serde(default))]
+    pub label: Option<String>,
     /// Yes/no facts.
     pub flags: Flags,
-    /// Fragments that say nothing about the track.
+    /// Text that is not part of the track's identity, in text order.
     pub junk: Vec<Junk>,
     /// Guesses the caller may want to check.
     pub warnings: Vec<Warning>,
@@ -548,6 +554,7 @@ impl ToJson for ParsedTrack {
             ("fullTitle", Json::str(&self.full_title)),
             ("versions", list(&self.versions)),
             ("year", num_opt(self.year)),
+            ("label", Json::opt_str(self.label.as_deref())),
             ("flags", self.flags.to_json_value()),
             ("junk", list(&self.junk)),
             ("warnings", Json::Arr(self.warnings.iter().map(|w| Json::str(w.as_str())).collect())),
@@ -590,6 +597,7 @@ pub(crate) struct RawTrack {
     pub full_title: String,
     pub versions: Vec<RawVersion>,
     pub year: Option<u32>,
+    pub label: Option<String>,
     pub flags: Flags,
     pub junk: Vec<RawJunk>,
     pub warnings: Vec<Warning>,
@@ -607,6 +615,7 @@ impl RawTrack {
             full_title: String::new(),
             versions: Vec::new(),
             year: None,
+            label: None,
             flags: Flags::default(),
             junk: Vec::new(),
             warnings: Vec::new(),
@@ -639,6 +648,7 @@ impl RawTrack {
                 })
                 .collect(),
             year: self.year,
+            label: self.label,
             flags: self.flags,
             junk: self
                 .junk
@@ -685,6 +695,7 @@ impl RawTrack {
             ("fullTitle", Json::str(&self.full_title)),
             ("versions", Json::Arr(versions)),
             ("year", num_opt(self.year)),
+            ("label", Json::opt_str(self.label.as_deref())),
             ("flags", self.flags.to_json_value()),
             ("junk", Json::Arr(junk)),
             ("warnings", Json::Arr(self.warnings.iter().map(|w| Json::str(w.as_str())).collect())),

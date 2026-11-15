@@ -318,6 +318,8 @@ pub struct FormatOptions {
     pub producers: bool,
     /// Write the position in front; default `false`.
     pub position: bool,
+    /// Write `" • " + label` after the title part (R11.3); default `true`.
+    pub label: bool,
 }
 
 impl Default for FormatOptions {
@@ -329,6 +331,7 @@ impl Default for FormatOptions {
             versions: VersionsOption::All,
             producers: true,
             position: false,
+            label: true,
         }
     }
 }
@@ -372,6 +375,12 @@ impl FormatOptions {
     /// Set whether the position is written in front.
     pub fn position(mut self, position: bool) -> Self {
         self.position = position;
+        self
+    }
+
+    /// Set whether the label (R8.7) is written after a spaced bullet.
+    pub fn label(mut self, label: bool) -> Self {
+        self.label = label;
         self
     }
 }
@@ -584,6 +593,7 @@ pub(crate) struct ResolvedFormat {
     pub versions: bool,
     pub producers: bool,
     pub position: bool,
+    pub label: bool,
 }
 
 /// JS truthiness of a JSON value.
@@ -639,6 +649,7 @@ impl ResolvedFormat {
             versions: get("versions").map_or(true, |v| v.as_str() == Some("all")),
             producers: get("producers").map_or(true, truthy),
             position: get("position").is_some_and(truthy),
+            label: get("label").map_or(true, truthy),
         }
     }
 
@@ -655,6 +666,7 @@ impl ResolvedFormat {
             versions: o.versions == VersionsOption::All,
             producers: o.producers,
             position: o.position,
+            label: o.label,
         }
     }
 }
