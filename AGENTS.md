@@ -1140,6 +1140,10 @@ Version rules:
   to the release notes. **Release files are permanent**: package recipes and FetchContent users
   pin the tarball's hash, so the job never replaces a file that is already attached, and a bad
   release gets a new patch version, never a re-upload.
+  The FetchContent examples pin a version by hand: the `URL` lines in `README.md`,
+  `c/README.md` and `start/getting-started.mdx` (and the amalgamation file name there). After a
+  release, point them at the new `c-vX.Y.Z` files; the install switch (`site/src/lib/lang.ts`)
+  follows `js/package.json` on its own.
 - **A publish job failed after the tags were created?** Fix the cause on `main` with a hidden commit
   type (`ci`/`chore`, so no new release), then re-run publishing for the existing tag:
   `gh workflow run release.yml -f python_tag=python-vX.Y.Z` (PyPI) or
