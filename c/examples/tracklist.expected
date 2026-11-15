@@ -1,0 +1,16 @@
+1 header
+2 track @00:00 title=Stigma artist=Noisia
+3 track @03:10 title=Desert Orgy artist=Phace artist=Misanthrop
+4 track @02:45 title=Sinkhole artist=Mefjus
+5 track @09:30 title=Drop That artist=June Miller
+warning: time-out-of-order on line 4 (warning)
+warning: time-after-audio-end on line 5 (warning)
+stats: 5 lines, 4 tracks, 4 timed
+--- edited
+Tracklist:
+00:00 Noisia - Stigma
+03:10 Phace & Misanthrop - Desert Orgy
+06:40 Mefjus - Sinkhole (VIP)
+09:30 June Miller - Drop That (VIP)
+12:00 ID - ID
+--- changed lines: 4 5 6

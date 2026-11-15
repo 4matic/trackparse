@@ -1,0 +1,12 @@
+prefix=@trackparse_pc_prefix@
+exec_prefix=${prefix}
+libdir=@trackparse_pc_LIBDIR@
+includedir=@trackparse_pc_INCLUDEDIR@
+
+Name: trackparse
+Description: Turn messy track names into structured data (C library, with a C++17 header)
+URL: https://4matic.github.io/trackparse/
+Version: @PROJECT_VERSION@
+Cflags: -I${includedir}@trackparse_pc_cflags@
+Libs: -L${libdir} -ltrackparse
+Libs.private: @trackparse_pc_libs_private@

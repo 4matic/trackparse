@@ -1,0 +1,19 @@
+# trackparseConfig.cmake: find_package(trackparse) support. Provides trackparse::trackparse.
+#
+#   find_package(trackparse CONFIG REQUIRED)
+#   target_link_libraries(app PRIVATE trackparse::trackparse)
+#
+# trackparse_SHARED tells whether the installed library is shared.
+
+@PACKAGE_INIT@
+
+set(trackparse_SHARED @TRACKPARSE_SHARED@)
+
+# A static libtrackparse needs the thread library (and libm) at link time.
+if(NOT trackparse_SHARED)
+  include(CMakeFindDependencyMacro)
+  find_dependency(Threads)
+endif()
+
+include("${CMAKE_CURRENT_LIST_DIR}/trackparseTargets.cmake")
+check_required_components(trackparse)

@@ -13,7 +13,7 @@ static tp_classification class_of(tp_class_kind kind) {
   return out;
 }
 
-static const tp_str *str_ptr(tp_str s) {
+static const tp_str *classify_str_ptr(tp_str s) {
   tp_str *p = tp_alloc(sizeof *p);
   *p = s;
   return p;
@@ -167,7 +167,7 @@ TP_PRIVATE bool tp_credits_after(tp_runes inner, tp_word_span_vec spans, ptrdiff
   memset(&opts, 0, sizeof opts);
   opts.role = role;
   opts.source = s.source;
-  opts.lead = str_ptr(tp_runes_str(tp_sub(inner, first.start, last_marker.end)));
+  opts.lead = classify_str_ptr(tp_runes_str(tp_sub(inner, first.start, last_marker.end)));
   opts.split_with = false;
   opts.feat_markers_join = tp_str_eq(role, TP_ROLE_FEATURED);
   /* Offsets are UTF-16 units (see the scanner). */
@@ -455,7 +455,7 @@ TP_PRIVATE bool tp_head_scan(tp_str raw, tp_strvec words, tp_site s, tp_ctx *c,
       }
     }
   }
-  if (descriptors.n > 0) v.descriptor = str_ptr(tp_join(descriptors, TP_S(" ")));
+  if (descriptors.n > 0) v.descriptor = classify_str_ptr(tp_join(descriptors, TP_S(" ")));
   *out = v;
   return true;
 }
@@ -511,7 +511,7 @@ TP_PRIVATE bool tp_prefix_form(tp_str raw, tp_strvec words, tp_site s, tp_ctx *c
     }
     tp_push(rest, w);
   }
-  if (rest.n > 0) v.descriptor = str_ptr(tp_join(rest, TP_S(" ")));
+  if (rest.n > 0) v.descriptor = classify_str_ptr(tp_join(rest, TP_S(" ")));
   *out = v;
   return true;
 }
