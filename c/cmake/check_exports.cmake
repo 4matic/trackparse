@@ -33,9 +33,10 @@ foreach(line IN LISTS lines)
   if(APPLE)
     string(REGEX REPLACE "^_" "" name "${name}")
   endif()
-  # Linker-made symbols of a shared object, and what a sanitizer build adds.
+  # Linker-made symbols, what a sanitizer build adds, and the i386 PIC thunks GCC emits.
   if(name MATCHES "^(_init|_fini|_edata|_end|__bss_start|_DYNAMIC|_GLOBAL_OFFSET_TABLE_)$"
-     OR name MATCHES "^_*(asan|ubsan|tsan|msan|sancov|sanitizer)_")
+     OR name MATCHES "^_*(asan|ubsan|tsan|msan|sancov|sanitizer)_"
+     OR name MATCHES "^__x86\\.get_pc_thunk\\.")
     continue()
   endif()
   if(name MATCHES "^trackparse_")
