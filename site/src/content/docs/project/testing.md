@@ -52,20 +52,33 @@ don't model are rejected instead of guessed.
 Each port throws thousands of random strings at the parser to check the
 [invariants](/trackparse/reference/spec/#invariants) from the spec. The JavaScript suite uses
 [fast-check](https://github.com/dubzzz/fast-check) and the Python suite uses
-[Hypothesis](https://hypothesis.works). The Rust and Go suites each have a small seeded generator
-of their own, so neither needs an extra test dependency. The C suite runs under
-AddressSanitizer and UndefinedBehaviorSanitizer (`-DTRACKPARSE_SANITIZE=ON`), so an out-of-bounds
-read, a leak or undefined behaviour on any fixture fails it. The Go module also has fuzz targets for
-`Parse`, [`ParseArtists`](/trackparse/reference/functions/#parseartistsinput-options), `Format`, [`ParseTracklist`](/trackparse/reference/tracklist/#parsetracklisttext-options), [`ApplyEdits`](/trackparse/reference/tracklist/#applyeditstext-edits-options), `Track.UnmarshalJSON` and the
+[Hypothesis](https://hypothesis.works). The Rust, Go and C suites each have a small seeded
+generator of their own, so none of them needs an extra test dependency. The Go module also has
+fuzz targets for `Parse`, [`ParseArtists`](/trackparse/reference/functions/#parseartistsinput-options), `Format`, [`ParseTracklist`](/trackparse/reference/tracklist/#parsetracklisttext-options), [`ApplyEdits`](/trackparse/reference/tracklist/#applyeditstext-edits-options), `Track.UnmarshalJSON` and the
 internal pipeline (`go test -fuzz`) that run the same checks on whatever the fuzzer finds, and a
 test that calls the parser, the tracklist functions and the edits from 16 goroutines at once under
 the race detector.
 
+The C library has the same kinds of tests, plus a few that only C needs:
+
+- libFuzzer targets for `parse`, `parse_artists`, `format`, `parse_tracklist`, `apply_edits` and
+  the JSON reader of the tests, seeded with every fixture input and checking the same invariants;
+- an out-of-memory test: for about 50 inputs across the API, the n-th allocation fails, for every n
+  until the call succeeds, and each call must return `NULL` or the correct result and free every
+  block it took;
+- 16 threads calling a shared parser, the free functions, the tracklist functions and the edits at
+  once, under ThreadSanitizer in CI, against the bytes of a sequential run;
+- the whole fixture set after `setlocale(LC_ALL, "")` and under German and Turkish locales, which
+  must give the bytes of the `C` locale;
+- the suite under AddressSanitizer with UndefinedBehaviorSanitizer (GCC and Clang),
+  MemorySanitizer and Valgrind, so an out-of-bounds read, an uninitialized value, a leak or
+  undefined behaviour fails it.
+
 - it never throws or panics, on any input, in any mode;
-- a 10,000-code-point input finishes inside a ceiling: 1 s in JavaScript and Python, 2 s in Rust
-  and Go.
-  It normally takes tens of milliseconds in JavaScript and Rust, a few milliseconds in Go and well
-  under a second in Python;
+- a 10,000-code-point input finishes inside a ceiling: 1 s in JavaScript and Python, 2 s in Rust,
+  Go and C (Go and C widen it ten times under the race detector or a sanitizer).
+  It normally takes tens of milliseconds in JavaScript and Rust, a few milliseconds in Go and C and
+  well under a second in Python;
   the ceiling is loose so that a busy CI machine doesn't
   fail the run but a blowup does;
 - [`normalize`](/trackparse/reference/functions/#normalizeinput) is idempotent;
@@ -73,7 +86,7 @@ the race detector.
 - every output validates against the JSON Schema (JavaScript, Python, Go and C, where the fixture
   runner writes every output and a Node script checks it; the Rust output is compared with
   JavaScript byte for byte instead, see below);
-- no word of the input goes missing from the output (the Rust and Go suites);
+- no word of the input goes missing from the output (the Rust, Go and C suites);
 - `parse(format(parse(s)))` round-trips.
 
 For tracklists, on random multi-line text and random edit lists:
@@ -82,7 +95,8 @@ For tracklists, on random multi-line text and random edit lists:
 - `applyEdits(t, [])` returns `t`, and an edit never touches a line it doesn't name;
 - shifting forward and back restores the text, unless something was clamped or upgraded;
 - 10,000 lines parse inside a ceiling each suite sets for itself: 3 s in JavaScript (it takes
-  about 0.8 s), 15 s in Python, 3 s in an optimized Rust build, 3 s in Go (it takes about 0.35 s);
+  about 0.8 s), 15 s in Python, 3 s in an optimized Rust build, 3 s in Go (it takes about 0.35 s)
+  and 3 s in C (it takes about 0.35 s too);
 - Markdown emphasis around a time or a track line gives the same kind, time and track as the plain
   line.
 
@@ -96,7 +110,8 @@ JSON output, tracklists and edits included. The difference count is zero.
 [`fuzz-ports.mjs`](https://github.com/4matic/trackparse/blob/main/scripts/fuzz-ports.mjs) does the
 same with random input, which reaches places no fixture does. The Rust crate and the Go module were
 each run against JavaScript on about 500,000 random single-track cases and 290,000 random
-tracklists with edits, again with zero differences.
+tracklists with edits, again with zero differences. CI runs the C library against JavaScript on
+50,000 random tracks and 10,000 tracklists on every push.
 
 ## Real tracklists
 
@@ -114,7 +129,8 @@ Every push runs one workflow per port, plus one for the spec:
 | [`python.yml`](https://github.com/4matic/trackparse/blob/main/.github/workflows/python.yml) | ruff, `mypy --strict` and pytest on Python 3.9 to 3.14, and every fixture against the installed wheel |
 | [`rust.yml`](https://github.com/4matic/trackparse/blob/main/.github/workflows/rust.yml) | `cargo test --locked` on stable and on Rust 1.74. On stable only: rustfmt, clippy, the tests with `--all-features` and a publish dry run. Also the Rust output against the built JavaScript package on every fixture |
 | [`go.yml`](https://github.com/4matic/trackparse/blob/main/.github/workflows/go.yml) | `go vet` and `go test -race` on Go 1.22 and on stable, with the artist-side test data written from the built JavaScript package. On stable only: gofmt, staticcheck and the full Unicode check against Node. Also checks that the generated data and Unicode tables are current, that `go.mod` has no dependencies and that no unstable `sort.Slice` is used, and compares the Go output with the built JavaScript package on every fixture. A separate job builds and tests `go/` on its own, as the module zip holds it. A weekly scheduled run fuzzes every fuzz target for three to five minutes |
-| [`spec.yml`](https://github.com/4matic/trackparse/blob/main/.github/workflows/spec.yml) | Fixture validation, stale generated files, the generator's own tests, and that the version numbers of the spec and the five packages match |
+| [`c.yml`](https://github.com/4matic/trackparse/blob/main/.github/workflows/c.yml) | CMake builds with `-Werror` and `ctest` (fixtures, schema check, unit, property, thread, locale and out-of-memory tests, the C++ wrapper in C++17 and C++20, the examples, the exported-symbol check and the install, pkg-config, amalgamation and FetchContent consumers) with GCC and Clang on Linux, GCC on ARM64, a shared-library build, Apple Clang on macOS and MSVC on Windows; 32-bit x86 and GCC 9 with CMake 3.16. The suite under ASan + UBSan (GCC and Clang), ThreadSanitizer, MemorySanitizer and Valgrind, and under German and Turkish locales. Also checks that the generated data and Unicode tables are current and match the Go port's sample, clang-format, a grep that keeps locale-dependent and unstable calls (`qsort`, `strtod`, `<ctype.h>`, the `printf` family) out of `src/`, and the amalgamation; compares the C output with the built JavaScript package on every fixture and on random input. A weekly scheduled run fuzzes every libFuzzer target for ten minutes |
+| [`spec.yml`](https://github.com/4matic/trackparse/blob/main/.github/workflows/spec.yml) | Fixture validation, stale generated files, the generator's own tests, and that the version numbers of the spec and the five ports match |
 
 ## Run it yourself
 
@@ -146,6 +162,7 @@ cmake --build c/build
 ctest --test-dir c/build --output-on-failure            # the same fixtures, schema check, unit tests
 TRACKPARSE_REPORT=1 c/build/trackparse-fixtures spec/fixtures/*/*.json   # pass rate per file and per rule
 cmake -S c -B c/build-asan -DTRACKPARSE_SANITIZE=ON     # the same suite under ASan and UBSan
+cmake --build c/build-asan && ctest --test-dir c/build-asan -LE consumer
 
 # All five against each other (from the root)
 pnpm build

@@ -14,7 +14,7 @@
 //   --lists=N    tracklists; each gives a parseTracklist and an applyEdits case with random
 //                edits (invalid ones included); default 58% of --n (290,000 for 500,000)
 //   --seed=N     generator seed (mulberry32); default 1. The same seed gives the same cases.
-//   --only=X     python, rust, go or c; default all four
+//   --only=X     python, rust, go or c; default all of them (five ports with JS)
 //   --batch=N    cases per port process; default 20000
 //   --out=FILE   write every differing case as JSONL (the case and each port's output)
 //
