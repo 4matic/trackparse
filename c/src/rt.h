@@ -50,6 +50,10 @@
 #else
 #define TP_UNUSED
 #endif
+#if defined(_MSC_VER)
+/* 4324: tp_scope holds a jmp_buf, which MSVC aligns to 16 and then reports the padding. */
+#pragma warning(disable : 4324)
+#endif
 #if defined(TRACKPARSE_AMALGAMATION) && defined(_MSC_VER)
 /* 4505: unreferenced static function; 4132: a const object declared before its definition
  * (TP_PRIVATE_DATA in the generated headers). */

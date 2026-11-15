@@ -551,8 +551,8 @@ static void sweep_all(const hz_cases *cases_p, size_t *used_p) {
     static const char *const own[] = {
         "",
         "\xff\xfe broken \xed\xa0\x80 UTF-8",
-        "01. Wilkinson ft. Becky Hill & Tom Cane - Afterglow (Sub Focus VIP Remix) "
-        "[Official Video]",
+        ("01. Wilkinson ft. Becky Hill & Tom Cane - Afterglow (Sub Focus VIP Remix) "
+         "[Official Video]"),
     };
     char *big = (char *)malloc(10001), *list = (char *)malloc(400001);
     size_t ln = 0;
