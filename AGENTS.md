@@ -679,11 +679,11 @@ Each of these was written wrong at least once and caught in review. Check them w
 | every suite checks "no word goes missing" | Only `rust/tests/properties.rs`, `go/properties_test.go` and `c/tests/test_properties.c` (the check is in `c/tests/hardening.c`) have that test today. |
 | "Neuropunk" on the site | "a private corpus of real podcast tracklists". Fixture file names and `source` values keep the name; the site and READMEs don't. |
 
-Numbers that appear in many files (grep all of them when one changes): fixture counts (13,130 =
-1,203 handwritten + 11,927 generated), test counts (vitest 1,352, pytest 1,342), CI matrices
+Numbers that appear in many files (grep all of them when one changes): fixture counts (13,565 =
+1,280 handwritten + 12,285 generated), test counts (vitest 1,435, pytest 1,427), CI matrices
 (Node 22/24 + 18/20, Python 3.9 to 3.14, Rust stable + 1.74, Go stable + 1.22, C: GCC, Clang,
 ARM64, shared, macOS, MSVC, 32-bit x86 and GCC 9 with CMake 3.16), the 27 version types, the sizes
-above. `spec/generator/README.md` links the site anchor `#generated-11927-cases`, which changes
+above. `spec/generator/README.md` links the site anchor `#generated-12285-cases`, which changes
 with the count.
 
 ### Checking examples and links
@@ -792,6 +792,9 @@ with the count.
 - `format(track, { featMarker: null })` writes the literal marker `null` in JS, Rust, Go and C's
   JSON door; Python falls back to the input's marker (found by `scripts/fuzz-ports.mjs`). The
   typed C API has no way to pass null. Needs a spec decision and a fixture.
+- Python's format options treat `[]` and `{}` as false, JS treats them as true (truthiness), so
+  `{"producers": []}` or `{"label": []}` drops the producers or the label in Python only. The
+  typed APIs take a bool; only the JSON-like door differs, and fuzz-ports never sends those values.
 - R13.9.5: `insert` next to a bare CR can merge the new line with an empty LF line on re-read
   (`"\r\r\n\n\r"`, insert after 2 gives 4 lines). All ports agree; no fixture pins it yet.
 - Python tracklist types have `to_dict()` but no `from_dict()`; `ParsedTrack` has both.
