@@ -57,7 +57,7 @@ on a test. 0.7.1 is the first C release you can download.
 ```cmake
 include(FetchContent)
 FetchContent_Declare(trackparse
-  URL https://github.com/4matic/trackparse/releases/download/c-v0.7.1/trackparse-c-0.7.1.tar.gz
+  URL https://github.com/4matic/trackparse/releases/download/c-v0.8.0/trackparse-c-0.8.0.tar.gz
   URL_HASH SHA256=<the tarball's line in SHA256SUMS>)
 FetchContent_MakeAvailable(trackparse)
 

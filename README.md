@@ -176,7 +176,7 @@ a single-file amalgamation to its [GitHub Release](https://github.com/4matic/tra
 ```cmake
 include(FetchContent)
 FetchContent_Declare(trackparse
-  URL https://github.com/4matic/trackparse/releases/download/c-v0.7.1/trackparse-c-0.7.1.tar.gz)
+  URL https://github.com/4matic/trackparse/releases/download/c-v0.8.0/trackparse-c-0.8.0.tar.gz)
 FetchContent_MakeAvailable(trackparse)
 target_link_libraries(app PRIVATE trackparse::trackparse)
 ```
