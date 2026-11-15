@@ -673,7 +673,7 @@ Each of these was written wrong at least once and caught in review. Check them w
 | "under 100 ms" for every port | True for JS (10 to 70 ms on 10,000 code points) and Rust (under 20 ms, release build). Python takes 40 to 170 ms. The suites enforce 1 s (JS, Python) and 2 s (Rust). Go: 3 to 7 ms (`go test -bench Parse10k` in `go/`, on an i7-4770S, Go 1.24, with other jobs running; JS on the same inputs 4 to 18 ms), ceiling 2 s. C: 1.4 to 5.7 ms (`test_bench` from a CMake Release build, GCC 9 at `-O3`, same i7-4770S, load average 6 from other jobs), ceiling 2 s. So "at most tens of milliseconds" holds for JS, Rust, Go and C, not Python. A 10,000-line tracklist: Go 0.33 to 0.38 s, C 0.34 to 0.39 s, JS 0.8 to 0.9 s. |
 | "identical output for any input" | Identical on every fixture input. The Rust crate takes NFC from `unicode-normalization` (Unicode 18), Node 24 has Unicode 17, so 32 new combining marks can be ordered differently. Link `project/ports/#what-the-rust-port-taught`. |
 | "zero dependencies" for the project | Zero in JS, Python and Go (the Go tables are generated from Node, not taken from `golang.org/x/text`). Rust has one, `unicode-normalization`. C needs only the C standard library, `libm` and the system's threads (pthreads, or Windows SRW locks); C++ is needed only for the wrapper's tests. |
-| "on vcpkg / Conan", "install the C library with a package manager" | No package manager carries it. FetchContent from the release tarball, the amalgamation, or an install from source with `find_package` and pkg-config, all three from the first C release, 0.7.0. |
+| "on vcpkg / Conan", "install the C library with a package manager" | No package manager carries it. FetchContent from the release tarball, the amalgamation, or an install from source with `find_package` and pkg-config, the tarball and the amalgamation from 0.7.1, the first C release with files. |
 | "no recursion" for C | One recursive function, the JSON writer `tp_json_write`, bounded by the reader's `TP_JSON_MAX_DEPTH` (200). The pipeline has none. |
 | a size in mixed units | Core: about 18 kB gzip. Tracklist entry: about 8.4 KiB (8,606 B), budget 9 KiB. Re-measure with `pnpm --filter trackparse build && pnpm --filter trackparse size`. |
 | every suite checks "no word goes missing" | Only `rust/tests/properties.rs`, `go/properties_test.go` and `c/tests/test_properties.c` (the check is in `c/tests/hardening.c`) have that test today. |
@@ -1120,7 +1120,8 @@ Version rules:
   `TRACKPARSE_VERSION_MAJOR` / `_MINOR` / `_PATCH` with `x-release-please-major` / `-minor` /
   `-patch`) and `src/data_gen.h` (`TP_SPEC_VERSION`, which `c/scripts/gen_data.mjs` writes with the
   marker, so `--check` stays clean after the bump). The release PR writes `c/CHANGELOG.md`, and
-  merging it tags `c-vX.Y.Z` (the default `-` separator). The first C release is 0.7.0. The
+  merging it tags `c-vX.Y.Z` (the default `-` separator). C was first tagged at 0.7.0, a release
+  with no files (`publish-c` failed on a test, see below); 0.7.1 is the first with files. The
   manifest starts C at the linked 0.6.1, so expect its first changelog to link a `c-v0.6.1` tag
   that never existed, as Go's and Rust's first entries did, and to list every commit under `c/`.
 - **C publishing is files on the GitHub Release.** The `publish-c` job in `release.yml`
