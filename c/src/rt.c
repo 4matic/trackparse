@@ -186,6 +186,45 @@ TP_PRIVATE void *tp_realloc(void *p, size_t old_size, size_t new_size) {
   return q;
 }
 
+TP_PRIVATE tp_mark tp_arena_mark(void) {
+  tp_mark m;
+  m.arena = rt_cur;
+  m.head = rt_cur != NULL ? rt_cur->head : NULL;
+  m.head_next = m.head != NULL ? ((tp_chunk *)m.head)->next : NULL;
+  m.head_used = m.head != NULL ? ((tp_chunk *)m.head)->used : 0;
+  return m;
+}
+
+static void rt_chunk_drop(tp_arena *a, tp_chunk *c) {
+  a->bytes -= TP_CHUNK_HDR + c->cap;
+  tp_sys_free(c);
+}
+
+TP_PRIVATE void tp_arena_release(tp_mark m) {
+  tp_arena *a = (tp_arena *)m.arena;
+  tp_chunk *old = (tp_chunk *)m.head;
+  tp_chunk *c;
+  if (a == NULL) return;
+  /* New heads (and the large chunks put behind them) sit in front of the old head. */
+  c = a->head;
+  while (c != NULL && c != old) {
+    tp_chunk *next = c->next;
+    rt_chunk_drop(a, c);
+    c = next;
+  }
+  a->head = old;
+  if (old == NULL) return;
+  /* Large chunks taken while the old head was still the head sit right behind it. */
+  c = old->next;
+  while (c != NULL && c != (tp_chunk *)m.head_next) {
+    tp_chunk *next = c->next;
+    rt_chunk_drop(a, c);
+    c = next;
+  }
+  old->next = (tp_chunk *)m.head_next;
+  old->used = m.head_used;
+}
+
 TP_PRIVATE tp_arena *tp_arena_use(tp_arena *a) {
   tp_arena *prev = rt_cur;
   rt_cur = a;

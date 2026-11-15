@@ -79,9 +79,14 @@ TP_PRIVATE ptrdiff_t tp_match_known_at(tp_runes text, ptrdiff_t start, tp_ctx *c
     tp_rune next = tp_at(text, end);
     bool boundary = end == n || next == ',' || next == ';' || tp_is_whitespace(next) ||
                     (extra != TP_NORUNE && next == extra);
-    if (boundary &&
-        tp_word_set_has(c->known_keys, tp_dedup_key(tp_runes_str(tp_sub(text, start, end))))) {
-      return end - start;
+    if (boundary) {
+      /* The key only answers yes or no: give its memory back at once. Without this a long
+       * input with a long known artist keeps every key (C port only; the GC ports free them). */
+      tp_mark mark = tp_arena_mark();
+      bool hit =
+          tp_word_set_has(c->known_keys, tp_dedup_key(tp_runes_str(tp_sub(text, start, end))));
+      tp_arena_release(mark);
+      if (hit) return end - start;
     }
   }
   return 0;
