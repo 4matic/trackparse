@@ -40,8 +40,8 @@ all of them, and for every fixture input its output is byte-identical to the
 **Docs:** [Getting started](https://4matic.github.io/trackparse/start/getting-started/)
 
 There is no package registry for C. Each release attaches two files to its
-[GitHub Release](https://github.com/4matic/trackparse/releases) (tags `c-vX.Y.Z`, the first is
-`c-v0.7.0`), with a `SHA256SUMS` file next to them:
+[GitHub Release](https://github.com/4matic/trackparse/releases) (tags `c-vX.Y.Z`, the first with
+files is `c-v0.7.1`), with a `SHA256SUMS` file next to them:
 
 - `trackparse-c-X.Y.Z.tar.gz`: this folder, for CMake;
 - `trackparse-c-X.Y.Z-amalgamation.zip`: `trackparse.c`, `trackparse.h` and `trackparse.hpp`, to
@@ -49,16 +49,15 @@ There is no package registry for C. Each release attaches two files to its
 
 Release files are never replaced: a fix is a new version, so a pinned hash keeps working.
 
-The first release with the C library is 0.7.0. Until the releases page lists `c-v0.7.0`, the
-download URLs below do not exist yet: build [from source](#from-source) instead, and leave the
-version out of `find_package` (a checkout from before that release still says 0.6.1).
+The C library was first tagged in 0.7.0, but that release has no files: its publish job failed
+on a test. 0.7.1 is the first C release you can download.
 
 ### CMake FetchContent
 
 ```cmake
 include(FetchContent)
 FetchContent_Declare(trackparse
-  URL https://github.com/4matic/trackparse/releases/download/c-v0.7.0/trackparse-c-0.7.0.tar.gz
+  URL https://github.com/4matic/trackparse/releases/download/c-v0.7.1/trackparse-c-0.7.1.tar.gz
   URL_HASH SHA256=<the tarball's line in SHA256SUMS>)
 FetchContent_MakeAvailable(trackparse)
 
