@@ -1,6 +1,6 @@
 ---
 title: Junk, flags and prefixes
-description: Video tags, quality markers, labels and platform suffixes; explicit and clean flags; years, track numbers and cue times.
+description: Video tags, quality markers, labels and platform suffixes; record labels after a bullet; explicit and clean flags; years, track numbers and cue times.
 ---
 
 import { Tabs, TabItem } from "@astrojs/starlight/components";
@@ -87,9 +87,10 @@ trackparse_track_free(t);
 | `quality` | `HD`, `HQ`, `4K`, `1080p` |
 | `promo` | `Free Download`, `Out Now`, `Premiere` |
 | `platform` | `- YouTube`, `- SoundCloud` suffixes |
-| `label` | `NCS Release`, `Monstercat Release` |
+| `label` | `NCS Release`, `Monstercat Release` in brackets (not the [`label` field](#labels-after-a-bullet)) |
 | `genre` | a bracketed genre such as `[Drum & Bass]` |
 | `other` | a bare `(Official)` |
+| `note` | text after a second bullet: `VISION RADIO RELOAD` in `concussion • VISION • VISION RADIO RELOAD` ([below](#labels-after-a-bullet)) |
 
 The phrases are in [`junk.json`](https://github.com/4matic/trackparse/blob/main/spec/data/junk.json)
 (plus `genres.json` for the genre kind) and [`platform-suffixes.json`](https://github.com/4matic/trackparse/blob/main/spec/data/platform-suffixes.json).
@@ -97,7 +98,9 @@ Seeing junk is also one of the ways `mode: "auto"` decides a string came from Yo
 (see [Modes](/trackparse/guides/modes/#how-auto-decides)). A bracket of junk is
 [R5.1](/trackparse/reference/spec/#r5-group-classification:~:text=R5.1%20Junk), a platform suffix
 [R2.2](/trackparse/reference/spec/#r2-mode-prelude:~:text=R2.2%20Platform%20suffixes), and unbracketed junk at the end of a
-YouTube title [R8.4](/trackparse/reference/spec/#r8-title-side:~:text=R8.4%20Trailing%20junk).
+YouTube title [R8.4](/trackparse/reference/spec/#r8-title-side:~:text=R8.4%20Trailing%20junk). A `note` is not noise:
+it goes to `junk` because it is not part of the track's identity either
+([R8.7](/trackparse/reference/spec/#r8-title-side:~:text=R8.7%20Bullet%20suffix)).
 
 In Rust the kind is the enum [`JunkKind`](https://docs.rs/trackparse/latest/trackparse/enum.JunkKind.html) (`JunkKind::Video`,
 `JunkKind::Quality` and so on). Its `as_str()` gives the lowercase names in the table. In Go the
@@ -162,6 +165,82 @@ are not junk yet. They stay in the title. See the [roadmap](/trackparse/project/
 
 To treat a phrase of your own as junk, add it with
 [`keywords.junk`](/trackparse/reference/options/#keywords).
+
+## Labels after a bullet
+
+Radio show tracklists often put the record label after the title, behind a spaced bullet (`•`), and
+sometimes a note after a second one. The first segment after the bullet becomes `label`, and each
+later one goes to `junk` with the kind `note`. You can open this example in the
+[playground](/trackparse/playground/#track=Noisia%20-%20concussion%20%E2%80%A2%20VISION%20%E2%80%A2%20VISION%20RADIO%20RELOAD).
+
+<Tabs syncKey="lang">
+<TabItem label="JavaScript">
+
+```js
+const l = parse("Noisia - concussion • VISION • VISION RADIO RELOAD");
+l.title;  // 'concussion'
+l.label;  // 'VISION'
+l.junk;   // [ { raw: 'VISION RADIO RELOAD', kind: 'note' } ]
+```
+
+</TabItem>
+<TabItem label="Python">
+
+```python
+l = parse("Noisia - concussion • VISION • VISION RADIO RELOAD")
+l.title  # 'concussion'
+l.label  # 'VISION'
+l.junk   # (Junk(raw='VISION RADIO RELOAD', kind='note'),)
+```
+
+</TabItem>
+<TabItem label="Rust">
+
+```rust
+let l = parse("Noisia - concussion • VISION • VISION RADIO RELOAD");
+&l.title;  // "concussion"
+&l.label;  // Some("VISION")
+&l.junk;   // [Junk { raw: "VISION RADIO RELOAD", kind: Note }]
+```
+
+</TabItem>
+<TabItem label="Go">
+
+```go
+l := trackparse.Parse("Noisia - concussion • VISION • VISION RADIO RELOAD")
+fmt.Printf("%q\n", l.Title)    // "concussion"
+fmt.Printf("%q\n", *l.Label)   // "VISION"
+fmt.Printf("%+v\n", l.Junk)    // [{Raw:VISION RADIO RELOAD Kind:note}]
+```
+
+</TabItem>
+<TabItem label="C">
+
+```c
+trackparse_track *l = trackparse_parse("Noisia - concussion • VISION • VISION RADIO RELOAD",
+                                       TRACKPARSE_NUL_TERMINATED);
+printf("%s\n", l->title.ptr);   // concussion
+if (l->label) printf("%s\n", l->label->ptr);   // VISION
+printf("%s: %s\n", l->junk[0].kind_name.ptr, l->junk[0].raw.ptr);   // note: VISION RADIO RELOAD
+trackparse_track_free(l);
+```
+
+</TabItem>
+</Tabs>
+
+The label is kept as written, after [normalization](/trackparse/reference/functions/#normalizeinput):
+same case, no lookup, `null` when there is none (`None` in Python and Rust, `nil` in Go, `NULL` in
+C). Only the part before the first bullet is the track, so versions, features and the year come
+from there: `WHO (K-LONE VIP) • IAMSIAM` keeps its VIP as a version, and `Stigma • HOSPITAL (2024)`
+has the label `HOSPITAL (2024)` and no `year`. A bracket of junk after the bullet is junk as usual,
+and a segment made only of junk phrases (`Stigma • FREE DOWNLOAD`) is junk too, not a label.
+
+The bullet has to be U+2022 with a space on each side, after the artist/title dash and outside
+every bracket. [What it understands](/trackparse/guides/what-it-understands/#labels-after-a-bullet)
+lists the cases that don't count, and the one false positive: a bullet inside a title
+(`Song • Part 2`) is read as a label too. The rule is
+[R8.7](/trackparse/reference/spec/#r8-title-side:~:text=R8.7%20Bullet%20suffix), and
+[`format`](/trackparse/guides/formatting/#labels) writes the label back.
 
 ## Flags
 
@@ -399,7 +478,7 @@ For whole tracklists with a time on every line, use [`parseTracklist`](/trackpar
 ## See also
 
 - [`ParsedTrack` in the reference](/trackparse/reference/parse/#parsedtrack) for the types of
-  `junk`, `flags`, `year`, `position` and `timestamp`.
+  `junk`, `label`, `flags`, `year`, `position` and `timestamp`.
 - [Modes](/trackparse/guides/modes/) for how junk and file extensions pick the mode.
 - [Formatting](/trackparse/guides/formatting/): junk is never written back, and the track number
   only when you ask.

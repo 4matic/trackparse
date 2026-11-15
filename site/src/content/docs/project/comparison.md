@@ -26,5 +26,5 @@ are features, who remixed it, what kind of version it is, and what was cut out o
 
 - [Introduction](/trackparse/start/introduction/) for what trackparse returns.
 - [What it understands](/trackparse/guides/what-it-understands/) for results on real inputs.
-- [How it's tested](/trackparse/project/testing/#handwritten-1203-cases): the regression fixtures
+- [How it's tested](/trackparse/project/testing/#handwritten-1280-cases): the regression fixtures
   include the test inputs of the parsers above.

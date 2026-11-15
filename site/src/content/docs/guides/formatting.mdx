@@ -108,6 +108,7 @@ Junk is never written back. Everything else is, by default, the way it was writt
 | `versions` | `"all"` or `"none"` | `"all"` |
 | `producers` | write `(prod. by …)` credits | `true` |
 | `position` | write the track number back | `false` |
+| `label` | write the [label](/trackparse/guides/junk-and-flags/#labels-after-a-bullet) back after the title, ` • VISION` ([R11.3](/trackparse/reference/spec/#r11-format:~:text=R11.3%20Title)) | `true` |
 
 Python takes the options as keyword arguments, so `featMarker` is `feat_marker`. Rust takes a
 [`FormatOptions`](https://docs.rs/trackparse/latest/trackparse/struct.FormatOptions.html) value built with one setter per option, and the
@@ -116,7 +117,8 @@ values are enums ([`FeatPlacement`](https://docs.rs/trackparse/latest/trackparse
 takes a [`FormatOptions`](https://pkg.go.dev/github.com/4matic/trackparse/go#FormatOptions) struct whose zero value is the default, and the values
 are typed string constants ([`FeatPlacement`](https://pkg.go.dev/github.com/4matic/trackparse/go#FeatPlacement), [`JoinerStyle`](https://pkg.go.dev/github.com/4matic/trackparse/go#JoinerStyle),
 [`VersionsOption`](https://pkg.go.dev/github.com/4matic/trackparse/go#VersionsOption)); [`trackparse.Ptr`](https://pkg.go.dev/github.com/4matic/trackparse/go#Ptr) sets `FeatMarker`.
-Since a Go `bool` field defaults to `false`, `producers` becomes `OmitProducers`. C takes a
+Since a Go `bool` field defaults to `false`, `producers` becomes `OmitProducers` and `label`
+becomes `OmitLabel`. C takes a
 `trackparse_format_options` handle from `trackparse_format_options_new()`, with one setter per
 option and C enums for the values; an option you don't set keeps its default, and
 `trackparse_format_options_free` releases the handle. Each tab below starts with the names in
@@ -150,7 +152,7 @@ format(parse("Future - Mask Off (prod. by Metro Boomin)"), { producers: false })
 
 - `feat="title"`: `"source"`, `"artist"`, `"title"` or `"omit"`
 - `feat_marker="featuring"`, `joiners="canonical"`, `versions="none"`
-- `producers=False`, `position=True`
+- `producers=False`, `position=True`, `label=False`
 
 ```python
 format_track(t, feat="title")
@@ -177,7 +179,7 @@ format_track(parse("Future - Mask Off (prod. by Metro Boomin)"), producers=False
 - `.feat_marker("featuring")`
 - `.joiners(JoinerStyle::Canonical)`: `Original` or `Canonical`
 - `.versions(VersionsOption::None)`: `All` or `None`
-- `.producers(false)`, `.position(true)`
+- `.producers(false)`, `.position(true)`, `.label(false)`
 
 ```rust
 use trackparse::{format_track_with, FeatPlacement, FormatOptions, JoinerStyle, VersionsOption};
@@ -212,7 +214,8 @@ format_track_with(
 - `FeatMarker: trackparse.Ptr("featuring")` (a `*string`)
 - `Joiners: trackparse.JoinersCanonical`: `JoinersOriginal` or `JoinersCanonical`
 - `Versions: trackparse.VersionsNone`: `VersionsAll` or `VersionsNone`
-- `OmitProducers: true` for `producers: false`, and `Position: true`
+- `OmitProducers: true` for `producers: false`, `OmitLabel: true` for `label: false`, and
+  `Position: true`
 
 ```go
 fmt.Printf("%q\n", trackparse.FormatWith(t, trackparse.FormatOptions{Feat: trackparse.FeatTitle}))
@@ -251,6 +254,7 @@ fmt.Printf("%q\n", trackparse.FormatWith(
   `_CANONICAL`
 - `trackparse_format_options_set_versions(o, TRACKPARSE_VERSIONS_NONE)`: `_ALL` or `_NONE`
 - `trackparse_format_options_set_omit_producers(o, true)` for `producers: false`
+- `trackparse_format_options_set_omit_label(o, true)` for `label: false`
 - `trackparse_format_options_set_position(o, true)`
 
 ```c
@@ -314,10 +318,73 @@ trackparse_track_free(t);
 </TabItem>
 </Tabs>
 
+## Labels
+
+A [label after a bullet](/trackparse/guides/junk-and-flags/#labels-after-a-bullet) is written back
+after the versions and producers, as `" • " + label`. Notes are junk, so they are not
+([try it](/trackparse/playground/#track=Noisia%20-%20concussion%20%E2%80%A2%20VISION%20%E2%80%A2%20VISION%20RADIO%20RELOAD)):
+
+<Tabs syncKey="lang">
+<TabItem label="JavaScript">
+
+```js
+const l = parse("Noisia - concussion • VISION • VISION RADIO RELOAD");
+format(l);                     // 'Noisia - concussion • VISION'
+format(l, { label: false });   // 'Noisia - concussion'
+```
+
+</TabItem>
+<TabItem label="Python">
+
+```python
+l = parse("Noisia - concussion • VISION • VISION RADIO RELOAD")
+format_track(l)                # 'Noisia - concussion • VISION'
+format_track(l, label=False)   # 'Noisia - concussion'
+```
+
+</TabItem>
+<TabItem label="Rust">
+
+```rust
+let l = parse("Noisia - concussion • VISION • VISION RADIO RELOAD");
+format_track(&l);                                         // "Noisia - concussion • VISION"
+format_track_with(&l, &FormatOptions::new().label(false)); // "Noisia - concussion"
+```
+
+</TabItem>
+<TabItem label="Go">
+
+```go
+l := trackparse.Parse("Noisia - concussion • VISION • VISION RADIO RELOAD")
+fmt.Printf("%q\n", trackparse.Format(l))                                            // "Noisia - concussion • VISION"
+fmt.Printf("%q\n", trackparse.FormatWith(l, trackparse.FormatOptions{OmitLabel: true})) // "Noisia - concussion"
+```
+
+</TabItem>
+<TabItem label="C">
+
+```c
+trackparse_track *l = trackparse_parse("Noisia - concussion • VISION • VISION RADIO RELOAD",
+                                       TRACKPARSE_NUL_TERMINATED);
+s = trackparse_format(l);
+printf("%s\n", s->str.ptr);   // Noisia - concussion • VISION
+trackparse_string_free(s);
+o = trackparse_format_options_new();
+trackparse_format_options_set_omit_label(o, true);
+s = trackparse_format_with(l, o);
+printf("%s\n", s->str.ptr);   // Noisia - concussion
+trackparse_string_free(s);
+trackparse_format_options_free(o);
+trackparse_track_free(l);
+```
+
+</TabItem>
+</Tabs>
+
 ## Round trip
 
-Parsing the formatted string gives back the same artist names and roles, the same title and the
-same version types and remixers, as long as the first parse raised no warnings. The spec makes this
+Parsing the formatted string gives back the same artist names and roles, the same title, the
+same version types and remixers and the same label, as long as the first parse raised no warnings. The spec makes this
 an invariant ([R11.6](/trackparse/reference/spec/#r11-format:~:text=R11.6%20Round%2Dtrip)), and the
 [property tests](/trackparse/project/testing/#properties) check it on generated input:
 
@@ -378,6 +445,13 @@ trackparse_track_free(first);
 
 </TabItem>
 </Tabs>
+
+The label has two exceptions: it only comes back when the formatted string has an artist part
+and a title. `ID - Stigma • VISION` has an unknown artist, so it formats to `Stigma • VISION`. That
+string has no dash, and without one the bullet is not read as a label: the second parse gives the
+title `Stigma • VISION`, no label and a [`noSeparator`](/trackparse/reference/warnings/#track-warnings:~:text=noSeparator) warning. `Noisia - [HD] • VISION` has an
+empty title (the `[HD]` is junk), so it formats to `Noisia - • VISION`, and a bullet right after
+the dash starts no label either: the second parse gives the title `• VISION`.
 
 The [playground](/trackparse/playground/#track=01.%20Wilkinson%20ft.%20Becky%20Hill%20%26%20Tom%20Cane%20-%20Afterglow%20%28Sub%20Focus%20VIP%20Remix%29%20%5BOfficial%20Video%5D)
 has a `format()` panel if you want to try the options on this track or your own strings. Its code

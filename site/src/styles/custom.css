@@ -51,6 +51,7 @@
   --tp-junk: #868686;
   --tp-position: #a8a8a8;
   --tp-year: #a8a8a8;
+  --tp-record: #6cc4a1;
 
   /* Syntax colours for the playground's own code panels (Vitesse Dark, like the code blocks). */
   --tp-syn-kw: #4d9375;
@@ -99,6 +100,7 @@
   --tp-junk: #6b6b6b;
   --tp-position: #5c5c5c;
   --tp-year: #5c5c5c;
+  --tp-record: #1d7a58;
 
   --tp-syn-kw: #1e754f;
   --tp-syn-str: #a45a4a;
@@ -495,6 +497,8 @@ starlight-tabs [role="tab"] {
 .tp-junk { --tp-c: var(--tp-junk); }
 .tp-year,
 .tp-flag { --tp-c: var(--tp-year); }
+/* The record label after a bullet (R8.7); .tp-label is taken by the form labels. */
+.tp-record { --tp-c: var(--tp-record); }
 .tp-title { --tp-c: var(--sl-color-gray-2); }
 
 /* A warning name in the parsed fields links to the warnings reference: same colour, quiet rule. */

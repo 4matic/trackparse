@@ -103,6 +103,7 @@ interface ParsedTrack {
   fullTitle: string;
   versions: Version[];
   year: number | null;
+  label: string | null;          // the record label after a spaced bullet
   flags: Flags;                  // { explicit, clean, unknownArtist, unknownTitle }
   junk: Junk[];                  // { raw: string; kind: JunkKind }
   warnings: Warning[];
@@ -127,6 +128,7 @@ class ParsedTrack:
     flags: Flags                     # Flags(explicit, clean, unknown_artist, unknown_title)
     junk: tuple[Junk, ...]           # Junk(raw: str, kind: JunkKind)
     warnings: tuple[Warning, ...]
+    label: Optional[str] = None      # last, so positional construction keeps working
 ```
 
 </TabItem>
@@ -143,6 +145,7 @@ pub struct ParsedTrack {
     pub full_title: String,
     pub versions: Vec<Version>,
     pub year: Option<u32>,
+    pub label: Option<String>,
     pub flags: Flags,                   // Flags { explicit, clean, unknown_artist, unknown_title }
     pub junk: Vec<Junk>,                // Junk { raw: String, kind: JunkKind }
     pub warnings: Vec<Warning>,
@@ -163,6 +166,7 @@ type Track struct {
 	FullTitle string
 	Versions  []Version
 	Year      *int
+	Label     *string
 	Flags     Flags        // Flags{Explicit, Clean, UnknownArtist, UnknownTitle bool}
 	Junk      []Junk       // Junk{Raw string; Kind JunkKind}
 	Warnings  []Warning
@@ -190,11 +194,13 @@ typedef struct trackparse_track {
   size_t junk_count;
   const trackparse_warning *warnings;
   size_t warnings_count;
+  const trackparse_str *label;             /* NULL when there is none; last, for the ABI */
 } trackparse_track;
 ```
 
 `flags.explicit_` has a trailing underscore because `explicit` is a C++ keyword; the JSON key is
-`explicit`.
+`explicit`. `label` was added after the other members so the struct only grew at its end; in JSON it
+comes between `year` and `flags`.
 
 </TabItem>
 </Tabs>
@@ -224,13 +230,14 @@ points to, so nothing in it outlives `trackparse_track_free`.
 | `fullTitle` | `string` | `title` with the versions put back in their original brackets ([R9.4](/trackparse/reference/spec/#r9-assembly-and-dedup:~:text=R9.4%20fullTitle)) |
 | `versions` | `Version[]` | Remixes and versions, left to right |
 | `year` | `number \| null` | From `(2015)` or `- 2015`, the first in text order ([R9.6](/trackparse/reference/spec/#r9-assembly-and-dedup:~:text=R9.6%20Track%20year)) |
+| [`label`](/trackparse/guides/junk-and-flags/#labels-after-a-bullet) | `string \| null` | The record label after a spaced bullet: `Stigma • VISION` → `"VISION"`. As written, no lookup. Not the junk kind `label` ([R8.7](/trackparse/reference/spec/#r8-title-side:~:text=R8.7%20Bullet%20suffix)) |
 | [`flags`](/trackparse/guides/junk-and-flags/#flags) | `{ explicit, clean, unknownArtist, unknownTitle }` | All booleans ([R5.4](/trackparse/reference/spec/#r5-group-classification:~:text=R5.4%20Flag), [R8.6](/trackparse/reference/spec/#r8-title-side:~:text=R8.6%20Unknown%20title)) |
-| [`junk`](/trackparse/guides/junk-and-flags/#junk) | `{ raw: string, kind: JunkKind }[]` | What was taken out of the title, and what kind of noise it was ([R5.1](/trackparse/reference/spec/#r5-group-classification:~:text=R5.1%20Junk)) |
+| [`junk`](/trackparse/guides/junk-and-flags/#junk) | `{ raw: string, kind: JunkKind }[]` | What was taken out because it is not part of the track's identity (noise, promo text, platform names, a bracketed label, notes after a label), with its kind ([R5.1](/trackparse/reference/spec/#r5-group-classification:~:text=R5.1%20Junk)) |
 | [`warnings`](/trackparse/reference/warnings/) | `Warning[]` | Which heuristics fired. See [Warnings](/trackparse/reference/warnings/) |
 
 The guides show each field at work: [Modes](/trackparse/guides/modes/) for `mode`,
 [Junk, flags and prefixes](/trackparse/guides/junk-and-flags/) for `position`, `timestamp`, `year`,
-`flags` and `junk`, [Artists and credits](/trackparse/guides/artists/) for `artists`, and
+`label`, `flags` and `junk`, [Artists and credits](/trackparse/guides/artists/) for `artists`, and
 [Versions and remixes](/trackparse/guides/versions/) for `versions`.
 
 ## Artist
@@ -404,8 +411,17 @@ delimiters `TRACKPARSE_DELIMITER_PAREN`, `_BRACKET`, `_BRACE` and `_DASH`. The v
 
 ## Junk kinds
 
-`video`, `audio`, `lyrics`, `quality`, `promo`, `platform`, `label`, `genre`, `other`. Examples are
-in [Junk, flags and prefixes](/trackparse/guides/junk-and-flags/#junk). The vocabulary is in
+`video`, `audio`, `lyrics`, `quality`, `promo`, `platform`, `label`, `genre`, `other`, `note`.
+Examples are in [Junk, flags and prefixes](/trackparse/guides/junk-and-flags/#junk).
+
+Three things are called a label or a note, and they are different:
+
+- the field [`label`](#parsedtrack) is the record label after a spaced bullet
+  (`Stigma • VISION` → `"VISION"`);
+- the junk kind `label` is a label name in brackets, `[NCS Release]`, and leaves the field `null`;
+- the junk kind `note` is a segment after a second bullet (`• VISION RADIO RELOAD`), while the
+  tracklist entry kind [`note`](/trackparse/guides/tracklists/#line-kinds) is a whole tracklist line
+  without a time that is not a header, a link or blank. The vocabulary is in
 [`spec/data`](https://github.com/4matic/trackparse/tree/main/spec/data). In Rust the kind is the
 enum [`JunkKind`](https://docs.rs/trackparse/latest/trackparse/enum.JunkKind.html) (`JunkKind::Video` and so on), in Go the typed string
 [`JunkKind`](https://pkg.go.dev/github.com/4matic/trackparse/go#JunkKind) (`trackparse.JunkKindVideo` and so on), in C the enum
@@ -428,7 +444,7 @@ import { parse } from "trackparse";
 const track = parse("Noisia - Stigma (2015)");
 
 JSON.stringify(track);
-// '{"input":"Noisia - Stigma (2015)","mode":"clean","position":null,"timestamp":null,"artists":[{"name":"Noisia","role":"primary","joiner":null,"source":"artist"}],"title":"Stigma","fullTitle":"Stigma","versions":[],"year":2015,"flags":{"explicit":false,"clean":false,"unknownArtist":false,"unknownTitle":false},"junk":[],"warnings":[]}'
+// '{"input":"Noisia - Stigma (2015)","mode":"clean","position":null,"timestamp":null,"artists":[{"name":"Noisia","role":"primary","joiner":null,"source":"artist"}],"title":"Stigma","fullTitle":"Stigma","versions":[],"year":2015,"label":null,"flags":{"explicit":false,"clean":false,"unknownArtist":false,"unknownTitle":false},"junk":[],"warnings":[]}'
 ```
 
 The result is a plain object, so `JSON.stringify` is all you need, and `JSON.parse` gives the
@@ -444,7 +460,7 @@ from trackparse import ParsedTrack, parse
 track = parse("Noisia - Stigma (2015)")
 
 json.dumps(track.to_dict(), separators=(",", ":"), ensure_ascii=False)
-# '{"input":"Noisia - Stigma (2015)","mode":"clean","position":null,"timestamp":null,"artists":[{"name":"Noisia","role":"primary","joiner":null,"source":"artist"}],"title":"Stigma","fullTitle":"Stigma","versions":[],"year":2015,"flags":{"explicit":false,"clean":false,"unknownArtist":false,"unknownTitle":false},"junk":[],"warnings":[]}'
+# '{"input":"Noisia - Stigma (2015)","mode":"clean","position":null,"timestamp":null,"artists":[{"name":"Noisia","role":"primary","joiner":null,"source":"artist"}],"title":"Stigma","fullTitle":"Stigma","versions":[],"year":2015,"label":null,"flags":{"explicit":false,"clean":false,"unknownArtist":false,"unknownTitle":false},"junk":[],"warnings":[]}'
 
 ParsedTrack.from_dict(track.to_dict()) == track   # True
 ```
@@ -464,7 +480,7 @@ use trackparse::{parse, ParsedTrack};
 let track = parse("Noisia - Stigma (2015)");
 
 track.to_json();
-// "{\"input\":\"Noisia - Stigma (2015)\",\"mode\":\"clean\",\"position\":null,\"timestamp\":null,\"artists\":[{\"name\":\"Noisia\",\"role\":\"primary\",\"joiner\":null,\"source\":\"artist\"}],\"title\":\"Stigma\",\"fullTitle\":\"Stigma\",\"versions\":[],\"year\":2015,\"flags\":{\"explicit\":false,\"clean\":false,\"unknownArtist\":false,\"unknownTitle\":false},\"junk\":[],\"warnings\":[]}"
+// "{\"input\":\"Noisia - Stigma (2015)\",\"mode\":\"clean\",\"position\":null,\"timestamp\":null,\"artists\":[{\"name\":\"Noisia\",\"role\":\"primary\",\"joiner\":null,\"source\":\"artist\"}],\"title\":\"Stigma\",\"fullTitle\":\"Stigma\",\"versions\":[],\"year\":2015,\"label\":null,\"flags\":{\"explicit\":false,\"clean\":false,\"unknownArtist\":false,\"unknownTitle\":false},\"junk\":[],\"warnings\":[]}"
 
 // with the `serde` feature and serde_json:
 let json = serde_json::to_string(&track).unwrap();
@@ -494,7 +510,7 @@ track := trackparse.Parse("Noisia - Stigma (2015)")
 
 data, _ := json.Marshal(track)
 fmt.Println(string(data))
-// {"input":"Noisia - Stigma (2015)","mode":"clean","position":null,"timestamp":null,"artists":[{"name":"Noisia","role":"primary","joiner":null,"source":"artist"}],"title":"Stigma","fullTitle":"Stigma","versions":[],"year":2015,"flags":{"explicit":false,"clean":false,"unknownArtist":false,"unknownTitle":false},"junk":[],"warnings":[]}
+// {"input":"Noisia - Stigma (2015)","mode":"clean","position":null,"timestamp":null,"artists":[{"name":"Noisia","role":"primary","joiner":null,"source":"artist"}],"title":"Stigma","fullTitle":"Stigma","versions":[],"year":2015,"label":null,"flags":{"explicit":false,"clean":false,"unknownArtist":false,"unknownTitle":false},"junk":[],"warnings":[]}
 
 var back trackparse.Track
 err := json.Unmarshal(data, &back)
@@ -519,7 +535,7 @@ trackparse_track *track = trackparse_parse("Noisia - Stigma (2015)", TRACKPARSE_
 
 trackparse_string *json = trackparse_track_to_json(track);
 printf("%s\n", json->str.ptr);
-// {"input":"Noisia - Stigma (2015)","mode":"clean","position":null,"timestamp":null,"artists":[{"name":"Noisia","role":"primary","joiner":null,"source":"artist"}],"title":"Stigma","fullTitle":"Stigma","versions":[],"year":2015,"flags":{"explicit":false,"clean":false,"unknownArtist":false,"unknownTitle":false},"junk":[],"warnings":[]}
+// {"input":"Noisia - Stigma (2015)","mode":"clean","position":null,"timestamp":null,"artists":[{"name":"Noisia","role":"primary","joiner":null,"source":"artist"}],"title":"Stigma","fullTitle":"Stigma","versions":[],"year":2015,"label":null,"flags":{"explicit":false,"clean":false,"unknownArtist":false,"unknownTitle":false},"junk":[],"warnings":[]}
 trackparse_string_free(json);
 trackparse_track_free(track);
 ```

@@ -223,7 +223,9 @@ in Go, a `trackparse_artists` with `items` and `count` in C), and the splitting 
 
 *(Python: `format_track`. Rust: [`format_track`](https://docs.rs/trackparse/latest/trackparse/fn.format_track.html), [`format_track_with`](https://docs.rs/trackparse/latest/trackparse/fn.format_track_with.html). Go: [`Format`](https://pkg.go.dev/github.com/4matic/trackparse/go#Format), [`FormatWith`](https://pkg.go.dev/github.com/4matic/trackparse/go#FormatWith). C: `trackparse_format`, `trackparse_format_with`)*
 
-Renders a [`ParsedTrack`](/trackparse/reference/parse/#parsedtrack) back to a string. Junk is left out.
+Renders a [`ParsedTrack`](/trackparse/reference/parse/#parsedtrack) back to a string. Junk is left out, and a
+[label](/trackparse/guides/junk-and-flags/#labels-after-a-bullet) is written after the title as
+` • VISION`.
 
 <Tabs syncKey="lang">
 <TabItem label="JavaScript">
@@ -278,10 +280,12 @@ trackparse_format_options_free(fo);
 </TabItem>
 </Tabs>
 
-The options are `feat`, [`featMarker`](/trackparse/guides/formatting/#options) (`feat_marker`), `joiners`, `versions`, `producers` and
-`position`. In Go they are the fields of `FormatOptions`, where `OmitProducers: true` stands for
-`producers: false`. In C they are setters on a `trackparse_format_options` handle, where
-`trackparse_format_options_set_omit_producers(o, true)` stands for `producers: false`. [Formatting](/trackparse/guides/formatting/) has the table and an example of each. In
+The options are `feat`, [`featMarker`](/trackparse/guides/formatting/#options) (`feat_marker`), `joiners`, `versions`, `producers`,
+`position` and `label`. In Go they are the fields of `FormatOptions`, where `OmitProducers: true`
+stands for `producers: false` and `OmitLabel: true` for `label: false`. In C they are setters on a
+`trackparse_format_options` handle, where `trackparse_format_options_set_omit_producers(o, true)`
+stands for `producers: false` and `trackparse_format_options_set_omit_label(o, true)` for
+`label: false`. [Formatting](/trackparse/guides/formatting/) has the table and an example of each. In
 the spec this is [R11](/trackparse/reference/spec/#r11-format).
 
 ## normalize(input)

@@ -14,7 +14,8 @@ export type Kind =
   | "title"
   | "version"
   | "junk"
-  | "year";
+  | "year"
+  | "record";
 
 export interface Segment {
   text: string;
@@ -30,6 +31,7 @@ export const KIND_LABEL: Record<Kind, string> = {
   version: "version",
   junk: "junk",
   year: "year",
+  record: "label",
 };
 
 export function escapeHtml(s: string): string {
@@ -58,7 +60,8 @@ export function highlight(input: string, track: ParsedTrack): Segment[] {
     lower += l.length === 1 ? l : c; // keep positions aligned (İ lowercases to two units)
   }
 
-  const mark = (needle: string | null | undefined, kind: Kind) => {
+  // `fromEnd`: take the last free hit instead of the first (the label sits at the end, R8.7).
+  const mark = (needle: string | null | undefined, kind: Kind, fromEnd = false) => {
     if (!needle) return;
     const forms = [...new Set([needle, needle.normalize("NFD"), needle.normalize("NFC")])];
     for (const [hay, lowerCase] of [
@@ -67,8 +70,8 @@ export function highlight(input: string, track: ParsedTrack): Segment[] {
     ] as const) {
       for (const form of forms) {
         const key = lowerCase ? [...form].map((c) => (c.toLowerCase().length === c.length ? c.toLowerCase() : c)).join("") : form;
-        for (let from = 0; ; ) {
-          const hit = hay.indexOf(key, from);
+        for (let from = fromEnd ? hay.length : 0; ; ) {
+          const hit = fromEnd ? (from < 0 ? -1 : hay.lastIndexOf(key, from)) : hay.indexOf(key, from);
           if (hit < 0) break;
           const start = at[hit];
           const end = at[hit + key.length - 1] + 1;
@@ -83,7 +86,7 @@ export function highlight(input: string, track: ParsedTrack): Segment[] {
             for (let i = start; i < end; i++) owner[i] = kind;
             return;
           }
-          from = hit + 1;
+          from = fromEnd ? hit - 1 : hit + 1;
         }
       }
     }
@@ -91,6 +94,7 @@ export function highlight(input: string, track: ParsedTrack): Segment[] {
 
   for (const v of track.versions) mark(v.raw, "version");
   for (const j of track.junk) mark(j.raw, "junk");
+  mark(track.label, "record", true);
   mark(track.position?.raw, "position");
   mark(track.timestamp?.raw, "position");
   mark(track.title, "title");
@@ -156,6 +160,7 @@ const FIELD_ROW: Record<string, string> = {
   position: "{ raw",
   timestamp: "{ raw",
   year: "number",
+  label: "string",
   flags: "{ explicit",
   mode: '"clean"',
   warnings: "Warning[]",
@@ -182,6 +187,7 @@ export const GUIDE = {
   junk: "guides/junk-and-flags/#junk",
   flags: "guides/junk-and-flags/#flags",
   year: "guides/junk-and-flags/#year",
+  label: "guides/junk-and-flags/#labels-after-a-bullet",
   position: "guides/junk-and-flags/#track-numbers",
   timestamp: "guides/junk-and-flags/#cue-times",
   mode: {
@@ -235,6 +241,7 @@ export function fieldsHtml(t: ParsedTrack, base?: string): string {
   ]);
   if (t.versions.length)
     rows.push(["Versions", t.versions.map((v) => `<div>${versionLine(v, base)}</div>`).join("")]);
+  if (t.label !== null) rows.push(["Label", chip(t.label, "record", "Labels after a bullet", at(base, GUIDE.label))]);
   if (t.junk.length)
     rows.push([
       "Junk",
