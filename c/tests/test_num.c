@@ -251,9 +251,11 @@ static void file_tests(const char *path, long *cases) {
 }
 
 int main(int argc, char **argv) {
-  const char *path = argc > 1 ? argv[1] : TP_TEST_DATA;
+  /* static: a local could be clobbered by the longjmp below (GCC -Wclobbered). */
+  static const char *path;
   static long cases;
   tp_scope s;
+  path = argc > 1 ? argv[1] : TP_TEST_DATA;
   if (!tp_scope_open(&s)) return 2;
   if (setjmp(s.jmp) != 0) {
     tp_scope_abort(&s);

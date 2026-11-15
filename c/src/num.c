@@ -151,9 +151,9 @@ static void num_big_mul_pow10(num_big *a, int64_t e) {
 static void num_big_shl(num_big *a, uint64_t bits) {
   size_t limbs = (size_t)(bits / 32), i;
   unsigned s = (unsigned)(bits % 32);
-  if (a->n == 0) return;
-  /* Unreachable by the callers' bounds; keeps the writes inside d. */
-  if (a->n + limbs + 1 > NUM_BIG_LIMBS) limbs = NUM_BIG_LIMBS - a->n - 1;
+  if (a->n == 0 || a->n >= NUM_BIG_LIMBS) return;
+  /* Unreachable by the callers' bounds; keeps the writes inside d (and shows GCC the bound). */
+  if (limbs > NUM_BIG_LIMBS - 1 - a->n) limbs = NUM_BIG_LIMBS - 1 - a->n;
   if (s == 0) {
     for (i = a->n; i > 0; i--) a->d[i - 1 + limbs] = a->d[i - 1];
     a->n += limbs;
