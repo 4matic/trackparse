@@ -140,8 +140,8 @@ TP_PRIVATE tp_phrase_table *tp_new_phrase_table(void);
  * trim() (not collapsed). */
 TP_PRIVATE void tp_phrase_table_add(tp_phrase_table *t, tp_str raw_key, const void *value);
 /* The longest entry matching words[start:]. Read-only (safe on a shared table); no allocation. */
-TP_PRIVATE bool tp_phrase_table_match_at(const tp_phrase_table *t, tp_strvec words,
-                                         ptrdiff_t start, tp_phrase_match *out);
+TP_PRIVATE bool tp_phrase_table_match_at(const tp_phrase_table *t, tp_strvec words, ptrdiff_t start,
+                                         tp_phrase_match *out);
 /* The longest entry matching words[:end] at its end (end exclusive). */
 TP_PRIVATE bool tp_phrase_table_match_ending(const tp_phrase_table *t, tp_strvec words,
                                              ptrdiff_t end, tp_phrase_match *out);

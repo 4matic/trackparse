@@ -333,8 +333,7 @@ TP_PRIVATE bool tp_format_time(double seconds, const tp_time_style *style, bool 
   if (style->hours) {
     int64_t h = whole / 3600, m = (whole % 3600) / 60;
     tp_str s = tp_pad(sec, 2);
-    out->raw = tl_join_time(tp_pad(h, style->hour_width), tp_pad(m, style->minute_width), &s,
-                            frac);
+    out->raw = tl_join_time(tp_pad(h, style->hour_width), tp_pad(m, style->minute_width), &s, frac);
     return true;
   }
   if (style->long_minutes) {

@@ -28,14 +28,14 @@ TP_PRIVATE tp_runes tp_tail(tp_runes t, ptrdiff_t a) { return tp_sub(t, a, (ptrd
 
 TP_PRIVATE bool tp_is_whitespace(tp_rune r) {
   return (r >= 0x09 && r <= 0x0d) || r == 0x20 || r == 0x85 || r == 0xa0 || r == 0x1680 ||
-         (r >= 0x2000 && r <= 0x200a) || r == 0x2028 || r == 0x2029 || r == 0x202f ||
-         r == 0x205f || r == 0x3000;
+         (r >= 0x2000 && r <= 0x200a) || r == 0x2028 || r == 0x2029 || r == 0x202f || r == 0x205f ||
+         r == 0x3000;
 }
 
 TP_PRIVATE bool tp_is_js_space(tp_rune r) {
   return (r >= 0x09 && r <= 0x0d) || r == 0x20 || r == 0xa0 || r == 0x1680 ||
-         (r >= 0x2000 && r <= 0x200a) || r == 0x2028 || r == 0x2029 || r == 0x202f ||
-         r == 0x205f || r == 0x3000 || r == 0xfeff;
+         (r >= 0x2000 && r <= 0x200a) || r == 0x2028 || r == 0x2029 || r == 0x202f || r == 0x205f ||
+         r == 0x3000 || r == 0xfeff;
 }
 
 TP_PRIVATE tp_str tp_js_trim(tp_str s) { return tp_js_trim_end(tp_js_trim_start(s)); }
@@ -115,16 +115,16 @@ TP_PRIVATE tp_str tp_ascii_lower(tp_str s) {
 TP_PRIVATE tp_str tp_strip_key_punct(tp_str lower) {
   if (lower.n > 0) {
     switch (lower.p[lower.n - 1]) {
-      case '.':
-      case ',':
-      case '!':
-      case '?':
-      case ':':
-      case ';':
-        lower.n--;
-        break;
-      default:
-        break;
+    case '.':
+    case ',':
+    case '!':
+    case '?':
+    case ':':
+    case ';':
+      lower.n--;
+      break;
+    default:
+      break;
     }
   }
   return lower;
@@ -195,9 +195,7 @@ TP_PRIVATE tp_str tp_collapse_runes(tp_runes t) {
 
 TP_PRIVATE tp_strvec tp_split_words(tp_str s) { return tp_split_words_runes(tp_runes_of(s)); }
 
-TP_PRIVATE tp_strvec tp_split_words_runes(tp_runes t) {
-  return tp_span_texts(tp_word_spans(t));
-}
+TP_PRIVATE tp_strvec tp_split_words_runes(tp_runes t) { return tp_span_texts(tp_word_spans(t)); }
 
 TP_PRIVATE tp_word_span_vec tp_word_spans(tp_runes t) {
   tp_word_span_vec spans = {0};
@@ -245,8 +243,8 @@ TP_PRIVATE bool tp_year_of(tp_str word, int *out) {
   tp_str key = tp_word_key(word);
   *out = 0;
   if (key.n != 4 || !tp_is_all_digits(key)) return false;
-  int n = (key.p[0] - '0') * 1000 + (key.p[1] - '0') * 100 + (key.p[2] - '0') * 10 +
-          (key.p[3] - '0');
+  int n =
+      (key.p[0] - '0') * 1000 + (key.p[1] - '0') * 100 + (key.p[2] - '0') * 10 + (key.p[3] - '0');
   *out = n;
   return n >= 1900 && n <= 2099;
 }
@@ -343,9 +341,7 @@ TP_PRIVATE tp_str tp_sanitize(tp_str s) {
 /* ------------------------------------------------------------------------------------------ */
 /* Phrase tables                                                                              */
 
-TP_PRIVATE tp_phrase_table *tp_new_phrase_table(void) {
-  return tp_alloc(sizeof(tp_phrase_table));
-}
+TP_PRIVATE tp_phrase_table *tp_new_phrase_table(void) { return tp_alloc(sizeof(tp_phrase_table)); }
 
 /* Keeps each list longest first, insertion order among equals (a stable insert, like the JS
  * sort). */
@@ -404,8 +400,8 @@ static bool tokens_match(tp_strvec words, ptrdiff_t start, tp_strvec tokens) {
   return true;
 }
 
-TP_PRIVATE bool tp_phrase_table_match_at(const tp_phrase_table *t, tp_strvec words,
-                                         ptrdiff_t start, tp_phrase_match *out) {
+TP_PRIVATE bool tp_phrase_table_match_at(const tp_phrase_table *t, tp_strvec words, ptrdiff_t start,
+                                         tp_phrase_match *out) {
   tp_phrase_match best = {NULL, 0};
   bool found = false;
   *out = best;

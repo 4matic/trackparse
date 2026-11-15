@@ -185,8 +185,8 @@ TP_PRIVATE tp_tables *tp_build_tables(const tp_keyword_lists *kw) {
     e.value = tp_data_joiners_tight[i].canonical;
     tp_push(t->tight_joiners, e);
   }
-  tp_clone(suffixes, tp_data_strs(tp_data_platform_suffixes_suffixes,
-                                  TP_DATA_PLATFORM_SUFFIXES_SUFFIXES_N));
+  tp_clone(suffixes,
+           tp_data_strs(tp_data_platform_suffixes_suffixes, TP_DATA_PLATFORM_SUFFIXES_SUFFIXES_N));
   /* JS sorts by UTF-16 length, longest first; the sort is stable. */
   tp_sort_stable(suffixes.p, suffixes.n, sizeof *suffixes.p, by_utf16_len_desc, NULL);
 
@@ -199,10 +199,9 @@ TP_PRIVATE tp_tables *tp_build_tables(const tp_keyword_lists *kw) {
   t->title_feat_markers = tp_marker_table(
       tp_data_strs(tp_data_feat_markers_title_markers, TP_DATA_FEAT_MARKERS_TITLE_MARKERS_N),
       extra_feat);
-  t->title_producer_markers =
-      tp_marker_table(tp_data_strs(tp_data_feat_markers_title_producer,
-                                   TP_DATA_FEAT_MARKERS_TITLE_PRODUCER_N),
-                      empty);
+  t->title_producer_markers = tp_marker_table(
+      tp_data_strs(tp_data_feat_markers_title_producer, TP_DATA_FEAT_MARKERS_TITLE_PRODUCER_N),
+      empty);
   both[0] = junk_entries; /* junk first: it wins over a genre */
   both[1] = genre_entries;
   t->junk_or_genre = tp_kind_table(both, 2);
@@ -221,8 +220,8 @@ TP_PRIVATE tp_tables *tp_build_tables(const tp_keyword_lists *kw) {
   t->stopwords = word_set(tp_data_stopwords_words, TP_DATA_STOPWORDS_WORDS_N);
   t->unknown_case_sensitive =
       word_set(tp_data_unknown_tokens_case_sensitive, TP_DATA_UNKNOWN_TOKENS_CASE_SENSITIVE_N);
-  t->unknown_case_insensitive = word_set(tp_data_unknown_tokens_case_insensitive,
-                                         TP_DATA_UNKNOWN_TOKENS_CASE_INSENSITIVE_N);
+  t->unknown_case_insensitive =
+      word_set(tp_data_unknown_tokens_case_insensitive, TP_DATA_UNKNOWN_TOKENS_CASE_INSENSITIVE_N);
   t->extensions = word_set(tp_data_extensions_extensions, TP_DATA_EXTENSIONS_EXTENSIONS_N);
   t->platform_suffixes = suffixes;
   return t;

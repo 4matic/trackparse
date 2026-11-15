@@ -18,7 +18,8 @@
  * - Option objects are opaque. Their setters copy what they are given. Bad values fall back to
  *   the defaults, as in every port. A NULL options pointer means the defaults.
  * - All functions are thread-safe. A trackparse_parser is immutable once created and can be
- *   shared between threads.
+ *   shared between threads. The default word tables are built on first use and kept for the
+ *   life of the process (a leak checker reports them as still reachable).
  */
 #ifndef TRACKPARSE_H
 #define TRACKPARSE_H
@@ -198,7 +199,10 @@ typedef enum trackparse_tracklist_warning_code {
   TRACKPARSE_TL_LINE_UNPARSED
 } trackparse_tracklist_warning_code;
 
-typedef enum trackparse_severity { TRACKPARSE_SEVERITY_INFO, TRACKPARSE_SEVERITY_WARNING } trackparse_severity;
+typedef enum trackparse_severity {
+  TRACKPARSE_SEVERITY_INFO,
+  TRACKPARSE_SEVERITY_WARNING
+} trackparse_severity;
 
 typedef enum trackparse_edit_op {
   TRACKPARSE_EDIT_SET_TIME,
@@ -231,11 +235,33 @@ typedef enum trackparse_feat {
   TRACKPARSE_FEAT_OMIT
 } trackparse_feat;
 
-typedef enum trackparse_joiners { TRACKPARSE_JOINERS_ORIGINAL, TRACKPARSE_JOINERS_CANONICAL } trackparse_joiners;
-typedef enum trackparse_versions { TRACKPARSE_VERSIONS_ALL, TRACKPARSE_VERSIONS_NONE } trackparse_versions;
+typedef enum trackparse_joiners {
+  TRACKPARSE_JOINERS_ORIGINAL,
+  TRACKPARSE_JOINERS_CANONICAL
+} trackparse_joiners;
+typedef enum trackparse_versions {
+  TRACKPARSE_VERSIONS_ALL,
+  TRACKPARSE_VERSIONS_NONE
+} trackparse_versions;
 
-/* The spec name of each value ("remix", "noSeparator", "time-out-of-order", "\r\n"...), or ""
- * for a value out of range. */
+/* Number of values in each enum, for loops over all of them. */
+#define TRACKPARSE_MODE_COUNT 5
+#define TRACKPARSE_ROLE_COUNT 4
+#define TRACKPARSE_SOURCE_COUNT 3
+#define TRACKPARSE_VERSION_TYPE_COUNT 27
+#define TRACKPARSE_DELIMITER_COUNT 4
+#define TRACKPARSE_JUNK_KIND_COUNT 9
+#define TRACKPARSE_WARNING_COUNT 8
+#define TRACKPARSE_ENTRY_KIND_COUNT 6
+#define TRACKPARSE_EOL_COUNT 4
+#define TRACKPARSE_TRACKLIST_WARNING_CODE_COUNT 9
+#define TRACKPARSE_SEVERITY_COUNT 2
+#define TRACKPARSE_EDIT_OP_COUNT 6
+#define TRACKPARSE_EDIT_WARNING_CODE_COUNT 3
+
+/* The spec name of each value ("remix", "noSeparator", "time-out-of-order"...), or "" for a
+ * value out of range. trackparse_eol_name returns the line ending itself ("\n", "\r\n", "\r",
+ * ""), so raw + eol rebuilds a line. */
 TRACKPARSE_API const char *trackparse_mode_name(trackparse_mode v);
 TRACKPARSE_API const char *trackparse_role_name(trackparse_role v);
 TRACKPARSE_API const char *trackparse_source_name(trackparse_source v);
@@ -245,15 +271,18 @@ TRACKPARSE_API const char *trackparse_junk_kind_name(trackparse_junk_kind v);
 TRACKPARSE_API const char *trackparse_warning_name(trackparse_warning v);
 TRACKPARSE_API const char *trackparse_entry_kind_name(trackparse_entry_kind v);
 TRACKPARSE_API const char *trackparse_eol_name(trackparse_eol v);
-TRACKPARSE_API const char *trackparse_tracklist_warning_code_name(trackparse_tracklist_warning_code v);
+TRACKPARSE_API const char *
+trackparse_tracklist_warning_code_name(trackparse_tracklist_warning_code v);
 TRACKPARSE_API const char *trackparse_severity_name(trackparse_severity v);
 TRACKPARSE_API const char *trackparse_edit_op_name(trackparse_edit_op v);
 TRACKPARSE_API const char *trackparse_edit_warning_code_name(trackparse_edit_warning_code v);
 
 /* Look a value up by its spec name (len may be TRACKPARSE_NUL_TERMINATED). */
 TRACKPARSE_API bool trackparse_mode_from_name(const char *name, size_t len, trackparse_mode *out);
-TRACKPARSE_API bool trackparse_version_type_from_name(const char *name, size_t len, trackparse_version_type *out);
-TRACKPARSE_API bool trackparse_junk_kind_from_name(const char *name, size_t len, trackparse_junk_kind *out);
+TRACKPARSE_API bool trackparse_version_type_from_name(const char *name, size_t len,
+                                                      trackparse_version_type *out);
+TRACKPARSE_API bool trackparse_junk_kind_from_name(const char *name, size_t len,
+                                                   trackparse_junk_kind *out);
 
 /* ------------------------------------------------------------------------------------------ */
 /* Parsed track (parsed-track.schema.json)                                                     */
@@ -342,53 +371,84 @@ typedef struct trackparse_tracklist_options trackparse_tracklist_options;
 TRACKPARSE_API trackparse_parse_options *trackparse_parse_options_new(void);
 TRACKPARSE_API void trackparse_parse_options_free(trackparse_parse_options *o);
 /* Setters return false only when out of memory (the option is then unchanged). */
-TRACKPARSE_API bool trackparse_parse_options_set_mode(trackparse_parse_options *o, trackparse_mode mode);
-TRACKPARSE_API bool trackparse_parse_options_set_uploader(trackparse_parse_options *o, const char *s, size_t len);
-TRACKPARSE_API bool trackparse_parse_options_add_known_artist(trackparse_parse_options *o, const char *s, size_t len);
-TRACKPARSE_API bool trackparse_parse_options_set_split_and(trackparse_parse_options *o, trackparse_split_and v);
+TRACKPARSE_API bool trackparse_parse_options_set_mode(trackparse_parse_options *o,
+                                                      trackparse_mode mode);
+TRACKPARSE_API bool trackparse_parse_options_set_uploader(trackparse_parse_options *o,
+                                                          const char *s, size_t len);
+TRACKPARSE_API bool trackparse_parse_options_add_known_artist(trackparse_parse_options *o,
+                                                              const char *s, size_t len);
+TRACKPARSE_API bool trackparse_parse_options_set_split_and(trackparse_parse_options *o,
+                                                           trackparse_split_and v);
 /* R12 keywords: extra vocabulary. type and kind are spec names, so new names are possible. */
-TRACKPARSE_API bool trackparse_parse_options_add_version_head(trackparse_parse_options *o, const char *key, size_t key_len, const char *type, size_t type_len);
-TRACKPARSE_API bool trackparse_parse_options_add_descriptor(trackparse_parse_options *o, const char *s, size_t len);
-TRACKPARSE_API bool trackparse_parse_options_add_genre(trackparse_parse_options *o, const char *s, size_t len);
-TRACKPARSE_API bool trackparse_parse_options_add_junk(trackparse_parse_options *o, const char *phrase, size_t phrase_len, const char *kind, size_t kind_len);
-TRACKPARSE_API bool trackparse_parse_options_add_feat_marker(trackparse_parse_options *o, const char *s, size_t len);
+TRACKPARSE_API bool trackparse_parse_options_add_version_head(trackparse_parse_options *o,
+                                                              const char *key, size_t key_len,
+                                                              const char *type, size_t type_len);
+TRACKPARSE_API bool trackparse_parse_options_add_descriptor(trackparse_parse_options *o,
+                                                            const char *s, size_t len);
+TRACKPARSE_API bool trackparse_parse_options_add_genre(trackparse_parse_options *o, const char *s,
+                                                       size_t len);
+TRACKPARSE_API bool trackparse_parse_options_add_junk(trackparse_parse_options *o,
+                                                      const char *phrase, size_t phrase_len,
+                                                      const char *kind, size_t kind_len);
+TRACKPARSE_API bool trackparse_parse_options_add_feat_marker(trackparse_parse_options *o,
+                                                             const char *s, size_t len);
 
 TRACKPARSE_API trackparse_format_options *trackparse_format_options_new(void);
 TRACKPARSE_API void trackparse_format_options_free(trackparse_format_options *o);
-TRACKPARSE_API bool trackparse_format_options_set_feat(trackparse_format_options *o, trackparse_feat v);
+TRACKPARSE_API bool trackparse_format_options_set_feat(trackparse_format_options *o,
+                                                       trackparse_feat v);
 /** The marker written before featured artists; "" is a valid marker. Unset: the input's. */
-TRACKPARSE_API bool trackparse_format_options_set_feat_marker(trackparse_format_options *o, const char *s, size_t len);
-TRACKPARSE_API bool trackparse_format_options_set_joiners(trackparse_format_options *o, trackparse_joiners v);
-TRACKPARSE_API bool trackparse_format_options_set_versions(trackparse_format_options *o, trackparse_versions v);
-TRACKPARSE_API bool trackparse_format_options_set_omit_producers(trackparse_format_options *o, bool v);
+TRACKPARSE_API bool trackparse_format_options_set_feat_marker(trackparse_format_options *o,
+                                                              const char *s, size_t len);
+TRACKPARSE_API bool trackparse_format_options_set_joiners(trackparse_format_options *o,
+                                                          trackparse_joiners v);
+TRACKPARSE_API bool trackparse_format_options_set_versions(trackparse_format_options *o,
+                                                           trackparse_versions v);
+TRACKPARSE_API bool trackparse_format_options_set_omit_producers(trackparse_format_options *o,
+                                                                 bool v);
 TRACKPARSE_API bool trackparse_format_options_set_position(trackparse_format_options *o, bool v);
 
 TRACKPARSE_API trackparse_tracklist_options *trackparse_tracklist_options_new(void);
 TRACKPARSE_API void trackparse_tracklist_options_free(trackparse_tracklist_options *o);
 /** Default for tracklists: TRACKPARSE_MODE_TRACKLIST. */
-TRACKPARSE_API bool trackparse_tracklist_options_set_mode(trackparse_tracklist_options *o, trackparse_mode mode);
-TRACKPARSE_API bool trackparse_tracklist_options_add_known_artist(trackparse_tracklist_options *o, const char *s, size_t len);
-TRACKPARSE_API bool trackparse_tracklist_options_set_split_and(trackparse_tracklist_options *o, trackparse_split_and v);
-TRACKPARSE_API bool trackparse_tracklist_options_add_version_head(trackparse_tracklist_options *o, const char *key, size_t key_len, const char *type, size_t type_len);
-TRACKPARSE_API bool trackparse_tracklist_options_add_descriptor(trackparse_tracklist_options *o, const char *s, size_t len);
-TRACKPARSE_API bool trackparse_tracklist_options_add_genre(trackparse_tracklist_options *o, const char *s, size_t len);
-TRACKPARSE_API bool trackparse_tracklist_options_add_junk(trackparse_tracklist_options *o, const char *phrase, size_t phrase_len, const char *kind, size_t kind_len);
-TRACKPARSE_API bool trackparse_tracklist_options_add_feat_marker(trackparse_tracklist_options *o, const char *s, size_t len);
+TRACKPARSE_API bool trackparse_tracklist_options_set_mode(trackparse_tracklist_options *o,
+                                                          trackparse_mode mode);
+TRACKPARSE_API bool trackparse_tracklist_options_add_known_artist(trackparse_tracklist_options *o,
+                                                                  const char *s, size_t len);
+TRACKPARSE_API bool trackparse_tracklist_options_set_split_and(trackparse_tracklist_options *o,
+                                                               trackparse_split_and v);
+TRACKPARSE_API bool trackparse_tracklist_options_add_version_head(trackparse_tracklist_options *o,
+                                                                  const char *key, size_t key_len,
+                                                                  const char *type,
+                                                                  size_t type_len);
+TRACKPARSE_API bool trackparse_tracklist_options_add_descriptor(trackparse_tracklist_options *o,
+                                                                const char *s, size_t len);
+TRACKPARSE_API bool trackparse_tracklist_options_add_genre(trackparse_tracklist_options *o,
+                                                           const char *s, size_t len);
+TRACKPARSE_API bool trackparse_tracklist_options_add_junk(trackparse_tracklist_options *o,
+                                                          const char *phrase, size_t phrase_len,
+                                                          const char *kind, size_t kind_len);
+TRACKPARSE_API bool trackparse_tracklist_options_add_feat_marker(trackparse_tracklist_options *o,
+                                                                 const char *s, size_t len);
 /** The audio length in seconds, for time-after-audio-end; 0 is a valid length. Unset: none. */
-TRACKPARSE_API bool trackparse_tracklist_options_set_audio_seconds(trackparse_tracklist_options *o, double seconds);
-TRACKPARSE_API bool trackparse_tracklist_options_add_marker_word(trackparse_tracklist_options *o, const char *s, size_t len);
+TRACKPARSE_API bool trackparse_tracklist_options_set_audio_seconds(trackparse_tracklist_options *o,
+                                                                   double seconds);
+TRACKPARSE_API bool trackparse_tracklist_options_add_marker_word(trackparse_tracklist_options *o,
+                                                                 const char *s, size_t len);
 
 /* ------------------------------------------------------------------------------------------ */
 /* Single tracks                                                                                */
 
 /** R1-R9: parse one track string. NULL only when out of memory. */
 TRACKPARSE_API trackparse_track *trackparse_parse(const char *s, size_t len);
-TRACKPARSE_API trackparse_track *trackparse_parse_with(const char *s, size_t len, const trackparse_parse_options *o);
+TRACKPARSE_API trackparse_track *trackparse_parse_with(const char *s, size_t len,
+                                                       const trackparse_parse_options *o);
 TRACKPARSE_API void trackparse_track_free(trackparse_track *t);
 
 /** R10: parse an artist string ("A feat. B & C") into artists. */
 TRACKPARSE_API trackparse_artists *trackparse_parse_artists(const char *s, size_t len);
-TRACKPARSE_API trackparse_artists *trackparse_parse_artists_with(const char *s, size_t len, const trackparse_parse_options *o);
+TRACKPARSE_API trackparse_artists *trackparse_parse_artists_with(const char *s, size_t len,
+                                                                 const trackparse_parse_options *o);
 TRACKPARSE_API void trackparse_artists_free(trackparse_artists *a);
 
 /** A string the caller owns (format, normalize, JSON). */
@@ -399,7 +459,8 @@ TRACKPARSE_API void trackparse_string_free(trackparse_string *s);
 
 /** R11: write a parsed track back as "Artists - Title (Versions)". */
 TRACKPARSE_API trackparse_string *trackparse_format(const trackparse_track *t);
-TRACKPARSE_API trackparse_string *trackparse_format_with(const trackparse_track *t, const trackparse_format_options *o);
+TRACKPARSE_API trackparse_string *trackparse_format_with(const trackparse_track *t,
+                                                         const trackparse_format_options *o);
 /** R1: the normalized form of a string. */
 TRACKPARSE_API trackparse_string *trackparse_normalize(const char *s, size_t len);
 /** Every artist of a track: the artist side, then each version's, in order. */
@@ -409,8 +470,10 @@ TRACKPARSE_API trackparse_artists *trackparse_all_artists(const trackparse_track
 typedef struct trackparse_parser trackparse_parser;
 TRACKPARSE_API trackparse_parser *trackparse_parser_new(const trackparse_parse_options *o);
 TRACKPARSE_API void trackparse_parser_free(trackparse_parser *p);
-TRACKPARSE_API trackparse_track *trackparse_parser_parse(const trackparse_parser *p, const char *s, size_t len);
-TRACKPARSE_API trackparse_artists *trackparse_parser_parse_artists(const trackparse_parser *p, const char *s, size_t len);
+TRACKPARSE_API trackparse_track *trackparse_parser_parse(const trackparse_parser *p, const char *s,
+                                                         size_t len);
+TRACKPARSE_API trackparse_artists *trackparse_parser_parse_artists(const trackparse_parser *p,
+                                                                   const char *s, size_t len);
 
 /* ------------------------------------------------------------------------------------------ */
 /* Tracklists (R13, tracklist.schema.json)                                                      */
@@ -470,7 +533,8 @@ typedef struct trackparse_tracklist {
 } trackparse_tracklist;
 
 TRACKPARSE_API trackparse_tracklist *trackparse_parse_tracklist(const char *s, size_t len);
-TRACKPARSE_API trackparse_tracklist *trackparse_parse_tracklist_with(const char *s, size_t len, const trackparse_tracklist_options *o);
+TRACKPARSE_API trackparse_tracklist *
+trackparse_parse_tracklist_with(const char *s, size_t len, const trackparse_tracklist_options *o);
 TRACKPARSE_API void trackparse_tracklist_free(trackparse_tracklist *t);
 
 /** A list of R13.9 edits, applied in order. */
@@ -482,13 +546,17 @@ TRACKPARSE_API bool trackparse_edits_set_time(trackparse_edits *e, long long lin
 /** Shift every timed line. */
 TRACKPARSE_API bool trackparse_edits_shift(trackparse_edits *e, double seconds);
 /** Shift the timed lines from `from` on. */
-TRACKPARSE_API bool trackparse_edits_shift_from(trackparse_edits *e, double seconds, long long from);
+TRACKPARSE_API bool trackparse_edits_shift_from(trackparse_edits *e, double seconds,
+                                                long long from);
 /** Shift the listed lines. */
-TRACKPARSE_API bool trackparse_edits_shift_lines(trackparse_edits *e, double seconds, const long long *lines, size_t count);
+TRACKPARSE_API bool trackparse_edits_shift_lines(trackparse_edits *e, double seconds,
+                                                 const long long *lines, size_t count);
 TRACKPARSE_API bool trackparse_edits_sort_by_time(trackparse_edits *e);
-TRACKPARSE_API bool trackparse_edits_set_rest(trackparse_edits *e, long long line, const char *rest, size_t len);
+TRACKPARSE_API bool trackparse_edits_set_rest(trackparse_edits *e, long long line, const char *rest,
+                                              size_t len);
 /** Insert text as a new line after `after` (0: at the top). */
-TRACKPARSE_API bool trackparse_edits_insert(trackparse_edits *e, long long after, const char *text, size_t len);
+TRACKPARSE_API bool trackparse_edits_insert(trackparse_edits *e, long long after, const char *text,
+                                            size_t len);
 TRACKPARSE_API bool trackparse_edits_delete(trackparse_edits *e, long long line);
 
 typedef struct trackparse_edit_warning {
@@ -508,7 +576,8 @@ typedef struct trackparse_edit_result {
 } trackparse_edit_result;
 
 /** R13.9: apply edits to a tracklist text. Lines not named stay byte for byte. */
-TRACKPARSE_API trackparse_edit_result *trackparse_apply_edits(const char *s, size_t len, const trackparse_edits *e);
+TRACKPARSE_API trackparse_edit_result *trackparse_apply_edits(const char *s, size_t len,
+                                                              const trackparse_edits *e);
 TRACKPARSE_API void trackparse_edit_result_free(trackparse_edit_result *r);
 
 /* ------------------------------------------------------------------------------------------ */

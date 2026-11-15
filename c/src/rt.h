@@ -78,7 +78,7 @@
 #endif
 
 #define TP_ALIGN 16
-#define TP_NORUNE ((tp_rune)-1)
+#define TP_NORUNE ((tp_rune) - 1)
 #define TP_COUNT(a) (sizeof(a) / sizeof((a)[0]))
 
 /* -------------------------------------------------------------------------------------------- */
@@ -229,11 +229,11 @@ TP_PRIVATE size_t tp_utf8_encode(char out[4], tp_rune r); /* r must be a valid s
  * The zero value is an empty vector. Elements live in the current arena. Passing a vector by
  * value copies the header (like a Go slice header): appending to the copy does not change the
  * original's length, exactly as in Go. */
-#define TP_VEC(T) \
-  struct {        \
-    T *p;         \
-    size_t n;     \
-    size_t cap;   \
+#define TP_VEC(T)                                                                                  \
+  struct {                                                                                         \
+    T *p;                                                                                          \
+    size_t n;                                                                                      \
+    size_t cap;                                                                                    \
   }
 
 /* Grow the vector whose element pointer is at pp (the address of a T *; read and written with
@@ -243,54 +243,52 @@ TP_PRIVATE void tp_vec_grow_(void *pp, size_t *cap, size_t need, size_t elem);
 TP_PRIVATE void tp_vec_push_n_(void *pp, size_t *n, size_t *cap, size_t k, size_t elem);
 
 /* Append one element (an expression of the element type). */
-#define tp_push(v, x)                                                        \
-  do {                                                                       \
-    if ((v).n == (v).cap)                                                    \
-      tp_vec_grow_(&(v).p, &(v).cap, (v).n + 1, sizeof *(v).p);     \
-    (v).p[(v).n++] = (x);                                                    \
+#define tp_push(v, x)                                                                              \
+  do {                                                                                             \
+    if ((v).n == (v).cap) tp_vec_grow_(&(v).p, &(v).cap, (v).n + 1, sizeof *(v).p);                \
+    (v).p[(v).n++] = (x);                                                                          \
   } while (0)
 
 /* Make room for k more elements and return a pointer to the first new one (zeroed). k is
  * evaluated twice: it must have no side effects. */
-#define tp_push_n(v, k) \
+#define tp_push_n(v, k)                                                                            \
   (tp_vec_push_n_(&(v).p, &(v).n, &(v).cap, (k), sizeof *(v).p), &(v).p[(v).n - (k)])
 
 /* Append all elements of another vector of the same type. */
-#define tp_append(v, w)                                                     \
-  do {                                                                      \
-    size_t tp_k_ = (w).n;                                                   \
-    if (tp_k_) {                                                            \
-      if ((v).n + tp_k_ > (v).cap)                                          \
-        tp_vec_grow_(&(v).p, &(v).cap, (v).n + tp_k_, sizeof *(v).p); \
-      memcpy(&(v).p[(v).n], (w).p, tp_k_ * sizeof *(v).p);                  \
-      (v).n += tp_k_;                                                       \
-    }                                                                       \
+#define tp_append(v, w)                                                                            \
+  do {                                                                                             \
+    size_t tp_k_ = (w).n;                                                                          \
+    if (tp_k_) {                                                                                   \
+      if ((v).n + tp_k_ > (v).cap) tp_vec_grow_(&(v).p, &(v).cap, (v).n + tp_k_, sizeof *(v).p);   \
+      memcpy(&(v).p[(v).n], (w).p, tp_k_ * sizeof *(v).p);                                         \
+      (v).n += tp_k_;                                                                              \
+    }                                                                                              \
   } while (0)
 
 /* Insert x at index i (0 <= i <= n). */
-#define tp_insert(v, i, x)                                                                       \
-  do {                                                                                           \
-    size_t tp_i_ = (i);                                                                          \
-    if ((v).n == (v).cap) tp_vec_grow_(&(v).p, &(v).cap, (v).n + 1, sizeof *(v).p);     \
-    memmove(&(v).p[tp_i_ + 1], &(v).p[tp_i_], ((v).n - tp_i_) * sizeof *(v).p);                  \
-    (v).p[tp_i_] = (x);                                                                          \
-    (v).n++;                                                                                     \
+#define tp_insert(v, i, x)                                                                         \
+  do {                                                                                             \
+    size_t tp_i_ = (i);                                                                            \
+    if ((v).n == (v).cap) tp_vec_grow_(&(v).p, &(v).cap, (v).n + 1, sizeof *(v).p);                \
+    memmove(&(v).p[tp_i_ + 1], &(v).p[tp_i_], ((v).n - tp_i_) * sizeof *(v).p);                    \
+    (v).p[tp_i_] = (x);                                                                            \
+    (v).n++;                                                                                       \
   } while (0)
 
 /* Remove elements [i, j). */
-#define tp_remove(v, i, j)                                                                      \
-  do {                                                                                          \
-    size_t tp_a_ = (i), tp_b_ = (j);                                                            \
-    memmove(&(v).p[tp_a_], &(v).p[tp_b_], ((v).n - tp_b_) * sizeof *(v).p);                     \
-    (v).n -= tp_b_ - tp_a_;                                                                     \
+#define tp_remove(v, i, j)                                                                         \
+  do {                                                                                             \
+    size_t tp_a_ = (i), tp_b_ = (j);                                                               \
+    memmove(&(v).p[tp_a_], &(v).p[tp_b_], ((v).n - tp_b_) * sizeof *(v).p);                        \
+    (v).n -= tp_b_ - tp_a_;                                                                        \
   } while (0)
 
 /* A copy with its own storage (slices.Clone). Use: tp_clone(dst, src). */
-#define tp_clone(dst, src)                                                    \
-  do {                                                                        \
-    (dst).n = (dst).cap = 0;                                                  \
-    (dst).p = NULL;                                                           \
-    tp_append(dst, src);                                                      \
+#define tp_clone(dst, src)                                                                         \
+  do {                                                                                             \
+    (dst).n = (dst).cap = 0;                                                                       \
+    (dst).p = NULL;                                                                                \
+    tp_append(dst, src);                                                                           \
   } while (0)
 
 #define tp_last(v) ((v).p[(v).n - 1])
@@ -392,8 +390,8 @@ struct tp_json {
   tp_json_kind kind;
   bool b;
   double num;
-  tp_str str;             /* valid UTF-8; lone surrogate escapes became U+FFFD */
-  const tp_json *arr;     /* kind == ARRAY */
+  tp_str str;         /* valid UTF-8; lone surrogate escapes became U+FFFD */
+  const tp_json *arr; /* kind == ARRAY */
   size_t arr_n;
   const tp_json_member *obj; /* kind == OBJECT, in document order; a repeated key keeps its first
                                 place and the last value (JS object semantics) */

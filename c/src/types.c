@@ -29,12 +29,12 @@ static const tp_str sources[] = {{"artist", 6}, {"title", 5}, {"version", 7}};
 TP_PRIVATE tp_strvec tp_all_sources(void) { return TP_NAMES(sources); }
 
 static const tp_str version_types[] = {
-    {"remix", 5},     {"bootleg", 7},  {"vip", 3},          {"edit", 4},     {"flip", 4},
-    {"refix", 5},     {"rework", 6},   {"mashup", 6},       {"blend", 5},    {"dub", 3},
-    {"mix", 3},       {"extended", 8}, {"radio", 5},        {"club", 4},     {"original", 8},
-    {"instrumental", 12}, {"acapella", 8}, {"live", 4},     {"acoustic", 8}, {"remaster", 8},
-    {"demo", 4},      {"reprise", 7},  {"cover", 5},        {"version", 7},  {"spedUp", 6},
-    {"slowed", 6},    {"nightcore", 9}};
+    {"remix", 5},         {"bootleg", 7},  {"vip", 3},    {"edit", 4},     {"flip", 4},
+    {"refix", 5},         {"rework", 6},   {"mashup", 6}, {"blend", 5},    {"dub", 3},
+    {"mix", 3},           {"extended", 8}, {"radio", 5},  {"club", 4},     {"original", 8},
+    {"instrumental", 12}, {"acapella", 8}, {"live", 4},   {"acoustic", 8}, {"remaster", 8},
+    {"demo", 4},          {"reprise", 7},  {"cover", 5},  {"version", 7},  {"spedUp", 6},
+    {"slowed", 6},        {"nightcore", 9}};
 
 /* AllVersionTypes: the 27 version types of the spec, in the spec's order. */
 TP_PRIVATE tp_strvec tp_all_version_types(void) { return TP_NAMES(version_types); }
@@ -44,17 +44,21 @@ static const tp_str delimiters[] = {{"(", 1}, {"[", 1}, {"{", 1}, {"-", 1}};
 /* AllDelimiters: every Delimiter, in the spec's order. */
 TP_PRIVATE tp_strvec tp_all_delimiters(void) { return TP_NAMES(delimiters); }
 
-static const tp_str junk_kinds[] = {{"video", 5},    {"audio", 5}, {"lyrics", 6},
-                                    {"quality", 7},  {"promo", 5}, {"platform", 8},
-                                    {"label", 5},    {"genre", 5}, {"other", 5}};
+static const tp_str junk_kinds[] = {{"video", 5},   {"audio", 5}, {"lyrics", 6},
+                                    {"quality", 7}, {"promo", 5}, {"platform", 8},
+                                    {"label", 5},   {"genre", 5}, {"other", 5}};
 
 /* AllJunkKinds: the junk kinds of the spec, in the spec's order. */
 TP_PRIVATE tp_strvec tp_all_junk_kinds(void) { return TP_NAMES(junk_kinds); }
 
-static const tp_str warnings[] = {{"noSeparator", 11},         {"ambiguousSeparator", 18},
-                                  {"unspacedDashSplit", 17},   {"asymmetricDashSplit", 19},
-                                  {"bySplit", 7},              {"quotedTitleSplit", 16},
-                                  {"ambiguousMixCredit", 18},  {"unbalancedBrackets", 18}};
+static const tp_str warnings[] = {{"noSeparator", 11},
+                                  {"ambiguousSeparator", 18},
+                                  {"unspacedDashSplit", 17},
+                                  {"asymmetricDashSplit", 19},
+                                  {"bySplit", 7},
+                                  {"quotedTitleSplit", 16},
+                                  {"ambiguousMixCredit", 18},
+                                  {"unbalancedBrackets", 18}};
 
 /* AllWarnings: every Warning, in the spec's order. */
 TP_PRIVATE tp_strvec tp_all_warnings(void) { return TP_NAMES(warnings); }
@@ -71,9 +75,9 @@ static const tp_str eols[] = {{"\n", 1}, {"\r\n", 2}, {"\r", 1}, {"", 0}};
 TP_PRIVATE tp_strvec tp_all_eols(void) { return TP_NAMES(eols); }
 
 static const tp_str warning_codes[] = {
-    {"time-missing", 12},         {"time-out-of-order", 17}, {"time-duplicate", 14},
-    {"no-start-at-zero", 16},     {"time-after-audio-end", 20}, {"invalid-time", 12},
-    {"position-gap", 12},         {"position-duplicate", 18}, {"line-unparsed", 13}};
+    {"time-missing", 12},     {"time-out-of-order", 17},    {"time-duplicate", 14},
+    {"no-start-at-zero", 16}, {"time-after-audio-end", 20}, {"invalid-time", 12},
+    {"position-gap", 12},     {"position-duplicate", 18},   {"line-unparsed", 13}};
 
 /* AllWarningCodes: every WarningCode, in the spec's order. */
 TP_PRIVATE tp_strvec tp_all_warning_codes(void) { return TP_NAMES(warning_codes); }

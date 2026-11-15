@@ -213,8 +213,8 @@ static bool compose_two(tp_rune a, tp_rune b, tp_rune *out) {
   /* Hangul: L + V -> LV, LV + T -> LVT. */
   if (a >= HANGUL_L_BASE && a < HANGUL_L_BASE + HANGUL_L_COUNT && b >= HANGUL_V_BASE &&
       b < HANGUL_V_BASE + HANGUL_V_COUNT) {
-    *out = HANGUL_S_BASE + ((a - HANGUL_L_BASE) * HANGUL_V_COUNT + (b - HANGUL_V_BASE)) *
-                               HANGUL_T_COUNT;
+    *out = HANGUL_S_BASE +
+           ((a - HANGUL_L_BASE) * HANGUL_V_COUNT + (b - HANGUL_V_BASE)) * HANGUL_T_COUNT;
     return true;
   }
   if (is_hangul_syllable(a) && (a - HANGUL_S_BASE) % HANGUL_T_COUNT == 0 && b > HANGUL_T_BASE &&

@@ -6,8 +6,8 @@
 
 /* isEmpty reports whether k adds no word, so the default tables can be shared. */
 TP_PRIVATE bool tp_keywords_is_empty(const tp_keywords *k) {
-  return k->version_heads.n == 0 && k->descriptors.n == 0 && k->genres.n == 0 &&
-         k->junk.n == 0 && k->feat_markers.n == 0;
+  return k->version_heads.n == 0 && k->descriptors.n == 0 && k->genres.n == 0 && k->junk.n == 0 &&
+         k->feat_markers.n == 0;
 }
 
 /* -------------------------------------------------------------------------------------------- */

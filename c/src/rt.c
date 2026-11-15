@@ -878,7 +878,7 @@ TP_PRIVATE void tp_sort_stable(void *base, size_t count, size_t size,
   tmp = (unsigned char *)tp_alloc_array(count, size);
   src = a;
   dst = tmp;
-  for (width = run; width < count; width = width > count / 2 ? count : width * 2) {
+  for (width = run; width<count; width = width> count / 2 ? count : width * 2) {
     size_t lo;
     for (lo = 0; lo < count; lo += 2 * width) {
       size_t mid = lo + width < count ? lo + width : count;

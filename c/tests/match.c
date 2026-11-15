@@ -9,21 +9,35 @@ void tp_json_quote(tp_buf *b, tp_str s) {
   for (size_t i = 0; i < s.n; i++) {
     unsigned char c = (unsigned char)s.p[i];
     switch (c) {
-      case '"': tp_buf_cstr(b, "\\\""); break;
-      case '\\': tp_buf_cstr(b, "\\\\"); break;
-      case '\b': tp_buf_cstr(b, "\\b"); break;
-      case '\f': tp_buf_cstr(b, "\\f"); break;
-      case '\n': tp_buf_cstr(b, "\\n"); break;
-      case '\r': tp_buf_cstr(b, "\\r"); break;
-      case '\t': tp_buf_cstr(b, "\\t"); break;
-      default:
-        if (c < 0x20) {
-          tp_buf_cstr(b, "\\u00");
-          tp_buf_byte(b, hexdigits[c >> 4]);
-          tp_buf_byte(b, hexdigits[c & 15]);
-        } else {
-          tp_buf_byte(b, (char)c);
-        }
+    case '"':
+      tp_buf_cstr(b, "\\\"");
+      break;
+    case '\\':
+      tp_buf_cstr(b, "\\\\");
+      break;
+    case '\b':
+      tp_buf_cstr(b, "\\b");
+      break;
+    case '\f':
+      tp_buf_cstr(b, "\\f");
+      break;
+    case '\n':
+      tp_buf_cstr(b, "\\n");
+      break;
+    case '\r':
+      tp_buf_cstr(b, "\\r");
+      break;
+    case '\t':
+      tp_buf_cstr(b, "\\t");
+      break;
+    default:
+      if (c < 0x20) {
+        tp_buf_cstr(b, "\\u00");
+        tp_buf_byte(b, hexdigits[c >> 4]);
+        tp_buf_byte(b, hexdigits[c & 15]);
+      } else {
+        tp_buf_byte(b, (char)c);
+      }
     }
   }
   tp_buf_byte(b, '"');
@@ -31,34 +45,40 @@ void tp_json_quote(tp_buf *b, tp_str s) {
 
 static void show_into(tp_buf *b, tp_json v) {
   switch (v.kind) {
-    case TP_JSON_NULL: tp_buf_cstr(b, "null"); break;
-    case TP_JSON_BOOL: tp_buf_cstr(b, v.b ? "true" : "false"); break;
-    case TP_JSON_NUMBER:
-      if (tp_is_nan(v.num) || tp_is_inf(v.num)) {
-        tp_buf_cstr(b, "null");
-      } else {
-        tp_buf_number(b, v.num);
-      }
-      break;
-    case TP_JSON_STRING: tp_json_quote(b, v.str); break;
-    case TP_JSON_ARRAY:
-      tp_buf_byte(b, '[');
-      for (size_t i = 0; i < v.arr_n; i++) {
-        if (i) tp_buf_byte(b, ',');
-        show_into(b, v.arr[i]);
-      }
-      tp_buf_byte(b, ']');
-      break;
-    case TP_JSON_OBJECT:
-      tp_buf_byte(b, '{');
-      for (size_t i = 0; i < v.obj_n; i++) {
-        if (i) tp_buf_byte(b, ',');
-        tp_json_quote(b, v.obj[i].key);
-        tp_buf_byte(b, ':');
-        show_into(b, v.obj[i].val);
-      }
-      tp_buf_byte(b, '}');
-      break;
+  case TP_JSON_NULL:
+    tp_buf_cstr(b, "null");
+    break;
+  case TP_JSON_BOOL:
+    tp_buf_cstr(b, v.b ? "true" : "false");
+    break;
+  case TP_JSON_NUMBER:
+    if (tp_is_nan(v.num) || tp_is_inf(v.num)) {
+      tp_buf_cstr(b, "null");
+    } else {
+      tp_buf_number(b, v.num);
+    }
+    break;
+  case TP_JSON_STRING:
+    tp_json_quote(b, v.str);
+    break;
+  case TP_JSON_ARRAY:
+    tp_buf_byte(b, '[');
+    for (size_t i = 0; i < v.arr_n; i++) {
+      if (i) tp_buf_byte(b, ',');
+      show_into(b, v.arr[i]);
+    }
+    tp_buf_byte(b, ']');
+    break;
+  case TP_JSON_OBJECT:
+    tp_buf_byte(b, '{');
+    for (size_t i = 0; i < v.obj_n; i++) {
+      if (i) tp_buf_byte(b, ',');
+      tp_json_quote(b, v.obj[i].key);
+      tp_buf_byte(b, ':');
+      show_into(b, v.obj[i].val);
+    }
+    tp_buf_byte(b, '}');
+    break;
   }
 }
 
@@ -72,11 +92,16 @@ tp_str tp_json_show(tp_json v) {
 static bool same_scalar(tp_json e, tp_json a) {
   if (e.kind != a.kind) return false;
   switch (e.kind) {
-    case TP_JSON_NULL: return true;
-    case TP_JSON_BOOL: return e.b == a.b;
-    case TP_JSON_NUMBER: return e.num == a.num;
-    case TP_JSON_STRING: return tp_str_eq(e.str, a.str);
-    default: return false;
+  case TP_JSON_NULL:
+    return true;
+  case TP_JSON_BOOL:
+    return e.b == a.b;
+  case TP_JSON_NUMBER:
+    return e.num == a.num;
+  case TP_JSON_STRING:
+    return tp_str_eq(e.str, a.str);
+  default:
+    return false;
   }
 }
 
@@ -100,9 +125,7 @@ static tp_str index_path(tp_str path, size_t i) {
   return tp_buf_done(&b);
 }
 
-static tp_str key_path(tp_str path, tp_str key) {
-  return tp_concat3(path, TP_S("."), key);
-}
+static tp_str key_path(tp_str path, tp_str key) { return tp_concat3(path, TP_S("."), key); }
 
 /* match: "partial" (README rules 1 to 4); empty on a match. */
 static tp_str match_partial(tp_json expected, tp_json actual, tp_str path) {

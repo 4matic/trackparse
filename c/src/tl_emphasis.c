@@ -36,9 +36,7 @@ TP_PRIVATE bool tp_is_emphasis_outer(tp_rune r) {
 }
 
 /* isEmphasisInner is the R13.12.2 inner side: a character that is not R0.2 whitespace. */
-TP_PRIVATE bool tp_is_emphasis_inner(tp_rune r) {
-  return r != TP_NORUNE && !tp_is_whitespace(r);
-}
+TP_PRIVATE bool tp_is_emphasis_inner(tp_rune r) { return r != TP_NORUNE && !tp_is_whitespace(r); }
 
 /* emphasisStack is the stack of a run: one each for '*', '**', '_' and '__'; -1 for longer runs
  * and other characters. */
