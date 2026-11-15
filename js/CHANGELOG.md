@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.1](https://github.com/4matic/trackparse/compare/js-v0.8.0...js-v0.8.1) (2026-11-15)
+
+
+### Miscellaneous
+
+* **js:** Synchronize trackparse versions
+
 ## [0.8.0](https://github.com/4matic/trackparse/compare/js-v0.7.1...js-v0.8.0) (2026-11-15)
 
 

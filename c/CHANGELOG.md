@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.1](https://github.com/4matic/trackparse/compare/c-v0.8.0...c-v0.8.1) (2026-11-15)
+
+
+### Documentation
+
+* the C FetchContent examples download 0.8.0 ([8a2c612](https://github.com/4matic/trackparse/commit/8a2c612666e5bb6d3cb25b9103fe6084f85cd7f7))
+
 ## [0.8.0](https://github.com/4matic/trackparse/compare/c-v0.7.1...c-v0.8.0) (2026-11-15)
 
 
