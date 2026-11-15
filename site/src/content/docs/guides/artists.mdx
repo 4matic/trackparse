@@ -47,20 +47,36 @@ type Artist struct {
 ```
 
 </TabItem>
+<TabItem label="C">
+
+```c
+typedef struct trackparse_artist {
+  trackparse_str name;
+  trackparse_role role;           /* TRACKPARSE_ROLE_PRIMARY, _FEATURED, _REMIXER, _PRODUCER */
+  const trackparse_str *joiner;   /* NULL for the first name of a list */
+  trackparse_source source;       /* TRACKPARSE_SOURCE_ARTIST, _TITLE, _VERSION */
+} trackparse_artist;
+```
+
+</TabItem>
 </Tabs>
 
 `role` says what the person did. `joiner` is the text that introduced the name, exactly as written
 (`"&"`, `","`, `"ft."`, `"prod. by"`), and `null` for the first name of a list (`None` in Python and
-Rust, `nil` in Go, where `Joiner` is a `*string`). `source` says where the credit was found: left of the dash (`artist`), right of it (`title`),
+Rust, `nil` in Go, where `Joiner` is a `*string`, `NULL` in C, where `joiner` is a
+`const trackparse_str *`). `source` says where the credit was found: left of the dash (`artist`), right of it (`title`),
 or inside a version (`version`). In Rust, `role` and `source` are the enums
 [`ArtistRole`](https://docs.rs/trackparse/latest/trackparse/enum.ArtistRole.html) and [`ArtistSource`](https://docs.rs/trackparse/latest/trackparse/enum.ArtistSource.html);
 `as_str()` and `Display` give the lowercase names used here. In Go they are the string types
 [`Role`](https://pkg.go.dev/github.com/4matic/trackparse/go#Role) and [`Source`](https://pkg.go.dev/github.com/4matic/trackparse/go#Source), with constants such as `trackparse.RolePrimary`
-and `trackparse.SourceTitle` whose values are those names. The full field list is under
+and `trackparse.SourceTitle` whose values are those names. In C they are the enums
+`trackparse_role` and `trackparse_source` (`TRACKPARSE_ROLE_PRIMARY`, `TRACKPARSE_SOURCE_TITLE`),
+and `trackparse_role_name()` and `trackparse_source_name()` give the names; the structs are in
+[`trackparse.h`](https://github.com/4matic/trackparse/blob/main/c/include/trackparse.h). The full field list is under
 [`Artist`](/trackparse/reference/parse/#artist) in the reference.
 
 Remixers live inside `versions`, not in `artists`. Use [`allArtists(track)`](/trackparse/reference/functions/#allartiststrack)
-(`all_artists` in Python and Rust, `AllArtists` in Go) when you want everyone in one list.
+(`all_artists` in Python and Rust, `AllArtists` in Go, `trackparse_all_artists` in C) when you want everyone in one list.
 
 ## Joiners
 
@@ -141,6 +157,31 @@ fmt.Printf("%q\n", names(trackparse.Parse("Kanye West vs. Daft Punk - Stronger")
 ```
 
 </TabItem>
+<TabItem label="C">
+
+```c
+#include <trackparse.h>
+
+trackparse_track *t = trackparse_parse("Skrillex & Diplo x Justin Bieber - Where Are Ü Now",
+                                       TRACKPARSE_NUL_TERMINATED);
+for (size_t i = 0; i < t->artists_count; i++) {
+  const trackparse_artist *a = &t->artists[i];
+  printf("%s (joiner %s), %s\n", a->name.ptr, a->joiner ? a->joiner->ptr : "NULL",
+         trackparse_role_name(a->role));
+}
+// Skrillex (joiner NULL), primary
+// Diplo (joiner &), primary
+// Justin Bieber (joiner x), primary
+trackparse_track_free(t);
+
+t = trackparse_parse("Kanye West vs. Daft Punk - Stronger", TRACKPARSE_NUL_TERMINATED);
+for (size_t i = 0; i < t->artists_count; i++) printf("%s\n", t->artists[i].name.ptr);
+// Kanye West
+// Daft Punk
+trackparse_track_free(t);
+```
+
+</TabItem>
 </Tabs>
 
 Some things look like joiners and aren't:
@@ -206,10 +247,29 @@ fmt.Printf("%q\n", names(trackparse.ParseArtists("Crosby, Stills, Nash and Young
 ```
 
 </TabItem>
+<TabItem label="C">
+
+```c
+t = trackparse_parse("Simon and Garfunkel - The Boxer", TRACKPARSE_NUL_TERMINATED);
+for (size_t i = 0; i < t->artists_count; i++) printf("%s\n", t->artists[i].name.ptr);
+// Simon and Garfunkel
+trackparse_track_free(t);
+
+trackparse_artists *list =
+    trackparse_parse_artists("Crosby, Stills, Nash and Young", TRACKPARSE_NUL_TERMINATED);
+for (size_t i = 0; i < list->count; i++) printf("%s\n", list->items[i].name.ptr);
+// Crosby
+// Stills
+// Nash
+// Young
+trackparse_artists_free(list);
+```
+
+</TabItem>
 </Tabs>
 
 Set [`splitAnd`](/trackparse/reference/options/#parse-options) (`split_and` in Python and Rust,
-`SplitAnd` in Go) to `"always"` or `"never"` to change that
+`SplitAnd` in Go, `trackparse_parse_options_set_split_and` in C) to `"always"` or `"never"` to change that
 ([try it](/trackparse/playground/#track=Simon%20and%20Garfunkel%20-%20The%20Boxer&splitAnd=always)):
 
 <Tabs syncKey="lang">
@@ -258,6 +318,31 @@ fmt.Printf("%q\n", names(trackparse.ParseWith("Simon and Garfunkel - The Boxer",
 never := trackparse.ParseOptions{SplitAnd: trackparse.SplitAndNever}
 fmt.Printf("%q\n", names(trackparse.ParseArtistsWith("Crosby, Stills, Nash and Young", never)))
 // ["Crosby" "Stills" "Nash and Young"]
+```
+
+</TabItem>
+<TabItem label="C">
+
+```c
+trackparse_parse_options *always = trackparse_parse_options_new();
+trackparse_parse_options_set_split_and(always, TRACKPARSE_SPLIT_AND_ALWAYS);
+t = trackparse_parse_with("Simon and Garfunkel - The Boxer", TRACKPARSE_NUL_TERMINATED, always);
+for (size_t i = 0; i < t->artists_count; i++) printf("%s\n", t->artists[i].name.ptr);
+// Simon
+// Garfunkel
+trackparse_track_free(t);
+trackparse_parse_options_free(always);
+
+trackparse_parse_options *never = trackparse_parse_options_new();
+trackparse_parse_options_set_split_and(never, TRACKPARSE_SPLIT_AND_NEVER);
+list = trackparse_parse_artists_with("Crosby, Stills, Nash and Young", TRACKPARSE_NUL_TERMINATED,
+                                     never);
+for (size_t i = 0; i < list->count; i++) printf("%s\n", list->items[i].name.ptr);
+// Crosby
+// Stills
+// Nash and Young
+trackparse_artists_free(list);
+trackparse_parse_options_free(never);
 ```
 
 </TabItem>
@@ -326,6 +411,27 @@ for _, s := range []string{
 ```
 
 </TabItem>
+<TabItem label="C">
+
+```c
+const char *inputs[] = {
+    "Noisia feat. Foreign Beggars - Shellshock",
+    "Noisia - Shellshock ft. Foreign Beggars",
+    "Silk City - Electricity (with Dua Lipa)",
+};
+for (size_t i = 0; i < 3; i++) {
+  t = trackparse_parse(inputs[i], TRACKPARSE_NUL_TERMINATED);
+  const trackparse_artist *a = &t->artists[1];
+  printf("%s | %s | %s | %s\n", a->name.ptr, trackparse_role_name(a->role), a->joiner->ptr,
+         trackparse_source_name(a->source));
+  trackparse_track_free(t);
+}
+// Foreign Beggars | featured | feat. | artist
+// Foreign Beggars | featured | ft. | title
+// Dua Lipa | featured | with | title
+```
+
+</TabItem>
 </Tabs>
 
 If the same person is credited twice, they appear once:
@@ -361,6 +467,18 @@ parse("Noisia feat. Foreign Beggars - Shellshock (feat. Foreign Beggars)")
 ```go
 fmt.Printf("%q\n", names(trackparse.Parse("Noisia feat. Foreign Beggars - Shellshock (feat. Foreign Beggars)").Artists))
 // ["Noisia" "Foreign Beggars"]
+```
+
+</TabItem>
+<TabItem label="C">
+
+```c
+t = trackparse_parse("Noisia feat. Foreign Beggars - Shellshock (feat. Foreign Beggars)",
+                     TRACKPARSE_NUL_TERMINATED);
+for (size_t i = 0; i < t->artists_count; i++) printf("%s\n", t->artists[i].name.ptr);
+// Noisia
+// Foreign Beggars
+trackparse_track_free(t);
 ```
 
 </TabItem>
@@ -417,11 +535,23 @@ fmt.Printf("%q\n", t.Title)                                         // "Mask Off
 ```
 
 </TabItem>
+<TabItem label="C">
+
+```c
+t = trackparse_parse("Future - Mask Off (prod. by Metro Boomin)", TRACKPARSE_NUL_TERMINATED);
+const trackparse_artist *a = &t->artists[1];
+printf("%s | %s | %s | %s\n", a->name.ptr, trackparse_role_name(a->role), a->joiner->ptr,
+       trackparse_source_name(a->source));   // Metro Boomin | producer | prod. by | title
+printf("%s\n", t->title.ptr);                // Mask Off
+trackparse_track_free(t);
+```
+
+</TabItem>
 </Tabs>
 
 ## knownArtists
 
-*(Python and Rust: `known_artists`; Go: `KnownArtists`)*
+*(Python and Rust: `known_artists`; Go: `KnownArtists`; C: `trackparse_parse_options_add_known_artist`)*
 
 trackparse has no artist database, on purpose. A built-in list would be wrong for half its users
 and out of date within a month. You tell it the names you care about:
@@ -473,13 +603,32 @@ fmt.Printf("%q\n", names(trackparse.ParseWith("Chase & Status - Baddadan", optio
 ```
 
 </TabItem>
+<TabItem label="C">
+
+```c
+t = trackparse_parse("Chase & Status - Baddadan", TRACKPARSE_NUL_TERMINATED);
+for (size_t i = 0; i < t->artists_count; i++) printf("%s\n", t->artists[i].name.ptr);
+// Chase
+// Status
+trackparse_track_free(t);
+
+trackparse_parse_options *options = trackparse_parse_options_new();
+trackparse_parse_options_add_known_artist(options, "Chase & Status", TRACKPARSE_NUL_TERMINATED);
+t = trackparse_parse_with("Chase & Status - Baddadan", TRACKPARSE_NUL_TERMINATED, options);
+for (size_t i = 0; i < t->artists_count; i++) printf("%s\n", t->artists[i].name.ptr);
+// Chase & Status
+trackparse_track_free(t);
+trackparse_parse_options_free(options);
+```
+
+</TabItem>
 </Tabs>
 
 A known name is matched case- and accent-insensitively wherever a credit list starts. It also
 protects names that begin with digits from being read as a track number (`3 Doors Down`). If you
 parse a lot of strings with the same names, put them in
 [`createParser`](/trackparse/reference/functions/#createparseroptions) (`create_parser` in Python,
-`Parser::new` in Rust, `NewParser` in Go). You can try it in the
+`Parser::new` in Rust, `NewParser` in Go, `trackparse_parser_new` in C). You can try it in the
 [playground](/trackparse/playground/#track=Chase%20%26%20Status%20-%20Baddadan&known=Chase%20%26%20Status).
 The option is listed under [Options](/trackparse/reference/options/#parse-options), and the
 matching rule is [R7.3](/trackparse/reference/spec/#r7-artist-side:~:text=R7.3%20Credit%2Dlist%20splitting) (a).
@@ -488,7 +637,7 @@ matching rule is [R7.3](/trackparse/reference/spec/#r7-artist-side:~:text=R7.3%2
 
 `ID` (and `Unknown`, `Untitled`, `?`, `???`) means the track hasn't been announced yet. It doesn't become a name.
 The track gets `flags.unknownArtist: true` (`flags.unknown_artist` in Python and Rust,
-`Flags.UnknownArtist` in Go) instead, and the same goes for titles
+`Flags.UnknownArtist` in Go, `flags.unknown_artist` in C) instead, and the same goes for titles
 ([R7.5](/trackparse/reference/spec/#r7-artist-side:~:text=R7.5%20Drops%20and%20unknowns), [R8.6](/trackparse/reference/spec/#r8-title-side:~:text=R8.6%20Unknown%20title);
 [open it in the playground](/trackparse/playground/#track=ID%20-%20ID%20%28ID%20Remix%29)):
 
@@ -534,6 +683,18 @@ fmt.Println(len(t.Artists))                  // 0
 fmt.Println(t.Flags.UnknownArtist)           // true
 fmt.Println(t.Flags.UnknownTitle)            // true
 fmt.Println(t.Versions[0].UnknownArtist)     // true
+```
+
+</TabItem>
+<TabItem label="C">
+
+```c
+t = trackparse_parse("ID - ID (ID Remix)", TRACKPARSE_NUL_TERMINATED);
+printf("%zu\n", t->artists_count);                                // 0
+printf("%s\n", t->flags.unknown_artist ? "true" : "false");       // true
+printf("%s\n", t->flags.unknown_title ? "true" : "false");        // true
+printf("%s\n", t->versions[0].unknown_artist ? "true" : "false"); // true
+trackparse_track_free(t);
 ```
 
 </TabItem>

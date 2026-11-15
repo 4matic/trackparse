@@ -6,19 +6,20 @@ description: parseArtists, format, normalize, allArtists, createParser and SPEC_
 import { Tabs, TabItem } from "@astrojs/starlight/components";
 
 All of these are exported from `trackparse`. The Python package and the Rust crate have the same
-functions in snake_case, and the Go package in CamelCase. [`parse`](/trackparse/reference/parse/) and the
+functions in snake_case, the Go package in CamelCase, and the C library in snake_case with a
+`trackparse_` prefix. [`parse`](/trackparse/reference/parse/) and the
 [tracklist functions](/trackparse/reference/tracklist/) have pages of their own.
 
-| JavaScript | Python | Rust | Go |
-|---|---|---|---|
-| `parse` | `parse` | `parse`, `parse_with` | `Parse`, `ParseWith` |
-| `parseArtists` | `parse_artists` | `parse_artists`, `parse_artists_with` | `ParseArtists`, `ParseArtistsWith` |
-| `format` | `format_track` | `format_track`, `format_track_with` | `Format`, `FormatWith` |
-| `normalize` | `normalize` | `normalize` | `Normalize` |
-| `allArtists` | `all_artists` | `all_artists` | `AllArtists` |
-| `createParser` | `create_parser` | `Parser::new` | `NewParser` |
-| `SPEC_VERSION` | `SPEC_VERSION` | `SPEC_VERSION` | `SpecVersion` |
-| [`parseTracklist`](/trackparse/reference/tracklist/#parsetracklisttext-options), [`applyEdits`](/trackparse/reference/tracklist/#applyeditstext-edits-options) (from `trackparse/tracklist`) | `parse_tracklist`, `apply_edits` (from `trackparse.tracklist`) | `parse_tracklist`, `parse_tracklist_with`, `apply_edits`, `apply_edits_with` (from `trackparse::tracklist`) | `ParseTracklist`, `ParseTracklistWith`, `ApplyEdits`, `ApplyEditsWith` (same package) |
+| JavaScript | Python | Rust | Go | C |
+|---|---|---|---|---|
+| `parse` | `parse` | `parse`, `parse_with` | `Parse`, `ParseWith` | `trackparse_parse`, `trackparse_parse_with` |
+| `parseArtists` | `parse_artists` | `parse_artists`, `parse_artists_with` | `ParseArtists`, `ParseArtistsWith` | `trackparse_parse_artists`, `trackparse_parse_artists_with` |
+| `format` | `format_track` | `format_track`, `format_track_with` | `Format`, `FormatWith` | `trackparse_format`, `trackparse_format_with` |
+| `normalize` | `normalize` | `normalize` | `Normalize` | `trackparse_normalize` |
+| `allArtists` | `all_artists` | `all_artists` | `AllArtists` | `trackparse_all_artists` |
+| `createParser` | `create_parser` | `Parser::new` | `NewParser` | `trackparse_parser_new` |
+| `SPEC_VERSION` | `SPEC_VERSION` | `SPEC_VERSION` | `SpecVersion` | `trackparse_spec_version()` |
+| [`parseTracklist`](/trackparse/reference/tracklist/#parsetracklisttext-options), [`applyEdits`](/trackparse/reference/tracklist/#applyeditstext-edits-options) (from `trackparse/tracklist`) | `parse_tracklist`, `apply_edits` (from `trackparse.tracklist`) | `parse_tracklist`, `parse_tracklist_with`, `apply_edits`, `apply_edits_with` (from `trackparse::tracklist`) | `ParseTracklist`, `ParseTracklistWith`, `ApplyEdits`, `ApplyEditsWith` (same package) | `trackparse_parse_tracklist`, `trackparse_parse_tracklist_with`, `trackparse_apply_edits` (same header) |
 
 What to know for each language:
 
@@ -42,12 +43,21 @@ What to know for each language:
   is not valid UTF-8 is read with U+FFFD in place of each bad sequence. The tracklist functions
   are in the same package. Every function has an entry with examples on
   [pkg.go.dev](https://pkg.go.dev/github.com/4matic/trackparse/go#section-documentation).
+- **C** (one header, [`trackparse.h`](https://github.com/4matic/trackparse/blob/main/c/include/trackparse.h)). Each function that takes options has a
+  `_with` form that takes an options handle, and `NULL` there means the defaults. Input is UTF-8
+  as a pointer and a byte length; pass `TRACKPARSE_NUL_TERMINATED` for a C string. Results are
+  read-only structs that own all their memory: free each with its own function
+  (`trackparse_track_free`, `trackparse_artists_free`, `trackparse_string_free`, and so on). Lists
+  are a pointer and a `_count` member, nullable fields are pointers that are `NULL` when absent,
+  and enums have a `_name()` function that gives the spec's string. Strings in results are
+  `trackparse_str`, a `ptr` and a `len`, and `ptr` is also NUL-terminated. A function returns
+  `NULL` only when memory runs out; it never crashes on any input. All functions are thread-safe.
 
 The options themselves are on the [Options](/trackparse/reference/options/) page.
 
 ## parseArtists(input, options?)
 
-*(Python: `parse_artists`. Rust: [`parse_artists`](https://docs.rs/trackparse/latest/trackparse/fn.parse_artists.html), [`parse_artists_with`](https://docs.rs/trackparse/latest/trackparse/fn.parse_artists_with.html). Go: [`ParseArtists`](https://pkg.go.dev/github.com/4matic/trackparse/go#ParseArtists), [`ParseArtistsWith`](https://pkg.go.dev/github.com/4matic/trackparse/go#ParseArtistsWith))*
+*(Python: `parse_artists`. Rust: [`parse_artists`](https://docs.rs/trackparse/latest/trackparse/fn.parse_artists.html), [`parse_artists_with`](https://docs.rs/trackparse/latest/trackparse/fn.parse_artists_with.html). Go: [`ParseArtists`](https://pkg.go.dev/github.com/4matic/trackparse/go#ParseArtists), [`ParseArtistsWith`](https://pkg.go.dev/github.com/4matic/trackparse/go#ParseArtistsWith). C: `trackparse_parse_artists`, `trackparse_parse_artists_with`)*
 
 Splits a bare artist string, with no title, into credits.
 
@@ -103,19 +113,37 @@ for _, a := range trackparse.ParseArtists("Sub Focus, Wilkinson & Dimension feat
 ```
 
 </TabItem>
+<TabItem label="C">
+
+```c
+#include <trackparse.h>
+
+trackparse_artists *as = trackparse_parse_artists("Sub Focus, Wilkinson & Dimension feat. Kojo",
+                                                  TRACKPARSE_NUL_TERMINATED);
+for (size_t i = 0; i < as->count; i++) {
+  printf("%s:%s\n", as->items[i].name.ptr, trackparse_role_name(as->items[i].role));
+}
+// Sub Focus:primary
+// Wilkinson:primary
+// Dimension:primary
+// Kojo:featured
+trackparse_artists_free(as);
+```
+
+</TabItem>
 </Tabs>
 
 Takes [`knownArtists`](/trackparse/guides/artists/#knownartists), [`splitAnd`](/trackparse/guides/artists/#and-is-special) and [`keywords`](/trackparse/reference/options/#keywords) (`known_artists`, `split_and`, `keywords`; in Rust
-through `parse_artists_with`, in Go through `ParseArtistsWith`). Use it for the artist field of ID3 tags or a streaming API, where
+through `parse_artists_with`, in Go through `ParseArtistsWith`, in C through `trackparse_parse_artists_with`). Use it for the artist field of ID3 tags or a streaming API, where
 the title is already separate. The result is a list of
 [`Artist`](/trackparse/reference/parse/#artist) values (a `list` in Python, a `Vec` in Rust, a slice
-in Go), and the splitting rules are explained in
+in Go, a `trackparse_artists` with `items` and `count` in C), and the splitting rules are explained in
 [Artists and credits](/trackparse/guides/artists/). In the spec this is
 [R10](/trackparse/reference/spec/#r10-parseartists).
 
 ## format(track, options?)
 
-*(Python: `format_track`. Rust: [`format_track`](https://docs.rs/trackparse/latest/trackparse/fn.format_track.html), [`format_track_with`](https://docs.rs/trackparse/latest/trackparse/fn.format_track_with.html). Go: [`Format`](https://pkg.go.dev/github.com/4matic/trackparse/go#Format), [`FormatWith`](https://pkg.go.dev/github.com/4matic/trackparse/go#FormatWith))*
+*(Python: `format_track`. Rust: [`format_track`](https://docs.rs/trackparse/latest/trackparse/fn.format_track.html), [`format_track_with`](https://docs.rs/trackparse/latest/trackparse/fn.format_track_with.html). Go: [`Format`](https://pkg.go.dev/github.com/4matic/trackparse/go#Format), [`FormatWith`](https://pkg.go.dev/github.com/4matic/trackparse/go#FormatWith). C: `trackparse_format`, `trackparse_format_with`)*
 
 Renders a [`ParsedTrack`](/trackparse/reference/parse/#parsedtrack) back to a string. Junk is left out.
 
@@ -154,16 +182,33 @@ fmt.Printf("%q\n", trackparse.FormatWith(trackparse.Parse("Wilkinson ft. Becky H
 ```
 
 </TabItem>
+<TabItem label="C">
+
+```c
+trackparse_format_options *fo = trackparse_format_options_new();
+trackparse_format_options_set_feat(fo, TRACKPARSE_FEAT_TITLE);
+trackparse_format_options_set_joiners(fo, TRACKPARSE_JOINERS_CANONICAL);
+trackparse_track *t = trackparse_parse("Wilkinson ft. Becky Hill - Afterglow (Sub Focus Remix)",
+                                       TRACKPARSE_NUL_TERMINATED);
+trackparse_string *s = trackparse_format_with(t, fo);
+printf("%s\n", s->str.ptr);
+// Wilkinson - Afterglow (feat. Becky Hill) (Sub Focus Remix)
+trackparse_string_free(s);
+trackparse_format_options_free(fo);
+```
+
+</TabItem>
 </Tabs>
 
 The options are `feat`, [`featMarker`](/trackparse/guides/formatting/#options) (`feat_marker`), `joiners`, `versions`, `producers` and
 `position`. In Go they are the fields of `FormatOptions`, where `OmitProducers: true` stands for
-`producers: false`. [Formatting](/trackparse/guides/formatting/) has the table and an example of each. In
+`producers: false`. In C they are setters on a `trackparse_format_options` handle, where
+`trackparse_format_options_set_omit_producers(o, true)` stands for `producers: false`. [Formatting](/trackparse/guides/formatting/) has the table and an example of each. In
 the spec this is [R11](/trackparse/reference/spec/#r11-format).
 
 ## normalize(input)
 
-*(Python: `normalize`. Rust: [`normalize`](https://docs.rs/trackparse/latest/trackparse/fn.normalize.html). Go: [`Normalize`](https://pkg.go.dev/github.com/4matic/trackparse/go#Normalize))*
+*(Python: `normalize`. Rust: [`normalize`](https://docs.rs/trackparse/latest/trackparse/fn.normalize.html). Go: [`Normalize`](https://pkg.go.dev/github.com/4matic/trackparse/go#Normalize). C: `trackparse_normalize`)*
 
 The Unicode cleanup every function runs first. It applies NFC, removes invisible characters
 (zero-width spaces, BOMs, soft hyphens), turns dash, bracket and quote variants into their plain
@@ -198,6 +243,15 @@ fmt.Printf("%q\n", trackparse.Normalize("Noisia\u200b — “Stigma”"))   // "
 ```
 
 </TabItem>
+<TabItem label="C">
+
+```c
+s = trackparse_normalize("Noisia\u200b — “Stigma”", TRACKPARSE_NUL_TERMINATED);
+printf("%s\n", s->str.ptr);   // Noisia - "Stigma"
+trackparse_string_free(s);
+```
+
+</TabItem>
 </Tabs>
 
 You don't need to call it before [`parse`](/trackparse/reference/parse/). It's exported because it helps when you build lookup
@@ -205,7 +259,7 @@ keys. The steps are [R1](/trackparse/reference/spec/#r1-normalization) in the sp
 
 ## allArtists(track)
 
-*(Python: `all_artists`. Rust: [`all_artists`](https://docs.rs/trackparse/latest/trackparse/fn.all_artists.html). Go: [`AllArtists`](https://pkg.go.dev/github.com/4matic/trackparse/go#AllArtists))*
+*(Python: `all_artists`. Rust: [`all_artists`](https://docs.rs/trackparse/latest/trackparse/fn.all_artists.html). Go: [`AllArtists`](https://pkg.go.dev/github.com/4matic/trackparse/go#AllArtists). C: `trackparse_all_artists`)*
 
 Every credit of a track in one list: the artists, then every remixer, with duplicates removed.
 Names are compared with the dedup key of
@@ -251,11 +305,26 @@ for _, a := range trackparse.AllArtists(trackparse.Parse("Wilkinson ft. Becky Hi
 ```
 
 </TabItem>
+<TabItem label="C">
+
+```c
+as = trackparse_all_artists(t);   /* t is the Wilkinson track from the format example */
+for (size_t i = 0; i < as->count; i++) {
+  printf("%s:%s\n", as->items[i].name.ptr, trackparse_role_name(as->items[i].role));
+}
+// Wilkinson:primary
+// Becky Hill:featured
+// Sub Focus:remixer
+trackparse_artists_free(as);
+trackparse_track_free(t);
+```
+
+</TabItem>
 </Tabs>
 
 ## createParser(options)
 
-*(Python: `create_parser`. Rust: [`Parser::new`](https://docs.rs/trackparse/latest/trackparse/struct.Parser.html). Go: [`NewParser`](https://pkg.go.dev/github.com/4matic/trackparse/go#NewParser), which returns a [`Parser`](https://pkg.go.dev/github.com/4matic/trackparse/go#Parser))*
+*(Python: `create_parser`. Rust: [`Parser::new`](https://docs.rs/trackparse/latest/trackparse/struct.Parser.html). Go: [`NewParser`](https://pkg.go.dev/github.com/4matic/trackparse/go#NewParser), which returns a [`Parser`](https://pkg.go.dev/github.com/4matic/trackparse/go#Parser). C: `trackparse_parser_new`)*
 
 Compiles options and keywords once and returns an object with [`parse`](/trackparse/reference/parse/) and `parseArtists`
 (`parse_artists`). Use it when you parse many strings with the same [`knownArtists`](/trackparse/guides/artists/#knownartists) or [`keywords`](/trackparse/reference/options/#keywords).
@@ -265,7 +334,10 @@ over the compiled ones: `parser.parse(s, { mode: "youtube" })`, `parser.parse(s,
 The Rust `Parser` takes its options once, in `Parser::new(&options)`. Its `parse` and
 `parse_artists` take only the input, and it is `Send + Sync`, so one parser can serve many threads. The Go `NewParser(options)` works
 the same way: its `Parse` and `ParseArtists` methods take only the input, and a `*Parser` is safe
-for concurrent use by many goroutines.
+for concurrent use by many goroutines. The C `trackparse_parser_new(options)` copies what it needs
+from the options handle, so the handle can be freed right away. `trackparse_parser_parse` and
+`trackparse_parser_parse_artists` take only the input, and a parser is immutable, so many threads
+can share one. Free it with `trackparse_parser_free`.
 
 <Tabs syncKey="lang">
 <TabItem label="JavaScript">
@@ -328,16 +400,39 @@ fmt.Println(parser.Parse("Chase & Status x Camo & Krooked - Track (Alix Perez Re
 ```
 
 </TabItem>
+<TabItem label="C">
+
+```c
+trackparse_parse_options *o = trackparse_parse_options_new();
+trackparse_parse_options_add_known_artist(o, "Chase & Status", TRACKPARSE_NUL_TERMINATED);
+trackparse_parse_options_add_known_artist(o, "Camo & Krooked", TRACKPARSE_NUL_TERMINATED);
+trackparse_parse_options_add_version_head(o, "rerub", TRACKPARSE_NUL_TERMINATED,
+                                          "rework", TRACKPARSE_NUL_TERMINATED);
+trackparse_parser *parser = trackparse_parser_new(o);
+trackparse_parse_options_free(o);
+
+t = trackparse_parser_parse(parser, "Chase & Status x Camo & Krooked - Track (Alix Perez Rerub)",
+                            TRACKPARSE_NUL_TERMINATED);
+printf("%s\n", t->versions[0].type_name.ptr);
+// rework
+trackparse_track_free(t);
+trackparse_parser_free(parser);
+```
+
+</TabItem>
 </Tabs>
 
 ## SPEC_VERSION
 
-*(Rust: [`SPEC_VERSION`](https://docs.rs/trackparse/latest/trackparse/constant.SPEC_VERSION.html). Go: [`SpecVersion`](https://pkg.go.dev/github.com/4matic/trackparse/go#SpecVersion))*
+*(Rust: [`SPEC_VERSION`](https://docs.rs/trackparse/latest/trackparse/constant.SPEC_VERSION.html). Go: [`SpecVersion`](https://pkg.go.dev/github.com/4matic/trackparse/go#SpecVersion). C: `trackparse_spec_version()`)*
 
 The version of the [spec](/trackparse/reference/spec/) the package implements, as a string (`&str`
-in Rust, the constant `SpecVersion` in Go). The packages and the spec are released together, so it's the same as the package version.
-A parsed tracklist carries it too, as `specVersion` (`spec_version` in Python and Rust,
-`SpecVersion` in Go).
+in Rust, the constant `SpecVersion` in Go, the function `trackparse_spec_version()` in C, which
+returns a static string). The packages and the spec are released together, so it's the same as the package version.
+A parsed tracklist carries it too, as `specVersion` (`spec_version` in Python, Rust and C,
+`SpecVersion` in Go). In C, `trackparse_library_version()` gives the version of the linked
+library and the macro `TRACKPARSE_VERSION` that of the header, which differ only when a shared
+library is replaced.
 
 ## See also
 
@@ -345,4 +440,4 @@ A parsed tracklist carries it too, as `specVersion` (`spec_version` in Python an
   [Options](/trackparse/reference/options/).
 - [Tracklist API](/trackparse/reference/tracklist/) for [`parseTracklist`](/trackparse/reference/tracklist/#parsetracklisttext-options) and [`applyEdits`](/trackparse/reference/tracklist/#applyeditstext-edits-options).
 - [Warnings](/trackparse/reference/warnings/) for the codes these functions report.
-- [Ports](/trackparse/project/ports/) for how the four packages are kept identical.
+- [Ports](/trackparse/project/ports/) for how the five packages are kept identical.

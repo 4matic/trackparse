@@ -23,7 +23,7 @@ doesn't recognize stays in the title, word for word
 This is the Go port of [trackparse](https://github.com/4matic/trackparse). Its behaviour is defined
 by a [shared spec](https://4matic.github.io/trackparse/reference/spec/) and pinned by
 [13,130 fixtures](https://4matic.github.io/trackparse/project/testing/). It passes all of them, and for every fixture input its output is byte-identical
-to the [JavaScript, Python and Rust packages](#other-languages).
+to the [JavaScript, Python, Rust and C packages](#other-languages).
 
 - Go 1.22 or later (the `go` line of `go.mod`; CI runs the tests on 1.22 and on the latest stable)
 - No dependencies: `go.mod` has no `require` line
@@ -448,8 +448,8 @@ default tables are built once, on first use.
 **Docs:** [SPEC_VERSION](https://4matic.github.io/trackparse/reference/functions/#spec_version) · [`SpecVersion`](https://pkg.go.dev/github.com/4matic/trackparse/go#SpecVersion) on pkg.go.dev
 
 The [spec](https://4matic.github.io/trackparse/reference/spec/) version this module implements. It equals the module version: the Go module, the npm
-package, the PyPI package, the Rust crate and the spec are released together and always share one
-version number.
+package, the PyPI package, the Rust crate, the C library and the spec are released together and
+always share one version number.
 
 ## Modes
 
@@ -694,7 +694,7 @@ fmt.Printf("%q\n", trackparse.Parse("Noisia - Sti\xffgma\xe2\x82").Title) // "St
 - [`scripts/compare-ports.mjs`](https://github.com/4matic/trackparse/blob/main/scripts/compare-ports.mjs)
   runs every fixture input through the JavaScript package and this module and compares the
   complete JSON output, every field of it, not only the ones a fixture asserts. The Python and
-  Rust packages are checked the same way.
+  Rust packages and the C library are checked the same way.
 - CI runs `go vet`, staticcheck and `go test -race` on Go 1.22 and on the latest stable, and fails
   if `go.mod` gains a `require` line or the code calls `sort.Slice` (JavaScript sorts are stable,
   `sort.Slice` is not).
@@ -716,8 +716,8 @@ So the output does not depend on the Go version you build with. More in
 
 This differs from the Rust crate, which takes NFC and NFD from the `unicode-normalization` crate
 and its Unicode 18 tables. Unicode 18 added 32 combining marks, so a string containing one of
-them can come out with its marks in another order in Rust than in JavaScript and Go. Strings
-without those marks are not affected, and every shared fixture gives the same bytes in all four
+them can come out with its marks in another order in Rust than in JavaScript, Go and C. Strings
+without those marks are not affected, and every shared fixture gives the same bytes in all five
 ports.
 
 ## Performance
@@ -752,7 +752,7 @@ results, upgrade on purpose and read the changelog first.
 
 **Docs:** [Ports](https://4matic.github.io/trackparse/project/ports/)
 
-The same parser exists for JavaScript, Python and Rust. All four implement one spec, pass the
+The same parser exists for JavaScript, Python, Rust and C. All five implement one spec, pass the
 same fixtures, are released together under one version number, and return identical JSON for
 every fixture input. You can parse in one language and read the result in another. The one known
 difference is described under [Unicode version](#unicode-version).
@@ -763,6 +763,7 @@ difference is described under [Unicode version](#unicode-version).
 | Python | [trackparse on PyPI](https://pypi.org/project/trackparse/) | `pip install trackparse` | [README](https://github.com/4matic/trackparse/blob/main/python/README.md) · [changelog](https://github.com/4matic/trackparse/blob/main/python/CHANGELOG.md) · [API](https://4matic.github.io/trackparse/reference/parse/) |
 | Rust | [trackparse on crates.io](https://crates.io/crates/trackparse) | `cargo add trackparse` | [README](https://github.com/4matic/trackparse/blob/main/rust/README.md) · [changelog](https://github.com/4matic/trackparse/blob/main/rust/CHANGELOG.md) · [API on docs.rs](https://docs.rs/trackparse) |
 | Go | [github.com/4matic/trackparse/go](https://pkg.go.dev/github.com/4matic/trackparse/go) | `go get github.com/4matic/trackparse/go` | [README](https://github.com/4matic/trackparse/blob/main/go/README.md) · [changelog](https://github.com/4matic/trackparse/blob/main/go/CHANGELOG.md) · [API on pkg.go.dev](https://pkg.go.dev/github.com/4matic/trackparse/go) |
+| C / C++ | [C library and C++ header](https://github.com/4matic/trackparse/blob/main/c/README.md) | CMake FetchContent from the [release tarball](https://github.com/4matic/trackparse/releases), or the amalgamation | [README](https://github.com/4matic/trackparse/blob/main/c/README.md) · [changelog](https://github.com/4matic/trackparse/blob/main/c/CHANGELOG.md) · [header](https://github.com/4matic/trackparse/blob/main/c/include/trackparse.h) |
 
 ## Limitations
 
@@ -801,7 +802,7 @@ spec, not here: see [AGENTS.md](https://github.com/4matic/trackparse/blob/main/A
 ## Links
 
 - [Documentation](https://4matic.github.io/trackparse/), with every example in JavaScript, Python,
-  Rust and Go, and a [playground](https://4matic.github.io/trackparse/playground/) that runs the
+  Rust, Go and C, and a [playground](https://4matic.github.io/trackparse/playground/) that runs the
   parser in your browser
 - [API documentation on pkg.go.dev](https://pkg.go.dev/github.com/4matic/trackparse/go)
 - [Spec](https://github.com/4matic/trackparse/blob/main/spec/SPEC.md) and its
@@ -809,7 +810,7 @@ spec, not here: see [AGENTS.md](https://github.com/4matic/trackparse/blob/main/A
 - [Changelog](https://github.com/4matic/trackparse/blob/main/go/CHANGELOG.md)
 - [Project README](https://github.com/4matic/trackparse#readme)
 - [GitHub repository](https://github.com/4matic/trackparse)
-- [npm package](https://www.npmjs.com/package/trackparse) · [PyPI package](https://pypi.org/project/trackparse/) · [Rust crate](https://crates.io/crates/trackparse)
+- [npm package](https://www.npmjs.com/package/trackparse) · [PyPI package](https://pypi.org/project/trackparse/) · [Rust crate](https://crates.io/crates/trackparse) · [C library](https://github.com/4matic/trackparse/blob/main/c/README.md)
 
 ## License
 

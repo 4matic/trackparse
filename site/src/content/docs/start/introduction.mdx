@@ -10,11 +10,15 @@ titles, file names, scrobbles, the tracklist under a mix. It gives you back an o
 artists and their roles, the clean title, every remix or version with its credits, and the noise
 that was around it.
 
-It comes as four packages with the same behaviour: `trackparse` on
+It comes as five packages with the same behaviour: `trackparse` on
 [npm](https://www.npmjs.com/package/trackparse) for JavaScript and TypeScript, `trackparse` on
 [PyPI](https://pypi.org/project/trackparse/) for Python, `trackparse` on
-[crates.io](https://crates.io/crates/trackparse) for Rust, and the module
-[`github.com/4matic/trackparse/go`](https://pkg.go.dev/github.com/4matic/trackparse/go) for Go.
+[crates.io](https://crates.io/crates/trackparse) for Rust, the module
+[`github.com/4matic/trackparse/go`](https://pkg.go.dev/github.com/4matic/trackparse/go) for Go,
+and a C library with one header,
+[`trackparse.h`](https://github.com/4matic/trackparse/blob/main/c/include/trackparse.h), released
+as a source tarball and an amalgamation on each
+[GitHub Release](https://github.com/4matic/trackparse/releases) from 0.7.0 on.
 Every example
 on this site has a tab for each language. The API docs of the Rust crate are on
 [docs.rs](https://docs.rs/trackparse), and those of the Go module on
@@ -51,7 +55,7 @@ The same rule shows up in smaller ways:
 - Every key of the output is always present, so you never have to check whether a field exists
   ([the output model](/trackparse/reference/spec/#output-model)).
 - No string makes it fail. [`parse`](/trackparse/reference/parse/) never throws in JavaScript or
-  Python and never panics in Rust or Go
+  Python, never panics in Rust or Go, and in C returns `NULL` only when memory runs out
   ([R0.8](/trackparse/reference/spec/#r0-portability:~:text=R0.8%20Parsing%20is)).
 
 ## What you get back
@@ -99,6 +103,20 @@ fmt.Println(string(data))
 ```
 
 </TabItem>
+<TabItem label="C">
+
+```c
+#include <trackparse.h>
+
+trackparse_track *t = trackparse_parse("Queen - Bohemian Rhapsody (Live at Wembley 1986)",
+                                       TRACKPARSE_NUL_TERMINATED);
+trackparse_string *json = trackparse_track_to_json(t);
+printf("%s\n", json->str.ptr);   // {"input":"Queen - Bohemian Rhapsody (Live at Wembley 1986)","mode":"clean",…}
+trackparse_string_free(json);
+trackparse_track_free(t);
+```
+
+</TabItem>
 </Tabs>
 
 ```json
@@ -129,12 +147,14 @@ fmt.Println(string(data))
 }
 ```
 
-All four give this JSON: the packages pass the same fixtures and give the same output on every
+All five give this JSON: the packages pass the same fixtures and give the same output on every
 fixture input ([Ports](/trackparse/project/ports/#what-the-rust-port-taught) has the one Unicode
 note). In JavaScript the result is a plain object. In Python it is a frozen
 dataclass with snake_case attributes, and `to_dict()` turns it into the JSON above. In Rust it is a
 struct with snake_case fields, and `to_json()` writes that JSON as a string. In Go it is a struct
-with exported CamelCase fields, and `json.Marshal` writes that JSON. The
+with exported CamelCase fields, and `json.Marshal` writes that JSON. In C it is a read-only
+struct with snake_case members that owns its memory, and `trackparse_track_to_json` writes that
+JSON. The
 [`parse` reference](/trackparse/reference/parse/) explains every field, and
 [Serializing to JSON](/trackparse/reference/parse/#serializing-to-json) shows the round trip in each
 language. [Try this track in the playground](/trackparse/playground/#track=Queen%20-%20Bohemian%20Rhapsody%20%28Live%20at%20Wembley%201986%29).
@@ -142,16 +162,16 @@ language. [Try this track in the playground](/trackparse/playground/#track=Queen
 ## Names in each language
 
 The docs use the JavaScript and JSON names in running text. Python and Rust use snake_case for the
-same things, and Go uses exported CamelCase:
+same things, Go uses exported CamelCase, and C prefixes every name with `trackparse_`:
 
-| | JavaScript | Python | Rust | Go |
-|---|---|---|---|---|
-| Parse | [`parse(s, options?)`](/trackparse/reference/parse/) | `parse(s, **options)` | [`parse(s)`](https://docs.rs/trackparse/latest/trackparse/fn.parse.html), [`parse_with(s, &options)`](https://docs.rs/trackparse/latest/trackparse/fn.parse_with.html) | [`Parse(s)`](https://pkg.go.dev/github.com/4matic/trackparse/go#Parse), [`ParseWith(s, options)`](https://pkg.go.dev/github.com/4matic/trackparse/go#ParseWith) |
-| A field | `track.fullTitle` | `track.full_title` | `track.full_title` | `track.FullTitle` |
-| An option | [`{ knownArtists: […] }`](/trackparse/reference/options/) | `known_artists=[…]` | [`ParseOptions::new().known_artists([…])`](https://docs.rs/trackparse/latest/trackparse/struct.ParseOptions.html) | [`ParseOptions{KnownArtists: …}`](https://pkg.go.dev/github.com/4matic/trackparse/go#ParseOptions) |
-| A value | `"remix"`, `null` | `"remix"`, `None` | `VersionType::Remix`, `None` | `VersionTypeRemix`, `nil` |
-| Lists | arrays | tuples | `Vec` | slices |
-| JSON | `JSON.stringify(track)` | `track.to_dict()` | `track.to_json()`, or `serde` | `json.Marshal(track)` |
+| | JavaScript | Python | Rust | Go | C |
+|---|---|---|---|---|---|
+| Parse | [`parse(s, options?)`](/trackparse/reference/parse/) | `parse(s, **options)` | [`parse(s)`](https://docs.rs/trackparse/latest/trackparse/fn.parse.html), [`parse_with(s, &options)`](https://docs.rs/trackparse/latest/trackparse/fn.parse_with.html) | [`Parse(s)`](https://pkg.go.dev/github.com/4matic/trackparse/go#Parse), [`ParseWith(s, options)`](https://pkg.go.dev/github.com/4matic/trackparse/go#ParseWith) | `trackparse_parse(s, len)`, `trackparse_parse_with(s, len, options)` |
+| A field | `track.fullTitle` | `track.full_title` | `track.full_title` | `track.FullTitle` | `track->full_title` |
+| An option | [`{ knownArtists: […] }`](/trackparse/reference/options/) | `known_artists=[…]` | [`ParseOptions::new().known_artists([…])`](https://docs.rs/trackparse/latest/trackparse/struct.ParseOptions.html) | [`ParseOptions{KnownArtists: …}`](https://pkg.go.dev/github.com/4matic/trackparse/go#ParseOptions) | `trackparse_parse_options_add_known_artist(options, …)` |
+| A value | `"remix"`, `null` | `"remix"`, `None` | `VersionType::Remix`, `None` | `VersionTypeRemix`, `nil` | `TRACKPARSE_VERSION_REMIX`, `NULL` |
+| Lists | arrays | tuples | `Vec` | slices | a pointer and a `_count` |
+| JSON | `JSON.stringify(track)` | `track.to_dict()` | `track.to_json()`, or `serde` | `json.Marshal(track)` | `trackparse_track_to_json(track)` |
 
 [Other functions](/trackparse/reference/functions/) has the full table of function names.
 
@@ -160,7 +180,7 @@ same things, and Go uses exported CamelCase:
 Behaviour isn't defined by the JavaScript code. It's defined by a written
 [spec](/trackparse/reference/spec/) with numbered rules (R0 to R13), and by 13,130 fixtures that pin those rules
 down. The JavaScript package is the reference implementation. The Python package, the Rust
-crate and the Go module pass the same fixtures and produce the same JSON, byte for byte.
+crate, the Go module and the C library pass the same fixtures and produce the same JSON, byte for byte.
 [How it's tested](/trackparse/project/testing/) and [Ports](/trackparse/project/ports/) have the
 details.
 
@@ -174,7 +194,7 @@ If all you need is a cleaned-up string to send to a scrobbler,
 scope. trackparse is for when you need to know who did what.
 
 It also has no artist database. `&` is a joiner, so `Chase & Status` comes out as two artists unless
-you pass it in [`knownArtists`](/trackparse/reference/options/#parse-options) (`known_artists` in Python and Rust, `KnownArtists` in Go). More on that in
+you pass it in [`knownArtists`](/trackparse/reference/options/#parse-options) (`known_artists` in Python and Rust, `KnownArtists` in Go, `trackparse_parse_options_add_known_artist` in C). More on that in
 [Artists and credits](/trackparse/guides/artists/#knownartists). The other gaps are listed under
 [Limitations and roadmap](/trackparse/project/roadmap/).
 

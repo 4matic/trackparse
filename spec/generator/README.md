@@ -2,7 +2,8 @@
 
 Combinatorial fixture generator for the trackparse spec. It writes
 `spec/fixtures/generated/*.json`: 11,927 cases, about 7.7 MB (`test/generated.test.ts` caps the
-size at 7.8 MB). Every port (JavaScript, Python, Rust and Go) runs these files next to the 1,203
+size at 7.8 MB). Every port (JavaScript, Python, Rust, Go and
+[C](https://github.com/4matic/trackparse/blob/main/c/README.md)) runs these files next to the 1,203
 handwritten fixtures. The case format is in [`../fixtures/README.md`](../fixtures/README.md).
 
 **Docs:** [How it's tested: generated cases](https://4matic.github.io/trackparse/project/testing/#generated-11927-cases) · [Spec](https://4matic.github.io/trackparse/reference/spec/)
@@ -25,7 +26,7 @@ the side of rejecting.
 
 When the SPEC changes, update the atom expectations and `problem()` in the same change. Then run
 `gen`, and every port must pass the result: JavaScript first, since it is the reference, then
-Python, Rust and Go.
+Python, Rust, Go and C.
 
 ## Scenarios
 

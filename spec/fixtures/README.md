@@ -2,8 +2,9 @@
 
 The shared test corpus: 13,130 cases, [1,203 written by hand](https://4matic.github.io/trackparse/project/testing/#handwritten-1203-cases)
 and [11,927 generated](https://4matic.github.io/trackparse/project/testing/#generated-11927-cases). Every port
-([JavaScript](../../js/README.md), [Python](../../python/README.md), [Rust](../../rust/README.md)
-and [Go](../../go/README.md)) runs every case here. The fixtures, not any one implementation,
+([JavaScript](../../js/README.md), [Python](../../python/README.md), [Rust](../../rust/README.md),
+[Go](../../go/README.md) and [C](https://github.com/4matic/trackparse/blob/main/c/README.md)) runs
+every case here. The fixtures, not any one implementation,
 define correct behaviour.
 
 **Docs:** [How it's tested](https://4matic.github.io/trackparse/project/testing/) · [Contributing](https://4matic.github.io/trackparse/project/contributing/)
@@ -92,8 +93,8 @@ unrelated fields: the case then survives changes elsewhere, and the exact cases 
   promoted.
 - Port-specific gaps go in that port's skip list ([`js/test/skip.json`](../../js/test/skip.json),
   [`python/tests/skip.json`](../../python/tests/skip.json), [`rust/tests/skip.json`](../../rust/tests/skip.json),
-  [`go/testdata/skip.json`](../../go/testdata/skip.json)), not here. A skip list can only shrink, and all
-  four are empty today.
+  [`go/testdata/skip.json`](../../go/testdata/skip.json), [`c/tests/skip.json`](../../c/tests/skip.json)), not here. A skip list can only shrink, and all
+  five are empty today.
 
 ## Running the fixtures
 
@@ -104,20 +105,24 @@ pnpm test                          # JavaScript: js/test/fixtures.test.ts
 (cd python && uv run pytest)       # Python: python/tests/test_fixtures.py
 (cd rust && cargo test)            # Rust: rust/tests/fixtures.rs
 (cd go && go test ./...)           # Go: go/fixtures_test.go
+(cd c && cmake -S . -B build && cmake --build build && ctest --test-dir build -R fixtures)
+                                   # C: c/tests/runner.c
 
 # one case, by id
 pnpm --filter trackparse exec vitest run test/fixtures.test.ts -t "brackets-version-001"
 (cd python && uv run pytest tests/test_fixtures.py -k "brackets-version-001")
 (cd rust && TRACKPARSE_ONLY=brackets-version-001 cargo test --test fixtures)
 (cd go && TRACKPARSE_ONLY=brackets-version-001 go test -run TestFixtures -v)
+(cd c && TRACKPARSE_ONLY=brackets-version-001 ./build/trackparse-fixtures ../spec/fixtures/*/*.json)
 
 # pass rate per fixture file and per spec rule
 pnpm conformance
 (cd python && uv run python scripts/conformance.py)
 (cd rust && TRACKPARSE_REPORT=1 cargo test --test fixtures -- --nocapture)
 (cd go && TRACKPARSE_REPORT=1 go test -run TestFixtures -v)
+(cd c && TRACKPARSE_REPORT=1 ./build/trackparse-fixtures ../spec/fixtures/*/*.json)
 
-# after pnpm build: the complete output of all four ports, compared
+# after pnpm build: the complete output of all five ports, compared
 node scripts/compare-ports.mjs
 node scripts/fuzz-ports.mjs        # the same diff on random input
 

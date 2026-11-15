@@ -1,15 +1,36 @@
 // One language choice for the whole site. The docs' code tabs (`<Tabs syncKey="lang">`) keep
 // theirs in localStorage under Starlight's key, as the tab label. The install switch on the
-// landing page and the playground's code panels read and write the same entry, so picking Rust
-// or Go in one place picks it everywhere.
+// landing page and the playground's code panels read and write the same entry, so picking Rust,
+// Go or C in one place picks it everywhere.
 
-export type Lang = "js" | "py" | "rs" | "go";
+import { version } from "../../../js/package.json";
+
+export type Lang = "js" | "py" | "rs" | "go" | "c";
 
 /** Starlight's key for `syncKey="lang"` (see its Tabs.astro). */
 const KEY = "starlight-synced-tabs__lang";
 
 /** The tab labels used on every docs page. */
-export const LANG_LABEL: Record<Lang, string> = { js: "JavaScript", py: "Python", rs: "Rust", go: "Go" };
+export const LANG_LABEL: Record<Lang, string> = { js: "JavaScript", py: "Python", rs: "Rust", go: "Go", c: "C" };
+
+/**
+ * The C library's version. All packages share one version (release-please bumps js/package.json
+ * with the rest), and the first C release is 0.7.0, so an older version means "not yet".
+ */
+const C_VERSION = (() => {
+  const [a, b] = version.split(".").map(Number);
+  return a > 0 || b >= 7 ? version : "0.7.0";
+})();
+const C_TARBALL = `https://github.com/4matic/trackparse/releases/download/c-v${C_VERSION}/trackparse-c-${C_VERSION}.tar.gz`;
+
+/** The CMake lines that fetch and link the C library (the install switch shows them for C). */
+export const C_FETCHCONTENT = [
+  "include(FetchContent)",
+  "FetchContent_Declare(trackparse",
+  `  URL ${C_TARBALL})`,
+  "FetchContent_MakeAvailable(trackparse)",
+  "target_link_libraries(app PRIVATE trackparse::trackparse)",
+].join("\n");
 
 /** Where each package lives, and where the docs explain how to install it. */
 export const PACKAGE: Record<Lang, { install: string; registry: string; url: string }> = {
@@ -17,6 +38,8 @@ export const PACKAGE: Record<Lang, { install: string; registry: string; url: str
   py: { install: "pip install trackparse", registry: "PyPI", url: "https://pypi.org/project/trackparse/" },
   rs: { install: "cargo add trackparse", registry: "crates.io", url: "https://crates.io/crates/trackparse" },
   go: { install: "go get github.com/4matic/trackparse/go@latest", registry: "pkg.go.dev", url: "https://pkg.go.dev/github.com/4matic/trackparse/go" },
+  // No registry: the release tarball, fetched by CMake, or the amalgamation from the same release.
+  c: { install: `FetchContent_Declare(trackparse URL ${C_TARBALL})`, registry: "GitHub Releases", url: "https://github.com/4matic/trackparse/releases" },
 };
 
 export function getLang(): Lang {

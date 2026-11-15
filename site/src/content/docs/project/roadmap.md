@@ -4,8 +4,8 @@ description: What trackparse doesn't do yet, and what comes next.
 ---
 
 The limits below come from the [spec](/trackparse/reference/spec/), so they are the same in the
-JavaScript, Python, Rust and Go packages. A new feature starts in the spec and lands in all four at
-once.
+JavaScript, Python, Rust, Go and C packages. A new feature starts in the spec and lands in all five
+at once.
 
 ## Not there yet
 
@@ -18,8 +18,8 @@ once.
   Only known label phrases (`[NCS Release]`) go to [`junk`](/trackparse/guides/junk-and-flags/#junk) as `label`.
 - Key and BPM (`8A`, `174 BPM`) stay in the title too.
 - An artist database. `Earth, Wind & Fire` splits unless you pass it in
-  [`knownArtists`](/trackparse/guides/artists/#knownartists) (`known_artists` in Python and Rust, `KnownArtists` in Go),
-  and a tracklist doesn't learn names from its other lines yet.
+  [`knownArtists`](/trackparse/guides/artists/#knownartists) (`known_artists` in Python and Rust, `KnownArtists` in Go,
+  `trackparse_parse_options_add_known_artist` in C), and a tracklist doesn't learn names from its other lines yet.
 - Gap and overlap checks between consecutive tracklist times.
 
 If one of these blocks you, [open an issue](https://github.com/4matic/trackparse/issues) with a few

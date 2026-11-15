@@ -296,8 +296,9 @@ const KEYWORDS: Record<Lang, Set<string>> = {
   py: new Set(["from", "import", "def", "return", "for", "in", "as", "lambda", "not", "and", "or"]),
   rs: new Set(["use", "let", "mut", "fn", "pub", "struct", "enum", "impl", "for", "in", "if", "else", "match", "return", "as", "ref", "const", "static", "mod", "crate", "self", "where", "while", "loop"]),
   go: new Set(["package", "import", "func", "var", "const", "type", "struct", "map", "for", "range", "if", "else", "return", "go", "defer"]),
+  c: new Set(["include", "int", "void", "char", "const", "static", "struct", "return", "if", "else", "for", "while", "sizeof", "size_t", "bool"]),
 };
-const CONSTANTS = new Set(["true", "false", "null", "undefined", "True", "False", "None", "Some", "nil"]);
+const CONSTANTS = new Set(["true", "false", "null", "undefined", "True", "False", "None", "Some", "nil", "NULL"]);
 
 /**
  * A small highlighter for the snippets the playground generates (one import, a call or two).
@@ -314,6 +315,9 @@ export function codeHtml(src: string, lang: Lang): string {
         : lang === "go"
           ? // Go: `//` comments, interpreted and raw (backquoted) strings.
             /(\/\/[^\n]*)|("(?:\\.|[^"\\\n])*"|`[^`]*`)|\b(\d+(?:\.\d+)?)\b|([A-Za-z_][\w]*)|([{}()[\],.;:=&])/g
+          : lang === "c"
+            ? // C: block comments, strings, character constants and the <header> of an #include.
+              /(\/\*[\s\S]*?\*\/)|("(?:\\.|[^"\\\n])*"|'(?:\\.|[^'\\\n])*'|<[\w./]+\.h>)|\b(\d+(?:\.\d+)?)\b|([A-Za-z_][\w]*)|([{}()[\],.;:=&*#!>-])/g
         : /(#[^\n]*)|("(?:\\.|[^"\\\n])*"|'(?:\\.|[^'\\\n])*')|\b(\d+(?:\.\d+)?)\b|([A-Za-z_][\w]*)|([{}()[\],.;:=])/g;
   let out = "";
   let last = 0;

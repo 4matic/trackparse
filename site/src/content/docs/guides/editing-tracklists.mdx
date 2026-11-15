@@ -6,7 +6,7 @@ description: Fix times, shift whole sections, sort, insert and delete lines, and
 import { Tabs, TabItem } from "@astrojs/starlight/components";
 
 [`applyEdits(text, edits)`](/trackparse/reference/tracklist/#applyeditstext-edits-options)
-(`apply_edits` in Python and Rust, `ApplyEdits` in Go) takes a
+(`apply_edits` in Python and Rust, `ApplyEdits` in Go, `trackparse_apply_edits` in C) takes a
 tracklist as text and returns new text. It's built for editors: you get back the lines it changed, and every other line keeps its
 bytes and its line ending. The rules are [R13.9](/trackparse/reference/spec/#r139-edits) in the
 spec.
@@ -41,6 +41,13 @@ import (
 
 	"github.com/4matic/trackparse/go"
 )
+```
+
+</TabItem>
+<TabItem label="C">
+
+```c
+#include <trackparse.h>
 ```
 
 </TabItem>
@@ -155,6 +162,51 @@ for _, line := range strings.Split(result.Text, "\r\n")[4:] {
 ```
 
 </TabItem>
+<TabItem label="C">
+
+```c
+/* text is the list from the previous page. */
+const char *text =
+    "Hour 2\r\n48:20 Noisia - Stigma\r\n52:47 Mefjus & Kasra - Bandwagon (Phace Remix)\r\n"
+    "56:05 Black Sun Empire - ID\r\n59:31 Alix Perez - Fade Away\r\n"
+    "01:03:10 Interview with Hybris\r\n01:07:44 Imanu - Sacrifice\r\n"
+    "00:11:02 Current Value feat. Teddy Killerz - Payload\r\n01:15:36 Hybris - Spinning Top";
+
+trackparse_tracklist *list = trackparse_parse_tracklist(text, TRACKPARSE_NUL_TERMINATED);
+const trackparse_suggestion *fix = list->warnings[1].suggestion;
+printf("%d %s %g\n", fix->line, fix->raw.ptr, fix->seconds);   // 8 01:11:02 4262
+
+trackparse_edits *edits = trackparse_edits_new();
+trackparse_edits_set_time(edits, fix->line, fix->seconds);
+trackparse_edits_shift_from(edits, 45, 5);
+trackparse_edit_result *result = trackparse_apply_edits(text, TRACKPARSE_NUL_TERMINATED, edits);
+trackparse_edits_free(edits);
+trackparse_tracklist_free(list);
+
+for (size_t i = 0; i < result->changed_count; i++) {
+  printf("%s%lld", i ? " " : "", result->changed[i]);
+}
+printf("\n");   // 5 6 7 8 9
+for (size_t i = 0; i < result->warnings_count; i++) {
+  const trackparse_edit_warning *w = &result->warnings[i];
+  printf("%s %zu %lld\n", trackparse_edit_warning_code_name(w->code), w->edit, *w->line);
+}
+// style-upgraded 1 5
+const char *from = result->text.ptr;
+for (int n = 0; n < 4; n++) from = strstr(from, "\r\n") + 2;   /* skip lines 1 to 4 */
+for (const char *c = from; *c; c++) {
+  if (*c != '\r') putchar(*c);
+}
+putchar('\n');
+// 01:00:16 Alix Perez - Fade Away
+// 01:03:55 Interview with Hybris
+// 01:08:29 Imanu - Sacrifice
+// 01:11:47 Current Value feat. Teddy Killerz - Payload
+// 01:16:21 Hybris - Spinning Top
+trackparse_edit_result_free(result);
+```
+
+</TabItem>
 </Tabs>
 
 In JavaScript an edit is an object with an `op`. In Python it is a plain dict with the same keys,
@@ -162,6 +214,11 @@ In JavaScript an edit is an object with an `op`. In Python it is a plain dict wi
 with a function per edit: `Edit::set_time(line, seconds)`, `Edit::shift_from(seconds, from)`. In Go
 it is an [`Edit`](https://pkg.go.dev/github.com/4matic/trackparse/go#Edit) struct, made with a function per edit as well:
 [`trackparse.SetTime(line, seconds)`](https://pkg.go.dev/github.com/4matic/trackparse/go#SetTime), [`trackparse.ShiftFrom(seconds, from)`](https://pkg.go.dev/github.com/4matic/trackparse/go#ShiftFrom).
+In C the edits go into a `trackparse_edits` list from `trackparse_edits_new()`, one call per edit
+(`trackparse_edits_set_time(edits, line, seconds)`, `trackparse_edits_shift_from(edits, seconds, from)`),
+declared in [`trackparse.h`](https://github.com/4matic/trackparse/blob/main/c/include/trackparse.h).
+The list copies what it is given, so it can be freed as soon as `trackparse_apply_edits` returns;
+the result is freed with `trackparse_edit_result_free`.
 
 Lines 1 to 4 are untouched, CRLF included ([R13.9.1](/trackparse/reference/spec/#r139-edits:~:text=R13.9.1%20Locality)). Edits run in
 order, each on the text the previous one produced, with line numbers as that text has them. The
@@ -171,18 +228,19 @@ does the same with buttons: the suggested fix, a shift and a sort, with undo.
 ## The edits
 
 There are six edits. JavaScript and Python write them the same way, as an object or a dict. Rust
-and Go have a constructor for each:
+and Go have a constructor for each, and C a function that appends it to a `trackparse_edits` list
+(shortened here to the part after `trackparse_edits_`):
 
-| JavaScript and Python | Rust | Go | Effect |
-|---|---|---|---|
-| `{ op: "set-time", line, seconds }` | `Edit::set_time(line, seconds)` | `SetTime(line, seconds)` | Rewrite the time on that line |
-| `{ op: "shift", seconds }` | `Edit::shift(seconds)` | `Shift(seconds)` | Add `seconds` (negative to go back) to every timed line |
-| `{ op: "shift", seconds, from }` | `Edit::shift_from(seconds, from)` | `ShiftFrom(seconds, from)` | The same, for every timed line from line `from` on |
-| `{ op: "shift", seconds, lines }` | `Edit::shift_lines(seconds, lines)` | `ShiftLines(seconds, lines...)` | The same, for the listed lines only |
-| `{ op: "sort-by-time" }` | `Edit::sort_by_time()` | `SortByTime()` | Reorder by time. Untimed lines move with the timed line above them, and lines before the first time stay on top |
-| `{ op: "set-rest", line, rest }` | `Edit::set_rest(line, rest)` | `SetRest(line, rest)` | Replace everything after the time, for example with `format(track)` ([`format_track`](/trackparse/reference/functions/#formattrack-options), Go `Format`) |
-| `{ op: "insert", after, text }` | `Edit::insert(after, text)` | `Insert(after, text)` | Insert a line after line `after` (`0` puts it at the top). It gets the text's usual line ending |
-| `{ op: "delete", line }` | `Edit::delete(line)` | `Delete(line)` | Remove a line |
+| JavaScript and Python | Rust | Go | C | Effect |
+|---|---|---|---|---|
+| `{ op: "set-time", line, seconds }` | `Edit::set_time(line, seconds)` | `SetTime(line, seconds)` | `set_time(e, line, seconds)` | Rewrite the time on that line |
+| `{ op: "shift", seconds }` | `Edit::shift(seconds)` | `Shift(seconds)` | `shift(e, seconds)` | Add `seconds` (negative to go back) to every timed line |
+| `{ op: "shift", seconds, from }` | `Edit::shift_from(seconds, from)` | `ShiftFrom(seconds, from)` | `shift_from(e, seconds, from)` | The same, for every timed line from line `from` on |
+| `{ op: "shift", seconds, lines }` | `Edit::shift_lines(seconds, lines)` | `ShiftLines(seconds, lines...)` | `shift_lines(e, seconds, lines, count)` | The same, for the listed lines only |
+| `{ op: "sort-by-time" }` | `Edit::sort_by_time()` | `SortByTime()` | `sort_by_time(e)` | Reorder by time. Untimed lines move with the timed line above them, and lines before the first time stay on top |
+| `{ op: "set-rest", line, rest }` | `Edit::set_rest(line, rest)` | `SetRest(line, rest)` | `set_rest(e, line, rest, len)` | Replace everything after the time, for example with `format(track)` ([`format_track`](/trackparse/reference/functions/#formattrack-options), Go `Format`, C `trackparse_format`) |
+| `{ op: "insert", after, text }` | `Edit::insert(after, text)` | `Insert(after, text)` | `insert(e, after, text, len)` | Insert a line after line `after` (`0` puts it at the top). It gets the text's usual line ending |
+| `{ op: "delete", line }` | `Edit::delete(line)` | `Delete(line)` | `delete(e, line)` | Remove a line |
 
 In Python the dict keys are quoted: `{"op": "set-time", "line": 3, "seconds": 90}`. Line numbers
 start at 1. Sorting is [R13.9.4](/trackparse/reference/spec/#r139-edits:~:text=R13.9.4%20Sort), and inserting and deleting
@@ -277,6 +335,39 @@ fmt.Println(tidy.Changed)       // [1 2 3]
 ```
 
 </TabItem>
+<TabItem label="C">
+
+```c
+const char *messy = "04:10 Mefjus ft. Phace - Sleepless\n00:00 Noisia - Stigma\n09:30 Outro";
+list = trackparse_parse_tracklist(messy, TRACKPARSE_NUL_TERMINATED);
+trackparse_format_options *canonical = trackparse_format_options_new();
+trackparse_format_options_set_joiners(canonical, TRACKPARSE_JOINERS_CANONICAL);
+trackparse_string *rest = trackparse_format_with(list->entries[0].track, canonical);
+printf("%s\n", rest->str.ptr);   // Mefjus feat. Phace - Sleepless
+
+edits = trackparse_edits_new();
+trackparse_edits_sort_by_time(edits);
+trackparse_edits_set_rest(edits, 2, rest->str.ptr, rest->str.len);
+trackparse_edits_insert(edits, 2, "06:45 Phace - Psycho", TRACKPARSE_NUL_TERMINATED);
+trackparse_edits_delete(edits, 4);
+trackparse_edit_result *tidy = trackparse_apply_edits(messy, TRACKPARSE_NUL_TERMINATED, edits);
+
+printf("%s\n", tidy->text.ptr);
+// 00:00 Noisia - Stigma
+// 04:10 Mefjus feat. Phace - Sleepless
+// 06:45 Phace - Psycho
+for (size_t i = 0; i < tidy->changed_count; i++) {
+  printf("%s%lld", i ? " " : "", tidy->changed[i]);
+}
+printf("\n");   // 1 2 3
+trackparse_edit_result_free(tidy);
+trackparse_edits_free(edits);
+trackparse_string_free(rest);
+trackparse_format_options_free(canonical);
+trackparse_tracklist_free(list);
+```
+
+</TabItem>
 </Tabs>
 
 Each edit sees the text the one before it produced. After the sort, the Mefjus line is line 2, and
@@ -351,6 +442,27 @@ for _, w := range result.Warnings {
 ```
 
 </TabItem>
+<TabItem label="C">
+
+```c
+text = "**[**52:47**] Mefjus - Bandwagon**\n**[**59:31**] Alix Perez - Fade Away**";
+edits = trackparse_edits_new();
+trackparse_edits_shift(edits, 45);
+result = trackparse_apply_edits(text, TRACKPARSE_NUL_TERMINATED, edits);
+
+printf("%s\n", result->text.ptr);
+// **[**53:32**] Mefjus - Bandwagon**
+// **[**01:00:16**] Alix Perez - Fade Away**
+for (size_t i = 0; i < result->warnings_count; i++) {
+  const trackparse_edit_warning *w = &result->warnings[i];
+  printf("%s %zu %lld\n", trackparse_edit_warning_code_name(w->code), w->edit, *w->line);
+}
+// style-upgraded 0 2
+trackparse_edit_result_free(result);
+trackparse_edits_free(edits);
+```
+
+</TabItem>
 </Tabs>
 
 `set-rest` replaces everything after the gap, including a closing `**` at the end of the line. The
@@ -363,7 +475,8 @@ Edits never throw or panic. A bad one changes nothing and reports why
 ([R13.9.6](/trackparse/reference/spec/#r139-edits:~:text=R13.9.6%20Totality)). In Rust the codes are the enum
 [`EditWarningCode`](https://docs.rs/trackparse/latest/trackparse/tracklist/enum.EditWarningCode.html) (`EditInvalid`, `TimeClamped`,
 `StyleUpgraded`), in Go the string type [`EditWarningCode`](https://pkg.go.dev/github.com/4matic/trackparse/go#EditWarningCode)
-(`trackparse.EditWarningCodeEditInvalid` and so on):
+(`trackparse.EditWarningCodeEditInvalid` and so on), in C the enum `trackparse_edit_warning_code`
+(`TRACKPARSE_EDIT_WARNING_EDIT_INVALID` and so on):
 
 | Code | When |
 |---|---|
@@ -372,7 +485,7 @@ Edits never throw or panic. A bad one changes nothing and reports why
 | `style-upgraded` | a time gained hours (see above) |
 
 Each edit warning is `{ code, edit, line }`, where `edit` is the index in your `edits` array and
-`line` is `null` (`None` in Python and Rust, a `nil` `*int` in Go) when the edit doesn't name a line.
+`line` is `null` (`None` in Python and Rust, a `nil` `*int` in Go, a `NULL` `const long long *` in C) when the edit doesn't name a line.
 [Warnings](/trackparse/reference/warnings/#edit-warnings) shows how to check them in each language.
 
 ## Guarantees

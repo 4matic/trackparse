@@ -7,12 +7,14 @@ Every row below is a real result of `parse(input)` with default options, except 
 *youtube*. Click an input to open it in the [playground](/trackparse/playground/) and see the full
 output.
 
-The results are the same in JavaScript, Python, Rust and Go, because all four follow one
+The results are the same in JavaScript, Python, Rust, Go and C, because all five follow one
 [spec](/trackparse/reference/spec/). The values are shown as they appear in JSON: `remix`, `bySplit`.
 In Rust they are enum variants such as [`VersionType::Remix`](https://docs.rs/trackparse/latest/trackparse/enum.VersionType.html) and
 [`Warning::BySplit`](https://docs.rs/trackparse/latest/trackparse/enum.Warning.html). In Go they are typed string constants such as
 [`trackparse.VersionTypeRemix`](https://pkg.go.dev/github.com/4matic/trackparse/go#VersionTypeRemix) and
-[`trackparse.WarningBySplit`](https://pkg.go.dev/github.com/4matic/trackparse/go#WarningBySplit), whose values are these same names. The columns
+[`trackparse.WarningBySplit`](https://pkg.go.dev/github.com/4matic/trackparse/go#WarningBySplit), whose values are these same names. In C they are enum values such as `TRACKPARSE_VERSION_REMIX`
+and `TRACKPARSE_WARNING_BY_SPLIT`, and functions such as `trackparse_version_type_name` return
+these names. The columns
 are fields of [`ParsedTrack`](/trackparse/reference/parse/#parsedtrack).
 
 | Input | Artists | Title | Versions and other fields |
@@ -60,7 +62,7 @@ acts ([R7.3](/trackparse/reference/spec/#r7-artist-side:~:text=R7.3%20Credit%2Dl
 [`no-split-before.json`](https://github.com/4matic/trackparse/blob/main/spec/data/no-split-before.json)).
 `Chase & Status` splits too, because nothing in the string tells it apart from two artists.
 Names like that go in [`knownArtists`](/trackparse/guides/artists/#knownartists) (`known_artists` in
-Python and Rust, `KnownArtists` in Go).
+Python and Rust, `KnownArtists` in Go, `trackparse_parse_options_add_known_artist` in C).
 
 **The Rolling Stones keep their brackets.** `(I Can't Get No)` is not a version, a feat or junk, so
 it stays in the title. That's the rule: anything unrecognized is left alone
@@ -72,14 +74,15 @@ them. In `youtube` mode it does, and it tells you through `warnings`
 ([`bySplit`](/trackparse/reference/warnings/#track-warnings:~:text=bySplit) and
 [`unspacedDashSplit`](/trackparse/reference/warnings/#track-warnings:~:text=unspacedDashSplit)). In
 Python the option is `mode="youtube"`, in Rust `ParseOptions::new().mode(ModeOption::Youtube)`, in
-Go `trackparse.ParseOptions{Mode: trackparse.ModeYouTube}`. See
+Go `trackparse.ParseOptions{Mode: trackparse.ModeYouTube}`, in C
+`trackparse_parse_options_set_mode(options, TRACKPARSE_MODE_YOUTUBE)`. See
 [Modes](/trackparse/guides/modes/#youtube-mode) and the [`mode` option](/trackparse/reference/options/#parse-options).
 
 ## In a tracklist
 
 Lines of a pasted tracklist go through
 [`parseTracklist`](/trackparse/guides/tracklists/) (`parse_tracklist` in Python and Rust,
-`ParseTracklist` in Go; the [Tracklist API](/trackparse/reference/tracklist/) has every field), which
+`ParseTracklist` in Go, `trackparse_parse_tracklist` in C; the [Tracklist API](/trackparse/reference/tracklist/) has every field), which
 also reads list bullets, Markdown emphasis and `w/` lines. Each input below is one line; click it to open it in the playground's
 tracklist tab.
 
