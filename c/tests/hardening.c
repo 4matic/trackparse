@@ -266,10 +266,21 @@ static const tp_str prop_joiners[] = {HZ_S(" & "), HZ_S(", "), HZ_S(" x "), HZ_S
 /* R8.7 record labels after a spaced bullet. */
 static const tp_str prop_labels[] = {HZ_S("VISION"), HZ_S("HOSPITAL"), HZ_S("GEMINI GEMINI"),
                                      HZ_S("SIX EIGHT"), HZ_S("\xc3\x98")};
+/* R8.7.4 notes: tail segments after the label (junk kind `note`). */
+static const tp_str prop_notes[] = {HZ_S("VISION RADIO RELOAD"), HZ_S("HOSPITAL"), HZ_S("S06E39")};
+/* R8.7.4 junk groups inside a tail segment. */
+static const tp_str prop_tail_groups[] = {HZ_S("[HD]"), HZ_S("(Official Video)")};
+/* R8.7.4 tail segments made only of a junk phrase. */
+static const tp_str prop_tail_phrases[] = {HZ_S("OUT NOW"), HZ_S("FREE DOWNLOAD")};
+/* R8.7.3 title parts that leave the title empty (`A - (VIP) U+2022 L`, `A - [HD] U+2022 L`). */
+static const tp_str prop_empty_titles[] = {HZ_S("(VIP)"), HZ_S("[HD]")};
 
+/* A track-shaped input for the metamorphic and round-trip properties, with an R8.7 bullet suffix
+ * (label, notes, tail junk) in some of the cases. */
 tp_str hz_track_string(hz_rng *r) {
-  tp_strvec artists = {0};
-  tp_str s;
+  tp_strvec artists = {0}, tail = {0};
+  tp_str s, label = {0};
+  bool has_label;
   for (int n = 1 + hz_below(r, 3); n > 0; n--) {
     tp_str a = PICK(r, prop_artists);
     if (!tp_strvec_has(artists, a)) tp_push(artists, a);
@@ -279,9 +290,28 @@ tp_str hz_track_string(hz_rng *r) {
     tp_str feat = PICK(r, prop_artists);
     if (!tp_strvec_has(artists, feat)) s = cat3(s, S(" feat. "), feat);
   }
-  s = cat3(s, S(" - "), PICK(r, prop_titles));
-  if (hz_chance(r, 50)) s = cat(s, cat3(S(" ("), PICK(r, prop_remixers), S(" Remix)")));
-  if (hz_chance(r, 50)) s = cat3(s, S(" " TP_BULLET_UTF8 " "), PICK(r, prop_labels));
+  has_label = hz_chance(r, 40);
+  if (has_label) label = PICK(r, prop_labels);
+  /* R8.7: the empty title only comes with a label, as in `A - [HD] U+2022 L`. */
+  if (has_label && hz_chance(r, 15)) {
+    s = cat3(s, S(" - "), PICK(r, prop_empty_titles));
+  } else {
+    s = cat3(s, S(" - "), PICK(r, prop_titles));
+    if (hz_chance(r, 50)) s = cat(s, cat3(S(" ("), PICK(r, prop_remixers), S(" Remix)")));
+  }
+  if (has_label) {
+    if (hz_chance(r, 25)) label = cat3(label, S(" "), PICK(r, prop_tail_groups));
+    tp_push(tail, label);
+    for (int n = hz_below(r, 3); n > 0; n--) tp_push(tail, PICK(r, prop_notes));
+  }
+  if (hz_chance(r, 25)) {
+    size_t at = (size_t)hz_below(r, (int)tail.n + 1);
+    tp_str phrase = PICK(r, prop_tail_phrases);
+    tp_push(tail, phrase);
+    for (size_t i = tail.n - 1; i > at; i--) tail.p[i] = tail.p[i - 1];
+    tail.p[at] = phrase;
+  }
+  for (size_t i = 0; i < tail.n; i++) s = cat3(s, S(" " TP_BULLET_UTF8 " "), tail.p[i]);
   return s;
 }
 
@@ -878,7 +908,8 @@ void hz_check_round_trip(tp_str s) {
   if (first.warnings.n > 0) return;
   formatted = tp_api_format(&first);
   second = tp_api_parse(formatted);
-  /* R11.6: the label (and the title) only count when the formatted string has an artist part. */
+  /* R11.6: with a label, the label and the title only count when the formatted string has an
+   * artist part and the title is not empty (`A - [HD] U+2022 L` formats to `A - U+2022 L`). */
   bool artist_part = false;
   for (size_t i = 0; i < first.artists.n; i++) {
     const tp_artist *x = &first.artists.p[i];
@@ -887,7 +918,7 @@ void hz_check_round_trip(tp_str s) {
       artist_part = true;
     }
   }
-  bool both = artist_part || first.label == NULL;
+  bool both = (artist_part && first.title.n > 0) || first.label == NULL;
   a = shape(&first, both);
   b = shape(&second, both);
   if (!tp_str_eq(a, b)) hz_fail("round trip %s -> %s:\n%s\n%s", hz_q(s), hz_q(formatted), a.p, b.p);
