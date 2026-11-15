@@ -20,6 +20,7 @@ import {
   type TitleAtom,
   type TransformAtom,
   type VersionAtom,
+  BULLET,
   isChannel,
 } from "./atoms.js";
 import { DATA } from "./data.js";
@@ -27,6 +28,7 @@ import {
   artistProblem,
   dedupKey,
   endsWithJunkPhrase,
+  labelProblem,
   remixerProblem,
   stripGroups,
   trailingJunkAmbiguous,
@@ -87,6 +89,10 @@ export interface Composition {
   transform: TransformAtom | null;
   /** Allow repeated artists (dedup scenario). */
   allowDup?: boolean;
+  /** R8.7: the segment after the first spaced bullet (the `label` field). */
+  label?: string;
+  /** R8.7: later bullet segments, junk kind `note` (only with `label`). */
+  notes?: string[];
 }
 
 export interface ExpArtist {
@@ -306,16 +312,28 @@ function pieces(c: Composition): Pieces {
   if (c.dashYear !== null) t += ` - ${c.dashYear}`;
   for (const j of c.junk) if (DASH_FORMS.includes(j.form)) t += ` - ${j.atom.text}`;
   for (const j of c.junk) if (j.form === "trailing") t += ` ${j.atom.text}`;
+  // R8.7: the bullet suffix ends the title side, before any pipe segment.
+  for (const b of bulletSegments(c)) t += ` ${BULLET} ${b}`;
   for (const j of c.junk) if (j.form === "pipe") t += ` | ${j.atom.text}`;
   const prefix = c.prefix?.text ?? "";
   const body = c.main ? `${prefix}${artistSide}${c.sep.text}${t}` : `${prefix}${t}`;
   return { artistSide, titleSide: t, body, titleUnbracketedTail: !bracketAfterTitle };
 }
 
+/** R8.7 segments in text order: the label, then the notes. */
+function bulletSegments(c: Composition): string[] {
+  return c.label === undefined ? [] : [c.label, ...(c.notes ?? [])];
+}
+
 /** Junk entries in order of appearance (matches the render order in pieces()). */
 function orderedJunk(c: Composition): { raw: string; kind: string }[] {
   const out: { raw: string; kind: string }[] = [];
-  for (const form of ["bracket", "dash", "trailing", "pipe"] as const) {
+  for (const form of ["bracket", "dash", "trailing", "note", "pipe"] as const) {
+    if (form === "note") {
+      // R8.7: segments after the label are junk kind `note`, at their place in the string (R9.7).
+      for (const n of c.notes ?? []) out.push({ raw: n, kind: "note" });
+      continue;
+    }
     for (const j of c.junk) {
       const f = j.form === "paren" || j.form === "square" ? "bracket" : j.form;
       if (f === form) out.push({ raw: j.atom.text, kind: j.atom.kind });
@@ -332,8 +350,10 @@ export function resolveMode(c: Composition): "clean" | "youtube" | "filename" {
   if (c.sep.kind === "pipe") return "youtube";
   if (c.junk.some((j) => j.form === "pipe" || j.form === "trailing")) return "youtube";
   // A dash suffix is the string's end: R2.1 fires only if it ends with a junk phrase (`… 2015` does not).
+  // R2.1 sees the bullet suffix (R8.7): with one, the string ends with a label or note, which is
+  // never a junk phrase (labelProblem), so dash junk no longer ends the string.
   const lastDash = c.junk.filter((j) => j.form === "dash").pop();
-  if (lastDash && endsWithJunkPhrase(lastDash.atom.text)) return "youtube";
+  if (lastDash && c.label === undefined && endsWithJunkPhrase(lastDash.atom.text)) return "youtube";
   if (c.junk.some((j) => (j.form === "paren" || j.form === "square") && j.atom.kind !== "genre")) return "youtube";
   return "clean";
 }
@@ -431,6 +451,8 @@ export function render(c: Composition, scenario: string, assert: AssertOpts = {}
       clean: c.extras.some((e) => e.kind === "clean"),
     };
   }
+  // R8.7: the first bullet segment is the label; asserted (null included) only where a scenario uses it.
+  if (c.label !== undefined) expected.label = c.label;
   if (junk.length > 0 || assert.junk) expected.junk = junk;
 
   const options: Record<string, unknown> = { mode: c.mode.option };
@@ -518,6 +540,10 @@ function rulesOf(c: Composition): string[] {
   }
   const numericFirst = c.main && /^[0-9]/.test(c.main.names[0]!.text);
   if (numericFirst) r.add("R4.2");
+  if (c.label !== undefined) {
+    r.add("R8.7");
+    if (c.notes?.length) r.add("R9.7");
+  }
   return [...r].sort(ruleCmp);
 }
 
@@ -726,5 +752,39 @@ export function problem(c: Composition): string | null {
 
   // --- transforms
   if (c.transform && c.transform.id !== "none" && opt === "filename") return "transform in filename";
+
+  // --- bullet suffix (R8.7)
+  if (c.notes?.length && c.label === undefined) return "notes without a label";
+  if (c.label !== undefined) {
+    const p = bulletProblem(c, mode);
+    if (p) return p;
+  }
+  return null;
+}
+
+/** Transforms that rewrite spaces: they would also rewrite the spaces around the bullet. */
+const SPACE_TRANSFORMS = ["nbsp", "ideographic-space", "thin-space", "double-space", "padded"];
+
+/**
+ * R8.7 compositions this model encodes: `<artist side> - <head title side> • L • N…`, where the
+ * head's expectation is the same composition's without the suffix.
+ */
+function bulletProblem(c: Composition, mode: ReturnType<typeof resolveMode>): string | null {
+  const segs = bulletSegments(c);
+  for (const b of segs) {
+    const p = labelProblem(b);
+    if (p) return `bullet segment ${b}: ${p}`;
+  }
+  if (new Set(segs.map(dedupKey)).size !== segs.length) return "repeated bullet segment";
+  // R6 intro: with a cut, R6 never peels the segment after the first dash. Without an artist side
+  // the old expectation came from R6.2 peeling it (`Hey Jude - Remastered 2015 • X`).
+  if (!c.main) return "bullet suffix without artist side (no R6.2 peel of s1)";
+  // R8.7.1: the trigger is a spaced dash (R6.1). Pipe titles, tight and one-sided dashes never cut.
+  if (c.sep.kind !== "spaced") return "bullet suffix needs a spaced-dash separator";
+  if (mode === "filename" || c.mode.ext) return "bullet suffix in filename mode";
+  if (c.transform && SPACE_TRANSFORMS.includes(c.transform.id)) return "transform rewrites the bullet's spaces";
+  // R8.4 on the head would need the junk to end the head; R2.1 sees the label at the end instead.
+  if (c.junk.some((j) => j.form === "trailing")) return "trailing junk before a bullet suffix";
+  if (c.prefix && c.prefix.form === "e") return "filename-only prefix";
   return null;
 }

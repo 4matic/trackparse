@@ -471,7 +471,17 @@ export const extraById = (id: string): ExtraAtom => byId(EXTRAS, id);
 
 // ---------------------------------------------------------------- junk
 
-export type JunkKind = "video" | "audio" | "lyrics" | "quality" | "promo" | "platform" | "label" | "genre" | "other";
+export type JunkKind =
+  | "video"
+  | "audio"
+  | "lyrics"
+  | "quality"
+  | "promo"
+  | "platform"
+  | "label"
+  | "genre"
+  | "other"
+  | "note";
 export type JunkForm = "paren" | "square" | "dash" | "trailing" | "pipe";
 
 export interface JunkAtom extends Atom {
@@ -533,6 +543,50 @@ export const JUNK_FORMS: (Atom & { form: JunkForm })[] = [
   { id: "dash", form: "dash" },
   { id: "trailing", form: "trailing" },
   { id: "pipe", form: "pipe" },
+];
+
+// ---------------------------------------------------------------- bullet suffix (R8.7)
+
+/** U+2022, the R8.7 bullet. Rendered with one space on each side. */
+export const BULLET = "\u2022";
+
+/**
+ * A segment after a spaced bullet (R8.7): the first one becomes `label`, every later one junk
+ * kind `note`. Opaque names that are no vocabulary word of spec/data (checked by
+ * `labelProblem()` in text.ts), so the expectation never depends on the R8.7 junk test.
+ */
+export interface BulletAtom extends Atom {
+  text: string;
+}
+
+const bullet = (id: string, text: string): BulletAtom => ({ id, text });
+
+export const LABELS: BulletAtom[] = [
+  bullet("wearehumans", "WEAREHUMANS"),
+  bullet("gemini-gemini", "GEMINI GEMINI"),
+  bullet("sofa-sound", "SOFA SOUND"),
+  bullet("red-face", "RED FACE"),
+  bullet("drumbassarena", "DRUM&BASSARENA"),
+  bullet("o-slash", "\u00D8"),
+  bullet("vision", "VISION"),
+  bullet("overview", "OVERVIEW"),
+  bullet("six-eight", "SIX EIGHT"),
+  bullet("flexout", "FLEXOUT"),
+  bullet("hoofbeats", "HOOFBEATS"),
+  bullet("project51", "PROJECT51"),
+  bullet("iamsiam", "IAMSIAM"),
+  bullet("none-left", "NONE LEFT"),
+  bullet("yamatai", "YAMATAI"),
+  bullet("hospital-lc", "Hospital"),
+  bullet("ram-records-lc", "Ram Recs"),
+];
+
+export const NOTES: BulletAtom[] = [
+  bullet("vision-reload", "VISION RELOAD"),
+  bullet("guest-selector", "GUEST SELECTOR"),
+  bullet("rewind", "REWIND"),
+  bullet("forthcoming-ep", "FORTHCOMING EP"),
+  bullet("catalogue-pick", "Catalogue Pick"),
 ];
 
 // ---------------------------------------------------------------- separators

@@ -236,3 +236,48 @@ describe("render() spot checks (hand-computed expectations)", () => {
     expect(render(comp({ mode: modeById("auto-mp3") }), "t").expected.mode).toBe("filename");
   });
 });
+
+describe("R8.7 bullet suffix", () => {
+  const bl = (parts: Partial<Composition>) => comp({ label: "VISION", notes: ["VISION RELOAD"], ...parts });
+
+  it("renders label and notes after the dash suffixes, before pipe junk and the platform", () => {
+    const r = render(
+      bl({
+        mode: modeById("youtube-yt"),
+        versions: [{ atom: versionById("vip-bare"), delim: "-", credits: [] }],
+        junk: [{ atom: junkById("hd"), form: "pipe" }],
+      }),
+      "t",
+    );
+    expect(r.input).toBe("Noisia - Diplodocus - VIP • VISION • VISION RELOAD | HD - YouTube");
+    expect(r.expected).toMatchObject({
+      artists: ["Noisia"],
+      title: "Diplodocus",
+      fullTitle: "Diplodocus - VIP",
+      label: "VISION",
+      junk: [
+        { raw: "VISION RELOAD", kind: "note" },
+        { raw: "HD", kind: "quality" },
+        { raw: "YouTube", kind: "platform" },
+      ],
+    });
+    expect(r.rules).toContain("R8.7");
+  });
+
+  it("auto: dash junk no longer ends the string (R2.1 sees the label)", () => {
+    const c = bl({ mode: modeById("auto"), notes: [], junk: [{ atom: junkById("official-video"), form: "dash" }] });
+    expect(render(c, "t").expected).toMatchObject({ mode: "clean", label: "VISION", junk: [{ raw: "Official Video", kind: "video" }] });
+  });
+
+  it("rejects compositions the model does not encode", () => {
+    expect(problem(bl({ main: null, versions: [{ atom: versionById("remastered-2015"), delim: "-", credits: [] }] }))).toMatch(
+      /without artist side/,
+    );
+    expect(problem(bl({ mode: modeById("youtube"), sep: sepById("pipe") }))).toMatch(/spaced-dash/);
+    expect(problem(bl({ mode: modeById("filename-mp3") }))).toMatch(/filename/);
+    expect(problem(bl({ label: "OUT NOW" }))).toMatch(/vocabulary/);
+    expect(problem(bl({ label: "1985" }))).toMatch(/number/);
+    expect(problem(bl({ notes: ["VISION"] }))).toMatch(/repeated/);
+    expect(problem(bl({}))).toBeNull();
+  });
+});

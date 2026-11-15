@@ -1,5 +1,6 @@
 import type { Scenario } from "../scenario.js";
 import { artistsJoiners } from "./artists-joiners.js";
+import { bulletLabel } from "./bullet-label.js";
 import { dashSuffix } from "./dash-suffix.js";
 import { dedupScenario } from "./dedup.js";
 import { featPlacement } from "./feat-placement.js";
@@ -23,6 +24,7 @@ export const SCENARIOS: Scenario[] = [
   dashSuffix,
   dedupScenario,
   kitchenSink,
+  bulletLabel,
   tracklist,
   tracklistEmphasis,
 ];

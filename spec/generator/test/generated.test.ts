@@ -56,7 +56,7 @@ describe("generated fixtures", () => {
     expect(n).toBeLessThanOrEqual(15000);
     let bytes = 0;
     for (const content of first.files.values()) bytes += Buffer.byteLength(content);
-    expect(bytes).toBeLessThanOrEqual(7.8e6);
+    expect(bytes).toBeLessThanOrEqual(8.2e6);
   });
 
   it("have unique, schema-shaped ids and non-empty inputs", () => {
