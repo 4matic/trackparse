@@ -478,8 +478,11 @@ warns `noSeparator` (`Hey Jude - Remastered 2015`).
      segment became junk, `label` is `null` and the head is still the working string. Junk from
      the tail takes its position in the normalized string (R9.7).
 
-  The rule applies in every mode, `tracklist` included. A bullet inside a title (`Song • Part 2`)
-  is read as a label too.
+  The rule applies in every mode, `tracklist` included. R2.1 runs before it and sees the tail, so
+  the tail can pick the mode and with it how the head is read: `A - Stigma HD • VISION HD`
+  resolves to `youtube` (it ends with the phrase `HD`), and R8.4 then takes `HD` from the head
+  (title `Stigma`, label `VISION HD`). A bullet inside a title (`Song • Part 2`) or inside quotes
+  (`A - "T • L"` → title `"T`, label `L"`) is read as a cut too.
 
 ## R9 Assembly and dedup
 
@@ -546,8 +549,10 @@ Title-like groups (versions, unknown) stay part of names verbatim.
   `with`; it becomes `feat.` only as the marker that starts a featured list.
 - **R11.6 Round-trip.** `parse(format(parse(s)))` equals `parse(s)` on `artists` (name, role),
   `title`, `versions` (type, artists' names) and `label` whenever `parse(s)` produced no warnings
-  and, if it has a label, the formatted string has an artist part (R11.4). Without one,
-  `ID - T • L` formats to `T • L`, which has no separator, so R8.7 does not fire on it.
+  and, if it has a label, the formatted string has an artist part (R11.4) and `title` is not
+  empty. Without an artist part, `ID - T • L` formats to `T • L`, which has no separator; with
+  an empty title, `A - [HD] • L` formats to `A - • L`, which has no title part (R8.7.2). In
+  neither case does R8.7 fire on the formatted string.
 
 ## R12 Options
 
