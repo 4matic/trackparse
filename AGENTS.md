@@ -441,7 +441,8 @@ node scripts/compare-ports.mjs --only=go                           # one port ag
 
 For C, compare-ports and fuzz-ports configure `c/build` (Release, `TRACKPARSE_BUILD_TESTS=OFF`)
 the first time and rebuild `trackparse-dump` there when a file in `c/src`, `c/wire`, `c/tools` or
-`c/include` is newer than the binary. Keep test builds out of `c/build`.
+`c/include` is newer than the binary. Keep test builds out of `c/build`. To keep out of each
+other's way, set `TRACKPARSE_C_BUILD=c/build-<name>` and the scripts build and run the C port there.
 
 Corpus check for R13 changes, when you have the private corpus (JSONL, one object per tracklist
 with `title` and `track_list`, kept in the git-ignored `spec/corpus/`):
@@ -810,7 +811,9 @@ with the count.
   `c.yml`), so C's own normalization and lowercasing code meets every code point only when someone
   runs the sweep by hand.
 
-## Porting guide (Rust, Go, others)
+<a id="porting-guide-rust-go-others"></a>
+
+## Porting guide (Rust, Go, C, others)
 
 A port is done when it passes every fixture and every invariant. The Python, Rust, Go and C ports
 are done and are good second references next to JS: the Python, Rust and Go modules map one to one
