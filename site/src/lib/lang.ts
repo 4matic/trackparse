@@ -15,15 +15,15 @@ export const LANG_LABEL: Record<Lang, string> = { js: "JavaScript", py: "Python"
 
 /**
  * The C library's version. All packages share one version (release-please bumps js/package.json
- * with the rest), and the first C release is 0.7.0, so an older version means "not yet".
+ * with the rest), and the first C release with files is 0.7.1, so an older version means "not yet".
  */
-const [MAJOR, MINOR] = version.split(".").map(Number);
+const [MAJOR, MINOR, PATCH] = version.split(".").map(Number);
 /**
- * Whether a C release exists. Before 0.7.0 the tarball URL below answers 404: the install switch
+ * Whether a C release exists. Before 0.7.1 the tarball URL below answers 404: the install switch
  * and the playground say so. The release PR bumps js/package.json, so the note goes away with it.
  */
-export const C_RELEASED = MAJOR > 0 || MINOR >= 7;
-const C_VERSION = C_RELEASED ? version : "0.7.0";
+export const C_RELEASED = MAJOR > 0 || MINOR > 7 || (MINOR === 7 && PATCH >= 1);
+const C_VERSION = C_RELEASED ? version : "0.7.1";
 const C_TARBALL = `https://github.com/4matic/trackparse/releases/download/c-v${C_VERSION}/trackparse-c-${C_VERSION}.tar.gz`;
 
 /** The CMake lines that fetch and link the C library (the install switch shows them for C). */

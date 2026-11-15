@@ -11,7 +11,7 @@ import { Tabs, TabItem } from "@astrojs/starlight/components";
 | Python | [`trackparse`](https://pypi.org/project/trackparse/) on PyPI | 13,130 / 13,130 fixtures, output identical to JS. Tracklists in `trackparse.tracklist` |
 | Rust | [`trackparse`](https://crates.io/crates/trackparse) on crates.io, API docs on [docs.rs](https://docs.rs/trackparse) | 13,130 / 13,130 fixtures, output identical to JS. Tracklists in `trackparse::tracklist` |
 | Go | [`github.com/4matic/trackparse/go`](https://pkg.go.dev/github.com/4matic/trackparse/go), API docs on [pkg.go.dev](https://pkg.go.dev/github.com/4matic/trackparse/go) | 13,130 / 13,130 fixtures, output identical to JS. Tracklists in the same package (`trackparse.ParseTracklist`) |
-| C | Source tarball and amalgamation on each [GitHub Release](https://github.com/4matic/trackparse/releases) from 0.7.0; the API is [`trackparse.h`](https://github.com/4matic/trackparse/blob/main/c/include/trackparse.h) | 13,130 / 13,130 fixtures, output identical to JS. Tracklists in the same library (`trackparse_parse_tracklist`) |
+| C | Source tarball and amalgamation on each [GitHub Release](https://github.com/4matic/trackparse/releases) from 0.7.1; the API is [`trackparse.h`](https://github.com/4matic/trackparse/blob/main/c/include/trackparse.h) | 13,130 / 13,130 fixtures, output identical to JS. Tracklists in the same library (`trackparse_parse_tracklist`) |
 
 <Tabs syncKey="lang">
 <TabItem label="JavaScript">
@@ -74,7 +74,7 @@ import { Tabs, TabItem } from "@astrojs/starlight/components";
 
 | What | C |
 |---|---|
-| Install | CMake `FetchContent` from the release tarball, or copy the amalgamation (both from 0.7.0) |
+| Install | CMake `FetchContent` from the release tarball, or copy the amalgamation (both from 0.7.1) |
 | Needs | a C11 compiler (GCC, Clang or MSVC), C++17 for `trackparse.hpp`; CMake 3.16 or newer for the CMake build |
 | Dependencies | none beyond libc, `libm` and threads |
 | Types | read-only structs, C enums with `_name()` functions, opaque option handles |
@@ -96,8 +96,8 @@ the tag `go/vX.Y.Z`, which the Go module proxy reads
 ([published versions](https://proxy.golang.org/github.com/4matic/trackparse/go/@v/list)). C has no
 registry either: a C release is the tag `c-vX.Y.Z`, with the source tarball
 (`trackparse-c-X.Y.Z.tar.gz`), the amalgamation (`trackparse-c-X.Y.Z-amalgamation.zip`) and
-`SHA256SUMS` attached to its GitHub Release, starting with 0.7.0. The
-[changelogs](/trackparse/project/roadmap/#next) list what each release brought.
+`SHA256SUMS` attached to its GitHub Release, starting with 0.7.1 (0.7.0 was tagged without
+files). The [changelogs](/trackparse/project/roadmap/#next) list what each release brought.
 
 ## Adding a language
 

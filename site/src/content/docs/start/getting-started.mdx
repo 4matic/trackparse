@@ -52,22 +52,22 @@ import { Aside, Steps, Tabs, TabItem } from "@astrojs/starlight/components";
         include(FetchContent)
         FetchContent_Declare(
           trackparse
-          URL https://github.com/4matic/trackparse/releases/download/c-v0.7.0/trackparse-c-0.7.0.tar.gz
-          URL_HASH SHA256=…   # the trackparse-c-0.7.0.tar.gz line of SHA256SUMS on the release
+          URL https://github.com/4matic/trackparse/releases/download/c-v0.7.1/trackparse-c-0.7.1.tar.gz
+          URL_HASH SHA256=…   # the trackparse-c-0.7.1.tar.gz line of SHA256SUMS on the release
         )
         FetchContent_MakeAvailable(trackparse)
         target_link_libraries(my_app PRIVATE trackparse::trackparse)
         ```
 
         C11, no dependencies beyond libc, `libm` and threads; it builds
-        with GCC, Clang and MSVC. Each release from 0.7.0 on, the first with the C library,
-        attaches the source tarball above (CMake 3.16 or newer), `SHA256SUMS` and an amalgamation
-        to its [GitHub Release](https://github.com/4matic/trackparse/releases). If the 0.7.0
-        release doesn't list them yet, build from a clone of the repository as the
-        [C README](https://github.com/4matic/trackparse/blob/main/c/README.md#from-source) shows.
+        with GCC, Clang and MSVC. Each release from 0.7.1 on attaches the source tarball above
+        (CMake 3.16 or newer), `SHA256SUMS` and an amalgamation to its
+        [GitHub Release](https://github.com/4matic/trackparse/releases). To build from a clone of
+        the repository instead, follow the
+        [C README](https://github.com/4matic/trackparse/blob/main/c/README.md#from-source).
         `cmake --install` also gives you `find_package(trackparse)` and a `trackparse.pc` for
         pkg-config. Without CMake, copy `trackparse.c` and `trackparse.h` from
-        `trackparse-c-0.7.0-amalgamation.zip` into your project and compile them with your
+        `trackparse-c-0.7.1-amalgamation.zip` into your project and compile them with your
         sources (`cc -std=c11 -DTRACKPARSE_STATIC main.c trackparse.c -lm -lpthread`). The API is
         one header,
         [`trackparse.h`](https://github.com/4matic/trackparse/blob/main/c/include/trackparse.h),
