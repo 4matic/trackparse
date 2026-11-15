@@ -9,6 +9,7 @@ from ._credits import Credit, ListOptions, ListResult, PositionedYear, split_cre
 from ._scanner import scan
 from ._tables import RunInfo, is_unknown_token
 from ._words import (
+    PhraseTable,
     WordSpan,
     ascii_lower,
     dedup_key,
@@ -139,11 +140,23 @@ def classify(inner: str, site: Site, ctx: Ctx) -> Classification:
 
 def junk_kind_of(words: list[str], ctx: Ctx) -> Optional[str]:
     """R5.1: the junk kind if the whole word list is junk vocabulary, else None."""
+    first_kind = phrase_kind_of(words, ctx.t.junk_or_genre, ctx)
+    if first_kind:
+        return first_kind
+    if len(words) >= 2 and in_vocab(words[-1], ctx.t.label_suffixes):
+        return "label"
+    return None
+
+
+def phrase_kind_of(words: list[str], phrases: PhraseTable[str], ctx: Ctx) -> Optional[str]:
+    """R5.1 tokenization over ``phrases`` (greedy, longest first) with connectors and year
+    words, at least one phrase: the kind of the first phrase, else None. R8.7 uses it without
+    genres."""
     first_kind: Optional[str] = None
     i = 0
     n = len(words)
     while i < n:
-        m = ctx.t.junk_or_genre.match_at(words, i)
+        m = phrases.match_at(words, i)
         if m is not None:
             if first_kind is None:
                 first_kind = m.entry.value
@@ -158,13 +171,8 @@ def junk_kind_of(words: list[str], ctx: Ctx) -> Optional[str]:
         ):
             i += 1
             continue
-        first_kind = None
-        break
-    if first_kind:
-        return first_kind
-    if n >= 2 and in_vocab(words[-1], ctx.t.label_suffixes):
-        return "label"
-    return None
+        return None
+    return first_kind
 
 
 # ---------------------------------------------------------------------------

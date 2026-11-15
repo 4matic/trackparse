@@ -60,3 +60,5 @@ class FormatOptions(TypedDict, total=False):
     versions: VersionsStyle
     producers: bool
     position: bool
+    #: R11.3: append ``" • " + label`` (default True).
+    label: bool

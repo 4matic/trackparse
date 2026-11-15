@@ -2,9 +2,21 @@
 
 from __future__ import annotations
 
-from typing import NamedTuple
+from typing import NamedTuple, Optional
 
-from ._classify import Feat, Flag, Junk, Producer, Site, VersionDraft, Versions, Year, classify
+from ._classify import (
+    Feat,
+    Flag,
+    Junk,
+    Producer,
+    Site,
+    VersionDraft,
+    Versions,
+    Year,
+    classify,
+    junk_kind_of,
+    phrase_kind_of,
+)
 from ._context import Ctx
 from ._credits import Credit, ListOptions, PositionedYear, split_credits
 from ._mode import PositionedJunk
@@ -13,6 +25,8 @@ from ._scanner import (
     Skel,
     cut_skel,
     groups_of,
+    is_spaced_bullet_at,
+    is_spaced_dash_at,
     remove_groups,
     render_skel,
     slice_skel,
@@ -21,7 +35,7 @@ from ._scanner import (
 )
 from ._separator import Peeled, peel_suffixes
 from ._tables import is_unknown_token
-from ._words import char_at, collapse_spaces, word_spans
+from ._words import char_at, collapse_spaces, split_words, word_spans
 
 
 class Extracted:
@@ -244,3 +258,78 @@ def cleanup_title(raw: str) -> str:
     if len(title) >= 2 and (q == '"' or q == "'") and title[-1] == q:
         title = _strip_lone_edges(collapse_spaces(title[1:-1]))
     return title
+
+
+# ---------------------------------------------------------------------------
+# R8.7 Bullet suffix
+
+
+class BulletSuffix(NamedTuple):
+    #: The working skeleton before the first cut, trimmed (R8.7.3).
+    head: Skel
+    label: Optional[str]
+    #: Junk from the tail segments, with their positions in the normalized string (R9.7).
+    junk: list[PositionedJunk]
+
+
+def _bullet_segments(skel: Skel) -> Optional[list[Skel]]:
+    """R8.7.1–R8.7.2: the head and tail segments when the rule fires, else None. Cuts at every
+    spaced bullet after the first spaced dash D, which must have text before it and after it."""
+    t = skel.text
+    if t[:2] == "- ":
+        return None  # R6.1: D at the start, nothing before it
+    dash = -1
+    for i in range(1, len(t) - 1):
+        if is_spaced_dash_at(t, i):
+            dash = i
+            break
+    if dash < 0:
+        return None
+    parts: list[Skel] = []
+    start = 0
+    for i in range(dash + 2, len(t) - 1):
+        if not is_spaced_bullet_at(t, i):
+            continue
+        parts.append(trim_skel(slice_skel(skel, start, i)))
+        start = i + 1
+    if not parts:
+        return None
+    parts.append(trim_skel(slice_skel(skel, start)))
+    if any(len(p.text) == 0 for p in parts):
+        return None
+    # R8.7.2: the title part between D and the first bullet counts as a segment (`A - • L`).
+    if len(parts[0].text) <= dash + 1:
+        return None
+    return parts
+
+
+def cut_bullet_suffix(skel: Skel, ctx: Ctx) -> Optional[BulletSuffix]:
+    """R8.7: cut a bullet suffix off the working skeleton (after R2 and R4, before R6)."""
+    parts = _bullet_segments(skel)
+    if parts is None:
+        return None
+    junk: list[PositionedJunk] = []
+    label: Optional[str] = None
+    for part in parts[1:]:
+        # R8.7.4: junk groups go to junk; every other group stays verbatim.
+        removed: set[int] = set()
+        for _, group in groups_of(part):
+            kind = junk_kind_of(split_words(group.inner), ctx)
+            if not kind:
+                continue
+            junk.append(PositionedJunk(group.inner, kind, group.pos))
+            removed.add(group.pos)
+        rest = trim_skel(remove_groups(part, removed))
+        if len(rest.text) == 0:
+            continue
+        text = collapse_spaces(render_skel(rest))
+        pos = rest.pos[0] if rest.pos else 0
+        # R8.7.4: only junk phrases, connectors and year words (no genres, no label suffixes).
+        phrase_kind = phrase_kind_of(split_words(text), ctx.t.junk_phrases, ctx)
+        if phrase_kind:
+            junk.append(PositionedJunk(text, phrase_kind, pos))
+        elif label is None:
+            label = text
+        else:
+            junk.append(PositionedJunk(text, "note", pos))
+    return BulletSuffix(parts[0], label, junk)

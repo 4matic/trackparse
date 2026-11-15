@@ -36,15 +36,20 @@ ARTISTS = ["Noisia", "Phace", "Fox Stevenson", "Sub Focus", "Mefjus", "Camo & Kr
            "Alix Perez"]  # fmt: skip
 TITLES = ["Tentacles", "Bruises", "Out the Blue", "Dead Limit", "Stigma", "Blind Faith"]
 REMIXERS = ["Skrillex", "Magnetude", "Wilkinson", "Break"]
+#: R8.7 record labels after a spaced bullet.
+RECORD_LABELS = ["VISION", "HOSPITAL", "GEMINI GEMINI", "SIX EIGHT", "Ø"]
 
 
 @st.composite
-def track(draw: Any) -> str:
+def track(draw: Any, labels: bool = True) -> str:
     artists = draw(st.lists(st.sampled_from(ARTISTS), min_size=1, max_size=3))
     joiner = draw(st.sampled_from([" & ", ", ", " x ", " vs. "]))
     feat: Optional[str] = draw(st.one_of(st.none(), st.sampled_from(ARTISTS)))
     title = draw(st.sampled_from(TITLES))
     remix: Optional[str] = draw(st.one_of(st.none(), st.sampled_from(REMIXERS)))
+    label: Optional[str] = (
+        draw(st.one_of(st.none(), st.sampled_from(RECORD_LABELS))) if labels else None
+    )
     unique = list(dict.fromkeys(artists))
     s = joiner.join(unique)
     if feat and feat not in unique:
@@ -52,6 +57,8 @@ def track(draw: Any) -> str:
     s += f" - {title}"
     if remix:
         s += f" ({remix} Remix)"
+    if label:
+        s += f" • {label}"
     return s
 
 
@@ -138,6 +145,8 @@ def test_5_artist_hygiene(s: str) -> None:
 
 
 quiet = track().filter(lambda s: len(parse(s).warnings) == 0)
+#: Without a label, for the cases that need the string to end in a version group.
+quiet_unlabelled = track(labels=False).filter(lambda s: len(parse(s).warnings) == 0)
 
 
 @FAST
@@ -162,7 +171,7 @@ def test_7_append_official_video(s: str) -> None:
 
 
 @FAST
-@given(quiet)
+@given(quiet_unlabelled)
 def test_7_bracket_swap(s: str) -> None:
     assume(s.endswith(" Remix)"))
     a = parse(s)
@@ -173,7 +182,7 @@ def test_7_bracket_swap(s: str) -> None:
 
 
 @FAST
-@given(quiet)
+@given(quiet_unlabelled)
 def test_7_case_swap(s: str) -> None:
     assume(s.endswith(" Remix)"))
     a = parse(s)
@@ -185,11 +194,15 @@ def test_7_case_swap(s: str) -> None:
     assert replace(without_input(b), full_title=a.full_title, versions=vb) == without_input(a)
 
 
-def _shape(t: ParsedTrack) -> tuple[list[tuple[str, str]], str, list[tuple[str, list[str]]]]:
+_Shape = tuple[list[tuple[str, str]], Optional[str], list[tuple[str, list[str]]], Optional[str]]
+
+
+def _shape(t: ParsedTrack, both: bool) -> _Shape:
     return (
         [(x.name, x.role) for x in t.artists],
-        t.title,
+        t.title if both else None,
         [(v.type, [x.name for x in v.artists]) for v in t.versions],
+        t.label if both else None,
     )
 
 
@@ -199,4 +212,10 @@ def test_8_round_trip(s: str) -> None:
     a = parse(s)
     if a.warnings:
         return
-    assert _shape(parse(format_track(a))) == _shape(a)
+    b = parse(format_track(a))
+    # R11.6: label (and title) only count when the formatted string has an artist part.
+    artist_part = any(
+        x.role == "primary" or (x.role == "featured" and x.source == "artist") for x in a.artists
+    )
+    both = artist_part or a.label is None
+    assert _shape(b, both) == _shape(a, both)

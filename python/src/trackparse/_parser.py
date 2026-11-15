@@ -15,7 +15,7 @@ from ._prefix import PrefixResult, strip_prefixes
 from ._scanner import Skel, scan, split_at_spaced_dashes, trim_skel
 from ._separator import find_separator
 from ._tables import Tables, js_entries, tables_for
-from ._title import Extracted, add_peeled, parse_title_side
+from ._title import Extracted, add_peeled, cut_bullet_suffix, parse_title_side
 from ._words import r0_trim_end
 from .options import KeywordOptions
 from .types import (
@@ -69,6 +69,7 @@ def _empty_track(inp: str, mode: str) -> ParsedTrack:
         versions=(),
         year=None,
         flags=Flags(),
+        label=None,
         junk=(),
         warnings=(),
     )
@@ -117,14 +118,25 @@ def _finish(st: _Staged, list_context: bool) -> ParsedTrack:
 
     out = Extracted()
     artist_skel: Optional[Skel]
+    label: Optional[str] = None
     if pre.pipe_title is not None:
         # R2.4 step 3: `artist | title`, R6 skipped.
         artist_skel = working if len(working.text) > 0 else None
         title_skel = _skel_of(pre.pipe_title, ctx)
         relaxed = artist_skel is not None
     else:
+        # R8.7: a bullet suffix is cut before R6, which then sees only the head.
+        bullet = cut_bullet_suffix(working, ctx)
+        if bullet is not None:
+            label = bullet.label
+            out.junk.extend(bullet.junk)
         sep = find_separator(
-            working, pre.mode, _uploader_skel(options.get("uploader")), ctx, list_context
+            bullet.head if bullet is not None else working,
+            pre.mode,
+            _uploader_skel(options.get("uploader")),
+            ctx,
+            list_context,
+            bullet_head=bullet is not None,
         )
         add_peeled(out, sep.peeled)
         artist_skel = sep.artist
@@ -165,6 +177,7 @@ def _finish(st: _Staged, list_context: bool) -> ParsedTrack:
         versions=final_versions,
         year=years[0].year if years else None,
         flags=flags,
+        label=label,
         junk=tuple(Junk(raw=j.raw, kind=cast(JunkKind, j.kind)) for j in junk),
         warnings=cast(tuple[Warning, ...], tuple(ctx.warnings)),
     )

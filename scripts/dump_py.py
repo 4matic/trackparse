@@ -46,6 +46,7 @@ FORMAT_OPTIONS = {
     "versions": "versions",
     "producers": "producers",
     "position": "position",
+    "label": "label",
 }
 
 

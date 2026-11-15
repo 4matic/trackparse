@@ -6,6 +6,7 @@ from collections.abc import Sequence
 from typing import NamedTuple, Optional
 
 from ._assemble import render_version
+from ._scanner import BULLET
 from ._tables import Tables, get_default_tables
 from ._words import dedup_key, word_matches
 from .types import Artist, ParsedTrack
@@ -18,6 +19,7 @@ class _Resolved(NamedTuple):
     versions: bool
     producers: object
     position: object
+    label: object
 
 
 def _is_feat_marker(raw: str, t: Tables) -> bool:
@@ -80,6 +82,7 @@ def format_track(
     versions: str = "all",
     producers: bool = True,
     position: bool = False,
+    label: bool = True,
 ) -> str:
     """R11: render ``track`` as ``Artists - Title (versions) (prod. ...)``."""
     t = get_default_tables()
@@ -90,6 +93,7 @@ def format_track(
         versions=("all" if versions is None else versions) == "all",
         producers=True if producers is None else producers,
         position=False if position is None else position,
+        label=True if label is None else label,
     )
     artists = list(track.artists)
     primaries = [a for a in artists if a.role == "primary"]
@@ -127,6 +131,9 @@ def format_track(
         first = producer_list[0]
         marker = first.joiner if first.joiner is not None else "prod."
         pieces.append(f"({marker} {_join_names(producer_list, o, t)})")
+    # R11.3: the label after a spaced bullet (R8.7).
+    if o.label and isinstance(track.label, str) and len(track.label) > 0:
+        pieces.append(f"{BULLET} {track.label}")
     title_part = " ".join(pieces)
 
     # R11.4

@@ -18,6 +18,9 @@ from ._words import char_at, collapse_spaces, is_whitespace
 #: R3.4 placeholder code point.
 PH = ""
 
+#: R8.7 bullet (U+2022).
+BULLET = "\u2022"
+
 _CLOSER = {"(": ")", "[": "]", "{": "}"}
 
 
@@ -193,6 +196,12 @@ def remove_groups(s: Skel, remove: set[int]) -> Skel:
 def is_spaced_dash_at(text: str, i: int) -> bool:
     """R6.1: ``-`` with a space immediately on both sides."""
     return 0 < i < len(text) - 1 and text[i] == "-" and text[i - 1] == " " and text[i + 1] == " "
+
+
+def is_spaced_bullet_at(text: str, i: int) -> bool:
+    """R8.7: U+2022 with a space immediately on both sides (the ends of the string do not
+    count)."""
+    return 0 < i < len(text) - 1 and text[i] == BULLET and text[i - 1] == " " and text[i + 1] == " "
 
 
 def has_spaced_dash(text: str) -> bool:

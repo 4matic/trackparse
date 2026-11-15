@@ -41,6 +41,7 @@ _FORMAT_KEYS = {
     "versions": "versions",
     "producers": "producers",
     "position": "position",
+    "label": "label",
 }
 
 

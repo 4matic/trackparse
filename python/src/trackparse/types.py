@@ -47,7 +47,7 @@ VersionType = Literal[
 ]
 VersionDelimiter = Literal["(", "[", "{", "-"]
 JunkKind = Literal[
-    "video", "audio", "lyrics", "quality", "promo", "platform", "label", "genre", "other"
+    "video", "audio", "lyrics", "quality", "promo", "platform", "label", "genre", "other", "note"
 ]
 Warning = Literal[
     "noSeparator",
@@ -222,6 +222,9 @@ class ParsedTrack:
     flags: Flags
     junk: tuple[Junk, ...]
     warnings: tuple[Warning, ...]
+    #: R8.7: the record label after a spaced bullet on the title side. Declared last so
+    #: positional construction keeps working; ``to_dict()`` writes it after ``year``.
+    label: Optional[str] = None
 
     def to_dict(self) -> dict[str, Any]:
         """The canonical JSON form (camelCase keys), identical to the JS reference output."""
@@ -235,6 +238,7 @@ class ParsedTrack:
             "fullTitle": self.full_title,
             "versions": [v.to_dict() for v in self.versions],
             "year": self.year,
+            "label": self.label,
             "flags": self.flags.to_dict(),
             "junk": [j.to_dict() for j in self.junk],
             "warnings": list(self.warnings),
@@ -257,4 +261,5 @@ class ParsedTrack:
             flags=Flags.from_dict(d["flags"]),
             junk=tuple(Junk.from_dict(j) for j in d["junk"]),
             warnings=cast(tuple[Warning, ...], tuple(d["warnings"])),
+            label=d.get("label"),
         )
