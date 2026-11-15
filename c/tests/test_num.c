@@ -173,6 +173,11 @@ static void unit_tests(void) {
   CHECK(tp_is_nan(tp_nan()) && !tp_is_nan(tp_inf(1)), "is_nan");
 }
 
+/* Not inlined into main, whose setjmp would make GCC warn about every local here
+ * (-Wclobbered, seen with GCC 11 on 32-bit). */
+#if defined(__GNUC__) || defined(__clang__)
+__attribute__((noinline))
+#endif
 static void file_tests(const char *path, long *cases) {
   tp_arena *scratch = tp_arena_current(); /* the scope's own arena, freed by main */
   FILE *f = fopen(path, "rb");
