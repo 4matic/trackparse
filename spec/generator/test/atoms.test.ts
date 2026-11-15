@@ -6,6 +6,8 @@ import {
   FEAT_MARKERS,
   JOINERS,
   JUNK,
+  LABELS,
+  NOTES,
   MODES,
   PREFIXES,
   SEPARATORS,
@@ -16,14 +18,14 @@ import {
 } from "../src/atoms.js";
 import { DATA } from "../src/data.js";
 import { REMIXERS } from "../src/scenarios/pools.js";
-import { artistProblem, mightClassify, remixerProblem, titleProblem, trailingJunkAmbiguous, words } from "../src/text.js";
+import { artistProblem, labelProblem, mightClassify, remixerProblem, titleProblem, trailingJunkAmbiguous, words } from "../src/text.js";
 
 const VERSION_TYPES = new Set([
   "remix", "bootleg", "vip", "edit", "flip", "refix", "rework", "mashup", "blend", "dub", "mix", "extended", "radio",
   "club", "original", "instrumental", "acapella", "live", "acoustic", "remaster", "demo", "reprise", "cover", "version",
   "spedUp", "slowed", "nightcore",
 ]);
-const JUNK_KINDS = new Set(["video", "audio", "lyrics", "quality", "promo", "platform", "label", "genre", "other"]);
+const JUNK_KINDS = new Set(["video", "audio", "lyrics", "quality", "promo", "platform", "label", "genre", "other", "note"]);
 
 function uniqueLowerIds(pool: { id: string }[]) {
   const ids = pool.map((a) => a.id);
@@ -109,6 +111,14 @@ describe("atom pools", () => {
     }
     expect(trailingJunkAmbiguous([], ["Official", "Video"])).toBe(true); // "Video" alone is also a phrase
     expect(trailingJunkAmbiguous(["Full"], ["HD"])).toBe(true); // "full hd"
+  });
+
+  it("bullet atoms (R8.7): opaque labels and notes, no vocabulary word", () => {
+    uniqueLowerIds([...LABELS, ...NOTES]);
+    for (const b of [...LABELS, ...NOTES]) expect(labelProblem(b.text), b.id).toBeNull();
+    expect(labelProblem("VISION RADIO RELOAD")).toBe("vocabulary:RADIO");
+    expect(labelProblem("FREE DOWNLOAD")).toMatch(/vocabulary/);
+    expect(labelProblem("SELF-RELEASE")).toBe("forbidden-char");
   });
 
   it("prefix atoms: timestamp seconds and position numbers match their raw text", () => {

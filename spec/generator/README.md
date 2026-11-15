@@ -1,12 +1,12 @@
 # @trackparse/fixture-gen
 
 Combinatorial fixture generator for the trackparse spec. It writes
-`spec/fixtures/generated/*.json`: 11,927 cases, about 7.7 MB (`test/generated.test.ts` caps the
-size at 7.8 MB). Every port (JavaScript, Python, Rust, Go and
+`spec/fixtures/generated/*.json`: 12,285 cases, about 8.1 MB (`test/generated.test.ts` caps the
+size at 8.2 MB). Every port (JavaScript, Python, Rust, Go and
 [C](https://github.com/4matic/trackparse/blob/main/c/README.md)) runs these files next to the 1,203
 handwritten fixtures. The case format is in [`../fixtures/README.md`](../fixtures/README.md).
 
-**Docs:** [How it's tested: generated cases](https://4matic.github.io/trackparse/project/testing/#generated-11927-cases) · [Spec](https://4matic.github.io/trackparse/reference/spec/)
+**Docs:** [How it's tested: generated cases](https://4matic.github.io/trackparse/project/testing/#generated-12285-cases) · [Spec](https://4matic.github.io/trackparse/reference/spec/)
 
 ## Oracle principle
 
@@ -45,6 +45,7 @@ anchor (`#r7-artist-side`, `#r13-tracklists`).
 | `dash-suffix` | dash-suffix peeling with and without an artist side (R6.2, R6.8, R8.2) |
 | `dedup` | repeated credits in every placement (R0.4, R7.6, R9.2), exhaustive |
 | `kitchen-sink` | all dimensions at once |
+| `bullet-label` | a record label and notes after spaced bullets (`Artist - Title (Remix) • LABEL • NOTE`) over heads with joiners, feat, producers, versions, dashed titles, junk, prefixes, platforms and transforms; no artist side, non-spaced separators, filename mode, trailing junk and space transforms are rejected (R8.7, R2.1, R9.7) |
 | `tracklist` | `fn: "parseTracklist"` over 1–6 line texts: time forms × lead/brackets × gaps × dotted/padded/bare positions × line endings × extra line kinds × time orders (R13, R6.10) |
 | `tracklist-emphasis` | `fn: "parseTracklist"` with Markdown: list bullets and emphasis runs around the time (`**T**`, `**[T]**`, `[**T**]`, `_[T]_`…) × emphasis around each track line (`**`, `__`, `*`, `_`) × time forms × gaps × positions × line endings (R13.2, R13.12) |
 

@@ -272,3 +272,52 @@ export function titleProblem(title: string): string | null {
 export function startsWithDigitRun(s: string): RegExpMatchArray | null {
   return s.match(/^([0-9]{1,3})( |$)/);
 }
+
+/**
+ * Every word of every vocabulary entry R8.7 or the rest of the pipeline could react to: junk
+ * phrases, connectors and label suffixes (R5.1, R8.7 tail test), genres, version heads,
+ * modifiers, descriptors and prefix forms (R5.7), feat / producer markers and `by` (R5.2, R5.3,
+ * R8.3), joiners (R7.3), stopwords, platform suffixes (R2.2), tracklist marker and header words
+ * (R13.3). Single words of multi-word entries count too (`free` of `free download`).
+ */
+const LABEL_VOCAB = new Set(
+  [
+    ...Object.keys(DATA.junkPhrases),
+    ...DATA.junkConnectors,
+    ...DATA.labelSuffixes,
+    ...DATA.genres,
+    ...HEADS,
+    ...Object.keys(DATA.typeCapable),
+    ...DATA.descriptors,
+    ...PREFIX_FORMS,
+    ...ALL_FEAT,
+    ...PRODUCER,
+    "by",
+    ...SPACED_JOINER_WORDS.map((j) => j.raw),
+    ...DATA.stopwords,
+    ...DATA.platformSuffixes.map((s) => s.replace(/^ [-|] /, "")),
+    ...DATA.markerWords,
+    ...DATA.headerWords,
+    ...DATA.unknownCaseInsensitive,
+  ].flatMap((e) => asciiLower(e).split(" ")),
+);
+
+/**
+ * Why `text` cannot be a bullet-suffix segment (R8.7 label or note) whose expectation is just
+ * itself, or null. Conservative: no vocabulary word at all, no year, no digits-only word, no
+ * bracket, dash, pipe, quote, comma, semicolon or bullet, not an unknown token.
+ */
+export function labelProblem(text: string): string | null {
+  if (text !== text.trim() || text.length === 0 || /\s{2}/.test(text)) return "untrimmed";
+  if (text.normalize("NFC") !== text) return "not-nfc";
+  if (/[()[\]{}|"'_,;:\-\u2022\u00B7\u2219\u25CF]/.test(text)) return "forbidden-char";
+  if (/[\u2000-\u206F\u3000\u00A0]/.test(text)) return "special-space";
+  if (isUnknownToken(text)) return "unknown-token";
+  const ws = words(text);
+  for (const w of ws) {
+    if (isYearWord(wordKey(w)) || /^[0-9]+$/.test(w)) return "number";
+    if (LABEL_VOCAB.has(wordKey(w)) || LABEL_VOCAB.has(asciiLower(w))) return `vocabulary:${w}`;
+  }
+  if (mightClassify(text) || endsWithJunkPhrase(text)) return "classifies";
+  return null;
+}

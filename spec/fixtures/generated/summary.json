@@ -1,7 +1,7 @@
 {
   "generator": "@trackparse/fixture-gen",
   "seed": 20260929,
-  "total": 11927,
+  "total": 12285,
   "scenarios": {
     "artists-joiners": {
       "file": "artists-joiners.json",
@@ -1409,6 +1409,233 @@
           "produced-by-paren-gydra": 235,
           "prodby-tight-paren-mefjus": 247,
           "prod-by-inline-mo": 296
+        }
+      }
+    },
+    "bullet-label": {
+      "file": "bullet-label.json",
+      "cases": 358,
+      "strategy": "pairwise+sample",
+      "productSize": 1316292216422400000,
+      "pairwiseCases": 298,
+      "sampledCases": 60,
+      "infeasiblePairs": 92,
+      "duplicateInputsDropped": 0,
+      "dims": {
+        "mode": {
+          "clean": 62,
+          "youtube": 74,
+          "youtube-yt": 76,
+          "youtube-sc": 92,
+          "auto": 26,
+          "auto-yt": 28
+        },
+        "prefix": {
+          "none": 70,
+          "pos-01-dot": 72,
+          "pos-3-dash": 64,
+          "ts-square": 78,
+          "ts-dash": 74
+        },
+        "a1": {
+          "noisia": 30,
+          "teddy-killerz": 30,
+          "zveri": 33,
+          "sigur-ros": 27,
+          "tiesto": 28,
+          "asap-rocky": 32,
+          "mr-oizo": 31,
+          "featurecast": 32,
+          "feed-me": 30,
+          "jay-z": 31,
+          "2-unlimited": 29,
+          "m83": 25
+        },
+        "j1": {
+          "none": 0,
+          "amp": 44,
+          "comma": 42,
+          "x": 43,
+          "vs-dot": 43,
+          "b2b": 44,
+          "and": 43,
+          "(n/a)": 99
+        },
+        "a2": {
+          "none": 0,
+          "mefjus": 48,
+          "phace": 46,
+          "gydra": 43,
+          "camo": 41,
+          "krooked": 41,
+          "kino": 40,
+          "(n/a)": 99
+        },
+        "placement": {
+          "none": 48,
+          "artist-inline": 35,
+          "artist-paren": 41,
+          "artist-square": 54,
+          "title-paren": 51,
+          "title-square": 44,
+          "title-curly": 51,
+          "title-inline": 34
+        },
+        "marker": {
+          "ft-dot": 27,
+          "ft": 23,
+          "feat-dot": 31,
+          "feat": 26,
+          "featuring": 23,
+          "feat-dot-cap": 28,
+          "ft-dot-upper": 25,
+          "featuring-cap": 28,
+          "feat-colon": 24,
+          "with": 25,
+          "with-cap": 21,
+          "w-slash": 29,
+          "(n/a)": 48
+        },
+        "fa": {
+          "sakamoto": 53,
+          "deadmau5": 44,
+          "kesha": 72,
+          "withered-hand": 72,
+          "xample": 69,
+          "(n/a)": 48
+        },
+        "sep": {
+          "hyphen": 98,
+          "en-dash": 96,
+          "em-dash": 89,
+          "double-hyphen": 75
+        },
+        "title": {
+          "diplodocus": 25,
+          "bruises": 32,
+          "one-more-time": 30,
+          "around-the-world": 30,
+          "gruppa-krovi": 34,
+          "hoppipolla": 29,
+          "cafe-del-mar": 24,
+          "hanataba": 31,
+          "dont-stop-me-now": 26,
+          "party-like-1999": 29,
+          "99-problems": 34,
+          "up-tempo": 34
+        },
+        "titleTail": {
+          "none": 115,
+          "louder": 122,
+          "part-two": 121
+        },
+        "version": {
+          "none": 22,
+          "remix-lower": 22,
+          "vip-mix": 24,
+          "rework": 20,
+          "dub": 23,
+          "version": 33,
+          "possessive": 25,
+          "remix-by": 25,
+          "original-mix": 26,
+          "club-mix": 23,
+          "club-ver": 27,
+          "acoustic": 23,
+          "remastered-2015": 24,
+          "nightcore": 22,
+          "edit-bare": 19
+        },
+        "delim": {
+          "paren": 87,
+          "square": 91,
+          "curly": 77,
+          "dash": 81,
+          "(n/a)": 22
+        },
+        "remixer": {
+          "none": 0,
+          "culture-shock": 26,
+          "foreign-beggars": 27,
+          "aphex-twin": 28,
+          "daft-punk": 35,
+          "katya-chekhova": 26,
+          "royksopp": 30,
+          "(n/a)": 186
+        },
+        "extra": {
+          "none": 62,
+          "year-paren": 82,
+          "dirty": 70,
+          "radio-clean": 72,
+          "moving-shadow": 72
+        },
+        "junk": {
+          "none": 54,
+          "official-video": 66,
+          "hd": 55,
+          "free-download": 51,
+          "ncs-release": 56,
+          "official": 40,
+          "ch-ukf": 36
+        },
+        "junkForm": {
+          "paren": 64,
+          "square": 76,
+          "dash": 85,
+          "pipe": 79,
+          "(n/a)": 54
+        },
+        "producer": {
+          "none": 81,
+          "prod-paren-camo": 69,
+          "prod-by-cap-square-krooked": 75,
+          "prodby-tight-paren-mefjus": 62,
+          "produced-by-inline-deadmau5": 71
+        },
+        "transform": {
+          "none": 87,
+          "nfd": 53,
+          "zwsp": 58,
+          "bom": 50,
+          "fullwidth-brackets": 60,
+          "curly-apostrophe": 50
+        },
+        "label": {
+          "wearehumans": 21,
+          "gemini-gemini": 20,
+          "sofa-sound": 23,
+          "red-face": 21,
+          "drumbassarena": 22,
+          "o-slash": 20,
+          "vision": 21,
+          "overview": 22,
+          "six-eight": 20,
+          "flexout": 24,
+          "hoofbeats": 23,
+          "project51": 21,
+          "iamsiam": 20,
+          "none-left": 18,
+          "yamatai": 22,
+          "hospital-lc": 19,
+          "ram-records-lc": 21
+        },
+        "note1": {
+          "none": 72,
+          "vision-reload": 65,
+          "guest-selector": 57,
+          "rewind": 51,
+          "forthcoming-ep": 55,
+          "catalogue-pick": 58
+        },
+        "note2": {
+          "none": 62,
+          "vision-reload": 48,
+          "guest-selector": 40,
+          "rewind": 50,
+          "forthcoming-ep": 44,
+          "catalogue-pick": 42,
+          "(n/a)": 72
         }
       }
     },
