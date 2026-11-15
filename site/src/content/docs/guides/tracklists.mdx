@@ -791,6 +791,126 @@ The first three open in the playground in tracklist mode; set the mode back to `
 what a plain `parse()` makes of them. The last two need neighbors: the position needs a 7 or 9 next to it, and the unspaced
 `BTK-Inception` dash only splits on a timed line when at least half the list uses spaced dashes.
 
+## Labels in a list
+
+Radio show lists often end each line with the record label after a bullet. Each line's track gets
+it as [`label`](/trackparse/guides/junk-and-flags/#labels-after-a-bullet), with a note after a
+second bullet in `junk`. A line with a bullet but no dash is not cut: its track part has no
+separator, so it gets a [`line-unparsed`](/trackparse/reference/warnings/#tracklist-warnings:~:text=line%2Dunparsed)
+warning as it would without the bullet.
+
+<Tabs syncKey="lang">
+<TabItem label="JavaScript">
+
+```js
+const radio = parseTracklist([
+  "00:00 VISION Radio Intro",
+  "00:48 Tom Finster - Age Of Spin • WEAREHUMANS",
+  "12:57 KROON ‘All The King’s Men’ EP Minimix • VISION",
+  "52:29 Noisia - concussion • VISION • VISION RADIO RELOAD",
+].join("\n"));
+
+radio.entries.map((e) => e.track?.label ?? null);   // [ null, 'WEAREHUMANS', null, 'VISION' ]
+radio.entries[3].track.junk;                        // [ { raw: 'VISION RADIO RELOAD', kind: 'note' } ]
+radio.warnings.map((w) => `${w.code} on line ${w.line}`);   // [ 'line-unparsed on line 3' ]
+```
+
+</TabItem>
+<TabItem label="Python">
+
+```python
+radio = parse_tracklist("\n".join([
+    "00:00 VISION Radio Intro",
+    "00:48 Tom Finster - Age Of Spin • WEAREHUMANS",
+    "12:57 KROON ‘All The King’s Men’ EP Minimix • VISION",
+    "52:29 Noisia - concussion • VISION • VISION RADIO RELOAD",
+]))
+
+[e.track.label if e.track else None for e in radio.entries]   # [None, 'WEAREHUMANS', None, 'VISION']
+radio.entries[3].track.junk   # (Junk(raw='VISION RADIO RELOAD', kind='note'),)
+[f"{w.code} on line {w.line}" for w in radio.warnings]   # ['line-unparsed on line 3']
+```
+
+</TabItem>
+<TabItem label="Rust">
+
+```rust
+let radio = parse_tracklist(&[
+    "00:00 VISION Radio Intro",
+    "00:48 Tom Finster - Age Of Spin • WEAREHUMANS",
+    "12:57 KROON ‘All The King’s Men’ EP Minimix • VISION",
+    "52:29 Noisia - concussion • VISION • VISION RADIO RELOAD",
+]
+.join("\n"));
+
+radio.entries.iter().map(|e| e.track.as_ref().and_then(|t| t.label.as_deref())).collect::<Vec<_>>();
+// [None, Some("WEAREHUMANS"), None, Some("VISION")]
+&radio.entries[3].track.as_ref().unwrap().junk;   // [Junk { raw: "VISION RADIO RELOAD", kind: Note }]
+radio.warnings.iter().map(|w| format!("{} on line {}", w.code, w.line)).collect::<Vec<_>>();
+// ["line-unparsed on line 3"]
+```
+
+</TabItem>
+<TabItem label="Go">
+
+```go
+radio := trackparse.ParseTracklist(strings.Join([]string{
+	"00:00 VISION Radio Intro",
+	"00:48 Tom Finster - Age Of Spin • WEAREHUMANS",
+	"12:57 KROON ‘All The King’s Men’ EP Minimix • VISION",
+	"52:29 Noisia - concussion • VISION • VISION RADIO RELOAD",
+}, "\n"))
+
+for _, e := range radio.Entries {
+	if e.Track != nil && e.Track.Label != nil {
+		fmt.Println(e.Line, *e.Track.Label)
+	}
+}
+// 2 WEAREHUMANS
+// 4 VISION
+fmt.Printf("%+v\n", radio.Entries[3].Track.Junk)   // [{Raw:VISION RADIO RELOAD Kind:note}]
+for _, w := range radio.Warnings {
+	fmt.Println(w.Code, "on line", w.Line)
+}
+// line-unparsed on line 3
+```
+
+</TabItem>
+<TabItem label="C">
+
+```c
+trackparse_tracklist *radio = trackparse_parse_tracklist(
+    "00:00 VISION Radio Intro\n"
+    "00:48 Tom Finster - Age Of Spin • WEAREHUMANS\n"
+    "12:57 KROON ‘All The King’s Men’ EP Minimix • VISION\n"
+    "52:29 Noisia - concussion • VISION • VISION RADIO RELOAD",
+    TRACKPARSE_NUL_TERMINATED);
+
+for (size_t i = 0; i < radio->entries_count; i++) {
+  const trackparse_track *t = radio->entries[i].track;
+  if (t && t->label) printf("%zu %s\n", i + 1, t->label->ptr);
+}
+// 2 WEAREHUMANS
+// 4 VISION
+const trackparse_junk *note = &radio->entries[3].track->junk[0];
+printf("%s: %s\n", note->kind_name.ptr, note->raw.ptr);   // note: VISION RADIO RELOAD
+for (size_t i = 0; i < radio->warnings_count; i++) {
+  printf("%s on line %d\n", trackparse_tracklist_warning_code_name(radio->warnings[i].code),
+         radio->warnings[i].line);
+}
+// line-unparsed on line 3
+trackparse_tracklist_free(radio);
+```
+
+</TabItem>
+</Tabs>
+
+A bullet that starts a line is a list bullet, not a label separator: `• Noisia - Stigma • VISION`
+has `• ` in [`parts.lead`](#nothing-is-lost) and the label `VISION`. After a time it is part of the
+track text (`00:00 • Noisia - Stigma • VISION` gives the artist `• Noisia`). A timed line without a
+dash stays a marker (`05:00 Intro • VISION`). Open [this list in the playground](/trackparse/playground/#list=00%3A00%20VISION%20Radio%20Intro%0A00%3A48%20Tom%20Finster%20-%20Age%20Of%20Spin%20%E2%80%A2%20WEAREHUMANS%0A12%3A57%20KROON%20%E2%80%98All%20The%20King%E2%80%99s%20Men%E2%80%99%20EP%20Minimix%20%E2%80%A2%20VISION%0A52%3A29%20Noisia%20-%20concussion%20%E2%80%A2%20VISION%20%E2%80%A2%20VISION%20RADIO%20RELOAD)
+to see the labels in the table.
+
 ## JSON
 
 A `Tracklist` ([R13.8](/trackparse/reference/spec/#r138-output)) serializes like a single track: `JSON.stringify(list)` in JavaScript,

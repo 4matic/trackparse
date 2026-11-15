@@ -198,7 +198,8 @@ are read as JavaScript reads an object: a repeated key keeps its first place and
 value, and integer-like keys come first, in ascending order. In C, each `add_` setter on the
 options handle adds one entry, and the version heads and junk phrases are read in that same
 JavaScript order. The type and kind are spec names given as strings, so a name that is not one of
-the built-in types also works, as in JavaScript. The built-in lists are JSON files in
+the built-in types also works, as in JavaScript. The junk kinds are those of
+[`junk`](/trackparse/reference/parse/#junk-kinds), `note` included. The built-in lists are JSON files in
 [`spec/data`](https://github.com/4matic/trackparse/tree/main/spec/data), and the keyword rules are
 [R12](/trackparse/reference/spec/#r12-options). [Your own words](/trackparse/guides/versions/#your-own-words) in the
 versions guide has another example.
@@ -484,13 +485,13 @@ of a tracklist options handle is `TRACKPARSE_MODE_TRACKLIST`.
 
 ## Format options
 
-[`format`](/trackparse/reference/functions/#formattrack-options) has its own options (`feat`, [`featMarker`](/trackparse/guides/formatting/#options), `joiners`, `versions`, `producers`, `position`).
+[`format`](/trackparse/reference/functions/#formattrack-options) has its own options (`feat`, [`featMarker`](/trackparse/guides/formatting/#options), `joiners`, `versions`, `producers`, `position`, `label`).
 They are listed under [Formatting](/trackparse/guides/formatting/#options). In Go they are the
-fields of [`FormatOptions`](https://pkg.go.dev/github.com/4matic/trackparse/go#FormatOptions); `producers: false` is `OmitProducers: true` there, so the zero value
-keeps the producers, and `FeatMarker` is a `*string` (`nil` keeps the input's marker). In Rust
+fields of [`FormatOptions`](https://pkg.go.dev/github.com/4matic/trackparse/go#FormatOptions); `producers: false` is `OmitProducers: true` there and `label: false` is
+`OmitLabel: true`, so the zero value keeps the producers and the label, and `FeatMarker` is a `*string` (`nil` keeps the input's marker). In Rust
 they are the setters of [`FormatOptions`](https://docs.rs/trackparse/latest/trackparse/struct.FormatOptions.html). In C they are the setters of a
 `trackparse_format_options` handle; `trackparse_format_options_set_omit_producers(o, true)` is
-`producers: false`, and a marker never set with `_set_feat_marker` keeps the input's. The rules are
+`producers: false`, `trackparse_format_options_set_omit_label(o, true)` is `label: false`, and a marker never set with `_set_feat_marker` keeps the input's. The rules are
 [R11](/trackparse/reference/spec/#r11-format).
 
 ## See also

@@ -140,6 +140,7 @@ trackparse_track_free(t);
     }
   ],
   "year": null,
+  "label": null,
   "flags": { "explicit": false, "clean": false, "unknownArtist": false, "unknownTitle": false },
   "junk": [],
   "warnings": []
@@ -230,7 +231,7 @@ same things, Go uses exported CamelCase, and C prefixes every name with `trackpa
 ## Spec first
 
 Behaviour isn't defined by the JavaScript code. It's defined by a written
-[spec](/trackparse/reference/spec/) with numbered rules (R0 to R13), and by 13,130 fixtures that pin those rules
+[spec](/trackparse/reference/spec/) with numbered rules (R0 to R13), and by 13,565 fixtures that pin those rules
 down. The JavaScript package is the reference implementation. The Python package, the Rust
 crate, the Go module and the C library pass the same fixtures and produce the same JSON, byte for byte.
 [How it's tested](/trackparse/project/testing/) and [Ports](/trackparse/project/ports/) have the

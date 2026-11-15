@@ -35,6 +35,7 @@ are fields of [`ParsedTrack`](/trackparse/reference/parse/#parsedtrack).
 | [`Eminem - Without Me (Explicit)`](/trackparse/playground/#track=Eminem%20-%20Without%20Me%20%28Explicit%29) | Eminem | `Without Me` | explicit flag |
 | [`Daft Punk - One More Time (Official Music Video) [HD]`](/trackparse/playground/#track=Daft%20Punk%20-%20One%20More%20Time%20%28Official%20Music%20Video%29%20%5BHD%5D) | Daft Punk | `One More Time` | junk: video, quality |
 | [`Elektronomia - Sky High [NCS Release]`](/trackparse/playground/#track=Elektronomia%20-%20Sky%20High%20%5BNCS%20Release%5D) | Elektronomia | `Sky High` | junk: label |
+| [`Noisia - concussion • VISION • VISION RADIO RELOAD`](/trackparse/playground/#track=Noisia%20-%20concussion%20%E2%80%A2%20VISION%20%E2%80%A2%20VISION%20RADIO%20RELOAD) | Noisia | `concussion` | [label](#labels-after-a-bullet) `VISION`, junk: note |
 | [`Porter Robinson - Shelter - YouTube`](/trackparse/playground/#track=Porter%20Robinson%20-%20Shelter%20-%20YouTube) | Porter Robinson | `Shelter` | junk: platform |
 | [`01. Aphex Twin - Xtal`](/trackparse/playground/#track=01.%20Aphex%20Twin%20-%20Xtal) | Aphex Twin | `Xtal` | position 1 |
 | [`[12:34] Noisia - Stigma`](/trackparse/playground/#track=%5B12%3A34%5D%20Noisia%20-%20Stigma) | Noisia | `Stigma` | timestamp 754 s |
@@ -78,6 +79,56 @@ Go `trackparse.ParseOptions{Mode: trackparse.ModeYouTube}`, in C
 `trackparse_parse_options_set_mode(options, TRACKPARSE_MODE_YOUTUBE)`. See
 [Modes](/trackparse/guides/modes/#youtube-mode) and the [`mode` option](/trackparse/reference/options/#parse-options).
 
+## Labels after a bullet
+
+Radio show tracklists often write the record label after the title, behind a bullet, and sometimes
+a note after a second one:
+
+| Input | Artists | Title | Other fields |
+|---|---|---|---|
+| [`Tom Finster - Age Of Spin • WEAREHUMANS`](/trackparse/playground/#track=Tom%20Finster%20-%20Age%20Of%20Spin%20%E2%80%A2%20WEAREHUMANS) | Tom Finster | `Age Of Spin` | label `WEAREHUMANS` |
+| [`Scrufizzer & Machinedrum - WHO (K-LONE VIP) • IAMSIAM`](/trackparse/playground/#track=Scrufizzer%20%26%20Machinedrum%20-%20WHO%20%28K-LONE%20VIP%29%20%E2%80%A2%20IAMSIAM) | Scrufizzer, Machinedrum | `WHO` | vip by K-LONE, label `IAMSIAM` |
+| [`Noisia - concussion • VISION • VISION RADIO RELOAD`](/trackparse/playground/#track=Noisia%20-%20concussion%20%E2%80%A2%20VISION%20%E2%80%A2%20VISION%20RADIO%20RELOAD) | Noisia | `concussion` | label `VISION`, junk: note `VISION RADIO RELOAD` |
+| [`Noisia • Phace - Stigma • VISION`](/trackparse/playground/#track=Noisia%20%E2%80%A2%20Phace%20-%20Stigma%20%E2%80%A2%20VISION) | `Noisia • Phace` | `Stigma` | label `VISION` |
+| [`Noisia - Stigma • HOSPITAL (2024)`](/trackparse/playground/#track=Noisia%20-%20Stigma%20%E2%80%A2%20HOSPITAL%20%282024%29) | Noisia | `Stigma` | label `HOSPITAL (2024)`, no year |
+| [`Noisia - Stigma • HOSPITAL [Official Video]`](/trackparse/playground/#track=Noisia%20-%20Stigma%20%E2%80%A2%20HOSPITAL%20%5BOfficial%20Video%5D) | Noisia | `Stigma` | label `HOSPITAL`, junk: video, mode youtube |
+| [`Noisia - Stigma • FREE DOWNLOAD`](/trackparse/playground/#track=Noisia%20-%20Stigma%20%E2%80%A2%20FREE%20DOWNLOAD) | Noisia | `Stigma` | no label, junk: promo, mode youtube |
+| [`Noisia - Stigma • Part 2`](/trackparse/playground/#track=Noisia%20-%20Stigma%20%E2%80%A2%20Part%202) | Noisia | `Stigma` | label `Part 2` (see below) |
+
+The rule is [R8.7](/trackparse/reference/spec/#r8-title-side:~:text=R8.7%20Bullet%20suffix). It fires
+on a *spaced bullet*: `•` (U+2022) with a space on each side, outside every bracket, somewhere after
+the first spaced dash. Everything after the first such bullet is the tail, cut at each spaced
+bullet:
+
+- The first tail segment is [`label`](/trackparse/reference/parse/#parsedtrack), as written (case
+  kept, no lookup). Each later segment goes to `junk` with the kind `note`.
+- A bracket of junk in the tail goes to `junk` as usual, and a segment made only of junk phrases
+  (`FREE DOWNLOAD`, `OUT NOW`) becomes junk instead of a label. Other brackets stay in the label
+  word for word, so `HOSPITAL (2024)` sets no `year`.
+- The track itself is the part before the first bullet. Versions, features, junk and the year come
+  from there only, which is why `WHO (K-LONE VIP) • IAMSIAM` keeps its VIP as a version.
+- Auto mode still sees the tail: `• FREE DOWNLOAD` and `• HOSPITAL [Official Video]` pick
+  [youtube mode](/trackparse/guides/modes/#how-auto-decides), as they would without the bullet.
+  The mode then decides how the head is read: `Noisia - Stigma HD • VISION HD` ends with the
+  phrase `HD`, so it is a YouTube title, and youtube mode takes the `HD` off the head too (title
+  `Stigma`, junk quality `HD`, label `VISION HD`).
+
+It does not fire, and the bullet stays where it is, when:
+
+- the bullet is not spaced ([`Noisia - Stigma•VISION`](/trackparse/playground/#track=Noisia%20-%20Stigma%E2%80%A2VISION)) or is
+  inside brackets ([`Noisia - Stigma (A • B Remix)`](/trackparse/playground/#track=Noisia%20-%20Stigma%20%28A%20%E2%80%A2%20B%20Remix%29):
+  a remix by `A • B`);
+- it comes before the dash ([`Noisia • Stigma - VISION`](/trackparse/playground/#track=Noisia%20%E2%80%A2%20Stigma%20-%20VISION): artist
+  `Noisia • Stigma`), or there is no spaced dash at all (`Intro • VISION`, `Noisia | Stigma • VISION`);
+- the dot is a different character: `·` (U+00B7), `∙` (U+2219) and `●` (U+25CF) are not bullets;
+- a segment is empty (`Noisia - Stigma •  • VISION`).
+
+One accepted false positive: a bullet that is part of the title reads as a label too.
+`Noisia - Stigma • Part 2` gives the title `Stigma` and the label `Part 2`. Quotes don't protect
+it either: `Noisia - "Stigma • VISION"` gives the title `"Stigma` and the label `VISION"`. The junk kind `label`
+is something else: a label name in brackets such as `[NCS Release]`, which leaves the `label` field
+`null`. [`format`](/trackparse/guides/formatting/#labels) writes the label back after the title.
+
 ## In a tracklist
 
 Lines of a pasted tracklist go through
@@ -98,7 +149,7 @@ tracklist tab.
 
 - [Artists and credits](/trackparse/guides/artists/): joiners, features, producers, `knownArtists`.
 - [Versions and remixes](/trackparse/guides/versions/): the 27 types and how they're read.
-- [Junk, flags and prefixes](/trackparse/guides/junk-and-flags/): noise, years, track numbers, cue times.
+- [Junk, flags and prefixes](/trackparse/guides/junk-and-flags/): noise, labels after a bullet, years, track numbers, cue times.
 - [Modes](/trackparse/guides/modes/): what changes for YouTube titles, file names and tracklist lines.
 - [Formatting](/trackparse/guides/formatting/): writing a parsed track back as a string.
 - [Tracklists](/trackparse/guides/tracklists/) and

@@ -14,8 +14,11 @@ at once.
 - Times at the end of a line (`Noisia - Stigma [12:34]`) and time ranges (`00:00 - 05:30`). A
   trailing time stays in the title. In a range only the start becomes the line's time; the end
   ends up in `track.timestamp` and nothing checks it.
-- Label and catalog numbers as fields. Catalog numbers like `[HOSP123]` stay in the title.
-  Only known label phrases (`[NCS Release]`) go to [`junk`](/trackparse/guides/junk-and-flags/#junk) as `label`.
+- Catalog numbers as a field. Catalog numbers like `[HOSP123]` stay in the title. A record label
+  is a field only when it follows a spaced bullet
+  ([`Stigma • VISION`](/trackparse/guides/junk-and-flags/#labels-after-a-bullet)), with no lookup,
+  and a bullet inside a title (`Song • Part 2`) is read as a label too. Known label phrases
+  (`[NCS Release]`) go to [`junk`](/trackparse/guides/junk-and-flags/#junk) as `label`.
 - Key and BPM (`8A`, `174 BPM`) stay in the title too.
 - An artist database. `Earth, Wind & Fire` splits unless you pass it in
   [`knownArtists`](/trackparse/guides/artists/#knownartists) (`known_artists` in Python and Rust, `KnownArtists` in Go,
