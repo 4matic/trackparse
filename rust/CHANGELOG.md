@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.1](https://github.com/4matic/trackparse/compare/rust-v0.7.0...rust-v0.7.1) (2026-11-15)
+
+
+### Miscellaneous
+
+* **rust:** Synchronize trackparse versions
+
 ## [0.7.0](https://github.com/4matic/trackparse/compare/rust-v0.6.1...rust-v0.7.0) (2026-11-15)
 
 

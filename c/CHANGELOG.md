@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.1](https://github.com/4matic/trackparse/compare/c-v0.7.0...c-v0.7.1) (2026-11-15)
+
+
+### Bug Fixes
+
+* **c:** the json example's expected output takes the version from c/VERSION, so the release bump no longer breaks example_json and the consumer checks ([0e0e297](https://github.com/4matic/trackparse/commit/0e0e2975cfb697010ca2dc09c075ed89fd34a103))
+
 ## [0.7.0](https://github.com/4matic/trackparse/compare/c-v0.6.1...c-v0.7.0) (2026-11-15)
 
 
