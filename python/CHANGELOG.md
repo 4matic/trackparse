@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.1](https://github.com/4matic/trackparse/compare/python-v0.7.0...python-v0.7.1) (2026-11-15)
+
+
+### Miscellaneous
+
+* **python:** Synchronize trackparse versions
+
 ## [0.7.0](https://github.com/4matic/trackparse/compare/python-v0.6.1...python-v0.7.0) (2026-11-15)
 
 

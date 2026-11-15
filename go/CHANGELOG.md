@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.1](https://github.com/4matic/trackparse/compare/go/v0.7.0...go/v0.7.1) (2026-11-15)
+
+
+### Miscellaneous
+
+* **go:** Synchronize trackparse versions
+
 ## [0.7.0](https://github.com/4matic/trackparse/compare/go/v0.6.1...go/v0.7.0) (2026-11-15)
 
 
