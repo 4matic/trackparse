@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.8.0](https://github.com/4matic/trackparse/compare/c-v0.7.1...c-v0.8.0) (2026-11-15)
+
+
+### Features
+
+* **c:** R8.7 bullet suffix: trackparse_track.label, TRACKPARSE_JUNK_NOTE, trackparse_format_options_set_omit_label; C++ label(), omit_label() ([0104542](https://github.com/4matic/trackparse/commit/01045422e3de29d7d1bd2a9cbfb9ad9ab0203314))
+
+
+### Documentation
+
+* C install links and notes point at 0.7.1, the first C release with files ([931c499](https://github.com/4matic/trackparse/commit/931c499ef11d56622f405cabf8e2d1f6fd1f60a3))
+* the label field, junk kind note and the format label option in every README; fixture counts ([a6f19dd](https://github.com/4matic/trackparse/commit/a6f19dd4583784288f3ca126be05f5617e4e0637))
+
 ## [0.7.1](https://github.com/4matic/trackparse/compare/c-v0.7.0...c-v0.7.1) (2026-11-15)
 
 

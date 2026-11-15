@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.8.0](https://github.com/4matic/trackparse/compare/go/v0.7.1...go/v0.8.0) (2026-11-15)
+
+
+### Features
+
+* **go:** R8.7 bullet suffix: Track.Label, JunkKindNote, FormatOptions.OmitLabel ([a8a7704](https://github.com/4matic/trackparse/commit/a8a7704fb92007297ea036f7e96a4a99c59148db))
+
+
+### Documentation
+
+* C install links and notes point at 0.7.1, the first C release with files ([931c499](https://github.com/4matic/trackparse/commit/931c499ef11d56622f405cabf8e2d1f6fd1f60a3))
+* the label field, junk kind note and the format label option in every README; fixture counts ([a6f19dd](https://github.com/4matic/trackparse/commit/a6f19dd4583784288f3ca126be05f5617e4e0637))
+
 ## [0.7.1](https://github.com/4matic/trackparse/compare/go/v0.7.0...go/v0.7.1) (2026-11-15)
 
 
