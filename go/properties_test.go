@@ -113,9 +113,18 @@ var (
 	propJoiners  = []string{" & ", ", ", " x ", " vs. "}
 	// propLabels are R8.7 record labels after a spaced bullet.
 	propLabels = []string{"VISION", "HOSPITAL", "GEMINI GEMINI", "SIX EIGHT", "Ø"}
+	// propNotes are R8.7.4 notes: tail segments after the label (junk kind `note`).
+	propNotes = []string{"VISION RADIO RELOAD", "HOSPITAL", "S06E39"}
+	// propTailGroups are R8.7.4 junk groups inside a tail segment.
+	propTailGroups = []string{"[HD]", "(Official Video)"}
+	// propTailPhrases are R8.7.4 tail segments made only of a junk phrase.
+	propTailPhrases = []string{"OUT NOW", "FREE DOWNLOAD"}
+	// propEmptyTitles are R8.7.3 title parts that leave the title empty (`A - (VIP) • L`).
+	propEmptyTitles = []string{"(VIP)", "[HD]"}
 )
 
-// trackString is a track-shaped input for the metamorphic and round-trip properties.
+// trackString is a track-shaped input for the metamorphic and round-trip properties, with an
+// R8.7 bullet suffix (label, notes, tail junk) in some of the cases.
 func (r *rng) trackString() string {
 	var artists []string
 	for n := 1 + r.below(3); n > 0; n-- {
@@ -130,12 +139,34 @@ func (r *rng) trackString() string {
 			s += " feat. " + feat
 		}
 	}
-	s += " - " + r.pick(propTitles)
-	if r.chance(50) {
-		s += " (" + r.pick(propRemixers) + " Remix)"
+	label := ""
+	if r.chance(40) {
+		label = r.pick(propLabels)
 	}
-	if r.chance(50) {
-		s += " • " + r.pick(propLabels)
+	// R8.7: the empty title only comes with a label, as in `A - [HD] • L`.
+	if label != "" && r.chance(15) {
+		s += " - " + r.pick(propEmptyTitles)
+	} else {
+		s += " - " + r.pick(propTitles)
+		if r.chance(50) {
+			s += " (" + r.pick(propRemixers) + " Remix)"
+		}
+	}
+	var tail []string
+	if label != "" {
+		if r.chance(25) {
+			label += " " + r.pick(propTailGroups)
+		}
+		tail = append(tail, label)
+		for n := r.below(3); n > 0; n-- {
+			tail = append(tail, r.pick(propNotes))
+		}
+	}
+	if r.chance(25) {
+		tail = slices.Insert(tail, r.below(len(tail)+1), r.pick(propTailPhrases))
+	}
+	for _, segment := range tail {
+		s += " • " + segment
 	}
 	return s
 }
@@ -376,7 +407,7 @@ func checkNoiseInsensitive(tb testing.TB, s string, cut int) {
 
 // shape is what R11.6 promises to keep: names with roles, the title, each version's type and
 // names, and the label. Without withTitle the title and the label are left out (R11.6: a label
-// counts only when the formatted string has an artist part).
+// counts only when the formatted string has an artist part and the title is not empty).
 func shape(t *Track, withTitle bool) string {
 	var b strings.Builder
 	for _, a := range t.Artists {
@@ -408,11 +439,12 @@ func checkRoundTrip(tb testing.TB, s string) {
 	}
 	formatted := Format(first)
 	second := Parse(formatted)
-	// R11.6: the label (and the title) only count when the formatted string has an artist part.
+	// R11.6: with a label, the label and the title only count when the formatted string has an
+	// artist part and the title is not empty (`A - [HD] • L` formats to `A - • L`).
 	artistPart := slices.ContainsFunc(first.Artists, func(a Artist) bool {
 		return a.Role == RolePrimary || (a.Role == RoleFeatured && a.Source == SourceArtist)
 	})
-	both := artistPart || first.Label == nil
+	both := (artistPart && first.Title != "") || first.Label == nil
 	if a, b := shape(&first, both), shape(&second, both); a != b {
 		tb.Fatalf("round trip %q -> %q:\n%s\n%s", s, formatted, a, b)
 	}

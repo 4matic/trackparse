@@ -137,11 +137,20 @@ const TITLES: &[&str] =
     &["Tentacles", "Bruises", "Out the Blue", "Dead Limit", "Stigma", "Blind Faith"];
 /// R8.7 record labels after a spaced bullet.
 const RECORD_LABELS: &[&str] = &["VISION", "HOSPITAL", "GEMINI GEMINI", "SIX EIGHT", "\u{d8}"];
+/// R8.7.4 notes: tail segments after the label (junk kind `note`).
+const LABEL_NOTES: &[&str] = &["VISION RADIO RELOAD", "HOSPITAL", "S06E39"];
+/// R8.7.4 junk groups inside a tail segment.
+const TAIL_JUNK_GROUPS: &[&str] = &["[HD]", "(Official Video)"];
+/// R8.7.4 tail segments made only of a junk phrase.
+const TAIL_JUNK_PHRASES: &[&str] = &["OUT NOW", "FREE DOWNLOAD"];
+/// R8.7.3 title parts that leave the title empty (`A - (VIP) \u{2022} L`, `A - [HD] \u{2022} L`).
+const EMPTY_TITLES: &[&str] = &["(VIP)", "[HD]"];
 
 const REMIXERS: &[&str] = &["Skrillex", "Magnetude", "Wilkinson", "Break"];
 const JOINERS: &[&str] = &[" & ", ", ", " x ", " vs. "];
 
-/// A track-shaped input for the metamorphic and round-trip properties.
+/// A track-shaped input for the metamorphic and round-trip properties, with an R8.7 bullet
+/// suffix (label, notes, tail junk) in some of the cases.
 fn track_string(rng: &mut Rng) -> String {
     let mut artists: Vec<&str> = Vec::new();
     for _ in 0..1 + rng.below(3) {
@@ -157,12 +166,33 @@ fn track_string(rng: &mut Rng) -> String {
             s.push_str(&format!(" feat. {feat}"));
         }
     }
-    s.push_str(&format!(" - {}", rng.pick(TITLES)));
-    if rng.chance(50) {
-        s.push_str(&format!(" ({} Remix)", rng.pick(REMIXERS)));
+    let label = rng.chance(40).then(|| rng.pick(RECORD_LABELS));
+    // R8.7: the empty title only comes with a label, as in `A - [HD] \u{2022} L`.
+    if label.is_some() && rng.chance(15) {
+        s.push_str(&format!(" - {}", rng.pick(EMPTY_TITLES)));
+    } else {
+        s.push_str(&format!(" - {}", rng.pick(TITLES)));
+        if rng.chance(50) {
+            s.push_str(&format!(" ({} Remix)", rng.pick(REMIXERS)));
+        }
     }
-    if rng.chance(30) {
-        s.push_str(&format!(" \u{2022} {}", rng.pick(RECORD_LABELS)));
+    let mut tail: Vec<String> = Vec::new();
+    if let Some(label) = label {
+        if rng.chance(25) {
+            tail.push(format!("{label} {}", rng.pick(TAIL_JUNK_GROUPS)));
+        } else {
+            tail.push(label.to_string());
+        }
+        for _ in 0..rng.below(3) {
+            tail.push(rng.pick(LABEL_NOTES).to_string());
+        }
+    }
+    if rng.chance(25) {
+        let at = rng.below(tail.len() + 1);
+        tail.insert(at, rng.pick(TAIL_JUNK_PHRASES).to_string());
+    }
+    for segment in &tail {
+        s.push_str(&format!(" \u{2022} {segment}"));
     }
     s
 }
@@ -489,8 +519,9 @@ fn metamorphic_keyword_case_changes_only_raw() {
 }
 
 /// What R11.6 promises to keep: names with roles, the title, each version's type and names, and
-/// the label. The title and the label count only when the formatted string has an artist part
-/// or there is no label (`ID - T \u{2022} L` formats to `T \u{2022} L`, which has no separator).
+/// the label. With a label, the title and the label count only when the formatted string has an
+/// artist part (`ID - T \u{2022} L` formats to `T \u{2022} L`, which has no separator) and the
+/// title is not empty (`A - [HD] \u{2022} L` formats to `A - \u{2022} L`).
 type Shape =
     (Vec<(String, ArtistRole)>, Option<String>, Vec<(String, Vec<String>)>, Option<String>);
 
@@ -521,7 +552,7 @@ fn round_trip_through_format_track() {
             a.role == ArtistRole::Primary
                 || (a.role == ArtistRole::Featured && a.source == ArtistSource::Artist)
         });
-        let both = artist_part || first.label.is_none();
+        let both = (artist_part && !first.title.is_empty()) || first.label.is_none();
         assert_eq!(
             shape(&second, both),
             shape(&first, both),

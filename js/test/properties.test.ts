@@ -90,6 +90,20 @@ const titleWords = fc.constantFrom(
 const remixer = fc.constantFrom("Skrillex", "Magnetude", "Wilkinson", "Break");
 /** R8.7 record labels after a spaced bullet. */
 const recordLabel = fc.constantFrom("VISION", "HOSPITAL", "GEMINI GEMINI", "SIX EIGHT", "Ø");
+/** R8.7.4 notes: tail segments after the label (junk kind `note`). */
+const labelNote = fc.constantFrom("VISION RADIO RELOAD", "HOSPITAL", "S06E39");
+/** R8.7.4 junk groups inside a tail segment. */
+const tailJunkGroup = fc.constantFrom("[HD]", "(Official Video)");
+/** R8.7.4 tail segments made only of a junk phrase. */
+const tailJunkPhrase = fc.constantFrom("OUT NOW", "FREE DOWNLOAD");
+/** R8.7.3 title parts that leave the title empty (`A - (VIP) • L`, `A - [HD] • L`). */
+const emptyTitle = fc.constantFrom("(VIP)", "[HD]");
+/** `arb` in `percent` of the cases, else undefined. */
+const sometimes = <T>(arb: fc.Arbitrary<T>, percent: number) =>
+  fc.oneof(
+    { arbitrary: fc.constant(undefined), weight: 100 - percent },
+    { arbitrary: arb, weight: percent },
+  );
 const track = fc
   .record({
     artists: fc.array(artist, { minLength: 1, maxLength: 3 }),
@@ -97,15 +111,27 @@ const track = fc
     feat: fc.option(artist, { nil: undefined }),
     title: titleWords,
     remix: fc.option(remixer, { nil: undefined }),
-    label: fc.option(recordLabel, { nil: undefined }),
+    label: sometimes(recordLabel, 40),
+    labelGroup: sometimes(tailJunkGroup, 25),
+    notes: fc.array(labelNote, { maxLength: 2 }),
+    phrase: sometimes(tailJunkPhrase, 25),
+    phraseAt: fc.nat(),
+    empty: sometimes(emptyTitle, 15),
   })
-  .map(({ artists, joiner, feat, title, remix, label }) => {
-    const unique = [...new Set(artists)];
-    let s = unique.join(joiner);
-    if (feat && !unique.includes(feat)) s += ` feat. ${feat}`;
-    s += ` - ${title}`;
-    if (remix) s += ` (${remix} Remix)`;
-    if (label) s += ` • ${label}`;
+  .map((t) => {
+    const unique = [...new Set(t.artists)];
+    let s = unique.join(t.joiner);
+    if (t.feat && !unique.includes(t.feat)) s += ` feat. ${t.feat}`;
+    // R8.7: the empty title only comes with a label, as in `A - [HD] • L`.
+    if (t.label && t.empty) s += ` - ${t.empty}`;
+    else {
+      s += ` - ${t.title}`;
+      if (t.remix) s += ` (${t.remix} Remix)`;
+    }
+    const tail: string[] = [];
+    if (t.label) tail.push(t.labelGroup ? `${t.label} ${t.labelGroup}` : t.label, ...t.notes);
+    if (t.phrase) tail.splice(t.phraseAt % (tail.length + 1), 0, t.phrase);
+    for (const segment of tail) s += ` • ${segment}`;
     return s;
   });
 
@@ -277,11 +303,12 @@ describe("invariants", () => {
         const a = parse(s);
         if (a.warnings.length > 0) return;
         const b = parse(format(a));
-        // R11.6: label (and title) only count when the formatted string has an artist part.
+        // R11.6: with a label, the label and the title only count when the formatted string has
+        // an artist part and the title is not empty (`A - [HD] • L` formats to `A - • L`).
         const artistPart = a.artists.some(
           (x) => x.role === "primary" || (x.role === "featured" && x.source === "artist"),
         );
-        const both = artistPart || a.label === null;
+        const both = (artistPart && a.title !== "") || a.label === null;
         const shape = (t: ParsedTrack) => ({
           artists: t.artists.map((x) => [x.name, x.role]),
           title: both ? t.title : null,

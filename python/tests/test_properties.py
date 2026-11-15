@@ -38,27 +38,54 @@ TITLES = ["Tentacles", "Bruises", "Out the Blue", "Dead Limit", "Stigma", "Blind
 REMIXERS = ["Skrillex", "Magnetude", "Wilkinson", "Break"]
 #: R8.7 record labels after a spaced bullet.
 RECORD_LABELS = ["VISION", "HOSPITAL", "GEMINI GEMINI", "SIX EIGHT", "Ø"]
+#: R8.7.4 notes: tail segments after the label (junk kind `note`).
+LABEL_NOTES = ["VISION RADIO RELOAD", "HOSPITAL", "S06E39"]
+#: R8.7.4 junk groups inside a tail segment.
+TAIL_JUNK_GROUPS = ["[HD]", "(Official Video)"]
+#: R8.7.4 tail segments made only of a junk phrase.
+TAIL_JUNK_PHRASES = ["OUT NOW", "FREE DOWNLOAD"]
+#: R8.7.3 title parts that leave the title empty (`A - (VIP) • L`, `A - [HD] • L`).
+EMPTY_TITLES = ["(VIP)", "[HD]"]
 
 
 @st.composite
 def track(draw: Any, labels: bool = True) -> str:
+    """A track-shaped input; with `labels`, an R8.7 bullet suffix in some of the cases."""
+
+    def sometimes(items: list[str], percent: int) -> Optional[str]:
+        if draw(st.integers(0, 99)) >= percent:
+            return None
+        return draw(st.sampled_from(items))
+
     artists = draw(st.lists(st.sampled_from(ARTISTS), min_size=1, max_size=3))
     joiner = draw(st.sampled_from([" & ", ", ", " x ", " vs. "]))
     feat: Optional[str] = draw(st.one_of(st.none(), st.sampled_from(ARTISTS)))
     title = draw(st.sampled_from(TITLES))
     remix: Optional[str] = draw(st.one_of(st.none(), st.sampled_from(REMIXERS)))
-    label: Optional[str] = (
-        draw(st.one_of(st.none(), st.sampled_from(RECORD_LABELS))) if labels else None
-    )
+    label = sometimes(RECORD_LABELS, 40) if labels else None
+    label_group = sometimes(TAIL_JUNK_GROUPS, 25)
+    notes = draw(st.lists(st.sampled_from(LABEL_NOTES), max_size=2))
+    phrase = sometimes(TAIL_JUNK_PHRASES, 25) if labels else None
+    phrase_at = draw(st.integers(min_value=0, max_value=2))
+    empty = sometimes(EMPTY_TITLES, 15)
     unique = list(dict.fromkeys(artists))
     s = joiner.join(unique)
     if feat and feat not in unique:
         s += f" feat. {feat}"
-    s += f" - {title}"
-    if remix:
-        s += f" ({remix} Remix)"
+    # R8.7: the empty title only comes with a label, as in `A - [HD] • L`.
+    if label and empty:
+        s += f" - {empty}"
+    else:
+        s += f" - {title}"
+        if remix:
+            s += f" ({remix} Remix)"
+    tail: list[str] = []
     if label:
-        s += f" • {label}"
+        tail = [f"{label} {label_group}" if label_group else label, *notes]
+    if phrase:
+        tail.insert(phrase_at % (len(tail) + 1), phrase)
+    for segment in tail:
+        s += f" • {segment}"
     return s
 
 
@@ -145,7 +172,7 @@ def test_5_artist_hygiene(s: str) -> None:
 
 
 quiet = track().filter(lambda s: len(parse(s).warnings) == 0)
-#: Without a label, for the cases that need the string to end in a version group.
+#: Without a bullet suffix (R8.7), for the cases that need the string to end in a version group.
 quiet_unlabelled = track(labels=False).filter(lambda s: len(parse(s).warnings) == 0)
 
 
@@ -213,9 +240,10 @@ def test_8_round_trip(s: str) -> None:
     if a.warnings:
         return
     b = parse(format_track(a))
-    # R11.6: label (and title) only count when the formatted string has an artist part.
+    # R11.6: with a label, the label and the title only count when the formatted string has an
+    # artist part and the title is not empty (`A - [HD] • L` formats to `A - • L`).
     artist_part = any(
         x.role == "primary" or (x.role == "featured" and x.source == "artist") for x in a.artists
     )
-    both = artist_part or a.label is None
+    both = (artist_part and a.title != "") or a.label is None
     assert _shape(b, both) == _shape(a, both)
