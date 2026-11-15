@@ -80,8 +80,9 @@ Remixers live inside `versions`, not in `artists`. Use [`allArtists(track)`](/tr
 
 ## Joiners
 
-`&`, `x`, `vs.`, `,`, `;`, `+`, `/` and `and` separate names. They're joiners, not roles: every name
-they produce is still primary.
+`&`, `x`, `vs.`, `,`, `;`, `+`, `/` and `and` separate names, and so do `b2b`, `meets`, `pres.` and
+the others in [`joiners.json`](https://github.com/4matic/trackparse/blob/main/spec/data/joiners.json).
+They're joiners, not roles: every name they produce is still primary.
 
 <Tabs syncKey="lang">
 <TabItem label="JavaScript">
@@ -199,8 +200,8 @@ in the playground to see every joiner.
 
 ### `and` is special
 
-`and` is common inside band names, so by default it only splits after a comma has already split the
-same list:
+`and` is common inside band names, so by default it only splits after a comma or semicolon has already
+split the same list:
 
 <Tabs syncKey="lang">
 <TabItem label="JavaScript">
@@ -484,7 +485,7 @@ trackparse_track_free(t);
 </TabItem>
 </Tabs>
 
-Names are compared with full Unicode case folding and accents removed, so `Sigur Rós` and
+Names are compared with full Unicode lowercasing and accents removed, so `Sigur Rós` and
 `SIGUR ROS` count as the same artist
 ([R9.2](/trackparse/reference/spec/#r9-assembly-and-dedup:~:text=R9.2%20Dedup)). [Try the
 example](/trackparse/playground/#track=Noisia%20feat.%20Foreign%20Beggars%20-%20Shellshock%20%28feat.%20Foreign%20Beggars%29)
@@ -624,7 +625,7 @@ trackparse_parse_options_free(options);
 </TabItem>
 </Tabs>
 
-A known name is matched case- and accent-insensitively wherever a credit list starts. It also
+A known name is matched case- and accent-insensitively wherever a name starts in a credit list. It also
 protects names that begin with digits from being read as a track number (`3 Doors Down`). If you
 parse a lot of strings with the same names, put them in
 [`createParser`](/trackparse/reference/functions/#createparseroptions) (`create_parser` in Python,

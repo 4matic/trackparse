@@ -35,7 +35,8 @@ The changelogs list what has shipped so far:
 [Python](https://github.com/4matic/trackparse/blob/main/python/CHANGELOG.md),
 [Rust](https://github.com/4matic/trackparse/blob/main/rust/CHANGELOG.md),
 [Go](https://github.com/4matic/trackparse/blob/main/go/CHANGELOG.md) and the
-[spec](https://github.com/4matic/trackparse/blob/main/spec/CHANGELOG.md).
+[spec](https://github.com/4matic/trackparse/blob/main/spec/CHANGELOG.md). The C library gets its
+changelog (`c/CHANGELOG.md`) with 0.7.0, its first release.
 
 ## See also
 

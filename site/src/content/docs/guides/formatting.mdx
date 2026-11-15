@@ -119,19 +119,13 @@ are typed string constants ([`FeatPlacement`](https://pkg.go.dev/github.com/4mat
 Since a Go `bool` field defaults to `false`, `producers` becomes `OmitProducers`. C takes a
 `trackparse_format_options` handle from `trackparse_format_options_new()`, with one setter per
 option and C enums for the values; an option you don't set keeps its default, and
-`trackparse_format_options_free` releases the handle:
-
-| Option | Python | Rust | Go | C |
-|---|---|---|---|---|
-| `feat` | `feat="title"` | `.feat(FeatPlacement::Title)`: `Source`, `Artist`, `Title`, `Omit` | `Feat: trackparse.FeatTitle`: `FeatSource`, `FeatArtist`, `FeatTitle`, `FeatOmit` | `trackparse_format_options_set_feat(o, TRACKPARSE_FEAT_TITLE)`: `_SOURCE`, `_ARTIST`, `_TITLE`, `_OMIT` |
-| `featMarker` | `feat_marker="featuring"` | `.feat_marker("featuring")` | `FeatMarker: trackparse.Ptr("featuring")` (a `*string`) | `trackparse_format_options_set_feat_marker(o, "featuring", TRACKPARSE_NUL_TERMINATED)` |
-| `joiners` | `joiners="canonical"` | `.joiners(JoinerStyle::Canonical)`: `Original`, `Canonical` | `Joiners: trackparse.JoinersCanonical`: `JoinersOriginal`, `JoinersCanonical` | `trackparse_format_options_set_joiners(o, TRACKPARSE_JOINERS_CANONICAL)`: `_ORIGINAL`, `_CANONICAL` |
-| `versions` | `versions="none"` | `.versions(VersionsOption::None)`: `All`, `None` | `Versions: trackparse.VersionsNone`: `VersionsAll`, `VersionsNone` | `trackparse_format_options_set_versions(o, TRACKPARSE_VERSIONS_NONE)`: `_ALL`, `_NONE` |
-| `producers` | `producers=False` | `.producers(false)` | `OmitProducers: true` | `trackparse_format_options_set_omit_producers(o, true)` |
-| `position` | `position=True` | `.position(true)` | `Position: true` | `trackparse_format_options_set_position(o, true)` |
+`trackparse_format_options_free` releases the handle. Each tab below starts with the names in
+that language.
 
 <Tabs syncKey="lang">
 <TabItem label="JavaScript">
+
+The names and values are those of the table above, as keys of one object.
 
 ```js
 format(t, { feat: "title" });
@@ -154,6 +148,10 @@ format(parse("Future - Mask Off (prod. by Metro Boomin)"), { producers: false })
 </TabItem>
 <TabItem label="Python">
 
+- `feat="title"`: `"source"`, `"artist"`, `"title"` or `"omit"`
+- `feat_marker="featuring"`, `joiners="canonical"`, `versions="none"`
+- `producers=False`, `position=True`
+
 ```python
 format_track(t, feat="title")
 # 'Wilkinson - Afterglow (ft. Becky Hill & Tom Cane) (Sub Focus VIP Remix)'
@@ -174,6 +172,12 @@ format_track(parse("Future - Mask Off (prod. by Metro Boomin)"), producers=False
 
 </TabItem>
 <TabItem label="Rust">
+
+- `.feat(FeatPlacement::Title)`: `Source`, `Artist`, `Title` or `Omit`
+- `.feat_marker("featuring")`
+- `.joiners(JoinerStyle::Canonical)`: `Original` or `Canonical`
+- `.versions(VersionsOption::None)`: `All` or `None`
+- `.producers(false)`, `.position(true)`
 
 ```rust
 use trackparse::{format_track_with, FeatPlacement, FormatOptions, JoinerStyle, VersionsOption};
@@ -204,6 +208,12 @@ format_track_with(
 </TabItem>
 <TabItem label="Go">
 
+- `Feat: trackparse.FeatTitle`: `FeatSource`, `FeatArtist`, `FeatTitle` or `FeatOmit`
+- `FeatMarker: trackparse.Ptr("featuring")` (a `*string`)
+- `Joiners: trackparse.JoinersCanonical`: `JoinersOriginal` or `JoinersCanonical`
+- `Versions: trackparse.VersionsNone`: `VersionsAll` or `VersionsNone`
+- `OmitProducers: true` for `producers: false`, and `Position: true`
+
 ```go
 fmt.Printf("%q\n", trackparse.FormatWith(t, trackparse.FormatOptions{Feat: trackparse.FeatTitle}))
 // "Wilkinson - Afterglow (ft. Becky Hill & Tom Cane) (Sub Focus VIP Remix)"
@@ -233,6 +243,15 @@ fmt.Printf("%q\n", trackparse.FormatWith(
 
 </TabItem>
 <TabItem label="C">
+
+- `trackparse_format_options_set_feat(o, TRACKPARSE_FEAT_TITLE)`: `_SOURCE`, `_ARTIST`, `_TITLE`
+  or `_OMIT`
+- `trackparse_format_options_set_feat_marker(o, "featuring", TRACKPARSE_NUL_TERMINATED)`
+- `trackparse_format_options_set_joiners(o, TRACKPARSE_JOINERS_CANONICAL)`: `_ORIGINAL` or
+  `_CANONICAL`
+- `trackparse_format_options_set_versions(o, TRACKPARSE_VERSIONS_NONE)`: `_ALL` or `_NONE`
+- `trackparse_format_options_set_omit_producers(o, true)` for `producers: false`
+- `trackparse_format_options_set_position(o, true)`
 
 ```c
 trackparse_format_options *o = trackparse_format_options_new();

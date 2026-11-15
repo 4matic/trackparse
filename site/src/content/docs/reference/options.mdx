@@ -33,8 +33,8 @@ parse(
     input,
     *,
     mode: ModeOption = "auto",       # "auto" | "clean" | "youtube" | "filename" | "tracklist"
-    known_artists: Sequence[str] = (),
     uploader: Optional[str] = None,
+    known_artists: Sequence[str] = (),
     split_and: str = "auto",         # "auto" | "always" | "never"
     keywords: Optional[KeywordOptions] = None,
 )
@@ -134,15 +134,20 @@ trackparse_parse_options_free(options);
 </TabItem>
 </Tabs>
 
-| JavaScript | Python and Rust | Go | C | Default | |
-|---|---|---|---|---|---|
-| `mode` | `mode` | `Mode` | `trackparse_parse_options_set_mode` | `"auto"` | Which [mode](/trackparse/guides/modes/) to use. `auto` picks `filename`, `youtube` or `clean` from the string |
-| `knownArtists` | `known_artists` | `KnownArtists` | `trackparse_parse_options_add_known_artist` | empty | Names that are never split, like `Chase & Status` or `Earth, Wind & Fire`. Matched case- and accent-insensitively. See [knownArtists](/trackparse/guides/artists/#knownartists) |
-| `uploader` | `uploader` | `Uploader` | `trackparse_parse_options_set_uploader` | none | The YouTube channel. In youtube mode it becomes the artist when there's no separator. `- Topic` and `VEVO` are dropped. See [the uploader fallback](/trackparse/guides/modes/#the-uploader-fallback) |
-| `splitAnd` | `split_and` | `SplitAnd` | `trackparse_parse_options_set_split_and` | `"auto"` | `auto` splits on `and` only after a comma (`A, B and C`), so `Simon and Garfunkel` stays whole. `always` and `never` do what they say. See [`and` is special](/trackparse/guides/artists/#and-is-special) |
-| `keywords` | `keywords` | `Keywords` | `trackparse_parse_options_add_version_head` and the other `add_` setters | none | Extra vocabulary, see [keywords](#keywords) below |
+The C setters are on the options handle and are named after the option in snake_case:
+`trackparse_parse_options_set_mode`, `_set_uploader` and `_set_split_and`. A list option is an
+`add_` setter that takes one entry, named in the singular: `_add_known_artist`. `keywords` has no
+setter of its own; each of its lists is an `add_` setter, listed under [keywords](#keywords).
 
-All five work the same in [`parse`](/trackparse/reference/parse/),
+| JavaScript | Python and Rust<br/>Go | Default | |
+|---|---|---|---|
+| `mode` | `mode`<br/>`Mode` | `"auto"` | Which [mode](/trackparse/guides/modes/) to use. `auto` picks `filename`, `youtube` or `clean` from the string |
+| `knownArtists` | `known_artists`<br/>`KnownArtists` | empty | Names that are never split, like `Chase & Status` or `Earth, Wind & Fire`. Matched case- and accent-insensitively. See [knownArtists](/trackparse/guides/artists/#knownartists) |
+| `uploader` | `uploader`<br/>`Uploader` | none | The YouTube channel. In youtube mode it becomes the artist when there's no separator. `- Topic` and `VEVO` are dropped. See [the uploader fallback](/trackparse/guides/modes/#the-uploader-fallback) |
+| `splitAnd` | `split_and`<br/>`SplitAnd` | `"auto"` | `auto` splits on `and` only after a comma or semicolon (`A, B and C`), so `Simon and Garfunkel` stays whole. `always` and `never` do what they say. See [`and` is special](/trackparse/guides/artists/#and-is-special) |
+| `keywords` | `keywords`<br/>`Keywords` | none | Extra vocabulary, see [keywords](#keywords) below |
+
+All five options work the same in [`parse`](/trackparse/reference/parse/),
 [`parseArtists`](/trackparse/reference/functions/#parseartistsinput-options) (which ignores `mode`
 and `uploader`) and [`createParser`](/trackparse/reference/functions/#createparseroptions). The
 playground has a field for each but `keywords`:
@@ -456,10 +461,16 @@ In C they are the setters of a `trackparse_tracklist_options` handle
 (`trackparse_tracklist_options_new()`), passed to `trackparse_parse_tracklist_with`. The
 rules are [R13.10](/trackparse/reference/spec/#r1310-options):
 
-| JavaScript | Python and Rust | Go | C | Default | Description |
-|---|---|---|---|---|---|
-| [`audioSeconds`](/trackparse/guides/tracklists/#options) | `audio_seconds` | `AudioSeconds` | `trackparse_tracklist_options_set_audio_seconds` | none | Length of the audio. Turns on the [`time-after-audio-end`](/trackparse/reference/warnings/#tracklist-warnings:~:text=time%2Dafter%2Daudio%2Dend) check |
-| [`markerWords`](/trackparse/guides/tracklists/#options) | `marker_words` | `MarkerWords` | `trackparse_tracklist_options_add_marker_word` | empty | Extra marker words. With `["drop"]`, `03:00 Drop` is a marker, not a track |
+| JavaScript | Python and Rust<br/>Go | Default | Description |
+|---|---|---|---|
+| [`audioSeconds`](/trackparse/guides/tracklists/#options) | `audio_seconds`<br/>`AudioSeconds` | none | Length of the audio. Turns on the [`time-after-audio-end`](/trackparse/reference/warnings/#tracklist-warnings:~:text=time%2Dafter%2Daudio%2Dend) check |
+| [`markerWords`](/trackparse/guides/tracklists/#options) | `marker_words`<br/>`MarkerWords` | empty | Extra marker words. With `["drop"]`, `03:00 Drop` is a marker, not a track |
+
+In C these two are `trackparse_tracklist_options_set_audio_seconds` and
+`trackparse_tracklist_options_add_marker_word` (one word per call). The shared options have the
+same setters as on the parse options handle, with `trackparse_tracklist_options_` in front:
+`_set_mode`, `_set_split_and`, `_add_known_artist` and the five keyword setters. There is no
+uploader on a tracklist.
 
 In Go the zero value of `TracklistOptions` is the defaults too: an empty `Mode` means
 `ModeTracklist`, and `ModeAuto` asks for auto mode on each line. `AudioSeconds` is a `*float64`,

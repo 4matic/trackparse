@@ -302,6 +302,19 @@ a.tp-mode:hover code {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
+/* Code wraps only at spaces: breaking inside a token split `->` and names in two. A token wider
+   than the panel (a long string literal) scrolls instead. */
+.tp-json.tp-code {
+  overflow-wrap: normal;
+}
+/* On narrow screens a wrapped continuation line starts at the left edge and loses its indentation,
+   so code keeps its lines and scrolls sideways instead. */
+@media (max-width: 50rem) {
+  .tp-json.tp-code {
+    white-space: pre;
+    overflow-x: auto;
+  }
+}
 .s-kw { color: var(--tp-syn-kw); }
 .s-str { color: var(--tp-syn-str); }
 .s-num { color: var(--tp-syn-num); }

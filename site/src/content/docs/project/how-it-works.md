@@ -5,8 +5,8 @@ description: The parsing pipeline, why it has no regex lookaround, and how track
 
 trackparse is a fixed pipeline of small hand-written scanners. There are no regexes with lookaround
 or backreferences, so nothing backtracks. A 10,000-code-point input takes at most tens of
-milliseconds in JavaScript, Rust and Go, and well under a second in Python.
-The same design is what lets the JavaScript, Python, Rust, Go and C packages give the same output:
+milliseconds in JavaScript, Rust, Go and C, and well under a second in Python. The same design
+is what lets the JavaScript, Python, Rust, Go and C packages give the same output:
 each step is a short function that reads the same way in all five languages.
 
 Each step below is a rule group in the [spec](/trackparse/reference/spec/):
@@ -28,8 +28,9 @@ exposes its first step on its own. Every port keeps one source file per step, wi
 IDs in the comments:
 [`js/src`](https://github.com/4matic/trackparse/tree/main/js/src),
 [`python/src/trackparse`](https://github.com/4matic/trackparse/tree/main/python/src/trackparse),
-[`rust/src`](https://github.com/4matic/trackparse/tree/main/rust/src) and
-[`go`](https://github.com/4matic/trackparse/tree/main/go).
+[`rust/src`](https://github.com/4matic/trackparse/tree/main/rust/src),
+[`go`](https://github.com/4matic/trackparse/tree/main/go) and
+[`c/src`](https://github.com/4matic/trackparse/tree/main/c/src).
 
 ## Brackets first
 
@@ -73,7 +74,7 @@ every port gives the same bytes:
 - A "digit" is `0` to `9` and nothing else.
 - "Letter" and "uppercase letter" mean the Unicode general categories L and Lu, not whatever a
   language's `isalpha` accepts ([R0.6](/trackparse/reference/spec/#r0-portability:~:text=R0.6%20Letter%20means)).
-- Any string must produce a result. Nothing throws or panics ([R0.8](/trackparse/reference/spec/#r0-portability:~:text=R0.8%20Parsing%20is)).
+- Any string must produce a result. Nothing throws or panics, and the C library returns `NULL` only when memory runs out ([R0.8](/trackparse/reference/spec/#r0-portability:~:text=R0.8%20Parsing%20is)).
 
 [Ports](/trackparse/project/ports/) lists the places where a language's standard library disagreed
 with these rules.
@@ -84,7 +85,7 @@ with these rules.
 lines, keeping each line's terminator. A small scanner reads the time at the start of each line, and
 the rest goes through [`parse()`](/trackparse/reference/parse/) in tracklist mode.
 
-Two decisions look across lines. A bare track number is only accepted when a neighbour continues
+Two decisions look across lines. A bare track number is only accepted when a neighbor continues
 the sequence. And an unspaced dash only splits when at least half the list uses spaced dashes. To
 make both decisions without parsing everything twice, each line first gets a cheap probe (time,
 normalization, prefixes), then one real parse. The checks run last, over the finished entries.

@@ -53,16 +53,36 @@ Each port throws thousands of random strings at the parser to check the
 [invariants](/trackparse/reference/spec/#invariants) from the spec. The JavaScript suite uses
 [fast-check](https://github.com/dubzzz/fast-check) and the Python suite uses
 [Hypothesis](https://hypothesis.works). The Rust, Go and C suites each have a small seeded
-generator of their own, so none of them needs an extra test dependency. The Go module also has
-fuzz targets for `Parse`, [`ParseArtists`](/trackparse/reference/functions/#parseartistsinput-options), `Format`, [`ParseTracklist`](/trackparse/reference/tracklist/#parsetracklisttext-options), [`ApplyEdits`](/trackparse/reference/tracklist/#applyeditstext-edits-options), `Track.UnmarshalJSON` and the
-internal pipeline (`go test -fuzz`) that run the same checks on whatever the fuzzer finds, and a
-test that calls the parser, the tracklist functions and the edits from 16 goroutines at once under
-the race detector.
+generator of their own, so none of them needs an extra test dependency. The checks:
+
+- it never throws or panics, on any input, in any mode;
+- a 10,000-code-point input finishes inside a ceiling: 1 s in JavaScript and Python, 2 s in Rust,
+  Go and C (Go and C widen it ten times under the race detector or a sanitizer). It normally
+  takes tens of milliseconds in JavaScript and Rust, a few milliseconds in Go and C, and well
+  under a second in Python. The ceiling is loose so that a busy CI machine doesn't fail the run
+  but a blowup does;
+- [`normalize`](/trackparse/reference/functions/#normalizeinput) is idempotent;
+- whitespace, dash and zero-width noise don't change the result;
+- every output validates against the JSON Schema (JavaScript and Python with a schema library,
+  Go with a small validator of its own, C through a Node script that checks every output the
+  fixture runner writes; the Rust output is compared with JavaScript byte for byte instead, see
+  below);
+- no word of the input goes missing from the output (the Rust, Go and C suites);
+- `parse(format(parse(s)))` round-trips.
+
+The Go module also has fuzz targets for `Parse`,
+[`ParseArtists`](/trackparse/reference/functions/#parseartistsinput-options), `Format`,
+[`ParseTracklist`](/trackparse/reference/tracklist/#parsetracklisttext-options),
+[`ApplyEdits`](/trackparse/reference/tracklist/#applyeditstext-edits-options),
+`Track.UnmarshalJSON` and the internal pipeline (`go test -fuzz`) that run the same checks on
+whatever the fuzzer finds, and a test that calls the parser, the tracklist functions and the edits
+from 16 goroutines at once under the race detector.
 
 The C library has the same kinds of tests, plus a few that only C needs:
 
 - libFuzzer targets for `parse`, `parse_artists`, `format`, `parse_tracklist`, `apply_edits` and
-  the JSON reader of the tests, seeded with every fixture input and checking the same invariants;
+  the JSON door that the cross-port diff runs, seeded with every fixture input and checking the
+  same invariants;
 - an out-of-memory test: for about 50 inputs across the API, the n-th allocation fails, for every n
   until the call succeeds, and each call must return `NULL` or the correct result and free every
   block it took;
@@ -73,21 +93,6 @@ The C library has the same kinds of tests, plus a few that only C needs:
 - the suite under AddressSanitizer with UndefinedBehaviorSanitizer (GCC and Clang),
   MemorySanitizer and Valgrind, so an out-of-bounds read, an uninitialized value, a leak or
   undefined behaviour fails it.
-
-- it never throws or panics, on any input, in any mode;
-- a 10,000-code-point input finishes inside a ceiling: 1 s in JavaScript and Python, 2 s in Rust,
-  Go and C (Go and C widen it ten times under the race detector or a sanitizer).
-  It normally takes tens of milliseconds in JavaScript and Rust, a few milliseconds in Go and C and
-  well under a second in Python;
-  the ceiling is loose so that a busy CI machine doesn't
-  fail the run but a blowup does;
-- [`normalize`](/trackparse/reference/functions/#normalizeinput) is idempotent;
-- whitespace, dash and zero-width noise don't change the result;
-- every output validates against the JSON Schema (JavaScript, Python, Go and C, where the fixture
-  runner writes every output and a Node script checks it; the Rust output is compared with
-  JavaScript byte for byte instead, see below);
-- no word of the input goes missing from the output (the Rust, Go and C suites);
-- `parse(format(parse(s)))` round-trips.
 
 For tracklists, on random multi-line text and random edit lists:
 
@@ -111,7 +116,7 @@ JSON output, tracklists and edits included. The difference count is zero.
 same with random input, which reaches places no fixture does. The Rust crate and the Go module were
 each run against JavaScript on about 500,000 random single-track cases and 290,000 random
 tracklists with edits, again with zero differences. CI runs the C library against JavaScript on
-50,000 random tracks and 10,000 tracklists on every push.
+50,000 random tracks and 10,000 tracklists on every push and pull request that `c.yml` runs on.
 
 ## Real tracklists
 
@@ -121,7 +126,8 @@ became a handwritten fixture instead, which is why the tracklist fixtures talk a
 
 ## In CI
 
-Every push runs one workflow per port, plus one for the spec:
+Every push to `main` runs one workflow per port, plus one for the spec. A pull request runs the
+workflows whose files it touches:
 
 | Workflow | What it runs |
 |---|---|
@@ -157,10 +163,10 @@ TRACKPARSE_REPORT=1 go test -run TestFixtures -v .   # pass rate per file and pe
 
 # C (a C11 compiler, CMake 3.16 or newer)
 cd ..
-cmake -S c -B c/build
-cmake --build c/build
-ctest --test-dir c/build --output-on-failure            # the same fixtures, schema check, unit tests
-TRACKPARSE_REPORT=1 c/build/trackparse-fixtures spec/fixtures/*/*.json   # pass rate per file and per rule
+cmake -S c -B c/build-test
+cmake --build c/build-test
+ctest --test-dir c/build-test --output-on-failure            # the same fixtures, schema check, unit tests
+TRACKPARSE_REPORT=1 c/build-test/trackparse-fixtures spec/fixtures/*/*.json   # pass rate per file and per rule
 cmake -S c -B c/build-asan -DTRACKPARSE_SANITIZE=ON     # the same suite under ASan and UBSan
 cmake --build c/build-asan && ctest --test-dir c/build-asan -LE consumer
 
@@ -169,6 +175,9 @@ pnpm build
 node scripts/compare-ports.mjs   # must print "differences: 0"
 node scripts/fuzz-ports.mjs      # the same diff on random tracks and tracklists with edits
 ```
+
+The C suite builds in `c/build-test`, not `c/build`: `compare-ports` configures `c/build` with the
+tests off.
 
 ## See also
 

@@ -18,9 +18,8 @@ It comes as five packages with the same behaviour: `trackparse` on
 and a C library with one header,
 [`trackparse.h`](https://github.com/4matic/trackparse/blob/main/c/include/trackparse.h), released
 as a source tarball and an amalgamation on each
-[GitHub Release](https://github.com/4matic/trackparse/releases) from 0.7.0 on.
-Every example
-on this site has a tab for each language. The API docs of the Rust crate are on
+[GitHub Release](https://github.com/4matic/trackparse/releases) from 0.7.0 on. Every example on
+this site has a tab for each language. The API docs of the Rust crate are on
 [docs.rs](https://docs.rs/trackparse), and those of the Go module on
 [pkg.go.dev](https://pkg.go.dev/github.com/4matic/trackparse/go).
 
@@ -154,8 +153,7 @@ dataclass with snake_case attributes, and `to_dict()` turns it into the JSON abo
 struct with snake_case fields, and `to_json()` writes that JSON as a string. In Go it is a struct
 with exported CamelCase fields, and `json.Marshal` writes that JSON. In C it is a read-only
 struct with snake_case members that owns its memory, and `trackparse_track_to_json` writes that
-JSON. The
-[`parse` reference](/trackparse/reference/parse/) explains every field, and
+JSON. The [`parse` reference](/trackparse/reference/parse/) explains every field, and
 [Serializing to JSON](/trackparse/reference/parse/#serializing-to-json) shows the round trip in each
 language. [Try this track in the playground](/trackparse/playground/#track=Queen%20-%20Bohemian%20Rhapsody%20%28Live%20at%20Wembley%201986%29).
 
@@ -164,14 +162,68 @@ language. [Try this track in the playground](/trackparse/playground/#track=Queen
 The docs use the JavaScript and JSON names in running text. Python and Rust use snake_case for the
 same things, Go uses exported CamelCase, and C prefixes every name with `trackparse_`:
 
-| | JavaScript | Python | Rust | Go | C |
-|---|---|---|---|---|---|
-| Parse | [`parse(s, options?)`](/trackparse/reference/parse/) | `parse(s, **options)` | [`parse(s)`](https://docs.rs/trackparse/latest/trackparse/fn.parse.html), [`parse_with(s, &options)`](https://docs.rs/trackparse/latest/trackparse/fn.parse_with.html) | [`Parse(s)`](https://pkg.go.dev/github.com/4matic/trackparse/go#Parse), [`ParseWith(s, options)`](https://pkg.go.dev/github.com/4matic/trackparse/go#ParseWith) | `trackparse_parse(s, len)`, `trackparse_parse_with(s, len, options)` |
-| A field | `track.fullTitle` | `track.full_title` | `track.full_title` | `track.FullTitle` | `track->full_title` |
-| An option | [`{ knownArtists: […] }`](/trackparse/reference/options/) | `known_artists=[…]` | [`ParseOptions::new().known_artists([…])`](https://docs.rs/trackparse/latest/trackparse/struct.ParseOptions.html) | [`ParseOptions{KnownArtists: …}`](https://pkg.go.dev/github.com/4matic/trackparse/go#ParseOptions) | `trackparse_parse_options_add_known_artist(options, …)` |
-| A value | `"remix"`, `null` | `"remix"`, `None` | `VersionType::Remix`, `None` | `VersionTypeRemix`, `nil` | `TRACKPARSE_VERSION_REMIX`, `NULL` |
-| Lists | arrays | tuples | `Vec` | slices | a pointer and a `_count` |
-| JSON | `JSON.stringify(track)` | `track.to_dict()` | `track.to_json()`, or `serde` | `json.Marshal(track)` | `trackparse_track_to_json(track)` |
+<Tabs syncKey="lang">
+<TabItem label="JavaScript">
+
+| What | JavaScript |
+|---|---|
+| Parse | [`parse(s, options?)`](/trackparse/reference/parse/) |
+| A field | `track.fullTitle` |
+| An option | [`{ knownArtists: […] }`](/trackparse/reference/options/) |
+| A value | `"remix"`, `null` |
+| Lists | arrays |
+| JSON | `JSON.stringify(track)` |
+
+</TabItem>
+<TabItem label="Python">
+
+| What | Python |
+|---|---|
+| Parse | `parse(s, **options)` |
+| A field | `track.full_title` |
+| An option | `known_artists=[…]` |
+| A value | `"remix"`, `None` |
+| Lists | tuples |
+| JSON | `track.to_dict()` |
+
+</TabItem>
+<TabItem label="Rust">
+
+| What | Rust |
+|---|---|
+| Parse | [`parse(s)`](https://docs.rs/trackparse/latest/trackparse/fn.parse.html), [`parse_with(s, &options)`](https://docs.rs/trackparse/latest/trackparse/fn.parse_with.html) |
+| A field | `track.full_title` |
+| An option | [`ParseOptions::new().known_artists([…])`](https://docs.rs/trackparse/latest/trackparse/struct.ParseOptions.html) |
+| A value | `VersionType::Remix`, `None` |
+| Lists | `Vec` |
+| JSON | `track.to_json()`, or `serde` |
+
+</TabItem>
+<TabItem label="Go">
+
+| What | Go |
+|---|---|
+| Parse | [`Parse(s)`](https://pkg.go.dev/github.com/4matic/trackparse/go#Parse), [`ParseWith(s, options)`](https://pkg.go.dev/github.com/4matic/trackparse/go#ParseWith) |
+| A field | `track.FullTitle` |
+| An option | [`ParseOptions{KnownArtists: …}`](https://pkg.go.dev/github.com/4matic/trackparse/go#ParseOptions) |
+| A value | `VersionTypeRemix`, `nil` |
+| Lists | slices |
+| JSON | `json.Marshal(track)` |
+
+</TabItem>
+<TabItem label="C">
+
+| What | C |
+|---|---|
+| Parse | `trackparse_parse(s, len)`, `trackparse_parse_with(s, len, options)` |
+| A field | `track->full_title` |
+| An option | `trackparse_parse_options_add_known_artist` |
+| A value | `TRACKPARSE_VERSION_REMIX`, `NULL` |
+| Lists | a pointer and a `_count` |
+| JSON | `trackparse_track_to_json(track)` |
+
+</TabItem>
+</Tabs>
 
 [Other functions](/trackparse/reference/functions/) has the full table of function names.
 

@@ -4,7 +4,10 @@
 // The switch shares its choice with the docs' language tabs and the playground (lib/lang.ts).
 import Check from "@lucide/astro/icons/check";
 import Copy from "@lucide/astro/icons/copy";
-import { C_FETCHCONTENT, PACKAGE } from "../lib/lang";
+import { C_FETCHCONTENT, C_RELEASED, PACKAGE } from "../lib/lang";
+
+const C_README = "https://github.com/4matic/trackparse/tree/main/c#readme";
+const C_SOURCE = "https://github.com/4matic/trackparse/tree/main/c#from-source";
 
 const pms = [
   { lang: "js", label: "npm" },
@@ -32,10 +35,21 @@ const command = (lang: (typeof pms)[number]["lang"]) => (lang === "c" ? C_FETCHC
   </div>
   <p class="pkgs">
     Published on <a href={PACKAGE.js.url}>npm</a>, <a href={PACKAGE.py.url}>PyPI</a>,{" "}
-    <a href={PACKAGE.rs.url}>crates.io</a> and the Go module proxy; the C library is a tarball on{" "}
-    <a href={PACKAGE.c.url}>GitHub Releases</a>. The Rust API docs are on{" "}
-    <a href="https://docs.rs/trackparse">docs.rs</a>, the Go API docs on <a href={PACKAGE.go.url}>pkg.go.dev</a>, the C
-    API in the <a href="https://github.com/4matic/trackparse/tree/main/c#readme">C README</a>.
+    <a href={PACKAGE.rs.url}>crates.io</a> and the Go module proxy;{" "}
+    {
+      C_RELEASED ? (
+        <>
+          the C library is a tarball on <a href={PACKAGE.c.url}>GitHub Releases</a>.
+        </>
+      ) : (
+        <>
+          the C library ships as a tarball on <a href={PACKAGE.c.url}>GitHub Releases</a> from 0.7.0, which is not
+          out yet; until then, <a href={C_SOURCE}>build it from the repository</a>.
+        </>
+      )
+    }{" "}
+    The Rust API docs are on <a href="https://docs.rs/trackparse">docs.rs</a>, the Go API docs on{" "}
+    <a href={PACKAGE.go.url}>pkg.go.dev</a>, the C API in the <a href={C_README}>C README</a>.
   </p>
 </div>
 
@@ -54,6 +68,8 @@ const command = (lang: (typeof pms)[number]["lang"]) => (lang === "c" ? C_FETCHC
   }
   .seg {
     display: flex;
+    /* The buttons keep their height when the CMake lines make the box taller. */
+    align-items: center;
     padding: 0.25rem;
     gap: 0.15rem;
     border-right: 1px solid var(--tp-border);
