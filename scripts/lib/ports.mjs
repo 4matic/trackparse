@@ -118,7 +118,10 @@ export function runLines(name, command, args, cwd) {
 }
 
 const cDir = join(root, "c");
-const cBuild = join(cDir, "build");
+// TRACKPARSE_C_BUILD picks another build folder (an agent or a second checkout using c/build).
+const cBuild = process.env.TRACKPARSE_C_BUILD
+  ? resolve(root, process.env.TRACKPARSE_C_BUILD)
+  : join(cDir, "build");
 
 /** The newest modification time under the C sources the dump binary is built from. */
 function newestCSource() {
