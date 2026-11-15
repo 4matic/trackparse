@@ -243,12 +243,50 @@ static tp_str run_fixture(tp_json file, tp_json c, tp_str id) {
   return mismatch;
 }
 
+/* The body of run_case inside its armed scope: the failure text to keep (heap), or NULL when the
+ * case behaves as its status demands (*ok true). A function of its own, so run_case, which calls
+ * setjmp, holds no temporaries a longjmp could clobber (GCC -Wclobbered). */
+static char *case_body(tp_json file, tp_json c, tp_json skip, tp_str id, bool *ok) {
+  tp_str reason, problem;
+  tp_json input = tp_json_null();
+  problem = run_fixture(file, c, id);
+  if (get_string(skip, tp_str_cstr(id), &reason)) {
+    if (problem.n == 0) {
+      problem = tp_concat3(TP_S("skip-listed ("), reason,
+                           TP_S(") but now passes: remove it from tests/skip.json"));
+    } else {
+      problem = TP_EMPTY;
+    }
+  }
+  *ok = problem.n == 0;
+  if (!*ok && failures_n < MAX_FAILURES) {
+    tp_buf b = {0};
+    tp_str text;
+    tp_json_get(c, TP_S("input"), &input);
+    tp_buf_str(&b, id);
+    tp_buf_cstr(&b, "\n  input: ");
+    tp_buf_str(&b, tp_json_show(input));
+    tp_buf_cstr(&b, "\n  ");
+    tp_buf_str(&b, problem);
+    text = tp_buf_done(&b);
+    return xstrndup(text.p, text.n);
+  }
+  return NULL;
+}
+
+static void count_rules(tp_json c, bool ok) {
+  tp_json rules_v = tp_json_null();
+  tp_json_get(c, TP_S("rules"), &rules_v);
+  for (size_t i = 0; rules_v.kind == TP_JSON_ARRAY && i < rules_v.arr_n; i++) {
+    if (rules_v.arr[i].kind == TP_JSON_STRING) count_rule(rules_v.arr[i].str, ok);
+  }
+}
+
 /* Runs one case in its own scope and does the bookkeeping: -1 when TRACKPARSE_ONLY filters it
  * out, 1 when it behaves as its status demands, 0 when not. */
 static int run_case(tp_json file, tp_json c, tp_json skip, const char *name, const char *only) {
   tp_scope s;
-  tp_str id = TP_EMPTY, reason, problem;
-  tp_json rules_v = tp_json_null(), input = tp_json_null();
+  tp_str id = TP_EMPTY;
   char *volatile kept = NULL;
   volatile bool ok = false;
   get_string(c, "id", &id);
@@ -261,29 +299,10 @@ static int run_case(tp_json file, tp_json c, tp_json skip, const char *name, con
     tp_scope_abort(&s);
     kept = xstrndup("out of memory", 13);
   } else {
+    bool passed = false;
     tp_scope_arm(&s);
-    problem = run_fixture(file, c, id);
-    if (get_string(skip, tp_str_cstr(id), &reason)) {
-      if (problem.n == 0) {
-        problem = tp_concat3(TP_S("skip-listed ("), reason,
-                             TP_S(") but now passes: remove it from tests/skip.json"));
-      } else {
-        problem = TP_EMPTY;
-      }
-    }
-    ok = problem.n == 0;
-    if (!ok && failures_n < MAX_FAILURES) {
-      tp_buf b = {0};
-      tp_str text;
-      tp_json_get(c, TP_S("input"), &input);
-      tp_buf_str(&b, id);
-      tp_buf_cstr(&b, "\n  input: ");
-      tp_buf_str(&b, tp_json_show(input));
-      tp_buf_cstr(&b, "\n  ");
-      tp_buf_str(&b, problem);
-      text = tp_buf_done(&b);
-      kept = xstrndup(text.p, text.n);
-    }
+    kept = case_body(file, c, skip, id, &passed);
+    ok = passed;
     tp_scope_close(&s);
     tp_arena_free(s.arena);
   }
@@ -294,10 +313,7 @@ static int run_case(tp_json file, tp_json c, tp_json skip, const char *name, con
       free(kept);
     }
   }
-  tp_json_get(c, TP_S("rules"), &rules_v);
-  for (size_t i = 0; rules_v.kind == TP_JSON_ARRAY && i < rules_v.arr_n; i++) {
-    if (rules_v.arr[i].kind == TP_JSON_STRING) count_rule(rules_v.arr[i].str, ok);
-  }
+  count_rules(c, ok);
   return ok ? 1 : 0;
 }
 
@@ -311,13 +327,41 @@ static const char *display_name(const char *path) {
   return best ? best : path;
 }
 
+/* The body of run_file inside its armed scope (a function of its own for -Wclobbered, as
+ * case_body): false when the file is not JSON. */
+static bool file_body(const char *path, const char *text, size_t len, tp_json skip,
+                      const char *only) {
+  tp_json data, cases;
+  tp_str whole;
+  whole.p = text;
+  whole.n = len;
+  if (!tp_json_parse(whole, &data)) {
+    fprintf(stderr, "runner: %s: invalid JSON\n", path);
+    return false;
+  }
+  if (tp_json_get(data, TP_S("cases"), &cases) && cases.kind == TP_JSON_ARRAY) {
+    const char *name = display_name(path);
+    file_count *fc = &files[files_n++];
+    fc->name = xstrndup(name, strlen(name));
+    fc->total = fc->ok = 0;
+    for (size_t i = 0; i < cases.arr_n; i++) {
+      int r = run_case(data, cases.arr[i], skip, name, only);
+      if (r < 0) continue;
+      fc->total++;
+      if (r > 0) fc->ok++;
+    }
+  }
+  /* else: metadata such as generated/summary.json */
+  return true;
+}
+
 /* Runs every case of one file inside a scope that holds the file's JSON. false when the file
  * could not be read. */
 static bool run_file(const char *path, tp_json skip, const char *only) {
   tp_scope s;
   size_t len = 0;
   char *text = read_file(path, &len);
-  volatile bool good = true;
+  bool good;
   if (!text) {
     fprintf(stderr, "runner: cannot read %s\n", path);
     return false;
@@ -333,28 +377,7 @@ static bool run_file(const char *path, tp_json skip, const char *only) {
     return false;
   }
   tp_scope_arm(&s);
-  {
-    tp_json data, cases;
-    tp_str whole;
-    whole.p = text;
-    whole.n = len;
-    if (!tp_json_parse(whole, &data)) {
-      fprintf(stderr, "runner: %s: invalid JSON\n", path);
-      good = false;
-    } else if (tp_json_get(data, TP_S("cases"), &cases) && cases.kind == TP_JSON_ARRAY) {
-      const char *name = display_name(path);
-      file_count *fc = &files[files_n++];
-      fc->name = xstrndup(name, strlen(name));
-      fc->total = fc->ok = 0;
-      for (size_t i = 0; i < cases.arr_n; i++) {
-        int r = run_case(data, cases.arr[i], skip, name, only);
-        if (r < 0) continue;
-        fc->total++;
-        if (r > 0) fc->ok++;
-      }
-    }
-    /* else: metadata such as generated/summary.json */
-  }
+  good = file_body(path, text, len, skip, only);
   tp_scope_close(&s);
   tp_arena_free(s.arena);
   free(text);
