@@ -22,7 +22,7 @@ doesn't recognize stays in the title, word for word
 
 This is the Python port of [trackparse](https://github.com/4matic/trackparse). Its behaviour is
 defined by a [shared spec](https://4matic.github.io/trackparse/reference/spec/) and pinned
-by [13,130 fixtures](https://4matic.github.io/trackparse/project/testing/). It passes all of them, and for every fixture input its output is byte-identical
+by [13,565 fixtures](https://4matic.github.io/trackparse/project/testing/). It passes all of them, and for every fixture input its output is byte-identical
 to the [JavaScript, Rust, Go and C packages](#other-languages).
 
 - Python 3.9 to 3.14
@@ -102,6 +102,7 @@ print(json.dumps(track.to_dict(), indent=2))
     }
   ],
   "year": null,
+  "label": null,
   "flags": { "explicit": false, "clean": false, "unknownArtist": false, "unknownTitle": false },
   "junk": [{ "raw": "Official Video", "kind": "video" }],
   "warnings": []
@@ -120,7 +121,7 @@ print(json.dumps(track.to_dict(), indent=2))
 parse(input, *, mode="auto", uploader=None, known_artists=(), split_and="auto", keywords=None) -> ParsedTrack
 parse_artists(input, *, <same options>) -> list[Artist]
 format_track(track, *, feat="source", feat_marker=None, joiners="original",
-             versions="all", producers=True, position=False) -> str
+             versions="all", producers=True, position=False, label=True) -> str
 normalize(input) -> str
 all_artists(track) -> list[Artist]
 create_parser(**options) -> Parser   # Parser.parse(...), Parser.parse_artists(...)
@@ -192,9 +193,13 @@ parse("Artist - Song [Some Label Rip]", keywords={"junk": {"some label rip": "la
 | `full_title` | `str` | `title` with the versions re-attached |
 | `versions` | `tuple[Version, ...]` | Remixes and other versions, left to right |
 | `year` | `int \| None` | From `(2015)` or `- 2015` |
+| `label` | `str \| None` | Record [label after a spaced bullet](https://4matic.github.io/trackparse/guides/junk-and-flags/#labels-after-a-bullet): `Stigma • VISION` gives `'VISION'` |
 | `flags` | `Flags` | `explicit`, `clean`, `unknown_artist`, `unknown_title` |
 | `junk` | `tuple[Junk, ...]` | What was taken out, each with a `kind` |
 | `warnings` | `tuple[Warning, ...]` | Heuristics that fired |
+
+`label` is declared last in the dataclass, with the default `None`, so code that builds a
+`ParsedTrack` by position keeps working; `to_dict()` writes it after `year`, as in JSON.
 
 `Artist(name, role, joiner, source)`:
 
@@ -220,7 +225,8 @@ parse("Queen - Bohemian Rhapsody (Live at Wembley 1986)").versions[0]
   `dub`, `mix`, `extended`, `radio`, `club`, `original`, `instrumental`, `acapella`, `live`,
   `acoustic`, `remaster`, `demo`, `reprise`, `cover`, `version`, `spedUp`, `slowed`, `nightcore`.
 - `JunkKind` ([junk kinds](https://4matic.github.io/trackparse/reference/parse/#junk-kinds)): `video`, `audio`, `lyrics`, `quality`, `promo`,
-  `platform`, `label`, `genre`, `other`.
+  `platform`, `label`, `genre`, `other`, `note`. The kind `label` is a label name in brackets
+  (`[NCS Release]`); `note` is text after a second bullet, next to the `label` attribute.
 - `Warning`: see [Warnings](#warnings).
 
 These are plain strings, typed as `Literal` aliases (see [Typing](#typing)).
@@ -269,6 +275,7 @@ Renders a track back to a string ([format options](https://4matic.github.io/trac
 | `versions` | `"all"` | `"all"` or `"none"` |
 | `producers` | `True` | Include `(prod. ...)` credits |
 | `position` | `False` | Include the track number (`01. `) |
+| `label` | `True` | Include the label after a spaced bullet (` • VISION`) |
 
 ```python
 from trackparse import format_track, parse
@@ -282,6 +289,10 @@ format_track(t, feat="omit", versions="none")  # 'Wilkinson - Afterglow'
 format_track(t, feat_marker="featuring")
 # 'Wilkinson featuring Becky Hill - Afterglow (Sub Focus Remix)'
 format_track(t, position=True)  # '01. Wilkinson ft. Becky Hill - Afterglow (Sub Focus Remix)'
+
+l = parse("Noisia - concussion • VISION • VISION RADIO RELOAD")
+format_track(l)  # 'Noisia - concussion • VISION'
+format_track(l, label=False)  # 'Noisia - concussion'
 ```
 
 ### `normalize(input)`
@@ -563,7 +574,7 @@ The package ships `py.typed` and passes `mypy --strict`.
 
 **Docs:** [How it's tested](https://4matic.github.io/trackparse/project/testing/)
 
-- 13,130 shared fixtures: 1,203 written by hand and 11,927 generated from the rules. Every output
+- 13,565 shared fixtures: 1,280 written by hand and 12,285 generated from the rules. Every output
   is also validated against the JSON Schema.
 - Property tests with [Hypothesis](https://hypothesis.works) for the spec's invariants: no
   exception on any string, `normalize` is idempotent, whitespace and dash noise doesn't change
@@ -605,7 +616,9 @@ fixture input. You can parse in one language and read the result in another.
 
 - `parse()` takes one track string. Whole tracklists go through `trackparse.tracklist`, which reads
   start times only: no durations, trailing times or time ranges.
-- Catalog numbers, key and BPM are not fields. They stay in the title.
+- Catalog numbers, key and BPM are not fields. They stay in the title. A record label is a field
+  only after a spaced bullet (`Stigma • VISION`), and a bullet inside a title (`Song • Part 2`) is
+  read as a label too.
 - There is no artist database. Pass `known_artists` for names that contain a joiner
   (`Earth, Wind & Fire`).
 

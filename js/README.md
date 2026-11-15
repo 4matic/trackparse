@@ -23,7 +23,7 @@ doesn't recognize stays in the title, word for word
 This is the JavaScript and TypeScript package of
 [trackparse](https://github.com/4matic/trackparse), and the reference implementation. Its behaviour
 is defined by a [shared spec](https://4matic.github.io/trackparse/reference/spec/) and
-pinned by [13,130 fixtures](https://4matic.github.io/trackparse/project/testing/). It passes all of them, and the
+pinned by [13,565 fixtures](https://4matic.github.io/trackparse/project/testing/). It passes all of them, and the
 [Python, Rust, Go and C packages](#other-languages) return the same output for every one.
 
 - Node 18 or later, browsers and other runtimes (no Node-specific APIs)
@@ -102,6 +102,7 @@ console.log(JSON.stringify(track, null, 2));
     }
   ],
   "year": null,
+  "label": null,
   "flags": { "explicit": false, "clean": false, "unknownArtist": false, "unknownTitle": false },
   "junk": [{ "raw": "Official Video", "kind": "video" }],
   "warnings": []
@@ -190,6 +191,7 @@ interface ParsedTrack {
   fullTitle: string;                      // title with the versions re-attached
   versions: Version[];                    // remixes and other versions, left to right
   year: number | null;                    // from "(2015)" or "- 2015"
+  label: string | null;                   // record label after a spaced bullet: "Stigma • VISION"
   flags: { explicit: boolean; clean: boolean; unknownArtist: boolean; unknownTitle: boolean };
   junk: { raw: string; kind: JunkKind }[]; // what was taken out, each with a kind
   warnings: Warning[];                    // heuristics that fired
@@ -228,7 +230,8 @@ parse("Queen - Bohemian Rhapsody (Live at Wembley 1986)").versions[0];
   `dub`, `mix`, `extended`, `radio`, `club`, `original`, `instrumental`, `acapella`, `live`,
   `acoustic`, `remaster`, `demo`, `reprise`, `cover`, `version`, `spedUp`, `slowed`, `nightcore`.
 - `JunkKind` ([junk kinds](https://4matic.github.io/trackparse/reference/parse/#junk-kinds)): `video`, `audio`, `lyrics`, `quality`, `promo`,
-  `platform`, `label`, `genre`, `other`.
+  `platform`, `label`, `genre`, `other`, `note`. The kind `label` is a label name in brackets
+  (`[NCS Release]`); `note` is text after a second bullet, next to the `label` field.
 - `Warning`: see [Warnings](#warnings).
 
 The same shape is published as a JSON Schema,
@@ -267,6 +270,7 @@ Renders a `ParsedTrack` back to a string: `Artists - Title (versions) (prod. ...
 | `versions` | `"all"` | `"all"` or `"none"` |
 | `producers` | `true` | Include `(prod. ...)` credits |
 | `position` | `false` | Include the track number (`01. `) |
+| `label` | `true` | Include the [label](https://4matic.github.io/trackparse/guides/junk-and-flags/#labels-after-a-bullet) after a spaced bullet (` • VISION`) |
 
 ```js
 import { format, parse } from "trackparse";
@@ -278,6 +282,10 @@ format(t, { feat: "title", joiners: "canonical" }); // 'Wilkinson - Afterglow (f
 format(t, { feat: "omit", versions: "none" });      // 'Wilkinson - Afterglow'
 format(t, { featMarker: "featuring" });             // 'Wilkinson featuring Becky Hill - Afterglow (Sub Focus Remix)'
 format(t, { position: true });                      // '01. Wilkinson ft. Becky Hill - Afterglow (Sub Focus Remix)'
+
+const l = parse("Noisia - concussion • VISION • VISION RADIO RELOAD");
+format(l);                                          // 'Noisia - concussion • VISION'
+format(l, { label: false });                        // 'Noisia - concussion'
 ```
 
 ### `normalize(input)`
@@ -560,7 +568,7 @@ catches a misspelt name.
 
 **Docs:** [How it's tested](https://4matic.github.io/trackparse/project/testing/)
 
-- 13,130 shared fixtures: 1,203 written by hand and 11,927 generated from the rules. Every output
+- 13,565 shared fixtures: 1,280 written by hand and 12,285 generated from the rules. Every output
   is also validated against the JSON Schema.
 - Property tests with [fast-check](https://github.com/dubzzz/fast-check) for the spec's invariants:
   no throw on any input, `normalize` is idempotent, whitespace and dash noise doesn't change the
@@ -602,7 +610,9 @@ fixture input. You can parse in one language and read the result in another.
 
 - `parse()` takes one track string. Whole tracklists go through `trackparse/tracklist`, which reads
   start times only: no durations, trailing times or time ranges.
-- Catalog numbers, key and BPM are not fields. They stay in the title.
+- Catalog numbers, key and BPM are not fields. They stay in the title. A record label is a field
+  only after a spaced bullet (`Stigma • VISION`), and a bullet inside a title (`Song • Part 2`) is
+  read as a label too.
 - There is no artist database. Pass `knownArtists` for names that contain a joiner
   (`Earth, Wind & Fire`).
 

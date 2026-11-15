@@ -1,7 +1,7 @@
 # Fixtures
 
-The shared test corpus: 13,130 cases, [1,203 written by hand](https://4matic.github.io/trackparse/project/testing/#handwritten-1203-cases)
-and [11,927 generated](https://4matic.github.io/trackparse/project/testing/#generated-11927-cases). Every port
+The shared test corpus: 13,565 cases, [1,280 written by hand](https://4matic.github.io/trackparse/project/testing/#handwritten-1280-cases)
+and [12,285 generated](https://4matic.github.io/trackparse/project/testing/#generated-12285-cases). Every port
 ([JavaScript](../../js/README.md), [Python](../../python/README.md), [Rust](../../rust/README.md),
 [Go](../../go/README.md) and [C](../../c/README.md)) runs
 every case here. The fixtures, not any one implementation,

@@ -3,7 +3,7 @@
 Combinatorial fixture generator for the trackparse spec. It writes
 `spec/fixtures/generated/*.json`: 12,285 cases, about 8.1 MB (`test/generated.test.ts` caps the
 size at 8.2 MB). Every port (JavaScript, Python, Rust, Go and
-[C](https://github.com/4matic/trackparse/blob/main/c/README.md)) runs these files next to the 1,203
+[C](https://github.com/4matic/trackparse/blob/main/c/README.md)) runs these files next to the 1,280
 handwritten fixtures. The case format is in [`../fixtures/README.md`](../fixtures/README.md).
 
 **Docs:** [How it's tested: generated cases](https://4matic.github.io/trackparse/project/testing/#generated-12285-cases) · [Spec](https://4matic.github.io/trackparse/reference/spec/)
