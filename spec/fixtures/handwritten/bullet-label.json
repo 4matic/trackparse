@@ -775,6 +775,102 @@
       "rules": ["R8.7", "R2.1"],
       "tags": ["label", "junk"],
       "note": "The tail segment is only a junk group: it goes to junk and nothing is left for the label. The segment was not empty before the group was removed, so the rule fires."
+    },
+    {
+      "id": "bullet-label-063",
+      "input": "Noisia - [HD] • VISION",
+      "expected": {
+        "mode": "youtube",
+        "artists": ["Noisia"],
+        "title": "",
+        "fullTitle": "",
+        "label": "VISION",
+        "junk": [{ "raw": "HD", "kind": "quality" }],
+        "warnings": []
+      },
+      "rules": ["R8.7", "R2.1", "R11.6"],
+      "tags": ["label", "junk", "round-trip"],
+      "note": "The title is empty, so R11.6 does not promise a round trip: format gives `Noisia - • VISION`, where R8.7.2 does not fire."
+    },
+    {
+      "id": "bullet-label-064",
+      "input": "Noisia - Stigma • VISION",
+      "options": { "keywords": { "junk": { "VISION": "" } } },
+      "expected": { "artists": ["Noisia"], "title": "Stigma", "label": "VISION", "junk": [] },
+      "rules": ["R8.7", "R12"],
+      "tags": ["label", "keywords"],
+      "note": "A keyword junk phrase with an empty kind has no kind (JS truthiness), so the segment stays the label."
+    },
+    {
+      "id": "bullet-label-065",
+      "input": "Noisia - Stigma • VISION • HOSPITAL",
+      "options": { "keywords": { "junk": { "VISION": "note" } } },
+      "expected": {
+        "artists": ["Noisia"],
+        "title": "Stigma",
+        "label": "HOSPITAL",
+        "junk": [{ "raw": "VISION", "kind": "note" }]
+      },
+      "rules": ["R8.7", "R12"],
+      "tags": ["label", "keywords"],
+      "note": "A keyword phrase of kind note makes the first segment junk, so the next one is the label."
+    },
+    {
+      "id": "bullet-label-066",
+      "input": "😀 - 😀T • L [HD] • FREE DOWNLOAD • N2 (Lyrics)",
+      "expected": {
+        "artists": ["😀"],
+        "title": "😀T",
+        "label": "L",
+        "junk": [{ "raw": "HD", "kind": "quality" }, { "raw": "FREE DOWNLOAD", "kind": "promo" }, { "raw": "N2", "kind": "note" }, { "raw": "Lyrics", "kind": "lyrics" }]
+      },
+      "rules": ["R8.7", "R9.7"],
+      "tags": ["label", "junk", "unicode"],
+      "note": "Junk from the tail in text order, with astral characters before it (UTF-16 positions in Python)."
+    },
+    {
+      "id": "bullet-label-067",
+      "input": "Noisia - \"Stigma • VISION\"",
+      "expected": { "artists": ["Noisia"], "title": "\"Stigma", "label": "VISION\"" },
+      "rules": ["R8.7", "R8.5"],
+      "tags": ["label", "near-miss"],
+      "note": "A bullet inside quotes still cuts (an accepted false positive): the quotes no longer wrap the whole title."
+    },
+    {
+      "id": "bullet-label-068",
+      "input": "Noisia - Stigma • VISION •",
+      "expected": { "artists": ["Noisia"], "title": "Stigma", "label": "VISION •" },
+      "rules": ["R8.7"],
+      "tags": ["label"],
+      "note": "A bullet at the end of the string is not spaced, so it stays in the label."
+    },
+    {
+      "id": "bullet-label-069",
+      "input": "Noisia - Stigma HD • VISION HD",
+      "expected": {
+        "mode": "youtube",
+        "artists": ["Noisia"],
+        "title": "Stigma",
+        "label": "VISION HD",
+        "junk": [{ "raw": "HD", "kind": "quality" }]
+      },
+      "rules": ["R8.7", "R2.1", "R8.4"],
+      "tags": ["label", "youtube"],
+      "note": "The string ends with the phrase HD, so R2.1 picks youtube and R8.4 takes HD from the head. The tail segment is not only junk phrases, so it stays the label."
+    },
+    {
+      "id": "bullet-label-070",
+      "input": "Noisia - Stigma HD • VISION",
+      "expected": {
+        "mode": "clean",
+        "artists": ["Noisia"],
+        "title": "Stigma HD",
+        "label": "VISION",
+        "junk": []
+      },
+      "rules": ["R8.7", "R2.1"],
+      "tags": ["label", "near-miss"],
+      "note": "Near miss of bullet-label-069: the string does not end with a junk phrase, so the mode stays clean and HD stays in the title."
     }
   ]
 }
