@@ -71,7 +71,8 @@
                   "platform",
                   "label",
                   "genre",
-                  "other"
+                  "other",
+                  "note"
                 ]
               }
             },
@@ -122,6 +123,10 @@
         "position": {
           "type": "boolean",
           "default": false
+        },
+        "label": {
+          "type": "boolean",
+          "default": true
         }
       }
     },
@@ -190,7 +195,8 @@
                   "platform",
                   "label",
                   "genre",
-                  "other"
+                  "other",
+                  "note"
                 ]
               }
             },
